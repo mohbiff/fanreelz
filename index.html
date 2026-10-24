@@ -654,7 +654,7 @@ function liveCat(l){const t=(l.title+" "+(l.game||"")).toLowerCase();let best=nu
 function renderLive(){
   const plat=state.livePlat||"All";
   const head=`<h1 class="sect-h" style="font-size:24px;margin-top:16px">${icon("live")} Live now</h1>
-    <p class="lede">Creators making AI films live on Twitch and YouTube right now. The list updates by itself every couple of minutes.</p>`;
+    <p class="lede">Creators making AI films live on Twitch and YouTube right now. The list updates by itself every couple of minutes.</p>${liveState.demo?`<div class="familybar">Test mode: showing popular Twitch streams on any topic, so you can check that Live now works. Remove ?livetest from the address to see the real list.</div>`:""}`;
   if(!LIVE.length){$("#main").innerHTML=head+`<div class="empty">${icon("live")}<h2 style="margin:10px 0 6px;font-size:18px;color:var(--fg)">Nobody is live right now</h2><p style="margin:0">${liveState.checked?`Last checked ${agoT(Date.parse(liveState.checked))}.`:"Checking Twitch and YouTube…"} When a creator goes live making AI films, they show up here.</p></div>`;return}
   const list=LIVE.filter(l=>plat==="All"||l.platform===plat).sort((a,b)=>b.viewers-a.viewers);
   const total=list.reduce((a,l)=>a+l.viewers,0);
@@ -684,7 +684,8 @@ const liveState={checked:null};
 async function loadLive(){
   if(!/^https?:$/.test(location.protocol))return;
   const get=u=>fetch(u,{headers:{Accept:"application/json"}}).then(r=>r.ok?r.json():{streams:[]}).catch(()=>({streams:[]}));
-  const [tw,yt]=await Promise.all([get("/api/live"),get("/api/live-youtube")]);
+  const demo=new URLSearchParams(location.search).has("livetest");liveState.demo=demo;
+  const [tw,yt]=await Promise.all([get("/api/live"+(demo?"?demo=1":"")),demo?{streams:[]}:get("/api/live-youtube")]);
   const next=[...(tw.streams||[]),...(yt.streams||[])].filter(l=>l&&l.id&&l.title);
   liveState.checked=tw.checked||yt.checked||new Date().toISOString();
   const changed=JSON.stringify(next.map(l=>[l.id,l.viewers]))!==JSON.stringify(LIVE.map(l=>[l.id,l.viewers]));

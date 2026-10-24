@@ -40,13 +40,26 @@ const json = (body, seconds) =>
     },
   });
 
-export default async () => {
+export default async (req) => {
+  const demo = new URL(req.url).searchParams.get("demo") === "1";
   const id = Netlify.env.get("TWITCH_CLIENT_ID");
   const secret = Netlify.env.get("TWITCH_CLIENT_SECRET");
   if (!id || !secret) return json({ streams: [], error: "Twitch keys are not set yet" }, 60);
 
   try {
     const token = await appToken(id, secret);
+
+    // Test mode (/api/live?demo=1): the most-watched safe streams on Twitch right now, any topic.
+    if (demo) {
+      const top = await helix("streams?first=20", id, token);
+      const out = top.filter((s) => s.type === "live" && !s.is_mature).slice(0, 4).map((s) => ({
+        id: "tw-" + s.user_login, platform: "Twitch", channel: s.user_login, ch: s.user_name,
+        title: s.title, game: s.game_name || "", viewers: s.viewer_count || 0,
+        thumb: (s.thumbnail_url || "").replace("{width}", "640").replace("{height}", "360"),
+        url: "https://www.twitch.tv/" + s.user_login, started: s.started_at, demo: true,
+      }));
+      return json({ streams: out, demo: true, checked: new Date().toISOString() }, 120);
+    }
     const watch = (Netlify.env.get("TWITCH_WATCHLIST") || "")
       .split(",").map((s) => s.trim().toLowerCase()).filter(Boolean);
 
