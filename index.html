@@ -1,0 +1,1446 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="description" content="Fanreelz collects the best AI fan films about games, books and series, rated by fans.">
+<style>html{color-scheme:light}:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px/1.45 system-ui,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style>
+</head>
+<body>
+<title>Fanreelz – AI fan films, ranked by fans</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@700;800&family=Figtree:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+/* Layout: video-site shell · top bar (menu, logo, centered search, actions) · left guide rail · chip row · thumbnail grid; watch view = player column + "Up next" column */
+:root{
+  --bg:#fbfafd; --surface:#ffffff; --hover:#efecf4; --chip:#ebe7f1; --fg:#17141f; --muted:#625b73; --line:#e1dce9;
+  --live:#dc2626; --accent:#c2410c; --accent-soft:#fde5d6; --star:#d97706; --ink-on-accent:#ffffff; --scrim:rgba(10,8,16,.55);
+  --display:"Unbounded","Arial Black",system-ui,sans-serif;
+  --body:"Figtree",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#110f17; --surface:#17141f; --hover:#262132; --chip:#272231; --fg:#f1edf7; --muted:#a69db9; --line:#2d2739;
+  --live:#f05252; --accent:#fb8a4c; --accent-soft:#3a2418; --star:#fbbf24; --ink-on-accent:#1b1008; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#110f17; --surface:#17141f; --hover:#262132; --chip:#272231; --fg:#f1edf7; --muted:#a69db9; --line:#2d2739;
+  --live:#f05252; --accent:#fb8a4c; --accent-soft:#3a2418; --star:#fbbf24; --ink-on-accent:#1b1008; color-scheme:dark}
+
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:14px;line-height:1.45}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+svg.i{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:none}
+
+/* top bar */
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:6;background:var(--bg);height:56px;display:flex;align-items:center;gap:12px;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.iconbtn{width:40px;height:40px;border-radius:50%;border:0;background:none;display:grid;place-items:center;flex:none}
+.iconbtn:hover{background:var(--hover)}
+.zz{display:inline-block;color:var(--accent);font-size:1.32em;line-height:.8;transform:skewX(-14deg) translateY(.04em);margin-left:.02em;position:relative;font-weight:800}
+.zz::after{content:"";position:absolute;left:-.06em;right:-.12em;bottom:-.2em;height:.13em;border-radius:.1em;background:var(--accent);transform:skewX(14deg)}
+.logo{display:flex;align-items:center;gap:7px;font-family:var(--display);font-weight:800;font-size:18px;letter-spacing:-.03em;background:none;border:0;padding:0}
+.logo .mark{width:26px;height:26px;color:var(--accent);display:grid;place-items:center}
+.logo .mark svg{width:26px;height:26px}
+.searchwrap{flex:1;display:flex;justify-content:center;min-width:0}
+.search{display:flex;width:100%;max-width:600px;height:40px}
+.search input{flex:1;min-width:0;border:1px solid var(--line);border-right:0;border-radius:20px 0 0 20px;background:var(--surface);padding:0 16px;outline:none}
+.search input:focus{border-color:var(--accent)}
+.search button{width:62px;border:1px solid var(--line);border-radius:0 20px 20px 0;background:var(--chip);display:grid;place-items:center}
+.actions{display:flex;align-items:center;gap:6px}
+.createbtn{display:flex;align-items:center;gap:6px;height:36px;padding:0 14px 0 10px;border-radius:18px;border:0;background:var(--chip);font-weight:600}
+.createbtn:hover{background:var(--hover)}
+.signin{display:flex;align-items:center;gap:6px;height:36px;padding:0 14px;border-radius:18px;border:1px solid var(--line);background:none;color:var(--accent);font-weight:600}
+.avatar{width:32px;height:32px;border-radius:50%;object-fit:cover;background:var(--chip);flex:none}
+
+/* shell */
+.shell{display:grid;grid-template-columns:240px minmax(0,1fr)}
+.shell.mini{grid-template-columns:72px minmax(0,1fr)}
+.guide{position:sticky;top:calc(56px + env(safe-area-inset-top,0px));height:calc(100vh - 56px - env(safe-area-inset-top,0px));overflow-y:auto;padding:4px 12px 24px max(12px,env(safe-area-inset-left,0px))}
+.guide h4{margin:12px 12px 4px;font-size:15px;font-weight:700}
+.guide hr{border:0;border-top:1px solid var(--line);margin:12px 0}
+.gi{display:flex;align-items:center;gap:20px;width:100%;height:40px;padding:0 12px;border-radius:10px;border:0;background:none;text-align:left;white-space:nowrap;overflow:hidden}
+.gi:hover{background:var(--hover)}
+.gi.on{background:var(--chip);font-weight:700}
+.gi .dot{width:24px;height:24px;border-radius:50%;flex:none;display:grid;place-items:center;font-size:11px;font-weight:700;color:#fff}
+.gi span{overflow:hidden;text-overflow:ellipsis}
+.shell.mini .guide{padding-left:max(4px,env(safe-area-inset-left,0px));padding-right:4px}
+.shell.mini .gi{flex-direction:column;height:auto;padding:14px 0 12px;gap:6px;font-size:10px;justify-content:center}
+.shell.mini .guide h4,.shell.mini .guide hr,.shell.mini .gi.cat{display:none}
+
+main{min-width:0;padding-right:max(16px,env(safe-area-inset-right,0px));padding-left:12px;padding-bottom:40px}
+.chips{position:sticky;top:calc(56px + env(safe-area-inset-top,0px));z-index:4;background:var(--bg);display:flex;gap:12px;overflow-x:auto;padding:10px 0 14px;scrollbar-width:none}
+.chips::-webkit-scrollbar{display:none}
+.chip{flex:none;height:32px;padding:0 12px;border-radius:8px;border:0;background:var(--chip);font-weight:600;white-space:nowrap}
+.chip:hover{background:var(--hover)}
+.chip.on{background:var(--fg);color:var(--bg)}
+
+.shelf{margin:4px 0 28px}
+.shelf h2,.sect-h{display:flex;align-items:center;gap:10px;font-size:20px;font-weight:700;margin:0 0 14px}
+.shelf h2 svg{color:var(--accent)}
+.shelfrow{display:grid;grid-auto-flow:column;grid-auto-columns:max(210px,calc((100% - 64px) / 5));gap:16px;overflow-x:auto;padding-bottom:6px}
+
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:40px 16px}
+.vid{background:none;border:0;padding:0;text-align:left;display:flex;flex-direction:column;gap:12px;min-width:0}
+.thumb{position:relative;aspect-ratio:16/9;max-width:100%;border-radius:12px;overflow:hidden;background:var(--chip)}
+.thumb canvas{display:block;width:100%;height:100%;transition:transform .25s}
+.vid:hover .thumb canvas{transform:scale(1.03)}
+.thumb .len{position:absolute;right:8px;bottom:8px;font-size:12px;font-weight:600;background:rgba(0,0,0,.75);color:#fff;padding:1px 5px;border-radius:4px}
+.thumb .rank{position:absolute;left:8px;bottom:6px;font-family:var(--display);font-size:34px;font-weight:800;color:#fff;text-shadow:0 2px 10px rgba(0,0,0,.6);line-height:1}
+.vinfo{display:flex;gap:12px;min-width:0}
+.cav{width:36px;height:36px;border-radius:50%;flex:none;display:grid;place-items:center;font-weight:700;color:#fff;font-size:14px}
+.vtext{min-width:0;display:flex;flex-direction:column;gap:3px}
+.vtitle{font-size:16px;font-weight:600;line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;margin:0}
+.vmeta{color:var(--muted);font-size:14px}
+.vmeta .st{color:var(--star)}
+.pill{display:inline-block;font-size:11px;font-weight:700;padding:1px 7px;border-radius:999px;background:var(--accent-soft);color:var(--accent);vertical-align:1px;margin-left:4px}
+.empty{padding:60px 20px;text-align:center;color:var(--muted)}
+.note{font-size:12px;color:var(--muted);margin-top:36px}
+
+/* watch view */
+.watch{display:grid;grid-template-columns:minmax(0,1fr) 402px;gap:24px;padding-top:16px;max-width:1700px}
+.player{position:relative;aspect-ratio:16/9;max-width:100%;border-radius:12px;overflow:hidden;background:#000}
+.player canvas{display:block;width:100%;height:100%}
+.play{position:absolute;inset:0;display:grid;place-items:center;text-decoration:none}
+.play span{display:flex;align-items:center;gap:10px;background:rgba(0,0,0,.72);color:#fff;font-weight:700;padding:14px 22px;border-radius:999px;font-size:15px}
+.play span svg{width:18px;height:18px;fill:#fff}
+.play:hover span{background:var(--accent);color:var(--ink-on-accent)}
+.play:hover span svg{fill:var(--ink-on-accent)}
+.wtitle{font-size:20px;font-weight:700;margin:12px 0 10px;line-height:1.3;text-wrap:balance}
+.wbar{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.owner{display:flex;align-items:center;gap:12px;min-width:0}
+.owner b{display:block;font-size:16px}
+.owner small{color:var(--muted)}
+.ratebox{display:flex;align-items:center;gap:2px;background:var(--chip);border-radius:18px;padding:2px 10px 2px 8px;height:36px}
+.ratebox span{font-weight:600;font-size:13px;margin-right:6px;white-space:nowrap}
+.ratebox button{background:none;border:0;font-size:21px;color:var(--muted);padding:0 2px;line-height:1;opacity:.55}
+.ratebox button.on{color:var(--star);opacity:1}
+.desc{background:var(--chip);border-radius:12px;padding:12px 14px;margin-top:14px;display:flex;flex-direction:column;gap:10px}
+.desc .top2{font-weight:700}
+.dist{display:grid;grid-template-columns:auto 1fr auto;gap:5px 10px;align-items:center;font-family:var(--mono);font-size:12px;color:var(--muted);max-width:420px}
+.bar{height:6px;background:var(--hover);border-radius:3px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--star)}
+.tags{display:flex;gap:8px;flex-wrap:wrap}
+.tags button{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:3px 10px;font-weight:600;font-size:13px}
+.trendlbl{font-size:10.5px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.1em;margin-left:6px}
+.gi .tr{margin-left:auto;color:var(--accent);flex:none}
+.gi .tr svg{width:16px;height:16px}
+.gi.more{color:var(--muted);font-size:13px}
+.dir{margin-bottom:36px}
+.dirgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px}
+.dircard{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:10px;text-align:left;min-width:0}
+.dircard:hover{border-color:var(--accent)}
+.dirhead{display:flex;align-items:center;gap:12px;background:none;border:0;padding:0;text-align:left;min-width:0}
+.dircard.dirhead{flex-direction:row;border:1px solid var(--line);background:var(--surface);padding:12px;border-radius:12px}
+.dircard.dirhead:hover{border-color:var(--accent)}
+.dirhead b{display:block;font-size:15px}
+.dirhead small{color:var(--muted);font-size:13px}
+.hot{color:var(--accent);font-weight:700}
+.dirchars{display:flex;flex-wrap:wrap;gap:6px}
+.dirchars button{border:0;background:var(--chip);border-radius:6px;padding:3px 9px;font-size:12px;font-weight:600}
+.dirchars button:hover{background:var(--hover)}
+.azlist{display:flex;flex-direction:column}
+.azletter{font-family:var(--display);font-size:18px;font-weight:800;color:var(--accent);padding:16px 4px 6px;border-bottom:1px solid var(--line)}
+.azrow{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,auto) 56px;gap:16px;align-items:center;background:none;border:0;border-bottom:1px solid var(--line);padding:10px 4px;text-align:left}
+.azrow:hover{background:var(--hover)}
+.aztitle{font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.azcat{color:var(--muted);font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.azscore{font-family:var(--mono);font-size:12px;color:var(--star);text-align:right;font-variant-numeric:tabular-nums}
+.morebtn{margin-top:16px}
+@media (max-width:600px){.azrow{grid-template-columns:minmax(0,1fr) 48px;row-gap:2px}.azcat{grid-column:1;grid-row:2}.azscore{grid-column:2;grid-row:1/3}}
+.arena{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);gap:20px;align-items:start}
+.bside{display:flex;flex-direction:column;gap:8px;min-width:0}
+.vs{align-self:center;font-family:var(--display);font-weight:800;font-size:28px;color:var(--accent)}
+.pick{align-self:flex-start;margin-top:4px}
+.rk{display:inline-block;min-width:28px;font-family:var(--display);font-weight:800;color:var(--accent)}
+.reqlist{display:flex;flex-direction:column}
+.req{display:grid;grid-template-columns:64px minmax(0,1fr) auto;gap:16px;align-items:start;padding:16px 0;border-bottom:1px solid var(--line)}
+.upv{display:flex;flex-direction:column;align-items:center;gap:2px;border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:8px 0}
+.upv.on{border-color:var(--accent);color:var(--accent);background:var(--accent-soft)}
+.rbody{min-width:0}
+.rbody h3{margin:0 0 4px;font-size:16px}
+.rnote{margin:6px 0}
+.contest-hero{display:grid;grid-template-columns:minmax(0,1fr) 280px;gap:20px;background:var(--chip);border-radius:16px;padding:24px;margin:16px 0 28px}
+.contest-hero h1{font-family:var(--display);font-size:clamp(24px,3.4vw,38px);margin:10px 0 8px;letter-spacing:-.02em;text-wrap:balance}
+.contest-hero p{margin:0 0 16px;color:var(--muted);max-width:60ch}
+.prize{background:var(--surface);border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:6px;border:1px dashed var(--line)}
+.prize small{font-size:11px;font-weight:700;letter-spacing:.1em;color:var(--muted)}
+.prize b{font-size:18px}
+.podium{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+.pod .vid{width:100%}
+.rules{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:6px;max-width:70ch}
+.plgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:20px}
+.plcard{background:none;border:0;padding:0;text-align:left;display:flex;flex-direction:column;gap:8px;min-width:0}
+.plcount{position:absolute;right:0;top:0;bottom:0;width:40%;background:rgba(0,0,0,.62);color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;font-weight:700;font-size:13px}
+.plitem{display:flex;flex-direction:column;gap:8px;align-items:flex-start;min-width:0}
+.plchoose{display:flex;flex-direction:column;gap:8px}
+.chk{display:flex;gap:10px;align-items:center;font-weight:600}
+.chero{display:flex;gap:24px;align-items:center;margin-top:20px;flex-wrap:wrap}
+.chero .cav{font-size:36px}
+.cinfo{min-width:0}
+.cinfo h1{margin:0 0 4px;font-size:28px}
+.badge2{font-size:12px;font-weight:700;padding:3px 10px;border-radius:999px;background:var(--accent-soft);color:var(--accent)}
+.discord-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,420px);gap:28px}
+.cmd{font-family:var(--mono);font-size:13px;background:var(--chip);padding:2px 8px;border-radius:6px;white-space:nowrap;justify-self:start}
+.desc .btn.ghost{background:var(--surface)}
+.chatmock{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:10px}
+.cm-head{display:flex;align-items:center;gap:10px}
+.cm-bot{font-size:10px;font-weight:800;background:var(--accent);color:var(--ink-on-accent);padding:1px 5px;border-radius:4px}
+.cm-embed{border-left:4px solid var(--accent);background:var(--chip);border-radius:6px;padding:12px 14px;display:flex;flex-direction:column;gap:10px}
+.cm-row{display:flex;gap:10px;align-items:flex-start}
+.howmade{display:flex;flex-direction:column;gap:6px;border-top:1px solid var(--line);padding-top:10px}
+.prompt{font-family:var(--mono);font-size:12.5px;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:10px 12px;white-space:pre-wrap;word-break:break-word}
+.owner.link{background:none;border:0;padding:0;text-align:left;color:inherit}
+.owner.link:hover b{text-decoration:underline}
+.wactions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.wactions button{height:34px;padding:0 14px;border-radius:17px;border:0;background:var(--chip);font-weight:600;display:inline-flex;align-items:center;gap:6px}
+.wactions button:hover{background:var(--hover)}
+.wactions svg.i{width:18px;height:18px}
+.lorebar{display:flex;gap:8px;margin:-4px 0 18px;flex-wrap:wrap}
+.lorebar button{height:28px;padding:0 12px;border-radius:14px;border:1px solid var(--line);background:none;font-weight:600;font-size:13px}
+.lorebar button.on{background:var(--accent-soft);border-color:var(--accent);color:var(--accent)}
+.toggle{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;padding:8px 12px;border:0;background:none;border-radius:10px;font-weight:600;text-align:left}
+.toggle:hover{background:var(--hover)}
+.sw{width:36px;height:20px;border-radius:10px;background:var(--line);position:relative;flex:none;transition:background .2s}
+.sw::after{content:"";position:absolute;left:2px;top:2px;width:16px;height:16px;border-radius:50%;background:#fff;transition:left .2s}
+.toggle.on .sw{background:var(--accent)}
+.toggle.on .sw::after{left:18px}
+.newsbox{margin:8px 4px 0;padding:12px;border-radius:12px;background:var(--chip);display:flex;flex-direction:column;gap:8px;font-size:13px}
+.newsbox .btn{align-self:flex-start;padding:7px 14px}
+.shell.mini .toggle,.shell.mini .newsbox{display:none}
+.familybar{display:flex;align-items:center;gap:8px;background:var(--accent-soft);color:var(--accent);font-weight:700;padding:8px 12px;border-radius:10px;margin:0 0 14px;font-size:13px}
+.familybar button{margin-left:auto;border:0;background:none;color:inherit;font-weight:700;text-decoration:underline}
+@media (max-width:860px){.arena{grid-template-columns:minmax(0,1fr)}.vs{justify-self:center}.contest-hero{grid-template-columns:minmax(0,1fr)}.podium{grid-template-columns:minmax(0,1fr)}.discord-grid{grid-template-columns:minmax(0,1fr)}.req{grid-template-columns:52px minmax(0,1fr)}.req .remind{grid-column:2;justify-self:start}}
+.fmtbar{display:flex;gap:4px;border-bottom:1px solid var(--line);margin:0 0 18px;overflow-x:auto;scrollbar-width:none}
+.fmtbar button{background:none;border:0;padding:10px 14px;font-weight:700;color:var(--muted);border-bottom:2px solid transparent;margin-bottom:-1px;white-space:nowrap;display:flex;gap:6px;align-items:baseline}
+.fmtbar button.on{color:var(--fg);border-bottom-color:var(--fg)}
+.fmtbar small{font-weight:600;font-size:12px;color:var(--muted)}
+.seeall{margin-left:auto;background:none;border:0;color:var(--accent);font-weight:700;font-size:14px}
+.shortrow{display:grid;grid-auto-flow:column;grid-auto-columns:max(150px,calc((100% - 80px) / 6));gap:16px;overflow-x:auto;padding-bottom:6px}
+.shortgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:24px 16px}
+.vid.short{gap:8px}
+.thumb.vert{aspect-ratio:9/16}
+.thumb.stack{margin-top:12px;overflow:visible}
+.thumb.stack canvas{border-radius:12px}
+.thumb.stack::before,.thumb.stack::after{content:"";position:absolute;left:8%;right:8%;top:-6px;height:12px;border-radius:10px 10px 0 0;background:var(--line);z-index:-1}
+.thumb.stack::after{left:16%;right:16%;top:-12px;background:var(--chip)}
+.thumb.stack{isolation:isolate}
+.sbadge{position:absolute;right:8px;bottom:8px;background:rgba(0,0,0,.78);color:#fff;font-size:12px;font-weight:700;padding:2px 8px;border-radius:4px;display:flex;gap:5px;align-items:center}
+.sbadge svg.i{width:14px;height:14px}
+.shorts-view{display:grid;grid-template-columns:auto minmax(0,320px);justify-content:center;gap:28px;padding-top:16px;align-items:start}
+.sp{position:relative;height:min(calc(100vh - 110px),760px);aspect-ratio:9/16;max-width:calc(100vw - 32px);border-radius:14px;overflow:hidden;background:#000}
+.sp canvas{width:100%;height:100%;display:block}
+.sp .ov{position:absolute;inset:auto 0 auto 0;top:0;padding:14px 16px 40px;background:linear-gradient(rgba(0,0,0,.75),transparent)!important;background:linear-gradient(transparent,rgba(0,0,0,.85));color:#fff;display:flex;flex-direction:column;gap:6px;pointer-events:none}
+.sp .ov b{font-size:17px;line-height:1.3}
+.sside{display:flex;flex-direction:column;gap:14px;padding-top:8px;min-width:0}
+.snav{display:flex;align-items:center;gap:12px}
+.navb{background:var(--chip)}
+.navb:disabled{opacity:.4;cursor:default}
+.sbanner{position:relative;border-radius:16px;overflow:hidden;min-height:260px;aspect-ratio:21/8;max-width:100%;margin-top:16px;background:#000}
+.sbanner canvas{position:absolute;inset:0;width:100%;height:100%}
+.sbanner .ov{position:absolute;inset:0;background:linear-gradient(90deg,rgba(0,0,0,.82),rgba(0,0,0,.15));color:#fff;padding:24px;display:flex;flex-direction:column;justify-content:flex-end;gap:10px}
+.sbanner h1{font-family:var(--display);font-size:clamp(24px,3.6vw,42px);margin:0;letter-spacing:-.02em;line-height:1.1;text-wrap:balance}
+.eplist{display:flex;flex-direction:column}
+.ep{display:grid;grid-template-columns:36px 200px minmax(0,1fr) 56px;gap:16px;align-items:center;padding:12px 6px;border:0;border-bottom:1px solid var(--line);background:none;text-align:left;width:100%}
+.ep:hover{background:var(--hover)}
+.ep .thumb{border-radius:8px}
+.ep .num{font-family:var(--display);font-weight:800;font-size:20px;color:var(--muted);text-align:center}
+.ep.watched .num{color:var(--accent)}
+.eptext{display:flex;flex-direction:column;gap:3px;min-width:0}
+.eptext b{font-size:15px}
+.serieslink{background:none;border:0;padding:0;color:var(--accent);font-weight:700;margin-top:12px;display:block}
+.subnote{margin:0;color:var(--muted);font-size:12px}
+@media (max-width:860px){.shorts-view{grid-template-columns:minmax(0,1fr);justify-items:center}.sp{height:calc(100vh - 260px);min-height:360px}.sside{width:100%}.ep{grid-template-columns:28px 120px minmax(0,1fr)}.ep .azscore{display:none}}
+.tipamts{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.tipamts .chip.on{background:var(--fg);color:var(--bg)}
+.tipother{display:flex;align-items:center;gap:6px;font-weight:600;font-size:13px}
+.tipother input{width:96px;border:1px solid var(--line);background:var(--bg);border-radius:8px;padding:6px 9px}
+.split{display:flex;flex-direction:column;gap:9px;background:var(--chip);border-radius:12px;padding:14px}
+.splitbar{display:flex;height:12px;border-radius:6px;overflow:hidden;background:var(--hover)}
+.splitbar i{display:block;height:100%}
+.sr{display:flex;justify-content:space-between;gap:12px;font-size:14px;font-variant-numeric:tabular-nums}
+.sr span{display:flex;align-items:center;gap:8px}
+.sr .dot{width:10px;height:10px;border-radius:3px;flex:none}
+.sr>:last-child{white-space:nowrap}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px}
+.btn svg.i{width:18px;height:18px}
+.sr.total{border-top:1px solid var(--line);padding-top:8px;font-weight:700}
+.tipmsg{display:flex;flex-direction:column;gap:4px;font-weight:600;font-size:13px}
+.tipmsg input{border:1px solid var(--line);background:var(--bg);border-radius:8px;padding:9px 11px;font-weight:400}
+.supp{margin-top:24px;max-width:560px}
+.supp .azrow{grid-template-columns:minmax(0,1fr) auto}
+.supp .who2{display:flex;align-items:center;gap:10px;min-width:0}
+.supp .who2 .cav{width:28px;height:28px;font-size:12px}
+.comments{margin-top:28px;display:flex;flex-direction:column;gap:18px;max-width:860px}
+.cmform{display:flex;gap:12px;align-items:flex-start}
+.cmform .avatar{width:36px;height:36px}
+.cmfield{flex:1;display:flex;flex-direction:column;gap:8px;min-width:0}
+.cmfield textarea{width:100%;box-sizing:border-box;resize:vertical;border:0;border-bottom:1px solid var(--line);background:transparent;padding:6px 2px;font:inherit;color:inherit;outline:none}
+.cmfield textarea:focus{border-bottom-color:var(--fg)}
+.cmfield .btn{padding:7px 14px}
+.cmlist{display:flex;flex-direction:column;gap:18px}
+.cm{display:flex;gap:12px;align-items:flex-start}
+.cm.reply{margin-left:48px}
+.cm.reply .cav{width:28px;height:28px;font-size:12px}
+.cmbody{flex:1;min-width:0}
+.cmhead{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}
+.cmhead b{font-size:13px}
+.cm p{margin:4px 0 6px;white-space:pre-wrap;overflow-wrap:anywhere}
+.cmact{display:flex;gap:4px;flex-wrap:wrap}
+.cmact button{background:none;border:0;border-radius:14px;padding:4px 10px;font-weight:600;font-size:12px;color:var(--muted)}
+.cmact button:hover{background:var(--hover)}
+.cmact button.on{color:var(--accent)}
+.cmact svg.i{width:14px;height:14px;vertical-align:-2px}
+.len:empty{display:none}
+.ytthumb{display:block;width:100%;height:100%;object-fit:cover;background:var(--chip)}
+.livechat{height:min(70vh,640px);border-radius:12px;overflow:hidden;background:var(--chip)}
+.vid.live{}
+.livecount{margin-left:auto;background:var(--live);color:#fff;font-size:11px;font-weight:800;border-radius:999px;padding:1px 7px}
+.upnext{display:flex;flex-direction:column;gap:8px}
+.livebadge{position:absolute;left:8px;top:8px;background:var(--live);color:#fff;font-weight:800;font-size:11px;letter-spacing:.06em;padding:2px 7px;border-radius:4px}
+.viewers{position:absolute;left:8px;bottom:8px;font-size:12px;font-weight:600;background:rgba(0,0,0,.75);color:#fff;padding:1px 6px;border-radius:4px}
+.plat{display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:700;color:var(--muted)}
+.lede{color:var(--muted);margin:-6px 0 22px;max-width:70ch}
+.prem{display:grid;grid-template-columns:240px minmax(0,1fr) auto;gap:16px;align-items:center;padding:14px 0;border-bottom:1px solid var(--line)}
+.prem .thumb{border-radius:10px}
+.prem .when{display:flex;flex-direction:column;align-items:flex-end;gap:8px;text-align:right}
+.count{font-family:var(--mono);font-size:15px;font-variant-numeric:tabular-nums}
+.date{color:var(--muted);font-size:13px}
+.nowtag{background:var(--live);color:#fff;font-weight:800;font-size:11px;letter-spacing:.06em;padding:2px 7px;border-radius:4px}
+.remind{height:34px;padding:0 14px;border-radius:17px;border:1px solid var(--line);background:none;font-weight:700;white-space:nowrap}
+.remind.on{background:var(--chip);border-color:transparent}
+.btn.link{text-decoration:none;display:inline-flex;align-items:center;gap:6px}
+.tvwrap{display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:24px;max-width:1700px}
+.screen{position:relative;aspect-ratio:16/9;max-width:100%;border-radius:12px;overflow:hidden;background:#000}
+.screen canvas{display:block;width:100%;height:100%}
+.screen .ov{position:absolute;inset:auto 0 0 0;padding:40px 18px 14px;background:linear-gradient(transparent,rgba(0,0,0,.82));color:#fff;display:flex;flex-direction:column;gap:8px}
+.screen .ov b{font-size:clamp(16px,2.2vw,24px);line-height:1.2}
+.screen .ov small{opacity:.85}
+.screen .chan{position:absolute;left:14px;top:12px;display:flex;gap:8px;align-items:center;color:#fff;font-weight:700;font-size:13px;text-shadow:0 1px 6px rgba(0,0,0,.6)}
+.prog{height:4px;background:rgba(255,255,255,.3);border-radius:2px;overflow:hidden}
+.prog i{display:block;height:100%;background:var(--accent)}
+.tvtime{font-family:var(--mono);font-size:12px;opacity:.9;font-variant-numeric:tabular-nums}
+.sched{display:flex;flex-direction:column}
+.sched h3{margin:0 0 8px;font-size:16px}
+.srow{display:grid;grid-template-columns:52px minmax(0,1fr);gap:12px;padding:10px 6px;border-bottom:1px solid var(--line);background:none;border-left:0;border-right:0;border-top:0;text-align:left}
+.srow:hover{background:var(--hover)}
+.srow .t{font-family:var(--mono);font-size:12px;color:var(--muted);padding-top:2px}
+.srow b{display:block;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.srow small{color:var(--muted)}
+.srow.cur .t{color:var(--accent);font-weight:700}
+@media (max-width:1100px){.tvwrap{grid-template-columns:minmax(0,1fr)}}
+@media (max-width:700px){.prem{grid-template-columns:120px minmax(0,1fr)}.prem .when{grid-column:1/-1;flex-direction:row;justify-content:space-between;align-items:center}}
+.upnext h3{margin:0 0 4px;font-size:16px}
+.mini-v{display:grid;grid-template-columns:168px minmax(0,1fr);gap:8px;background:none;border:0;padding:0;text-align:left;border-radius:8px}
+.mini-v .thumb{border-radius:8px}
+.mini-v .vtitle{font-size:14px}
+.mini-v .vmeta{font-size:12px}
+
+/* dialogs */
+.scrim{position:fixed;inset:0;background:var(--scrim);z-index:20;display:flex;align-items:center;justify-content:center;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:24px}
+.dlg{background:var(--surface);border-radius:14px;width:min(560px,100%);max-height:100%;overflow:auto;padding:22px;display:flex;flex-direction:column;gap:14px}
+.dlg h2{margin:0;font-size:20px}
+.form{display:flex;flex-direction:column;gap:12px}
+.form label{display:flex;flex-direction:column;gap:4px;font-weight:600;font-size:13px}
+.form input,.form select{border:1px solid var(--line);background:var(--bg);border-radius:8px;padding:9px 11px;font-weight:400}
+.btn{border:0;border-radius:18px;padding:9px 16px;font-weight:700;background:var(--accent);color:var(--ink-on-accent)}
+.btn.ghost{background:var(--chip);color:var(--fg)}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.toast{position:fixed;left:max(16px,env(safe-area-inset-left,0px));bottom:calc(20px + env(safe-area-inset-bottom,0px));background:var(--fg);color:var(--bg);padding:12px 18px;border-radius:8px;z-index:30;font-weight:600}
+.plist{display:flex;flex-direction:column;gap:6px;margin:0;padding:0;list-style:none}
+.plist li{display:flex;justify-content:space-between;gap:12px;padding:8px 10px;background:var(--chip);border-radius:8px;cursor:pointer}
+.plist li span:first-child{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+@media (max-width:1100px){.watch{grid-template-columns:minmax(0,1fr)}}
+@media (max-width:860px){
+  .shell,.shell.mini{grid-template-columns:minmax(0,1fr)}
+  .guide{display:none;position:fixed;left:0;top:calc(56px + env(safe-area-inset-top,0px));bottom:0;width:260px;height:auto;background:var(--surface);z-index:7;box-shadow:4px 0 24px rgba(0,0,0,.25)}
+  .shell.open .guide{display:block}
+  main{padding-left:max(16px,env(safe-area-inset-left,0px))}
+  .createbtn b,.logo .word-tag{display:none}
+  .createbtn{padding:0;width:40px;justify-content:center;background:none}
+  .grid{grid-template-columns:minmax(0,1fr)}
+  .search button{width:48px}
+}
+@media (max-width:520px){.logo .word{display:none}.signin b{display:none}.signin{padding:0 10px}.mini-v{grid-template-columns:140px minmax(0,1fr)}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<div style="background:var(--accent);color:var(--ink-on-accent);text-align:center;font-weight:700;font-size:13px;padding:7px 16px">Preview: Fanreelz launches soon. The films are real AI fan films from YouTube; ratings open at launch.</div>
+<header class="top">
+  <button class="iconbtn" id="menuBtn" aria-label="Menu"><svg class="i" viewBox="0 0 24 24"><path d="M3 6h18M3 12h18M3 18h18"/></svg></button>
+  <button class="logo" id="homeLogo" aria-label="Fanreelz home"><span class="mark"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2.4"/><circle cx="12" cy="12" r="2" fill="currentColor"/><circle cx="12" cy="6.5" r="2.2" fill="currentColor"/><circle cx="17.2" cy="14.8" r="2.2" fill="currentColor"/><circle cx="6.8" cy="14.8" r="2.2" fill="currentColor"/></svg></span><span class="word">Fanreel<span class="zz">z</span></span></button>
+  <div class="searchwrap"><form class="search" id="sform" role="search"><input id="q" type="search" placeholder="Search" aria-label="Search films, games, characters"><button type="submit" aria-label="Search"><svg class="i" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M20 20l-4.8-4.8"/></svg></button></form></div>
+  <div class="actions">
+    <button class="createbtn" id="submitBtn" aria-label="Submit a film"><svg class="i" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg><b>Submit</b></button>
+    <div id="who"><button class="signin" id="signinBtn"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg><b>Sign in</b></button></div>
+  </div>
+</header>
+
+<div class="shell" id="shell">
+  <nav class="guide" id="guide" aria-label="Guide"></nav>
+  <main id="main"></main>
+</div>
+<div class="scrim" id="scrim" hidden></div>
+<div class="toast" id="toast" hidden></div>
+<script>
+const GROUPS=[
+ {name:"Games",cats:[
+  {id:"dota2",name:"Dota 2",chars:["Lina","Invoker","Pudge","Crystal Maiden","Juggernaut","Drow Ranger","The Ancients"]},
+  {id:"lol",name:"League of Legends",chars:["Jinx","Ahri","Yasuo","Thresh","Nasus","Runeterra"]},
+  {id:"eldenring",name:"Elden Ring",chars:["Malenia","Radahn","Melina","Messmer","The Lands Between"]},
+  {id:"wh40k",name:"Warhammer 40K",chars:["Space Marines","Orks","Eldar"]},
+  {id:"aoe2",name:"Age of Empires II",chars:["Joan of Arc","Saladin","Genghis Khan","Campaigns"]},
+  {id:"gta6",name:"Grand Theft Auto VI",chars:["Lucia","Jason","Vice City"]},
+  {id:"gta",name:"Grand Theft Auto (classic)",chars:["Vice City","San Andreas","Los Santos"]},
+  {id:"minecraft",name:"Minecraft",chars:["Steve","Alex","Herobrine","Creeper","Ender Dragon"]},
+  {id:"roblox",name:"Roblox",chars:["Noob","Bacon Hair","Obby","Doors"]},
+  {id:"wow",name:"World of Warcraft",chars:["Sylvanas","Illidan","Thrall","Jaina","Anduin","Azeroth"]},
+  {id:"wc3",name:"Warcraft III",chars:["Arthas","Grom Hellscream","Kel'Thuzad","Tyrande"]},
+  {id:"elderscrolls",name:"The Elder Scrolls",chars:["Skyrim","Oblivion"]},
+  {id:"zelda",name:"The Legend of Zelda",chars:["Link","Hyrule"]},
+  {id:"fallout",name:"Fallout",chars:["New Vegas"]},
+  {id:"darksouls",name:"Dark Souls",chars:["Lordran","Drangleic"]},
+  {id:"diablo",name:"Diablo",chars:["Sanctuary","Lut Gholein"]},
+  {id:"starcraft",name:"StarCraft",chars:["Terran","Zerg"]},
+  {id:"stalker",name:"S.T.A.L.K.E.R.",chars:["Pripyat"]}]},
+ {name:"Trending AI",cats:[
+  {id:"aiseries",name:"AI series",chars:["Reality","Drama","Comedy"]},
+  {id:"brainrot",name:"Italian brainrot",chars:["Tralalero Tralala","Bombardiro Crocodilo","Tung Tung Tung Sahur"]},
+  {id:"whatif",name:"What if…",chars:["History","Pets","Everyday"]}]},
+ {name:"Books",cats:[
+  {id:"lotr",name:"The Lord of the Rings",chars:["Gandalf","Frodo","Aragorn","Witch-king","Middle-earth"]},
+  {id:"dune",name:"Dune",chars:["Paul Atreides","Chani","Fremen"]},
+  {id:"witcher",name:"The Witcher",chars:["Geralt","Ciri","Yennefer"]}]},
+ {name:"Anime & Manga",cats:[
+  {id:"onepiece",name:"One Piece",chars:["Luffy","Zoro","Shanks"]},
+  {id:"naruto",name:"Naruto",chars:["Naruto","Itachi","Kakashi"]},
+  {id:"berserk",name:"Berserk",chars:["Guts","Griffith"]},
+  {id:"frieren",name:"Frieren",chars:["Frieren","Fern","Himmel"]}]},
+ {name:"Tabletop RPG",cats:[
+  {id:"dnd",name:"Dungeons & Dragons",chars:["Drizzt","Beholders","Vecna"]},
+  {id:"whfantasy",name:"Warhammer Fantasy",chars:["Empire","Skaven","Vampire Counts"]},
+  {id:"pathfinder",name:"Pathfinder",chars:["Golarion","Iconic heroes"]}]},
+ {name:"Film & TV",cats:[
+  {id:"got",name:"Game of Thrones",chars:["Daenerys","Jon Snow","The Night King"]},
+  {id:"witchertv",name:"The Witcher (series)",chars:["Geralt","Jaskier"]},
+  {id:"arcane",name:"Arcane",chars:["Vi","Jinx","Jayce"]}]},
+ {name:"Card games",cats:[
+  {id:"mtg",name:"Magic: The Gathering",chars:["Planeswalkers","Phyrexia","Eldraine"]},
+  {id:"hearthstone",name:"Hearthstone",chars:["Jaina","Thrall","Arthas"]}]},
+ {name:"Other",cats:[
+  {id:"myth",name:"Mythology",chars:["Norse","Greek","Egyptian"]},
+  {id:"original",name:"Original worlds",chars:["Sci-fi","Fantasy","Horror"]}]}
+];
+const CATS=GROUPS.flatMap(g=>g.cats);
+const SRC=["YouTube","TikTok","X","Reddit","Vimeo"];
+const TOOLS=["Kling","Runway","Veo","Sora","Pika","Hailuo"];
+const CREATORS=["frostbyte_films","ancientlens","solarforge","pixelmonk","northlight.ai","wyrmhaus","kaiju_kurt","lumen_lab","dreadnought.vfx","miravision"];
+const TITLES={
+ dota2:{Lina:["Lina: Slave to Fire","Dragon Slave – a short film","Lina vs Crystal Maiden: Sisters"],Invoker:["The Arsenal Magus","Invoker – 10 Spells, 1 Second"],Pudge:["Fresh Meat","The Butcher of the Dire"],"Crystal Maiden":["Frost Over the Ancients"],Juggernaut:["Omnislash – AI Anime"]},
+ lol:{Jinx:["Jinx: Get Jinxed (AI cut)","Zaun Is Burning"],Ahri:["Nine Tails"],Yasuo:["Wanderer of the Wind"],Thresh:["The Lantern Bearer"]},
+ eldenring:{Malenia:["Let Me Solo Her: The Movie","Scarlet Rot"],Radahn:["Starscourge"],Melina:["Ashen Pact"]},
+ wh40k:{"Space Marines":["Ultramar Falling","The Emperor Protects"],Orks:["WAAAGH! – a documentary"],Eldar:["Craftworld Requiem"]},
+ aoe2:{"Joan of Arc":["The Maid of Orléans – AoE2 Campaign"],Saladin:["Hattin, 1187"],"Genghis Khan":["Storm of the Steppe"]},
+ wow:{Sylvanas:["The Banshee Queen","Burning of Teldrassil – AI Cinematic"],Illidan:["You Are Not Prepared","The Betrayer"],Thrall:["Son of Durotan"],Jaina:["Daughter of the Sea"],Anduin:["The Light in the Dark"]},
+ wc3:{Arthas:["Culling of Stratholme – Reimagined","Frostmourne"],"Grom Hellscream":["Blood of Mannoroth"],"Kel'Thuzad":["The Cult of the Damned"],Tyrande:["Night of the Huntress"]},
+ gta6:{Lucia:["Lucia – Leonida Heat"],Jason:["Jason & Lucia: Getaway"],"Vice City":["Vice City Nights – AI Trailer"]},
+ minecraft:{Steve:["Steve's First Night","Live Action Minecraft – AI Remake"],Alex:["Alex and the Nether"],Herobrine:["Herobrine Is Real","Seed 404"],Creeper:["Creeper Cam"],"Ender Dragon":["The End – Dragon Fight Cinematic"]},
+ roblox:{Noob:["The Last Noob","Noob to Pro – The Movie"],"Bacon Hair":["Bacon Hair Saves the Server"],Obby:["The Impossible Obby"],Doors:["Doors: Figure Awakens"]},
+ aiseries:{Reality:["Veggie Villa – Season 2"],Drama:["Office of the Robots"],Comedy:["Grandma's Talking Toaster"]},
+ brainrot:{"Tralalero Tralala":["Tralalero Tralala: Origins"],"Bombardiro Crocodilo":["Bombardiro Crocodilo vs Tralalero"],"Tung Tung Tung Sahur":["Tung Tung Tung Sahur – Horror Cut"]},
+ whatif:{History:["What if Rome Had Smartphones"],Pets:["What if Cats Ran the City"],Everyday:["What if Gravity Took Mondays Off"]},
+ lotr:{Gandalf:["You Shall Not Pass – 1950s Panavision"],Frodo:["The Burden"],Aragorn:["Elessar"]},
+ dune:{"Paul Atreides":["Muad'Dib – Trailer"],Chani:["Arrakis at Dawn"],Fremen:["Riders of the Sandworm"]},
+ witcher:{Geralt:["The Butcher of Blaviken"],Ciri:["The Elder Blood"],Yennefer:["Magic of Vengerberg"]},
+ onepiece:{Luffy:["Gear 5 – Live Action Dream","King of the Pirates"],Zoro:["Three Swords, One Path"],Shanks:["The Red-Haired Emperor"]},
+ naruto:{Naruto:["Will of Fire – AI Movie"],Itachi:["The Night of the Uchiha","Tsukuyomi"],Kakashi:["Copy Ninja"]},
+ berserk:{Guts:["The Black Swordsman","Eclipse – Reimagined"],Griffith:["The Falcon's Dream"]},
+ frieren:{Frieren:["A Thousand Years After"],Fern:["Zoltraak"],Himmel:["The Hero's Statue"]},
+ dnd:{Drizzt:["The Dark Elf Trilogy – Teaser"],Beholders:["Eye Tyrant"],Vecna:["The Whispered One","Lich King of Greyhawk"]},
+ whfantasy:{Empire:["Altdorf Burns"],Skaven:["Under-Empire","The Horned Rat"],"Vampire Counts":["Sylvania Nights"]},
+ pathfinder:{Golarion:["Absalom at War"],"Iconic heroes":["Seoni & Valeros"]},
+ got:{Daenerys:["Mother of Dragons – Prequel"],"Jon Snow":["Beyond the Wall","The North Remembers"],"The Night King":["The Long Night – Directors Cut"]},
+ witchertv:{Geralt:["Toss a Coin – Ballad Video"],Jaskier:["The Bard's Tale"]},
+ arcane:{Vi:["Undercity Brawler"],Jinx:["Powder","Monkey Bomb"],Jayce:["Man of Progress"]},
+ mtg:{Planeswalkers:["The Spark","Gatewatch Rising"],Phyrexia:["All Will Be One"],Eldraine:["Wilds of the Realm"]},
+ hearthstone:{Jaina:["Proudmoore"],Thrall:["Doomhammer"],Arthas:["Frostmourne Hungers"]},
+ myth:{Norse:["Ragnarök in 4K","The Binding of Fenrir"],Greek:["Icarus"],Egyptian:["The Court of Anubis"]},
+ original:{"Sci-fi":["Signal from Proxima","The Last Colonist"],Fantasy:["The Glass Crown"],Horror:["The House by the Bog"]}
+};
+let seed=7;const rnd=()=>{seed=(seed*16807)%2147483647;return (seed-1)/2147483646};
+const FILMS=[];let fid=0;
+for(const c of CATS)for(const ch of c.chars)for(const t of (TITLES[c.id]?.[ch]||[])){
+  const votes=Math.round(40+rnd()*rnd()*4800);
+  const mean=2.6+rnd()*2.3;
+  const dist=[1,2,3,4,5].map(s=>Math.max(0,Math.exp(-((s-mean)**2)/1.1)));const tot=dist.reduce((a,b)=>a+b,0);
+  const counts=dist.map(d=>Math.round(d/tot*votes));
+  FILMS.push({id:"f"+(fid++),title:t,cat:c.id,char:ch,src:SRC[Math.floor(rnd()*SRC.length)],tool:TOOLS[Math.floor(rnd()*TOOLS.length)],
+    by:CREATORS[Math.floor(rnd()*CREATORS.length)],len:`${Math.floor(1+rnd()*14)}:${String(Math.floor(rnd()*60)).padStart(2,"0")}`,
+    days:Math.floor(rnd()*240),counts,hue:Math.floor(rnd()*360)});
+}
+// Real, well-known AI content (no made-up ratings; links go to a search for the real thing)
+const REAL=[
+  {id:"real-fruit-love-island",title:"Fruit Love Island",cat:"aiseries",char:"Reality",src:"TikTok",tool:"Various AI tools",by:"@ai.cinema021",len:"Series",date:"2026-03-13",hue:330,url:"https://www.youtube.com/results?search_query=Fruit+Love+Island+AI"},
+  {id:"real-ai-gta6-clips",title:"AI-made GTA 6 “gameplay” clips",cat:"gta6",char:"Vice City",src:"YouTube",tool:"Various AI tools",by:"Various creators",len:"Shorts",date:"2026-06-01",hue:300,url:"https://www.youtube.com/results?search_query=AI+GTA+6+video"}
+];
+for(const r of REAL)FILMS.unshift({...r,real:true,counts:[0,0,0,0,0],days:Math.max(0,Math.floor((Date.now()-Date.parse(r.date))/864e5))});
+
+const store={get(k,d){try{return JSON.parse(localStorage.getItem(k))??d}catch{return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch{}}};
+const acct={db:null,user:null,uid:null,me:null,online:false,readonly:false};
+let myRatings={},community={},mySubs=[],sharedSubs=[],names={};
+const state={format:"all",dur:"any",shortList:null,shortI:0,series:null,season:1,ctab:"film",family:store.get("fr_family",false),lore:"all",creator:null,tv:"top",view:"home",feed:"home",group:"All",cat:null,char:null,q:"",film:null,bgroup:"All",azLimit:60};
+const $=s=>document.querySelector(s);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const rawFilms=()=>[...sharedSubs.filter(f=>f.format!=="episode"),...FILMS];
+const allFilms=()=>state.family?rawFilms().filter(isKids):rawFilms();
+const findFilm=id=>rawFilms().find(f=>f.id===id)||allEpisodes().find(e=>e.id===id);
+const groupOf=catId=>GROUPS.find(g=>g.cats.some(c=>c.id===catId));
+const catName=id=>CATS.find(c=>c.id===id)?.name||id;
+function counts(f){const c=[...f.counts];const x=community[f.id];if(x)x.forEach((v,i)=>c[i]+=v);return c}
+function stats(f){const c=counts(f);const n=c.reduce((a,b)=>a+b,0);const avg=n?c.reduce((a,v,i)=>a+v*(i+1),0)/n:0;return {n,avg,bayes:(avg*n+3.4*50)/(n+50),c}}
+const fmtN=n=>n>=1000?(n/1000).toFixed(1).replace(/\.0$/,"")+"K":String(n);
+const ago=d=>d==null?"on YouTube":d===0?"today":d===1?"1 day ago":d<7?`${d} days ago`:d<14?"1 week ago":d<60?`${Math.round(d/7)} weeks ago`:d<365?`${Math.round(d/30)} months ago`:"1 year ago";
+const byName=f=>f.byId?(f.byId===acct.uid?"You":(names[f.byId]||"Fanreelz member")):f.by;
+const hueOf=s=>{let h=0;for(const ch of String(s))h=(h*31+ch.charCodeAt(0))%360;return h};
+const cav=(name0,size,name=name0||"YouTube")=>`<span class="cav" style="background:hsl(${hueOf(name)},45%,42%)${size?`;width:${size}px;height:${size}px`:""}" aria-hidden="true">${esc((String(name).replace(/^@/,"")[0]||"?").toUpperCase())}</span>`;
+const daysSince=t=>Math.max(0,Math.floor((Date.now()-t)/864e5));
+const I={home:'<path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/>',top:'<path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/>',
+  fresh:'<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>',mine:'<path d="M5 4h14v17l-7-4-7 4z"/>',list:'<path d="M9 6h11M9 12h11M9 18h11M4.5 6h.01M4.5 12h.01M4.5 18h.01"/>',trend:'<path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/>',live:'<circle cx="12" cy="12" r="2.5"/><path d="M7.8 7.8a6 6 0 0 0 0 8.4M16.2 7.8a6 6 0 0 1 0 8.4M5 5a10 10 0 0 0 0 14M19 5a10 10 0 0 1 0 14"/>',prem:'<rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4"/>',tv:'<rect x="3" y="6" width="18" height="13" rx="2"/><path d="M8 3l4 3 4-3"/>',battle:'<path d="M14.5 17.5L3 6V3h3l11.5 11.5M13 19l6-6M16 16l4 4M9.5 17.5L21 6V3h-3L6.5 14.5M11 19l-6-6M8 16l-4 4"/>',req:'<path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-4 10.5c.8.8 1 1.5 1 2.5h6c0-1 .2-1.7 1-2.5A6 6 0 0 0 12 3z"/>',trophy:'<path d="M8 4h8v5a4 4 0 0 1-8 0zM8 6H4a3 3 0 0 0 4 4M16 6h4a3 3 0 0 1-4 4M12 13v4M8 21h8M10 17h4v4"/>',bot:'<rect x="4" y="8" width="16" height="11" rx="3"/><path d="M12 4v4M9 13h.01M15 13h.01M9 16h6"/>',save:'<path d="M4 6h12M4 12h12M4 18h7M18 14v7M14.5 17.5h7"/>',flag:'<path d="M5 21V4h11l-2 4 2 4H5"/>',shield:'<path d="M12 3l8 3v6c0 4.5-3.4 8-8 9-4.6-1-8-4.5-8-9V6z"/><path d="M8.5 12l2.5 2.5 4.5-5"/>',short:'<rect x="7" y="3" width="10" height="18" rx="2.5"/><path d="M11 9.5v5l3.5-2.5z"/>',series:'<rect x="3" y="8" width="14" height="12" rx="2"/><path d="M7 5h12a2 2 0 0 1 2 2v9"/>',heart:'<path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/>',film:'<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M7 5v14M17 5v14M3 9.5h4M17 9.5h4M3 14.5h4M17 14.5h4"/>'};
+const filmTrend=f=>(stats(f).n+(f.real?3000:0)+(f.boost||0))*Math.exp(-(f.days??14)/21);
+function trendingByGroup(){const per={};for(const f of allFilms())per[f.cat]=(per[f.cat]||0)+filmTrend(f);const m={};for(const g of GROUPS)m[g.name]=g.cats.map(c=>({c,s:per[c.id]||0})).sort((a,b)=>b.s-a.s);return m}
+const icon=k=>`<svg class="i" viewBox="0 0 24 24">${I[k]}</svg>`;
+
+function paint(cv,f){
+  if(f.yt){const im=document.createElement("img");im.src="https://i.ytimg.com/vi/"+f.yt+"/hqdefault.jpg";im.alt="";im.loading="lazy";im.className="ytthumb";cv.replaceWith(im);return}
+  const r=cv.getBoundingClientRect();const w=Math.max(80,Math.round(r.width||320)),h=Math.max(45,Math.round(r.height||w*9/16));
+  const dpr=Math.min(2,window.devicePixelRatio||1);cv.width=w*dpr;cv.height=h*dpr;const x=cv.getContext("2d");x.scale(dpr,dpr);
+  let s=f.hue*97+f.title.length;const R=()=>{s=(s*16807)%2147483647;return s/2147483647};
+  const g=x.createLinearGradient(0,0,w,h);g.addColorStop(0,`hsl(${f.hue},55%,16%)`);g.addColorStop(1,`hsl(${(f.hue+50)%360},60%,34%)`);
+  x.fillStyle=g;x.fillRect(0,0,w,h);
+  const sun=x.createRadialGradient(w*.7,h*.38,0,w*.7,h*.38,h*.55);sun.addColorStop(0,`hsla(${(f.hue+30)%360},90%,70%,.9)`);sun.addColorStop(1,"hsla(0,0%,0%,0)");
+  x.fillStyle=sun;x.fillRect(0,0,w,h);
+  for(let l=0;l<3;l++){x.beginPath();x.moveTo(0,h);let y=h*(.55+l*.13);x.lineTo(0,y);
+    for(let px=0;px<=w;px+=w/12){y=h*(.5+l*.13)+(R()-.5)*h*.18;x.lineTo(px,y)}x.lineTo(w,h);x.closePath();
+    x.fillStyle=`hsla(${f.hue},40%,${8+l*3}%,${.55+l*.18})`;x.fill()}
+}
+function paintAll(root=document){root.querySelectorAll("canvas[data-f]").forEach(cv=>{const f=findFilm(cv.dataset.f);if(f)paint(cv,f)});root.querySelectorAll("canvas[data-s]").forEach(cv=>{const x=findSeries(cv.dataset.s);if(x)paint(cv,{hue:x.hue,title:x.title})})}
+
+const metaLine=f=>{const s=stats(f);return `${s.n?`<span class="st">★</span> ${s.avg.toFixed(1)} · ${fmtN(s.n)} ratings`:"No ratings yet"} · ${ago(f.days)}`};
+function card(f,rank){
+  return `<button class="vid" data-open="${esc(f.id)}"><div class="thumb"><canvas data-f="${esc(f.id)}"></canvas>${rank?`<span class="rank">${rank}</span>`:""}<span class="len">${esc(f.len)}</span></div>
+  <div class="vinfo">${cav(byName(f))}<div class="vtext"><h3 class="vtitle">${esc(f.title)}</h3>
+  <div class="vmeta">${esc(byName(f)||"YouTube creator")}${f.real?'<span class="pill">Real</span>':""}${myRatings[f.id]?`<span class="pill">You ${myRatings[f.id]}★</span>`:""}</div>
+  <div class="vmeta">${metaLine(f)}</div></div></div></button>`;
+}
+
+function renderGuide(){
+  const fi=(k,label,ic)=>`<button class="gi ${state.view==="home"&&!state.cat&&state.feed===k&&(k!=="home"||state.format==="all")?"on":""}" data-feed="${k}">${icon(ic)}<span>${label}</span></button>`;
+  const fnav=(k,label)=>`<button class="gi ${(state.view==="home"&&!state.cat&&state.feed==="home"&&state.format===k)||(k==="short"&&state.view==="shorts")||(k==="series"&&state.view==="series")?"on":""}" data-fmtnav="${k}">${icon(k)}<span>${label}</span></button>`;
+  const T=trendingByGroup();
+  $("#guide").innerHTML=fi("home","Home","home")+fnav("short","Shorts")+fnav("series","Series")+fi("top","Top rated","top")+fi("new","New","fresh")+fi("mine","Your ratings","mine")+
+    `<button class="gi ${state.view==="browse"?"on":""}" data-browse="All">${icon("list")}<span>Browse all</span></button><hr>`+
+    `<button class="gi ${state.view==="live"?"on":""}" data-view="live">${icon("live")}<span>Live now</span>${LIVE.length?`<span class="livecount">${LIVE.length}</span>`:""}</button>`+[["premieres","Premieres","prem"],["tv","Fanreelz TV","tv"]].map(([v,l,ic])=>`<button class="gi ${state.view===v?"on":""}" data-view="${v}">${icon(ic)}<span>${l}</span></button>`).join("")+
+    `<hr><h4>Community</h4>`+[["battles","Fan Battles","battle"],["requests","Requests","req"],["contest","Weekly contest","trophy"],["playlists","Playlists","list"],["discord","Discord bot","bot"]].map(([v,l,ic])=>`<button class="gi ${state.view===v?"on":""}" data-view="${v}">${icon(ic)}<span>${l}</span></button>`).join("")+
+    GROUPS.map(g=>{const top=T[g.name].slice(0,3).map(x=>x.c);
+      if(state.cat&&g.cats.some(c=>c.id===state.cat)&&!top.some(c=>c.id===state.cat))top.push(CATS.find(c=>c.id===state.cat));
+      return `<hr><h4>${esc(g.name)}<span class="trendlbl">Trending</span></h4>`+top.map((c,i)=>`<button class="gi cat ${state.cat===c.id?"on":""}" data-cat="${c.id}"><span class="dot" style="background:hsl(${hueOf(c.id)},50%,42%)">${esc(c.name[0])}</span><span>${esc(c.name)}</span></button>`).join("")+
+        (g.cats.length>3?`<button class="gi cat more" data-browse="${esc(g.name)}">${icon("list")}<span>All ${g.cats.length} in ${esc(g.name)}</span></button>`:"");}).join("")+
+    `<hr><button class="toggle ${state.family?"on":""}" data-family="" role="switch" aria-checked="${state.family}"><span>Family-friendly mode</span><span class="sw"></span></button>
+     <div class="newsbox"><b>Weekly top 10</b><span class="vmeta" style="font-size:13px">The best new AI fan films in your inbox every Monday.</span><button class="btn ${settings.newsletter?"ghost":""}" data-news="">${settings.newsletter?"✓ Subscribed":"Subscribe"}</button></div>`;
+}
+function renderWho(){
+  const el=$("#who");
+  if(acct.online&&acct.me){el.innerHTML=`<button class="iconbtn" id="profileBtn" aria-label="Your profile"><img class="avatar" alt=""></button>`;el.querySelector("img").src=acct.me.avatarUrl}
+  else el.innerHTML=`<button class="signin" id="signinBtn"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg><b>Sign in</b></button>`;
+}
+function feedList(){
+  const q=state.q.toLowerCase();
+  let list=allFilms().filter(f=>(!state.cat||f.cat===state.cat)&&(!state.char||f.char===state.char)&&
+    (state.cat||state.group==="All"||groupOf(f.cat)?.name===state.group)&&
+    (!q||[f.title,f.char,catName(f.cat),byName(f),f.tool].join(" ").toLowerCase().includes(q)));
+  if(state.feed==="mine"&&!state.cat)list=list.filter(f=>myRatings[f.id]);
+  if(state.cat&&state.lore!=="all")list=list.filter(f=>loreOf(f)===state.lore);
+  const k=state.feed==="new"?f=>f.days:f=>-stats(f).bayes;
+  return list.sort((a,b)=>k(a)-k(b));
+}
+function renderHome(){
+  const c=CATS.find(c=>c.id===state.cat);
+  const chips=c?[`<button class="chip ${!state.char?"on":""}" data-char="">All</button>`,...c.chars.map(ch=>`<button class="chip ${state.char===ch?"on":""}" data-char="${esc(ch)}">${esc(ch)}</button>`)]
+    :["All",...GROUPS.map(g=>g.name)].map(g=>`<button class="chip ${state.group===g?"on":""}" data-group="${esc(g)}">${esc(g)}</button>`);
+  const list=feedList();
+  let html=`<div class="chips">${chips.join("")}</div>`;
+  if(state.family)html+=`<div class="familybar">${icon("shield")} Family-friendly mode is on. Only films suited for younger viewers are shown.<button data-family="">Turn off</button></div>`;
+  if(c)html+=`<h1 class="sect-h" style="font-size:24px;margin-top:4px">${cav(c.name,48)} ${esc(c.name)}<span class="vmeta" style="font-size:14px;font-weight:500">${list.length} films</span></h1><div class="lorebar">${[["all","All films"],["lore","Lore-accurate"],["whatif","What if"]].map(([k,l])=>`<button class="${state.lore===k?"on":""}" data-lore="${k}">${l}</button>`).join("")}</div>`;
+  if(state.q&&!c){const q=state.q.toLowerCase();const mc=CATS.filter(x=>x.name.toLowerCase().includes(q)||x.chars.some(ch=>ch.toLowerCase().includes(q)));
+    html+=`<h1 class="sect-h" style="font-size:22px">Results for “${esc(state.q)}”</h1>`;
+    if(mc.length)html+=`<section class="shelf"><h2 class="sect-h" style="font-size:16px">Categories</h2><div class="dirgrid">${mc.slice(0,6).map(x=>`<button class="dircard dirhead" data-cat="${x.id}">${cav(x.name,40)}<span><b>${esc(x.name)}</b><small>${esc(groupOf(x.id).name)} · ${allFilms().filter(f=>f.cat===x.id).length} films</small></span></button>`).join("")}</div></section>`;
+    if(list.length)html+=`<h2 class="sect-h" style="font-size:16px">Films</h2>`;}
+  const showShelf=state.feed==="home"&&!state.q&&list.length>=6;
+  let rest=list;
+  if(showShelf){
+    const top=[...list].sort((a,b)=>filmTrend(b)-filmTrend(a)).slice(0,6);
+    const ids=new Set(top.map(f=>f.id));rest=list.filter(f=>!ids.has(f.id)).sort((a,b)=>a.days-b.days);
+    html+=`<section class="shelf"><h2>${icon("trend")} Trending ${c?"in "+esc(state.char||c.name):state.group==="All"?"now":"in "+esc(state.group)}</h2><div class="shelfrow">${top.map((f,i)=>card(f,i+1)).join("")}</div></section>`;
+  }
+  if(state.feed==="top"&&!c)html+=`<h2 class="sect-h">${icon("top")} Top rated</h2>`;
+  if(state.feed==="new"&&!c)html+=`<h2 class="sect-h">${icon("fresh")} Newest</h2>`;
+  if(state.feed==="mine"&&!c)html+=`<h2 class="sect-h">${icon("mine")} Your ratings</h2>`;
+  if(showShelf)html+=`<h2 class="sect-h">${icon("fresh")} Latest</h2>`;
+  html+=rest.length?`<div class="grid">${rest.map(f=>card(f)).join("")}</div>`
+    :`<div class="empty">${state.feed==="mine"?(acct.online?"You haven't rated anything yet.":"Sign in to see the films you've rated."):"No films here yet. Submit the first one."}</div>`;
+  html+=`<p class="note">Layout demo of Fanreelz. Films marked Real are actual viral AI content; all other films, creators and ratings are made-up examples.</p>`;
+  $("#main").innerHTML=html;
+}
+function renderWatch(){
+  const f=findFilm(state.film);if(!f){state.view="home";return renderHome()}
+  const s=stats(f),max=Math.max(...s.c),mine=myRatings[f.id]||0;
+  const next=nextFor(f);
+  const url=f.url||"https://www.youtube.com/results?search_query="+encodeURIComponent(f.title+" AI film");
+  $("#main").innerHTML=`<div class="watch"><div>
+    <div class="player"><canvas data-f="${esc(f.id)}"></canvas><a class="play" href="${esc(url)}" target="_blank" rel="noopener"><span><svg viewBox="0 0 12 12"><path d="M2 1l9 5-9 5z"/></svg>Watch on ${esc(f.src)}</span></a></div>
+    ${f.format==="episode"?`<button class="serieslink" data-series="${esc(f.seriesId)}">${esc(findSeries(f.seriesId)?.title||"Series")} · Season ${f.season}, Episode ${f.ep}</button>`:""}<h1 class="wtitle" ${f.format==="episode"?'style="margin-top:4px"':""}>${esc(f.title)}${f.real?'<span class="pill">Real</span>':""}${isVerified(f)?'<span class="pill">Verified original</span>':""}</h1>
+    <div class="wbar">${(f.real||f.yt)?`<div class="owner">${cav(byName(f),40)}<div><b>${esc(byName(f)||"YouTube creator")}</b><small>${esc(catName(f.cat))} · ${esc(f.char)}</small></div></div>`:`<button class="owner link" data-creator="${esc(f.byId||f.by)}">${cav(byName(f),40)}<div><b>${esc(byName(f)||"YouTube creator")}</b><small>${fmtN(followerCount(f.byId||f.by))} followers · ${esc(catName(f.cat))}</small></div></button>`}
+      <div class="ratebox" role="group" aria-label="Rate this film"><span>${mine?"Your rating":"Rate"}</span>${[1,2,3,4,5].map(k=>`<button data-rate="${k}" class="${k<=mine?"on":""}" aria-label="${k} stars">★</button>`).join("")}</div></div>
+    <div class="desc"><div class="top2">${s.n?`★ ${s.avg.toFixed(1)} from ${s.n.toLocaleString("en-US")} ratings`:"No ratings yet"} · ${f.days==null?"":ago(f.days)+" · "}${esc(f.src)} · made with ${esc(f.tool)}</div>
+      <div class="dist">${[5,4,3,2,1].map(k=>`<span>${k}★</span><span class="bar"><i style="width:${max?s.c[k-1]/max*100:0}%"></i></span><span>${fmtN(s.c[k-1])}</span>`).join("")}</div>
+      <div class="tags"><button data-cat="${f.cat}">${esc(catName(f.cat))}</button><button data-cat="${f.cat}" data-char-go="${esc(f.char)}">${esc(f.char)}</button><button data-cat="${f.cat}" data-lore-go="${loreOf(f)}">${loreOf(f)==="lore"?"Lore-accurate":"What if"}</button>${isKids(f)?'<button data-family-info="">Family-friendly</button>':""}</div>
+      ${f.real||f.yt||f.byId?"":`<div class="howmade"><b>How it was made</b><div class="vmeta">Tool: ${esc(f.tool)} · Prompt shared by ${esc(byName(f)||"YouTube creator")}</div><div class="prompt" id="promptText">${esc(promptOf(f))}</div><div class="row"><button class="btn ghost" data-copyprompt="" style="padding:6px 12px">Copy prompt</button></div></div>`}
+      <div class="vmeta" style="font-size:12px">The video plays at the source, so the creator gets the views.</div></div>
+    <div class="wactions">${f.real||f.yt?"":`<button data-tip="${esc(f.byId||f.by)}" data-tipfilm="${esc(f.id)}">${icon("heart")}Tip</button>`}<button data-save="${esc(f.id)}">${icon("save")}Save</button>${isVerified(f)?"":`<button data-claimorig="${esc(f.id)}">${icon("shield")}Is this yours?</button>`}<button data-report="${esc(f.id)}">${icon("flag")}Report re-upload</button></div>
+  </div><aside class="upnext"><h3>${f.format==="episode"?"Next episodes":"Up next"}</h3>${next.map(x=>`<button class="mini-v" data-open="${esc(x.id)}"><div class="thumb"><canvas data-f="${esc(x.id)}"></canvas><span class="len">${esc(x.len)}</span></div><div class="vtext"><h4 class="vtitle">${esc(x.title)}</h4><div class="vmeta">${esc(byName(x)||"YouTube creator")}</div><div class="vmeta">${metaLine(x)}</div></div></button>`).join("")}</aside></div>`;
+  $(".watch>div").insertAdjacentHTML("beforeend",commentsHtml(f));
+  if(f.yt)$(".player").innerHTML=ytFrame(f.yt);
+}
+function renderBrowse(){
+  const T=trendingByGroup(),gsel=state.bgroup;
+  const chips=["All",...GROUPS.map(g=>g.name)].map(g=>`<button class="chip ${gsel===g?"on":""}" data-browse="${esc(g)}">${esc(g)}</button>`).join("");
+  const groups=GROUPS.filter(g=>gsel==="All"||g.name===gsel);
+  let html=`<div class="chips">${chips}</div><h1 class="sect-h" style="font-size:24px;margin-top:4px">${icon("list")} Browse all</h1><p class="vmeta" style="margin:-6px 0 22px">Every game, book, show and trend on Fanreelz. Pick a category or a character to see its films.</p>`;
+  html+=groups.map(g=>{const ranked=T[g.name];const cats=[...g.cats].sort((a,b)=>a.name.localeCompare(b.name));
+    return `<section class="dir"><h2 class="sect-h">${esc(g.name)} <span class="vmeta" style="font-size:14px;font-weight:500">${g.cats.length} categories</span></h2><div class="dirgrid">${cats.map(c=>{const n=allFilms().filter(f=>f.cat===c.id).length,r=ranked.findIndex(x=>x.c.id===c.id);
+      return `<div class="dircard"><button class="dirhead" data-cat="${c.id}">${cav(c.name,40)}<span><b>${esc(c.name)}</b><small>${n} films${r<3?` · <span class="hot">Trending #${r+1}</span>`:""}</small></span></button><div class="dirchars">${c.chars.map(ch=>`<button data-cat="${c.id}" data-char-go="${esc(ch)}">${esc(ch)}</button>`).join("")}</div></div>`;}).join("")}</div></section>`;}).join("");
+  const films=allFilms().filter(f=>gsel==="All"||groupOf(f.cat)?.name===gsel).sort((a,b)=>a.title.localeCompare(b.title));
+  const shown=films.slice(0,state.azLimit);let last="";
+  html+=`<section class="dir"><h2 class="sect-h">All films A–Z <span class="vmeta" style="font-size:14px;font-weight:500">${films.length} films</span></h2><div class="azlist">`+shown.map(f=>{
+    const L=((f.title.match(/[A-Za-z0-9]/)||["#"])[0]).toUpperCase();const head=L!==last?`<div class="azletter">${esc(L)}</div>`:"";last=L;const s=stats(f);
+    return head+`<button class="azrow" data-open="${esc(f.id)}"><span class="aztitle">${esc(f.title)}</span><span class="azcat">${esc(catName(f.cat))} · ${esc(f.char)}</span><span class="azscore">${s.n?"★ "+s.avg.toFixed(1):"–"}</span></button>`;}).join("")+
+    `</div>${films.length>shown.length?`<button class="btn ghost morebtn" data-more="1">Show more (${films.length-shown.length} left)</button>`:""}</section>`;
+  $("#main").innerHTML=html;
+}
+/* ---- Live now, Premieres, Fanreelz TV (examples) ---- */
+/* Streams that are live right now. Empty until the real site checks Twitch and YouTube for live status. */
+const LIVE=[];
+const LIVE_PLATS=["All","Twitch","YouTube","TikTok"];
+const liveUrl=l=>l.platform==="Twitch"?"https://www.twitch.tv/search?term="+encodeURIComponent(l.title):l.platform==="TikTok"?"https://www.tiktok.com/search/live?q="+encodeURIComponent(l.title):"https://www.youtube.com/results?search_query="+encodeURIComponent(l.title+" live");
+const T0=Date.now();
+const PREMS=[
+  {id:"p1",title:"Frostmourne: The Fall of Lordaeron",cat:"wc3",char:"Arthas",by:"ancientlens",at:T0-12*6e4,hue:200,len:"14:00"},
+  {id:"p2",title:"Herobrine: Seed 405",cat:"minecraft",char:"Herobrine",by:"kaiju_kurt",at:T0+95*6e4,hue:110,len:"9:30"},
+  {id:"p3",title:"Lina: Dragon's Requiem",cat:"dota2",char:"Lina",by:"frostbyte_films",at:T0+(22*60+15)*6e4,hue:15,len:"6:45"},
+  {id:"p4",title:"Veggie Villa \u2013 Reunion Special",cat:"aiseries",char:"Reality",by:"miravision",at:T0+48*36e5,hue:330,len:"12:00"},
+  {id:"p5",title:"The Long Night \u2013 Part II",cat:"got",char:"The Night King",by:"dreadnought.vfx",at:T0+(72*60+30)*6e4,hue:220,len:"18:20"},
+  {id:"p6",title:"Gear 5: The Movie",cat:"onepiece",char:"Luffy",by:"lumen_lab",at:T0+5*864e5,hue:45,len:"22:10"}];
+let reminders=store.get("fr_remind",{});
+const clock=t=>new Date(t).toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"});
+const dayLabel=t=>new Date(t).toLocaleDateString("en-GB",{weekday:"short",day:"numeric",month:"short"});
+const hms=ms=>{ms=Math.max(0,ms);const s=Math.floor(ms/1000),h=Math.floor(s/3600),m=Math.floor(s%3600/60),x=s%60;return (h?h+":"+String(m).padStart(2,"0"):m)+":"+String(x).padStart(2,"0")};
+const secs=len=>{const m=/^(\d+):(\d{2})$/.exec(len||"");return m?(+m[1])*60+(+m[2]):300};
+const exampleNote=`<p class="note">Prototype: channels and premieres here are made-up examples. Links open a search on the platform.</p>`;
+function liveCat(l){const t=(l.title+" "+(l.game||"")).toLowerCase();let best=null,score=0;
+  for(const c of CATS){let sc=0;if(t.includes(c.name.toLowerCase()))sc=10;for(const ch of c.chars)if(ch.length>3&&t.includes(ch.toLowerCase()))sc=Math.max(sc,5);if(sc>score){score=sc;best=c.id}}return best}
+function renderLive(){
+  const plat=state.livePlat||"All";
+  const head=`<h1 class="sect-h" style="font-size:24px;margin-top:16px">${icon("live")} Live now</h1>
+    <p class="lede">Creators making AI films live on Twitch and YouTube right now. The list updates by itself every couple of minutes.</p>`;
+  if(!LIVE.length){$("#main").innerHTML=head+`<div class="empty">${icon("live")}<h2 style="margin:10px 0 6px;font-size:18px;color:var(--fg)">Nobody is live right now</h2><p style="margin:0">${liveState.checked?`Last checked ${agoT(Date.parse(liveState.checked))}.`:"Checking Twitch and YouTube…"} When a creator goes live making AI films, they show up here.</p></div>`;return}
+  const list=LIVE.filter(l=>plat==="All"||l.platform===plat).sort((a,b)=>b.viewers-a.viewers);
+  const total=list.reduce((a,l)=>a+l.viewers,0);
+  $("#main").innerHTML=head+`<div class="chips">${LIVE_PLATS.filter(p=>p==="All"||LIVE.some(l=>l.platform===p)).map(p=>`<button class="chip ${plat===p?"on":""}" data-liveplat="${p}">${p}</button>`).join("")}<span class="vmeta" style="align-self:center">${list.length} streams · ${fmtN(total)} watching</span></div>
+    <div class="grid">${list.map(l=>{const c=liveCat(l);return `<button class="vid" data-liveopen="${esc(l.id)}">
+      <div class="thumb">${l.thumb?`<img class="ytthumb" src="${esc(l.thumb)}${l.platform==="Twitch"?"?t="+Math.floor(Date.now()/12e4):""}" alt="" loading="lazy">`:""}<span class="livebadge">LIVE</span><span class="viewers">${fmtN(l.viewers)} watching</span></div>
+      <div class="vinfo">${cav(l.ch)}<div class="vtext"><h3 class="vtitle">${esc(l.title)}</h3><div class="vmeta">${esc(l.ch)} · <span class="plat">${esc(l.platform)}</span></div><div class="vmeta">${esc(c?catName(c):(l.game||"AI film"))}</div></div></div></button>`}).join("")}</div>`;
+}
+function renderLivePlay(){
+  const l=LIVE.find(x=>x.id===state.liveId);
+  if(!l){$("#main").innerHTML=`<div class="empty" style="margin-top:40px"><h2 style="margin:0 0 6px;font-size:18px;color:var(--fg)">This stream has ended</h2><p style="margin:0 0 14px">The creator is no longer live.</p><button class="btn" data-view="live">See who is live</button></div>`;return}
+  const host=location.hostname,parents=[...new Set([host,host.replace(/^www\./,""),"www."+host.replace(/^www\./,"")])].map(h=>"parent="+encodeURIComponent(h)).join("&");
+  const dark=matchMedia("(prefers-color-scheme: dark)").matches;
+  const player=l.platform==="Twitch"?`https://player.twitch.tv/?channel=${encodeURIComponent(l.channel)}&${parents}&autoplay=true&muted=false`:`https://www.youtube-nocookie.com/embed/${encodeURIComponent(l.video)}?autoplay=1&rel=0`;
+  const chat=l.platform==="Twitch"?`https://www.twitch.tv/embed/${encodeURIComponent(l.channel)}/chat?${parents}${dark?"&darkpopout":""}`:`https://www.youtube.com/live_chat?v=${encodeURIComponent(l.video)}&embed_domain=${encodeURIComponent(host)}`;
+  const c=liveCat(l);
+  $("#main").innerHTML=`<div class="watch"><div>
+    <div class="player"><iframe src="${esc(player)}" title="Live stream" allow="autoplay; fullscreen; encrypted-media; picture-in-picture" allowfullscreen style="position:absolute;inset:0;width:100%;height:100%;border:0"></iframe></div>
+    <h1 class="wtitle"><span class="nowtag">LIVE</span> ${esc(l.title)}</h1>
+    <div class="wbar"><div class="owner">${cav(l.ch,40)}<div><b>${esc(l.ch)}</b><small>${fmtN(l.viewers)} watching on ${esc(l.platform)}${c?" · "+esc(catName(c)):""}</small></div></div>
+      <a class="btn ghost" style="text-decoration:none" href="${esc(l.url)}" target="_blank" rel="noopener">Open on ${esc(l.platform)} ↗</a></div>
+    <p class="vmeta" style="font-size:12px;margin-top:12px">The stream and chat come straight from ${esc(l.platform)}. To chat, sign in to ${esc(l.platform)} in the chat window.</p>
+  </div><aside class="livechat"><iframe src="${esc(chat)}" title="Live chat" style="width:100%;height:100%;border:0"></iframe></aside></div>`;
+}
+/* Ask Netlify which creators are live (see netlify/functions). Only works on the deployed site. */
+const liveState={checked:null};
+async function loadLive(){
+  if(!/^https?:$/.test(location.protocol))return;
+  const get=u=>fetch(u,{headers:{Accept:"application/json"}}).then(r=>r.ok?r.json():{streams:[]}).catch(()=>({streams:[]}));
+  const [tw,yt]=await Promise.all([get("/api/live"),get("/api/live-youtube")]);
+  const next=[...(tw.streams||[]),...(yt.streams||[])].filter(l=>l&&l.id&&l.title);
+  liveState.checked=tw.checked||yt.checked||new Date().toISOString();
+  const changed=JSON.stringify(next.map(l=>[l.id,l.viewers]))!==JSON.stringify(LIVE.map(l=>[l.id,l.viewers]));
+  LIVE.length=0;LIVE.push(...next);
+  if(changed||state.view==="live")renderGuide();
+  if(state.view==="live")renderLive();
+}
+function premState(p,now){const end=p.at+secs(p.len)*1000;return now<p.at?"soon":now<end?"now":"done"}
+function renderPremieres(){
+  const now=Date.now();const list=PREMS.filter(p=>premState(p,now)!=="done").sort((a,b)=>a.at-b.at);
+  $("#main").innerHTML=`<h1 class="sect-h" style="font-size:24px;margin-top:16px">${icon("prem")} Premieres</h1>
+    <p class="lede">New AI fan films released at a set time, so fans can watch, chat and rate together the moment they drop.</p>
+    <div>${list.map(p=>{const st=premState(p,now);return `<div class="prem"><div class="thumb"><canvas data-p="${p.id}"></canvas>${st==="now"?'<span class="livebadge">PREMIERING</span>':""}<span class="len">${esc(p.len)}</span></div>
+      <div class="vinfo">${cav(p.by)}<div class="vtext"><h3 class="vtitle">${esc(p.title)}</h3><div class="vmeta">${esc(p.by)}</div><div class="vmeta">${esc(catName(p.cat))} \u00b7 ${esc(p.char)}</div></div></div>
+      <div class="when">${st==="now"?`<span class="nowtag">PREMIERING NOW</span><span class="date" data-cd="${p.id}">${hms(now-p.at)} in</span><a class="btn link" href="https://www.youtube.com/results?search_query=${encodeURIComponent(p.title)}" target="_blank" rel="noopener">Join premiere \u2197</a>`
+        :`<span class="count" data-cd="${p.id}">${until(p.at-now)}</span><span class="date">${esc(dayLabel(p.at))}, ${clock(p.at)}</span><button class="remind ${reminders[p.id]?"on":""}" data-remind="${p.id}">${reminders[p.id]?"\u2713 Reminder set":"Remind me"}</button>`}</div></div>`}).join("")}</div>${exampleNote}`;
+  document.querySelectorAll("canvas[data-p]").forEach(cv=>{const p=PREMS.find(x=>x.id===cv.dataset.p);paint(cv,{hue:p.hue,title:p.title})});
+}
+const until=ms=>ms>=864e5?`${Math.floor(ms/864e5)}d ${Math.floor(ms%864e5/36e5)}h`:hms(ms);
+function tickPremieres(){const now=Date.now();for(const p of PREMS){const el=document.querySelector(`[data-cd="${p.id}"]`);if(!el)continue;const st=premState(p,now);
+  if((st==="now")!==el.classList.contains("date")){render();return}el.textContent=st==="now"?hms(now-p.at)+" in":until(p.at-now)}}
+function tvChannels(){const T=trendingByGroup();return [{id:"top",name:"Top rated"},{id:"trending",name:"Trending"},...GROUPS.map(g=>T[g.name][0]?.c).filter(Boolean).map(c=>({id:c.id,name:c.name}))]}
+function tvQueue(ch){
+  let list=allFilms().filter(f=>!f.real&&f.format!=="short"&&(ch==="top"||ch==="trending"||f.cat===ch));
+  list=list.sort((a,b)=>ch==="trending"?filmTrend(b)-filmTrend(a):stats(b).bayes-stats(a).bayes).slice(0,30);
+  const total=list.reduce((a,f)=>a+secs(f.len),0)||1;
+  const t=((Date.now()-Date.UTC(2026,0,1))/1000)%total;let acc=0,i=0;
+  while(i<list.length&&acc+secs(list[i].len)<=t){acc+=secs(list[i].len);i++}
+  return {list,i,offset:t-acc,startedAt:Date.now()-(t-acc)*1000};
+}
+let tvNow=null;
+function renderTV(){
+  const chans=tvChannels();if(!chans.some(c=>c.id===state.tv))state.tv="top";
+  const q=tvQueue(state.tv);const f=q.list[q.i];if(!f){$("#main").innerHTML=`<div class="empty">Nothing on this channel yet.</div>`;return}
+  tvNow={id:f.id,startedAt:q.startedAt,dur:secs(f.len)};state.film=f.id;
+  const mine=myRatings[f.id]||0,s=stats(f);
+  let t=q.startedAt+secs(f.len)*1000;const next=[];for(let k=1;k<=8&&q.list.length>1;k++){const g=q.list[(q.i+k)%q.list.length];next.push({g,at:t});t+=secs(g.len)*1000}
+  const url=f.url||"https://www.youtube.com/results?search_query="+encodeURIComponent(f.title+" AI film");
+  $("#main").innerHTML=`<div class="chips">${chans.map(c=>`<button class="chip ${state.tv===c.id?"on":""}" data-tv="${c.id}">${esc(c.name)}</button>`).join("")}</div>
+   <div class="tvwrap"><div>
+    <div class="screen"><canvas data-f="${esc(f.id)}"></canvas><div class="chan"><span class="nowtag">ON AIR</span>Fanreelz TV \u00b7 ${esc(chans.find(c=>c.id===state.tv).name)}</div>
+      <div class="ov"><small>Now playing</small><b>${esc(f.title)}</b><small>${esc(byName(f)||"YouTube creator")} \u00b7 ${esc(catName(f.cat))} \u00b7 ${esc(f.char)}</small>
+      <div class="prog"><i id="tvbar" style="width:0%"></i></div><span class="tvtime" id="tvtime"></span></div></div>
+    <div class="wbar" style="margin-top:14px"><div class="row"><a class="btn link" href="${esc(url)}" target="_blank" rel="noopener">Watch on ${esc(f.src)} \u2197</a><button class="btn ghost" data-open="${esc(f.id)}">Film page</button></div>
+      <div class="ratebox" role="group" aria-label="Rate this film"><span>${mine?"Your rating":s.n?"\u2605 "+s.avg.toFixed(1)+" \u00b7 Rate":"Rate"}</span>${[1,2,3,4,5].map(k=>`<button data-rate="${k}" class="${k<=mine?"on":""}" aria-label="${k} stars">\u2605</button>`).join("")}</div></div>
+    <p class="vmeta" style="margin-top:12px">Fanreelz TV plays a channel's best films back to back, like a TV schedule. Everyone tuned in sees the same film at the same moment.</p>
+   </div><aside class="sched"><h3>Coming up</h3>
+    <div class="srow cur"><span class="t">Now</span><span><b>${esc(f.title)}</b><small>${esc(catName(f.cat))} \u00b7 ${esc(f.len)}</small></span></div>
+    ${next.map(x=>`<button class="srow" data-open="${esc(x.g.id)}"><span class="t">${clock(x.at)}</span><span><b>${esc(x.g.title)}</b><small>${esc(catName(x.g.cat))} \u00b7 ${esc(x.g.len)}</small></span></button>`).join("")}
+   </aside></div>`;
+  tickTV();
+}
+function tickTV(){if(!tvNow)return;const el=Date.now()-tvNow.startedAt;if(el>=tvNow.dur*1000){render();return}
+  const b=$("#tvbar"),t=$("#tvtime");if(b)b.style.width=(el/tvNow.dur/10).toFixed(2)+"%";if(t)t.textContent=hms(el)+" / "+hms(tvNow.dur*1000)}
+/* ================= Community features ================= */
+const hnum=s=>{let h=7;for(const c of String(s))h=(h*31+c.charCodeAt(0))>>>0;return h};
+const KIDS_CATS=new Set(["roblox","minecraft","aiseries","whatif","brainrot","onepiece","frieren","hearthstone","myth"]);
+const isKids=f=>KIDS_CATS.has(f.cat)&&!/horror|herobrine|seed 40|night|scarlet|eclipse|butcher|anubis/i.test(f.title+" "+f.char);
+const loreOf=f=>f.lore?f.lore:(f.cat==="whatif"||/what if|reimagined|1950s|live action|anime|ballad|music|vs /i.test(f.title))?"whatif":(hnum(f.id)%3?"lore":"whatif");
+const isVerified=f=>!f.real&&!f.yt&&!f.byId&&hnum(f.title)%3===0;
+const promptOf=f=>`${f.char}, ${catName(f.cat)}, cinematic ${["wide shot","close-up","tracking shot","aerial shot"][hnum(f.id)%4]}, ${["golden hour","volumetric fog","neon rim light","storm clouds"][hnum(f.title)%4]}, 35mm film grain, consistent character design`;
+const isExampleCreator=n=>CREATORS.includes(n);
+
+/* shared state from the database */
+let allVotes=[],myVotes=[],reqDocs={},upDocs={},claimDocs={},plDocs={},myFollows={},settings={};
+const docOf=(col,uid)=>acct.db.doc(col+"/"+uid);
+async function writeOwn(col,data){
+  try{await docOf(col,acct.uid).set(data);return true}
+  catch(e){if(e&&e.code==="invalid_argument"){acct.readonly=true;toast("This page is shared with you as view-only")}else toast("Couldn't save. Try again in a moment.");return false}
+}
+
+/* ---------- Fan Battles ---------- */
+const battle={pool:"all",pair:null,seen:new Set()};
+function battlePool(){return allFilms().filter(f=>!f.real&&(battle.pool==="all"||f.cat===battle.pool))}
+function eloTable(pool){
+  const R={};for(const f of pool)R[f.id]=1400+Math.round((stats(f).bayes-3)*120);
+  const W={},L={};
+  for(const [w,l] of allVotes){if(!(w in R)||!(l in R))continue;const ea=1/(1+10**((R[l]-R[w])/400));R[w]+=24*(1-ea);R[l]-=24*(1-ea);W[w]=(W[w]||0)+1;L[l]=(L[l]||0)+1}
+  return {R,W,L};
+}
+function newPair(){
+  const pool=battlePool();if(pool.length<2){battle.pair=null;return}
+  const byChar={};for(const f of pool)(byChar[f.cat+"|"+f.char+"|"+f.format]||(byChar[f.cat+"|"+f.char+"|"+f.format]=[])).push(f);
+  const groups=Object.values(byChar).filter(g=>g.length>1);
+  let a,b;
+  if(groups.length&&Math.random()<.5){const g=groups[Math.floor(Math.random()*groups.length)];[a,b]=g.sort(()=>Math.random()-.5)}
+  else{const byCat={};for(const f of pool)(byCat[f.cat+"|"+f.format]||(byCat[f.cat+"|"+f.format]=[])).push(f);const cg=Object.values(byCat).filter(g=>g.length>1);
+    const g=cg.length?cg[Math.floor(Math.random()*cg.length)]:pool;const sh=[...g].sort(()=>Math.random()-.5);a=sh[0];b=sh[1]}
+  battle.pair=[a.id,b.id];
+}
+function renderBattles(){
+  const T=trendingByGroup();const pools=[{id:"all",name:"All films"},...GROUPS.map(g=>T[g.name][0]?.c).filter(Boolean).map(c=>({id:c.id,name:c.name}))];
+  if(!battle.pair||!battle.pair.every(id=>battlePool().some(f=>f.id===id)))newPair();
+  const pool=battlePool();const {R,W,L}=eloTable(pool);
+  const board=[...pool].sort((x,y)=>R[y.id]-R[x.id]).slice(0,10);
+  const side=id=>{const f=findFilm(id);return `<div class="bside"><button class="vid" data-open="${esc(f.id)}"><div class="thumb"><canvas data-f="${esc(f.id)}"></canvas><span class="len">${esc(f.len)}</span></div></button>
+    <h3 class="vtitle" style="font-size:18px">${esc(f.title)}</h3><div class="vmeta">${esc(byName(f)||"YouTube creator")} · ${esc(catName(f.cat))} · ${esc(f.char)}</div>
+    <button class="btn pick" data-vote="${esc(f.id)}">Pick this one</button></div>`};
+  $("#main").innerHTML=`<div class="chips">${pools.map(p=>`<button class="chip ${battle.pool===p.id?"on":""}" data-bpool="${p.id}">${esc(p.name)}</button>`).join("")}</div>
+   <h1 class="sect-h" style="font-size:24px">${icon("battle")} Fan Battles</h1>
+   <p class="lede">Two films, one vote. Pick the better one and the ranking updates like a chess rating: beating a highly rated film counts for more.</p>
+   ${battle.pair?`<div class="arena">${side(battle.pair[0])}<div class="vs">VS</div>${side(battle.pair[1])}</div>
+   <div class="row" style="justify-content:center;margin:14px 0 30px"><button class="btn ghost" data-vote="skip">Skip this pair</button><span class="vmeta">${myVotes.length?`You've voted ${myVotes.length} times`:acct.online?"":"Sign in to vote"}</span></div>`:`<div class="empty">Not enough films in this pool yet.</div>`}
+   <h2 class="sect-h">Battle ranking <span class="vmeta" style="font-size:14px;font-weight:500">${esc(pools.find(p=>p.id===battle.pool)?.name||"")}</span></h2>
+   <div class="azlist">${board.map((f,i)=>`<button class="azrow" data-open="${esc(f.id)}"><span class="aztitle"><span class="rk">${i+1}</span>${esc(f.title)}</span><span class="azcat">${esc(catName(f.cat))} · ${W[f.id]||0} wins, ${L[f.id]||0} losses</span><span class="azscore">${Math.round(R[f.id])}</span></button>`).join("")}</div>
+   <p class="note">Ranking starts from each film's star rating and moves with every vote cast on this page.</p>`;
+}
+async function castVote(winner){
+  if(!battle.pair)return;
+  if(winner==="skip"){newPair();render();return}
+  if(!needAccount("Sign in to vote in Fan Battles."))return;
+  const loser=battle.pair.find(id=>id!==winner);
+  const next=[...myVotes,[winner,loser]].slice(-500);
+  if(await writeOwn("votes",{v:next})){myVotes=next;toast("Vote counted");newPair();render()}
+}
+
+/* ---------- Requests & commissions ---------- */
+const T1=Date.now();
+const REQ_SEED=[
+  {id:"rs1",title:"Crystal Maiden origin story",cat:"dota2",char:"Crystal Maiden",note:"How she ended up in Icewrack, told like a fairy tale.",votes:412,t:T1-4*864e5,claimedBy:["frostbyte_films"]},
+  {id:"rs2",title:"Arthas and Jaina, the Stratholme argument from her side",cat:"wc3",char:"Arthas",note:"",votes:388,t:T1-9*864e5,claimedBy:[]},
+  {id:"rs3",title:"Herobrine documentary, found-footage style",cat:"minecraft",char:"Herobrine",note:"Keep it spooky but not gory.",votes:301,t:T1-2*864e5,claimedBy:["kaiju_kurt","pixelmonk"]},
+  {id:"rs4",title:"Frieren and Himmel, the meteor shower scene in live action",cat:"frieren",char:"Himmel",note:"",votes:265,t:T1-12*864e5,claimedBy:[],madeFilm:true},
+  {id:"rs5",title:"Roblox Noob's first day at school",cat:"roblox",char:"Noob",note:"Family friendly please, my kids love these.",votes:198,t:T1-1*864e5,claimedBy:[]},
+  {id:"rs6",title:"Illidan's 10,000 years in prison, one minute",cat:"wow",char:"Illidan",note:"",votes:174,t:T1-6*864e5,claimedBy:["wyrmhaus"]},
+  {id:"rs7",title:"Gandalf vs the Balrog from the Balrog's point of view",cat:"lotr",char:"Gandalf",note:"",votes:150,t:T1-15*864e5,claimedBy:[]},
+  {id:"rs8",title:"Italian brainrot cinematic universe trailer",cat:"brainrot",char:"Tralalero Tralala",note:"",votes:96,t:T1-3*36e5,claimedBy:[]}];
+let reqSort="top";
+function allRequests(){
+  const list=REQ_SEED.map(r=>({...r,example:true}));
+  for(const [uid,d] of Object.entries(reqDocs))for(const r of (Array.isArray(d.items)?d.items:[])){
+    if(!r||typeof r.title!=="string"||!CATS.some(c=>c.id===r.cat))continue;
+    list.push({id:String(r.id),title:r.title.slice(0,140),cat:r.cat,char:String(r.char||""),note:String(r.note||"").slice(0,300),forCreator:String(r.forCreator||""),votes:0,t:+r.t||Date.now(),claimedBy:[],byId:uid});}
+  const up={},cl={};
+  for(const [uid,d] of Object.entries(upDocs))for(const id of Object.keys(d.ids||{}))if(d.ids[id])up[id]=(up[id]||0)+1;
+  for(const [uid,d] of Object.entries(claimDocs))for(const id of Object.keys(d.ids||{}))if(d.ids[id])(cl[id]||(cl[id]=[])).push(uid);
+  return list.map(r=>({...r,total:r.votes+(up[r.id]||0),claimers:[...r.claimedBy,...(cl[r.id]||[]).map(uid=>uid===acct.uid?"You":(names[uid]||"Fanreelz member"))]}));
+}
+const myUp=()=>upDocs[acct.uid]?.ids||{};
+const myClaims=()=>claimDocs[acct.uid]?.ids||{};
+function renderRequests(){
+  let list=allRequests();
+  if(reqSort==="top")list.sort((a,b)=>b.total-a.total);
+  if(reqSort==="new")list.sort((a,b)=>b.t-a.t);
+  if(reqSort==="open")list=list.filter(r=>!r.claimers.length&&!r.madeFilm).sort((a,b)=>b.total-a.total);
+  if(reqSort==="commissions")list=list.filter(r=>r.forCreator).sort((a,b)=>b.t-a.t);
+  const up=myUp(),cl=myClaims();
+  $("#main").innerHTML=`<div class="chips">${[["top","Most wanted"],["new","Newest"],["open","Not claimed yet"],["commissions","Commissions"]].map(([k,l])=>`<button class="chip ${reqSort===k?"on":""}" data-rsort="${k}">${l}</button>`).join("")}</div>
+   <div class="wbar"><h1 class="sect-h" style="font-size:24px;margin:0">${icon("req")} Requests</h1><button class="btn" data-newreq="">+ Request a film</button></div>
+   <p class="lede" style="margin-top:8px">Tell creators what you want to see. Vote up the ideas you like; a creator who takes one on marks it as claimed.</p>
+   <div class="reqlist">${list.length?list.map(r=>`<div class="req">
+     <button class="upv ${up[r.id]?"on":""}" data-upvote="${esc(r.id)}" aria-label="Vote up"><svg class="i" viewBox="0 0 24 24"><path d="M12 5l7 8h-4v6H9v-6H5z"/></svg><b>${fmtN(r.total)}</b></button>
+     <div class="rbody"><h3>${esc(r.title)}</h3>
+       <div class="vmeta">${esc(catName(r.cat))} · ${esc(r.char)} · ${ago(daysSince(r.t))}${r.byId?` · by ${esc(r.byId===acct.uid?"you":(names[r.byId]||"a Fanreelz member"))}`:""}</div>
+       ${r.note?`<p class="rnote">${esc(r.note)}</p>`:""}
+       <div class="row" style="gap:8px">${r.forCreator?`<span class="pill">Commission for ${esc(r.forCreator)}</span>`:""}${r.madeFilm?'<span class="pill">Made</span>':""}${r.claimers.length?`<span class="vmeta">Claimed by ${esc(r.claimers.join(", "))}</span>`:""}</div></div>
+     <button class="remind ${cl[r.id]?"on":""}" data-claim="${esc(r.id)}">${cl[r.id]?"✓ You're making it":"I'll make it"}</button></div>`).join(""):`<div class="empty">No requests here yet.</div>`}</div>
+   <p class="note">The requests already on the list are made-up examples. New ones you post are shared with everyone who can open this page.</p>`;
+}
+function openRequest(forCreator){
+  if(!needAccount("Sign in to request a film."))return;
+  openModal(`<div class="dlg" role="dialog" aria-modal="true" aria-label="Request a film"><h2>${forCreator?"Commission "+esc(forCreator):"Request a film"}</h2>
+    ${forCreator?`<p class="vmeta" style="margin:0">Your request goes to ${esc(forCreator)} and shows under Commissions. In the finished site the creator would reply with a price.</p>`:""}
+    <form class="form" id="rf"><label for="rTitle">What should the film be about?<input id="rTitle" required maxlength="140" placeholder="e.g. Crystal Maiden origin story"></label>
+    <label for="rCat">Category<select id="rCat">${GROUPS.map(g=>`<optgroup label="${esc(g.name)}">${g.cats.map(c=>`<option value="${c.id}" ${c.id===state.cat?"selected":""}>${esc(c.name)}</option>`).join("")}</optgroup>`).join("")}</select></label>
+    <label for="rChar">Character<select id="rChar"></select></label>
+    <label for="rNote">Details (optional)<input id="rNote" maxlength="300" placeholder="Tone, length, scenes you want"></label>
+    <div class="row"><button class="btn" type="submit" id="rGo">Post request</button><button class="btn ghost" type="button" data-close>Cancel</button></div></form></div>`);
+  const fill=()=>{const c=CATS.find(c=>c.id===$("#rCat").value);$("#rChar").innerHTML=c.chars.map(ch=>`<option>${esc(ch)}</option>`).join("")};fill();$("#rCat").onchange=fill;
+  $("#rf").onsubmit=async e=>{e.preventDefault();$("#rGo").disabled=true;
+    const mine=Array.isArray(reqDocs[acct.uid]?.items)?reqDocs[acct.uid].items:[];
+    const r={id:"q"+Date.now().toString(36)+Math.random().toString(36).slice(2,5),title:$("#rTitle").value.trim(),cat:$("#rCat").value,char:$("#rChar").value,note:$("#rNote").value.trim(),t:Date.now(),forCreator:forCreator||""};
+    if(await writeOwn("requests",{items:[r,...mine].slice(0,100)})){closeModal();reqSort=forCreator?"commissions":"new";go({view:"requests"});toast(forCreator?"Commission sent":"Request posted")}else $("#rGo").disabled=false};
+}
+async function toggleMap(col,docs,id,label){
+  if(!needAccount(label))return;
+  const cur={...(docs[acct.uid]?.ids||{})};if(cur[id])delete cur[id];else cur[id]=true;
+  if(await writeOwn(col,{ids:cur})){docs[acct.uid]={ids:cur};render()}
+}
+
+/* ---------- Weekly contest ---------- */
+const THEMES=[
+  {name:"Warcraft villains",test:f=>["wow","wc3","hearthstone"].includes(f.cat)&&/sylvanas|illidan|arthas|kel|night|frost|lich/i.test(f.char+" "+f.title)},
+  {name:"Minecraft & Roblox adventures",test:f=>["minecraft","roblox"].includes(f.cat)},
+  {name:"Anime heroes",test:f=>["onepiece","naruto","berserk","frieren"].includes(f.cat)},
+  {name:"Dark fantasy",test:f=>["eldenring","darksouls","diablo","elderscrolls","berserk","whfantasy","wh40k","got"].includes(f.cat)},
+  {name:"MOBA legends",test:f=>["dota2","lol","arcane"].includes(f.cat)}];
+function contestNow(){
+  const d=new Date();const wk=Math.floor((Date.UTC(d.getFullYear(),d.getMonth(),d.getDate())-Date.UTC(2026,0,5))/(7*864e5));
+  const theme=THEMES[((wk%THEMES.length)+THEMES.length)%THEMES.length];
+  const end=new Date(d);end.setHours(23,59,59,0);end.setDate(end.getDate()+((7-end.getDay())%7));
+  return {theme,end:end.getTime(),week:wk};
+}
+function renderContest(){
+  const {theme,end}=contestNow();
+  const entries=allFilms().filter(f=>!f.real&&theme.test(f)).sort((a,b)=>stats(b).bayes-stats(a).bayes);
+  const pod=entries.slice(0,3),rest=entries.slice(3);
+  $("#main").innerHTML=`<div class="contest-hero"><div><span class="nowtag" style="background:var(--accent);color:var(--ink-on-accent)">THIS WEEK'S CONTEST</span>
+    <h1>${esc(theme.name)}</h1><p>Make an AI fan film on this week's theme. The film with the best fan rating when the week ends wins.</p>
+    <div class="row"><button class="btn" id="submitBtn2">Submit your entry</button><span class="vmeta">Ends in <b class="count" id="cEnd">${until(end-Date.now())}</b></span></div></div>
+    <div class="prize"><small>PRIZE</small><b>Sponsor slot</b><span>An AI video tool sponsors the prize, for example a year of their top plan.</span></div></div>
+   <h2 class="sect-h">Leading entries <span class="vmeta" style="font-size:14px;font-weight:500">${entries.length} entries</span></h2>
+   ${pod.length?`<div class="podium">${pod.map((f,i)=>`<div class="pod p${i+1}">${card(f,i+1)}</div>`).join("")}</div>`:`<div class="empty">No entries yet. Be the first.</div>`}
+   ${rest.length?`<div class="azlist" style="margin-top:24px">${rest.map((f,i)=>{const s=stats(f);return `<button class="azrow" data-open="${esc(f.id)}"><span class="aztitle"><span class="rk">${i+4}</span>${esc(f.title)}</span><span class="azcat">${esc(byName(f)||"YouTube creator")} · ${esc(catName(f.cat))}</span><span class="azscore">${s.n?"★ "+s.avg.toFixed(1):"–"}</span></button>`}).join("")}</div>`:""}
+   <h2 class="sect-h" style="margin-top:30px">Rules</h2><ul class="rules"><li>One entry per creator per week, made mostly with AI tools.</li><li>The theme changes every Monday. Past winners get a badge on their profile.</li><li>No real people, nothing sexual, nothing hateful. Entries that break the rules are removed.</li><li>Ranking uses the same weighted rating as the top lists, so a handful of 5-star votes can't win alone.</li></ul>
+   <p class="note">Prototype: the theme rotates weekly; entries are the existing example films that fit the theme.</p>`;
+}
+
+/* ---------- Playlists ---------- */
+let openList=null;
+function featuredLists(){
+  const top=(fn,n)=>allFilms().filter(fn).sort((a,b)=>stats(b).bayes-stats(a).bayes).slice(0,n).map(f=>f.id);
+  return [
+    {id:"fx1",name:"Warcraft lore, the essentials",owner:"Fanreelz",films:top(f=>["wow","wc3"].includes(f.cat)&&loreOf(f)==="lore",8)},
+    {id:"fx2",name:"Best of Lina",owner:"Fanreelz",films:top(f=>f.char==="Lina",6)},
+    {id:"fx3",name:"Family movie night",owner:"Fanreelz",films:top(isKids,10)},
+    {id:"fx4",name:"Dark fantasy marathon",owner:"Fanreelz",films:top(f=>["eldenring","darksouls","diablo","elderscrolls","berserk","whfantasy","got"].includes(f.cat),10)}];
+}
+const myLists=()=>Array.isArray(plDocs[acct.uid]?.lists)?plDocs[acct.uid].lists:[];
+function communityLists(){const out=[];for(const [uid,d] of Object.entries(plDocs)){if(uid===acct.uid)continue;for(const l of (Array.isArray(d.lists)?d.lists:[]))if(l&&typeof l.name==="string"&&Array.isArray(l.films)&&l.films.length)out.push({id:String(l.id),name:l.name.slice(0,80),films:l.films.map(String),ownerId:uid})}return out}
+function listCard(l,own){const fs=l.films.map(findFilm).filter(Boolean);const f0=fs[0];
+  return `<button class="plcard" data-plopen="${esc(l.id)}"><div class="thumb">${f0?`<canvas data-f="${esc(f0.id)}"></canvas>`:""}<span class="plcount">${icon("list")} ${fs.length} films</span></div>
+   <h3 class="vtitle">${esc(l.name)}</h3><div class="vmeta">${own?"Your playlist":l.ownerId?esc(names[l.ownerId]||"Fanreelz member"):esc(l.owner)}</div></button>`}
+function renderPlaylists(){
+  const all=[...myLists().map(l=>({...l,own:true})),...featuredLists(),...communityLists()];
+  if(openList){const l=all.find(x=>x.id===openList);if(l){const fs=l.films.map(findFilm).filter(Boolean);
+    $("#main").innerHTML=`<button class="chip" data-plopen="" style="margin:14px 0">← All playlists</button><h1 class="sect-h" style="font-size:24px">${icon("list")} ${esc(l.name)}</h1>
+      <p class="lede">${fs.length} films${l.own?" · your playlist":""}</p>
+      ${fs.length?`<div class="grid">${fs.map(f=>`<div class="plitem">${card(f)}${l.own?`<button class="remind" data-plremove="${esc(l.id)}|${esc(f.id)}">Remove</button>`:""}</div>`).join("")}</div>`:`<div class="empty">This playlist is empty. Open a film and choose Save.</div>`}
+      ${l.own?`<button class="btn ghost" style="margin-top:24px" data-pldelete="${esc(l.id)}">Delete playlist</button>`:""}`;return}openList=null}
+  const mine=myLists(),comm=communityLists();
+  $("#main").innerHTML=`<div class="wbar" style="margin-top:16px"><h1 class="sect-h" style="font-size:24px;margin:0">${icon("list")} Playlists</h1><button class="btn" data-plnew="">+ New playlist</button></div>
+   <p class="lede" style="margin-top:8px">Collect films in the order you want to watch them, and share your lists with other fans.</p>
+   <h2 class="sect-h">Your playlists</h2>${mine.length?`<div class="plgrid">${mine.map(l=>listCard(l,true)).join("")}</div>`:`<p class="vmeta">${acct.online?"You have no playlists yet. Open a film and choose Save, or make one here.":"Sign in to make playlists."}</p>`}
+   <h2 class="sect-h" style="margin-top:28px">Featured</h2><div class="plgrid">${featuredLists().map(l=>listCard(l)).join("")}</div>
+   ${comm.length?`<h2 class="sect-h" style="margin-top:28px">From the community</h2><div class="plgrid">${comm.map(l=>listCard(l)).join("")}</div>`:""}`;
+}
+async function saveLists(lists){if(await writeOwn("playlists",{lists})){plDocs[acct.uid]={lists};return true}return false}
+function openSave(filmId){
+  if(!needAccount("Sign in to save films to playlists."))return;
+  const lists=myLists();
+  openModal(`<div class="dlg" role="dialog" aria-modal="true" aria-label="Save to playlist"><h2>Save to playlist</h2>
+    ${lists.length?`<div class="plchoose">${lists.map(l=>`<label class="chk"><input type="checkbox" data-plpick="${esc(l.id)}" ${l.films.includes(filmId)?"checked":""}> ${esc(l.name)} <span class="vmeta">${l.films.length}</span></label>`).join("")}</div>`:`<p class="vmeta" style="margin:0">No playlists yet.</p>`}
+    <form class="form" id="plf"><label for="plName">New playlist<input id="plName" maxlength="80" placeholder="e.g. Warcraft lore in order"></label>
+    <div class="row"><button class="btn" type="submit">Done</button><button class="btn ghost" type="button" data-close>Cancel</button></div></form></div>`);
+  $("#plf").onsubmit=async e=>{e.preventDefault();
+    let next=lists.map(l=>{const on=document.querySelector(`[data-plpick="${CSS.escape(l.id)}"]`)?.checked;const has=l.films.includes(filmId);
+      return on&&!has?{...l,films:[...l.films,filmId]}:!on&&has?{...l,films:l.films.filter(x=>x!==filmId)}:l});
+    const nm=$("#plName").value.trim();if(nm)next=[{id:"pl"+Date.now().toString(36),name:nm,films:[filmId]},...next];
+    if(await saveLists(next.slice(0,50))){closeModal();toast(nm?`Saved to “${nm}”`:"Playlists updated");render()}};
+}
+
+/* ---------- Creators ---------- */
+function creatorFilms(key){return allFilms().filter(f=>(f.byId?f.byId===key:f.by===key))}
+function creatorBadges(key,films){
+  const b=[];const T=trendingByGroup();
+  for(const g of GROUPS)for(const c of g.cats){const top=allFilms().filter(f=>f.cat===c.id).sort((a,b)=>stats(b).bayes-stats(a).bayes).slice(0,3);if(top.some(f=>films.includes(f)))b.push(`Top 3 in ${c.name}`)}
+  if(isExampleCreator(key)&&hnum(key)%2===0)b.unshift("Verified creator");
+  if(isExampleCreator(key)&&hnum(key)%5===1)b.push("Contest winner");
+  return b.slice(0,4);
+}
+function followerCount(key){const base=isExampleCreator(key)?200+hnum(key)%9000:0;return base+(myFollows[key]?1:0)}
+function renderCreator(){
+  const key=state.creator;const films=creatorFilms(key);const name=films[0]?byName(films[0]):key;
+  const rated=films.filter(f=>stats(f).n);const avg=rated.length?rated.reduce((a,f)=>a+stats(f).avg,0)/rated.length:0;
+  const badges=creatorBadges(key,films);const following=!!myFollows[key];
+  $("#main").innerHTML=`<div class="chero">${cav(name,96)}<div class="cinfo"><h1>${esc(name)}</h1>
+     <div class="vmeta">${fmtN(followerCount(key))} followers · ${films.length} films${rated.length?` · ★ ${avg.toFixed(1)} average`:""}</div>
+     <div class="row" style="gap:6px;margin-top:6px">${badges.map(b=>`<span class="badge2">${esc(b)}</span>`).join("")}</div>
+     <div class="row" style="margin-top:12px"><button class="btn ${following?"ghost":""}" data-follow="${esc(key)}">${following?"✓ Following":"Follow"}</button>
+       <button class="btn ghost" data-tip="${esc(key)}">${icon("heart")} Tip</button><button class="btn ghost" data-commission="${esc(name)}">Commission a film</button></div></div></div>
+   ${supportersHtml(key)}
+   ${creatorContent(key,films)}
+   ${isExampleCreator(key)?`<p class="note">Example creator. Follower counts and badges are made up.</p>`:""}`;
+}
+async function toggleFollow(key){
+  if(!needAccount("Sign in to follow creators."))return;
+  const next={...myFollows};if(next[key])delete next[key];else next[key]=true;
+  if(await writeOwn("follows",{c:next})){myFollows=next;render();toast(next[key]?"Following":"Unfollowed")}
+}
+const TIP_FEE=0.08,TIP_FEE_PRO=0.05;
+const isPro=key=>isExampleCreator(key)&&hnum(key)%2===0;
+const stripeEst=a=>a>0?a*0.015+1.8:0;
+const kr=x=>(Math.round(x*100)/100).toFixed(2)+" kr";
+let tipDocs={};
+function creatorName(key){const f=creatorFilms(key)[0]||allEpisodes().find(e=>(e.byId||e.by)===key);return f?byName(f):key}
+const FANS=["nightelf_nora","pudge_main","blockbuilder77","azeroth_anna","ancientwatcher","manawyrm","lorekeeper_li"];
+function supporters(key){
+  const tot={};
+  if(isExampleCreator(key))for(let i=0;i<4;i++){const fan=FANS[(hnum(key)+i*3)%FANS.length];tot["ex:"+fan]=(tot["ex:"+fan]||0)+50+hnum(key+fan)%450}
+  for(const [uid,d] of Object.entries(tipDocs))for(const t of (Array.isArray(d.items)?d.items:[]))if(t&&t.to===key&&t.show&&+t.amt>0)tot[uid]=(tot[uid]||0)+(+t.amt);
+  return Object.entries(tot).map(([id,amt])=>({id,amt,ex:id.startsWith("ex:"),name:id.startsWith("ex:")?id.slice(3):id===acct.uid?"You":(names[id]||"Fanreelz member")})).sort((a,b)=>b.amt-a.amt).slice(0,5);
+}
+function supportersHtml(key){const l=supporters(key);if(!l.length)return "";
+  return `<section class="supp"><h2 class="sect-h" style="font-size:16px">${icon("heart")} Top supporters</h2><div class="azlist">${l.map(x=>`<div class="azrow" style="cursor:default"><span class="who2">${cav(x.name)}<span class="aztitle">${esc(x.name)}${x.ex?' <span class="vmeta" style="font-weight:500">(example)</span>':""}</span></span><span class="azscore" style="color:var(--fg)">${Math.round(x.amt)} kr</span></div>`).join("")}</div></section>`}
+function openTip(key,filmId){
+  const name=creatorName(key),pro=isPro(key),rate=pro?TIP_FEE_PRO:TIP_FEE;let amt=50;
+  openModal(`<div class="dlg" role="dialog" aria-modal="true" aria-label="Tip ${esc(name)}"><h2>Tip ${esc(name)}</h2>
+    <p class="vmeta" style="margin:0">Say thanks for a film you liked. Most of the tip goes straight to the creator.</p>
+    <div class="tipamts">${[20,50,100,200].map(a=>`<button class="chip ${a===amt?"on":""}" data-tipamt="${a}">${a} kr</button>`).join("")}<label class="tipother" for="tipAmt">Other<input id="tipAmt" type="number" min="10" max="5000" step="1" inputmode="numeric" placeholder="kr"></label></div>
+    <div class="split" id="tipSplit"></div>
+    <label class="tipmsg" for="tipMsg">Message (optional)<input id="tipMsg" maxlength="140" placeholder="Loved the ending!"></label>
+    <label class="chk" for="tipShow"><input type="checkbox" id="tipShow" checked> Show my name among top supporters</label>
+    <div class="row"><button class="btn" id="tipGo"></button><button class="btn ghost" data-close>Cancel</button></div>
+    <p class="subnote">Prototype: no payment is taken and no money moves. The real site would charge cards through Stripe Connect, take Fanreelz's share automatically and pay the rest out to the creator.</p></div>`,
+    e=>{const a=e.target.closest("[data-tipamt]");if(a){amt=+a.dataset.tipamt;$("#tipAmt").value="";upd()}});
+  const upd=()=>{
+    document.querySelectorAll("[data-tipamt]").forEach(b=>b.classList.toggle("on",+b.dataset.tipamt===amt&&!$("#tipAmt").value));
+    const fee=amt*rate,pay=Math.min(amt,stripeEst(amt)),net=Math.max(0,amt-fee-pay),pc=x=>amt?(x/amt*100):0;
+    $("#tipSplit").innerHTML=`<div class="splitbar" aria-hidden="true"><i style="width:${pc(net)}%;background:var(--accent)"></i><i style="width:${pc(fee)}%;background:var(--star)"></i><i style="width:${pc(pay)}%;background:var(--muted)"></i></div>
+      <div class="sr"><span><i class="dot" style="background:var(--accent)"></i>${esc(name)} receives</span><b>${kr(net)} (${pc(net).toFixed(0)}%)</b></div>
+      <div class="sr"><span><i class="dot" style="background:var(--star)"></i>Fanreelz fee (${Math.round(rate*100)}%${pro?", Pro creator":""})</span><span>${kr(fee)}</span></div>
+      <div class="sr"><span><i class="dot" style="background:var(--muted)"></i>Card processing (about 1.5% + 1.80 kr)</span><span>${kr(pay)}</span></div>
+      <div class="sr total"><span>You pay</span><span>${kr(amt)}</span></div>
+      ${pro?`<span class="subnote">${esc(name)} has Fanreelz Pro, so Fanreelz's fee drops from 8% to 5%.</span>`:""}`;
+    $("#tipGo").textContent=`Send ${amt} kr (demo)`;$("#tipGo").disabled=amt<10;
+  };
+  $("#tipAmt").oninput=()=>{const v=Math.round(+$("#tipAmt").value);amt=v>=10?Math.min(v,5000):(v>0?v:50);upd()};
+  upd();
+  $("#tipGo").onclick=async()=>{
+    if(!needAccount("Sign in to tip creators."))return;
+    if(amt<10){toast("The smallest tip is 10 kr");return}
+    const mine=Array.isArray(tipDocs[acct.uid]?.items)?tipDocs[acct.uid].items:[];
+    const t={to:key,amt,msg:$("#tipMsg").value.trim().slice(0,140),show:$("#tipShow").checked,film:filmId||"",t:Date.now(),demo:true};
+    if(await writeOwn("tips",{items:[t,...mine].slice(0,200)})){tipDocs[acct.uid]={items:[t,...mine]};closeModal();toast(`Demo tip of ${amt} kr recorded. No money was moved.`);render()}
+  };
+}
+
+/* ---------- Originals ---------- */
+function openClaim(f){
+  openModal(`<div class="dlg" role="dialog" aria-modal="true" aria-label="Claim original"><h2>Is this your film?</h2>
+    <p style="margin:0">If you made “${esc(f.title)}” and this is a re-upload, you can claim the original. On the finished site you'd prove it by signing in with the YouTube or TikTok account that posted the original; the credit then moves to you and the copy links to your version.</p>
+    <p class="vmeta" style="margin:0">Nothing is sent in the prototype.</p><div class="row"><button class="btn ghost" data-close>Close</button></div></div>`);
+}
+
+/* ---------- Discord bot (concept) ---------- */
+function renderDiscord(){
+  const top=allFilms().filter(f=>f.cat==="dota2").sort((a,b)=>stats(b).bayes-stats(a).bayes).slice(0,3);
+  $("#main").innerHTML=`<h1 class="sect-h" style="font-size:24px;margin-top:16px">${icon("bot")} Fanreelz bot for Discord</h1>
+   <p class="lede">Bring the top lists to the servers where fans already hang out. The bot posts the week's best films for your game every Monday and answers commands in chat.</p>
+   <div class="discord-grid"><div><h2 class="sect-h" style="font-size:16px">Commands</h2>
+    <div class="azlist">${[["/fanreel top dota2","This week's top 5 in a category"],["/fanreel lina","Best films about a character"],["/fanreel random","A random highly rated film"],["/fanreel battle","Start a Fan Battle vote in the channel"],["/fanreel subscribe minecraft","Weekly top list in this channel"]].map(([c,d])=>`<div class="azrow" style="cursor:default"><code class="cmd">${c}</code><span class="azcat">${d}</span><span></span></div>`).join("")}</div>
+    <div class="row" style="margin-top:18px"><button class="btn" data-soon="Discord bot">Add to your server</button><span class="vmeta">Concept only, not built yet</span></div></div>
+   <div><h2 class="sect-h" style="font-size:16px">What a weekly post looks like</h2>
+    <div class="chatmock"><div class="cm-head">${cav("Fanreelz",36)}<b>Fanreelz</b><span class="cm-bot">BOT</span><span class="vmeta">Today at 10:00</span></div>
+     <div class="cm-embed"><b>Top 3 Dota 2 AI films this week</b>${top.map((f,i)=>`<div class="cm-row"><span class="rk">${i+1}</span><span>${esc(f.title)}<br><small class="vmeta">by ${esc(byName(f)||"YouTube creator")} · ★ ${stats(f).avg.toFixed(1)}</small></span></div>`).join("")}<small class="vmeta">See all on Fanreelz · /fanreel top dota2</small></div></div></div></div>`;
+}
+
+/* ---------- Newsletter ---------- */
+async function toggleNewsletter(){
+  if(!needAccount("Sign in to get the weekly top 10 by email."))return;
+  const next={...settings,newsletter:!settings.newsletter};
+  try{await acct.db.doc("data/users/"+acct.uid+"/settings").set(next);settings=next;render();toast(next.newsletter?"Subscribed to the weekly top 10":"Unsubscribed")}
+  catch(e){toast("Couldn't save your choice. Try again.")}
+}
+
+/* ---------- subscriptions ---------- */
+function startCommunity(db){
+  const mapCol=(col,target,after)=>db.collection(col).onSnapshot(snap=>{for(const k of Object.keys(target))delete target[k];for(const d of snap.docs){const v=d.data();if(v&&typeof v==="object")target[d.id]=v}after&&after();render();},()=>{});
+  db.collection("votes").onSnapshot(snap=>{const all=[];let mine=[];for(const d of snap.docs){const v=Array.isArray(d.data()?.v)?d.data().v:[];const ok=v.filter(p=>Array.isArray(p)&&p.length===2).map(p=>[String(p[0]),String(p[1])]);all.push(...ok);if(d.id===acct.uid)mine=ok}allVotes=all;myVotes=mine;render()},()=>{});
+  mapCol("tips",tipDocs,resolveExtraNames);mapCol("comments",commentDocs,resolveExtraNames);mapCol("commentlikes",likeDocs);mapCol("requests",reqDocs,resolveExtraNames);mapCol("upvotes",upDocs);mapCol("claims",claimDocs,resolveExtraNames);mapCol("playlists",plDocs,resolveExtraNames);
+  db.doc("follows/"+acct.uid).onSnapshot(d=>{myFollows=d.exists&&d.data()?.c&&typeof d.data().c==="object"?{...d.data().c}:{};render()},()=>{});
+  db.doc("data/users/"+acct.uid+"/settings").onSnapshot(d=>{settings=d.exists?{...d.data()}:{};render()},()=>{});
+}
+async function resolveExtraNames(){
+  if(!acct.user)return;const ids=[...new Set([...Object.keys(reqDocs),...Object.keys(claimDocs),...Object.keys(plDocs),...Object.keys(tipDocs),...Object.keys(commentDocs)])];if(!ids.length)return;
+  const ps=await acct.user.profiles(ids);let ch=false;for(const id of ids){const n=ps[id]?.name||"";if(names[id]!==n){names[id]=n;ch=true}}if(ch)render();
+}
+
+/* ================= Formats: shorts, films, series ================= */
+for(const f of FILMS){
+  if(f.real){f.format=f.id==="real-ai-gta6-clips"?"short":"film";continue}
+  const h=hnum(f.id+"fmt");
+  if(h%4===0){f.format="short";f.len=`0:${String(15+h%45).padStart(2,"0")}`}
+  else{f.format="film";if(h%7===0)f.len=`${20+h%28}:${String(h%60).padStart(2,"0")}`}
+}
+const fliIdx=FILMS.findIndex(f=>f.id==="real-fruit-love-island");
+const fliFilm=fliIdx>=0?FILMS.splice(fliIdx,1)[0]:null;
+const SERIES_DEF=[
+  {id:"s-azeroth",title:"Shadows of Azeroth",cat:"wow",char:"Sylvanas",by:"wyrmhaus",hue:265,tool:"Kling",seasons:[["The Banshee's Oath","Ashes of Lordaeron","Windrunner","The Dark Lady Rises","Undercity","Teldrassil Burns"],["Into the Maw","Chains of Domination","The Jailer's Bargain","Redemption?"]]},
+  {id:"s-lordaeron",title:"Lordaeron: The Fall",cat:"wc3",char:"Arthas",by:"ancientlens",hue:210,tool:"Sora",seasons:[["The Plague","Stratholme","Northrend","Frostmourne","The Lich King"]]},
+  {id:"s-herobrine",title:"The Herobrine Chronicles",cat:"minecraft",char:"Herobrine",by:"kaiju_kurt",hue:120,tool:"Runway",seasons:[["Seed 404","White Eyes","The Missing Torch","Nether Signal","The Last World"]]},
+  {id:"s-radiant",title:"Radiant & Dire",cat:"dota2",char:"Lina",by:"frostbyte_films",hue:15,tool:"Kling",seasons:[["Sisters of Fire and Ice","The Arsenal Magus","Fresh Meat","Ancient's Fall"]]},
+  {id:"s-grandline",title:"Grand Line Tales",cat:"onepiece",char:"Luffy",by:"lumen_lab",hue:40,tool:"Veo",seasons:[["East Blue","The Red-Haired Emperor","Three Swords","Gear 5"]]},
+  {id:"s-noob",title:"Noob's School Days",cat:"roblox",char:"Noob",by:"miravision",hue:200,tool:"Pika",seasons:[["First Day","The Obby Test","Field Trip"],["New Kid","Bacon Hair's Secret","Graduation"]]}];
+const EPISODES=[],SERIES=[];
+for(const d of SERIES_DEF){const eps=[];let age=40+hnum(d.id)%120;
+  d.seasons.forEach((titles,si)=>titles.forEach((t,ei)=>{const h=hnum(d.id+"|"+si+"|"+ei);const votes=40+h%2600;const mean=3.3+(h%140)/100;
+    const dist=[1,2,3,4,5].map(s=>Math.exp(-((s-mean)**2)/1.1));const tot=dist.reduce((a,b)=>a+b,0);
+    eps.push({id:`${d.id}-s${si+1}e${ei+1}`,title:t,cat:d.cat,char:d.char,src:"YouTube",tool:d.tool,by:d.by,len:`${3+h%10}:${String(h%60).padStart(2,"0")}`,days:Math.max(0,age),counts:dist.map(x=>Math.round(x/tot*votes)),hue:(d.hue+ei*14+si*40)%360,format:"episode",seriesId:d.id,season:si+1,ep:ei+1});
+    age-=6+h%5;}));
+  EPISODES.push(...eps);
+  SERIES.push({id:d.id,title:d.title,cat:d.cat,char:d.char,by:d.by,hue:d.hue,tool:d.tool,episodes:eps,format:"series"});}
+if(fliFilm)SERIES.unshift({id:"s-fruit-love-island",title:"Fruit Love Island",cat:"aiseries",char:"Reality",by:fliFilm.by,hue:330,tool:fliFilm.tool,real:true,url:fliFilm.url,src:"TikTok",episodes:[],format:"series",days:fliFilm.days});
+
+const slugify=s=>String(s).toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"").slice(0,40)||"series";
+function userSeries(){
+  const map={};
+  for(const e of sharedSubs.filter(f=>f.format==="episode")){
+    const id=`us-${e.byId}-${slugify(e.seriesTitle)}`;e.seriesId=id;
+    (map[id]||(map[id]={id,title:e.seriesTitle||"Untitled series",cat:e.cat,char:e.char,byId:e.byId,hue:e.hue,tool:e.tool,episodes:[],format:"series"})).episodes.push(e);}
+  for(const s of Object.values(map))s.episodes.sort((a,b)=>a.season-b.season||a.ep-b.ep);
+  return Object.values(map);
+}
+const allEpisodes=()=>[...EPISODES,...sharedSubs.filter(f=>f.format==="episode")];
+const allSeries=()=>{const l=[...SERIES,...userSeries()];return state.family?l.filter(s=>isKids(s)):l};
+const findSeries=id=>[...SERIES,...userSeries()].find(s=>s.id===id);
+const seriesBy=s=>s.byId?(s.byId===acct.uid?"You":(names[s.byId]||"Fanreelz member")):s.by;
+function seriesStats(s){const c=[0,0,0,0,0];for(const e of s.episodes)counts(e).forEach((v,i)=>c[i]+=v);const n=c.reduce((a,b)=>a+b,0);const avg=n?c.reduce((a,v,i)=>a+v*(i+1),0)/n:0;return {n,avg,bayes:(avg*n+3.4*50)/(n+50)}}
+const seriesDays=s=>s.episodes.length?Math.min(...s.episodes.map(e=>e.days)):(s.days||0);
+const seasonsOf=s=>[...new Set(s.episodes.map(e=>e.season))].sort((a,b)=>a-b);
+let watched=store.get("fr_watched",{});
+function seriesList(){
+  const q=state.q.toLowerCase();
+  let l=allSeries().filter(s=>(!state.cat||s.cat===state.cat)&&(!state.char||s.char===state.char)&&(state.cat||state.group==="All"||groupOf(s.cat)?.name===state.group)&&
+    (!q||[s.title,s.char,catName(s.cat),seriesBy(s),...s.episodes.map(e=>e.title)].join(" ").toLowerCase().includes(q)));
+  if(state.feed==="mine"&&!state.cat)l=l.filter(s=>s.episodes.some(e=>myRatings[e.id]));
+  const k=state.feed==="new"?s=>seriesDays(s):s=>-seriesStats(s).bayes;
+  return l.sort((a,b)=>k(a)-k(b));
+}
+const DUR=[["any","Any length"],["u5","Under 5 min"],["5to20","5–20 min"],["o20","Over 20 min"]];
+const durOk=f=>{const s=secs(f.len);return state.dur==="any"||(state.dur==="u5"&&s<300)||(state.dur==="5to20"&&s>=300&&s<=1200)||(state.dur==="o20"&&s>1200)};
+
+function shortCard(f){const s=stats(f);
+  return `<button class="vid short" data-short="${esc(f.id)}"><div class="thumb vert"><canvas data-f="${esc(f.id)}"></canvas>${f.real?'<span class="livebadge" style="background:var(--accent)">REAL</span>':""}<span class="len">${esc(f.len)}</span></div>
+   <h3 class="vtitle" style="font-size:14px">${esc(f.title)}</h3><div class="vmeta" style="font-size:12px">${s.n?`<span class="st">★</span> ${s.avg.toFixed(1)} · ${fmtN(s.n)} ratings`:"No ratings yet"}</div></button>`}
+function seriesCard(s){const st=seriesStats(s),ss=seasonsOf(s);
+  return `<button class="vid" data-series="${esc(s.id)}"><div class="thumb stack"><canvas data-s="${esc(s.id)}"></canvas><span class="sbadge">${icon("series")}${s.episodes.length?`${s.episodes.length} episodes`:"Series"}</span>${s.real?'<span class="livebadge" style="background:var(--accent)">REAL</span>':""}</div>
+   <div class="vinfo">${cav(seriesBy(s))}<div class="vtext"><h3 class="vtitle">${esc(s.title)}</h3><div class="vmeta">${esc(seriesBy(s))} · ${esc(catName(s.cat))}</div>
+   <div class="vmeta">${ss.length?`${ss.length} season${ss.length>1?"s":""} · `:""}${st.n?`<span class="st">★</span> ${st.avg.toFixed(1)}`:"Episodes on "+esc(s.src||"YouTube")} · updated ${ago(seriesDays(s))}</div></div></div></button>`}
+function fmtTabs(nAll,nFilm,nShort,nSeries){
+  return `<div class="fmtbar" role="tablist">${[["all","All",nAll],["film","Films",nFilm],["short","Shorts",nShort],["series","Series",nSeries]].map(([k,l,n])=>`<button role="tab" aria-selected="${state.format===k}" class="${state.format===k?"on":""}" data-fmt="${k}">${l}<small>${n}</small></button>`).join("")}</div>`}
+
+function renderHomeF(){
+  const c=CATS.find(x=>x.id===state.cat);
+  const chips=c?[`<button class="chip ${!state.char?"on":""}" data-char="">All</button>`,...c.chars.map(ch=>`<button class="chip ${state.char===ch?"on":""}" data-char="${esc(ch)}">${esc(ch)}</button>`)]
+    :["All",...GROUPS.map(g=>g.name)].map(g=>`<button class="chip ${state.group===g?"on":""}" data-group="${esc(g)}">${esc(g)}</button>`);
+  const base=feedList(),films=base.filter(f=>f.format!=="short"),shorts=base.filter(f=>f.format==="short"),series=seriesList();
+  let html=`<div class="chips">${chips.join("")}</div>`;
+  if(state.family)html+=`<div class="familybar">${icon("shield")} Family-friendly mode is on. Only films suited for younger viewers are shown.<button data-family="">Turn off</button></div>`;
+  if(c)html+=`<h1 class="sect-h" style="font-size:24px;margin-top:4px">${cav(c.name,48)} ${esc(c.name)}<span class="vmeta" style="font-size:14px;font-weight:500">${films.length} films · ${shorts.length} shorts · ${series.length} series</span></h1>`;
+  if(state.q&&!c){const q=state.q.toLowerCase();const mc=CATS.filter(x=>x.name.toLowerCase().includes(q)||x.chars.some(ch=>ch.toLowerCase().includes(q)));
+    html+=`<h1 class="sect-h" style="font-size:22px">Results for “${esc(state.q)}”</h1>`;
+    if(mc.length)html+=`<section class="shelf"><h2 class="sect-h" style="font-size:16px">Categories</h2><div class="dirgrid">${mc.slice(0,6).map(x=>`<button class="dircard dirhead" data-cat="${x.id}">${cav(x.name,40)}<span><b>${esc(x.name)}</b><small>${esc(groupOf(x.id).name)} · ${allFilms().filter(f=>f.cat===x.id).length} films</small></span></button>`).join("")}</div></section>`;}
+  if(state.feed==="top"&&!c)html+=`<h2 class="sect-h">${icon("top")} Top rated</h2>`;
+  if(state.feed==="new"&&!c)html+=`<h2 class="sect-h">${icon("fresh")} Newest</h2>`;
+  if(state.feed==="mine"&&!c)html+=`<h2 class="sect-h">${icon("mine")} Your ratings</h2>`;
+  html+=fmtTabs(films.length+shorts.length+series.length,films.length,shorts.length,series.length);
+  const sub=c&&state.format!=="short"&&state.format!=="series"?`<div class="lorebar">${[["all","All films"],["lore","Lore-accurate"],["whatif","What if"]].map(([k,l])=>`<button class="${state.lore===k?"on":""}" data-lore="${k}">${l}</button>`).join("")}</div>`:"";
+  const empty=`<div class="empty">${state.feed==="mine"?(acct.online?"You haven't rated anything here yet.":"Sign in to see what you've rated."):"Nothing here yet. Submit the first one."}</div>`;
+  if(state.format==="film"){
+    const fl=films.filter(durOk);
+    html+=sub+`<div class="lorebar">${DUR.map(([k,l])=>`<button class="${state.dur===k?"on":""}" data-dur="${k}">${l}</button>`).join("")}</div>`;
+    html+=fl.length?`<div class="grid">${fl.map(f=>card(f)).join("")}</div>`:empty;
+  }else if(state.format==="short"){
+    html+=shorts.length?`<div class="shortgrid">${shorts.map(shortCard).join("")}</div>`:empty;
+  }else if(state.format==="series"){
+    html+=series.length?`<div class="grid">${series.map(seriesCard).join("")}</div>`:empty;
+  }else{
+    html+=sub;
+    const shelves=state.feed==="home"&&!state.q;
+    let rest=films;
+    if(shelves&&films.length>=6){
+      const top=[...films].sort((a,b)=>filmTrend(b)-filmTrend(a)).slice(0,5);const ids=new Set(top.map(f=>f.id));rest=films.filter(f=>!ids.has(f.id)).sort((a,b)=>a.days-b.days);
+      html+=`<section class="shelf"><h2>${icon("trend")} Trending films ${c?"in "+esc(state.char||c.name):state.group==="All"?"":"in "+esc(state.group)}</h2><div class="shelfrow">${top.map((f,i)=>card(f,i+1)).join("")}</div></section>`;
+    }
+    if(shorts.length){const sl=shelves?[...shorts].sort((a,b)=>filmTrend(b)-filmTrend(a)):shorts;
+      html+=`<section class="shelf"><h2>${icon("short")} Shorts<button class="seeall" data-fmt="short">See all ${shorts.length}</button></h2><div class="shortrow">${sl.slice(0,12).map(shortCard).join("")}</div></section>`;}
+    if(series.length)html+=`<section class="shelf"><h2>${icon("series")} Series<button class="seeall" data-fmt="series">See all ${series.length}</button></h2><div class="shelfrow">${series.slice(0,8).map(seriesCard).join("")}</div></section>`;
+    if(rest.length)html+=`<h2 class="sect-h">${icon("film")} ${shelves?"Latest films":"Films"}</h2><div class="grid">${rest.map(f=>card(f)).join("")}</div>`;
+    if(!films.length&&!shorts.length&&!series.length)html+=empty;
+  }
+  html+=`<p class="note">The films are real AI fan films on YouTube, picked by Fanreelz. Ratings and sign-in open at launch. Premieres and Community pages still show examples.</p>`;
+  $("#main").innerHTML=html;
+}
+
+/* shorts viewer */
+function openShorts(id){
+  const f=findFilm(id);if(!f)return;
+  const pool=allFilms().filter(x=>x.format==="short");
+  const same=pool.filter(x=>x.id!==id&&x.cat===f.cat),other=pool.filter(x=>x.id!==id&&x.cat!==f.cat).sort((a,b)=>filmTrend(b)-filmTrend(a));
+  go({view:"shorts",shortList:[f,...same,...other].map(x=>x.id),shortI:0,film:id});
+}
+function renderShorts(){
+  const list=state.shortList||[];const f=findFilm(list[state.shortI]);if(!f){state.view="home";return renderHomeF()}
+  state.film=f.id;const s=stats(f),mine=myRatings[f.id]||0;
+  const url=f.url||"https://www.youtube.com/results?search_query="+encodeURIComponent(f.title+" AI short");
+  $("#main").innerHTML=`<div class="shorts-view"><div class="sp"><canvas data-f="${esc(f.id)}"></canvas>
+     <a class="play" href="${esc(url)}" target="_blank" rel="noopener"><span><svg viewBox="0 0 12 12"><path d="M2 1l9 5-9 5z"/></svg>Watch on ${esc(f.src)}</span></a>
+     <div class="ov"><span class="vmeta" style="color:#fff;opacity:.85">${esc(catName(f.cat))} · ${esc(f.char)} · ${esc(f.len)}</span><b>${esc(f.title)}</b></div></div>
+   <div class="sside">
+     ${(f.real||f.yt)?`<div class="owner">${cav(byName(f),40)}<div><b>${esc(byName(f)||"YouTube creator")}</b></div></div>`:`<button class="owner link" data-creator="${esc(f.byId||f.by)}">${cav(byName(f),40)}<div><b>${esc(byName(f)||"YouTube creator")}</b><small>${fmtN(followerCount(f.byId||f.by))} followers</small></div></button>`}
+     <div class="vmeta">${s.n?`★ ${s.avg.toFixed(1)} from ${fmtN(s.n)} ratings`:"No ratings yet"} · ${ago(f.days)}</div>
+     <div class="ratebox" role="group" aria-label="Rate this short" style="align-self:flex-start"><span>${mine?"Your rating":"Rate"}</span>${[1,2,3,4,5].map(k=>`<button data-rate="${k}" class="${k<=mine?"on":""}" aria-label="${k} stars">★</button>`).join("")}</div>
+     <div class="wactions" style="margin-top:0">${f.real||f.yt?"":`<button data-tip="${esc(f.byId||f.by)}" data-tipfilm="${esc(f.id)}">${icon("heart")}Tip</button>`}<button data-save="${esc(f.id)}">${icon("save")}Save</button><button data-open-full="${esc(f.id)}">${icon("film")}Details</button></div>
+     <div class="snav"><button class="iconbtn navb" data-snav="-1" aria-label="Previous short" ${state.shortI===0?"disabled":""}><svg class="i" viewBox="0 0 24 24"><path d="M6 15l6-6 6 6"/></svg></button>
+       <span class="vmeta">${state.shortI+1} / ${list.length}</span>
+       <button class="iconbtn navb" data-snav="1" aria-label="Next short" ${state.shortI>=list.length-1?"disabled":""}><svg class="i" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></button></div>
+     <p class="vmeta" style="font-size:12px;margin:0">Use the arrow keys or scroll to move between shorts.</p></div></div>`;
+  if(f.yt){const sp=$(".sp");sp.querySelector("canvas")?.remove();sp.querySelector(".play")?.remove();sp.insertAdjacentHTML("afterbegin",ytFrame(f.yt))}
+}
+function stepShort(d){const n=(state.shortList||[]).length;const i=Math.min(n-1,Math.max(0,state.shortI+d));if(i!==state.shortI){state.shortI=i;render()}}
+let wheelLock=0;
+addEventListener("wheel",e=>{if(state.view!=="shorts"||!e.target.closest(".sp"))return;e.preventDefault();const t=Date.now();if(t-wheelLock<450)return;wheelLock=t;stepShort(e.deltaY>0?1:-1)},{passive:false});
+addEventListener("keydown",e=>{if(state.view!=="shorts"||!$("#scrim").hidden||e.target.closest("input,select,textarea"))return;if(e.key==="ArrowDown"){e.preventDefault();stepShort(1)}if(e.key==="ArrowUp"){e.preventDefault();stepShort(-1)}});
+
+/* series page */
+function renderSeries(){
+  const s=findSeries(state.series);if(!s){state.view="home";return renderHomeF()}
+  const ss=seasonsOf(s);if(!ss.includes(state.season))state.season=ss[0]||1;
+  const st=seriesStats(s);const firstUnwatched=s.episodes.find(e=>!watched[e.id]);const anyWatched=s.episodes.some(e=>watched[e.id]);
+  const eps=s.episodes.filter(e=>e.season===state.season);
+  $("#main").innerHTML=`<div class="sbanner"><canvas data-s="${esc(s.id)}"></canvas><div class="ov">
+     <span class="row" style="gap:8px"><span class="nowtag" style="background:var(--accent);color:var(--ink-on-accent)">SERIES</span>${s.real?'<span class="nowtag" style="background:#fff;color:#000">REAL</span>':""}</span>
+     <h1>${esc(s.title)}</h1>
+     <div style="opacity:.9">${esc(catName(s.cat))} · ${esc(s.char)}${ss.length?` · ${ss.length} season${ss.length>1?"s":""} · ${s.episodes.length} episodes`:""}${st.n?` · ★ ${st.avg.toFixed(1)} from ${fmtN(st.n)} episode ratings`:""}</div>
+     <div class="row">${s.real?`<a class="btn link" href="${esc(s.url)}" target="_blank" rel="noopener">Watch episodes on ${esc(s.src)} ↗</a>`:firstUnwatched?`<button class="btn" data-open="${esc(firstUnwatched.id)}">${anyWatched?`Continue: S${firstUnwatched.season} E${firstUnwatched.ep}`:"Start watching"}</button>`:`<button class="btn" data-open="${esc(s.episodes[0]?.id||"")}">Watch again</button>`}
+       ${s.real?"":`<button class="btn ghost" data-creator="${esc(s.byId||s.by)}">${esc(seriesBy(s))}</button>`}</div></div></div>
+   ${s.real?`<p class="lede" style="margin-top:18px">Fruit Love Island is a real AI-generated dating-show series, first posted on TikTok in March 2026. Episodes aren't listed in this prototype; the button above searches for them.</p>`:`
+   <div class="fmtbar" style="margin-top:18px">${ss.map(n=>`<button class="${state.season===n?"on":""}" data-season="${n}">Season ${n}<small>${s.episodes.filter(e=>e.season===n).length}</small></button>`).join("")}</div>
+   <div class="eplist">${eps.map(e=>{const es=stats(e);return `<button class="ep ${watched[e.id]?"watched":""}" data-open="${esc(e.id)}"><span class="num">${e.ep}</span><span class="thumb"><canvas data-f="${esc(e.id)}"></canvas><span class="len">${esc(e.len)}</span></span>
+      <span class="eptext"><b>${esc(e.title)}</b><small class="vmeta">S${e.season} E${e.ep} · ${ago(e.days)}${watched[e.id]?" · Watched":""}</small></span><span class="azscore">${es.n?"★ "+es.avg.toFixed(1):"–"}</span></button>`}).join("")}</div>
+   <p class="note">Rate each episode on its own page. The series score combines every episode rating.</p>`}`;
+}
+function nextFor(f){
+  if(f.format==="episode"){const s=findSeries(f.seriesId);const eps=s?s.episodes:[];const i=eps.findIndex(e=>e.id===f.id);
+    const after=eps.slice(i+1),others=allFilms().filter(x=>x.format!=="short"&&x.cat===f.cat).sort((a,b)=>stats(b).bayes-stats(a).bayes);return [...after,...others].slice(0,14)}
+  return allFilms().filter(x=>x.id!==f.id&&x.format!=="short").sort((a,b)=>((b.cat===f.cat)-(a.cat===f.cat))||(stats(b).bayes-stats(a).bayes)).slice(0,14);
+}
+function creatorContent(key,films){
+  const fl=films.filter(f=>f.format!=="short"),sh=films.filter(f=>f.format==="short"),se=allSeries().filter(s=>(s.byId||s.by)===key);
+  const tab=state.ctab||"film";
+  return `<div class="fmtbar" style="margin-top:24px">${[["film","Films",fl.length],["short","Shorts",sh.length],["series","Series",se.length]].map(([k,l,n])=>`<button class="${tab===k?"on":""}" data-ctab="${k}">${l}<small>${n}</small></button>`).join("")}</div>`+
+   (tab==="short"?(sh.length?`<div class="shortgrid">${sh.map(shortCard).join("")}</div>`:`<div class="empty">No shorts yet.</div>`)
+   :tab==="series"?(se.length?`<div class="grid">${se.map(seriesCard).join("")}</div>`:`<div class="empty">No series yet.</div>`)
+   :(fl.length?`<div class="grid">${fl.sort((a,b)=>a.days-b.days).map(f=>card(f)).join("")}</div>`:`<div class="empty">No films yet.</div>`));
+}
+const detectFormat=u=>/\/shorts\/|tiktok\.com|instagram\.com\/reel/i.test(u)?"short":/[?&]list=/i.test(u)?"episode":"film";
+
+/* ---------- Comments ---------- */
+let commentDocs={},likeDocs={},cSort="top",replyTo=null;
+const cname=uid=>uid===acct.uid?(acct.me?.name||"You"):(names[uid]||"Fanreelz member");
+const agoT=t=>{const m=Math.floor((Date.now()-t)/6e4);return m<1?"just now":m<60?m+" min ago":m<1440?Math.floor(m/60)+" h ago":ago(Math.floor(m/1440))};
+function filmComments(fid){
+  const all=[];
+  for(const [uid,d] of Object.entries(commentDocs))for(const c of (Array.isArray(d.items)?d.items:[]))
+    if(c&&c.film===fid&&typeof c.text==="string"&&c.text.trim())all.push({id:String(c.id),text:c.text.slice(0,1000),t:+c.t||0,parent:c.parent?String(c.parent):"",uid});
+  const likes={};for(const d of Object.values(likeDocs))for(const id of Object.keys(d.ids||{}))if(d.ids[id])likes[id]=(likes[id]||0)+1;
+  all.forEach(c=>c.likes=likes[c.id]||0);return all;
+}
+const composer=parent=>`<form class="cmform" data-cparent="${esc(parent)}">${acct.me?`<img class="avatar" alt="" src="${esc(acct.me.avatarUrl)}">`:cav("You",36)}<div class="cmfield"><textarea maxlength="1000" rows="2" placeholder="${parent?"Write a reply…":"Add a comment…"}" aria-label="${parent?"Reply":"Comment"}"></textarea><div class="row"><button class="btn" type="submit">${parent?"Reply":"Comment"}</button>${parent?`<button class="btn ghost" type="button" data-ccancel="">Cancel</button>`:""}</div></div></form>`;
+function commentsHtml(f){
+  const all=filmComments(f.id),top=all.filter(c=>!c.parent),kids=id=>all.filter(c=>c.parent===id).sort((a,b)=>a.t-b.t);
+  top.sort(cSort==="new"?(a,b)=>b.t-a.t:(a,b)=>(b.likes-a.likes)||(b.t-a.t));
+  const mine=likeDocs[acct.uid]?.ids||{};
+  const one=(c,r)=>`<div class="cm ${r?"reply":""}">${cav(cname(c.uid))}<div class="cmbody"><div class="cmhead"><b>${esc(cname(c.uid))}</b><span class="vmeta" style="font-size:12px">${agoT(c.t)}</span></div><p>${esc(c.text)}</p>
+    <div class="cmact"><button class="${mine[c.id]?"on":""}" data-clike="${esc(c.id)}" aria-label="Like">${icon("heart")} ${c.likes||""}</button>${r?"":`<button data-creply="${esc(c.id)}">Reply</button>`}${c.uid===acct.uid?`<button data-cdel="${esc(c.id)}">Delete</button>`:`<button data-creport="">Report</button>`}</div>${replyTo===c.id?composer(c.id):""}</div></div>`;
+  return `<section class="comments" aria-label="Comments"><div class="row" style="justify-content:space-between"><h2 class="sect-h" style="margin:0">${all.length} comment${all.length===1?"":"s"}</h2><div class="row" style="gap:6px">${[["top","Top"],["new","Newest"]].map(([k,l])=>`<button class="chip ${cSort===k?"on":""}" data-csort="${k}">${l}</button>`).join("")}</div></div>
+    ${composer("")}
+    <div class="cmlist">${top.length?top.map(c=>one(c,false)+kids(c.id).map(x=>one(x,true)).join("")).join(""):`<p class="vmeta" style="margin:0">No comments yet. Start the conversation.</p>`}</div></section>`;
+}
+const myComments=()=>Array.isArray(commentDocs[acct.uid]?.items)?commentDocs[acct.uid].items:[];
+async function postComment(parent,text){
+  if(!needAccount("Sign in to comment on films."))return false;
+  text=text.trim();if(!text){toast("Write something first");return false}
+  const c={id:"c"+Date.now().toString(36)+Math.random().toString(36).slice(2,5),film:state.film,text:text.slice(0,1000),t:Date.now(),parent:parent||""};
+  const next=[c,...myComments()].slice(0,500);
+  if(await writeOwn("comments",{items:next})){commentDocs[acct.uid]={items:next};const fm=document.querySelector(`.cmform[data-cparent="${CSS.escape(parent||"")}"] textarea`);if(fm)fm.value="";replyTo=null;render();toast(parent?"Reply posted":"Comment posted");return true}
+  return false;
+}
+async function deleteComment(id){const next=myComments().filter(c=>c.id!==id&&c.parent!==id);if(await writeOwn("comments",{items:next})){commentDocs[acct.uid]={items:next};render();toast("Comment deleted")}}
+async function likeComment(id){
+  if(!needAccount("Sign in to like comments."))return;
+  const cur={...(likeDocs[acct.uid]?.ids||{})};if(cur[id])delete cur[id];else cur[id]=true;
+  if(await writeOwn("commentlikes",{ids:cur})){likeDocs[acct.uid]={ids:cur};render()}
+}
+let lastFilm=null;
+/* ===== Live catalogue: real AI fan films on YouTube ===== */
+FILMS.length=0;FILMS.push(...[{"id": "yt-0p0bLXaG49U", "yt": "0p0bLXaG49U", "title": "Arthas – No Turning Back | 4K Warcraft AI Live-action Film", "cat": "wc3", "char": "Arthas", "src": "YouTube", "tool": "AI tools", "by": "Avaren", "len": "", "days": null, "counts": [0, 0, 0, 0, 0], "hue": 0, "format": "film", "lore": "lore", "boost": 250, "url": "https://www.youtube.com/watch?v=0p0bLXaG49U"}, {"id": "yt-PYKDyXnJl5E", "yt": "PYKDyXnJl5E", "title": "Arthas: The Price of Vengeance | A Warcraft AI Fan Film", "cat": "wc3", "char": "Arthas", "src": "YouTube", "tool": "AI tools", "by": "Avaren", "len": "15:15", "days": null, "counts": [0, 0, 0, 0, 0], "hue": 47, "format": "film", "lore": "lore", "boost": 240, "url": "https://www.youtube.com/watch?v=PYKDyXnJl5E"}, {"id": "yt-MdG3Dk8dxBg", "yt": "MdG3Dk8dxBg", "title": "Arthas: No Turning Back | Official Trailer | Warcraft AI Cinematic", "cat": "wc3", "char": "Arthas", "src": "YouTube", "tool": "AI tools", "by": "Avaren", "len": "", "days": null, "counts": [0, 0, 0, 0, 0], "hue": 94, "format": "film", "lore": "lore", "boost": 230, "url": "https://www.youtube.com/watch?v=MdG3Dk8dxBg"}, {"id": "yt-geI1PHbnbog", "yt": "geI1PHbnbog", "title": "WoW 30th: Tyrande, Sylvanas & Jaina in Stunning 4K AI Glory", "cat": "wow", "char": "Sylvanas", "src": "YouTube", "tool": "AI tools", "by": "", "len": "", "days": null, "counts": [0, 0, 0, 0, 0], "hue": 141, "format": "film", "lore": "lore", "boost": 220, "url": "https://www.youtube.com/watch?v=geI1PHbnbog"}, {"id": "yt-P1wnb0lTNfg", "yt": "P1wnb0lTNfg", "title": "World of Warcraft Forever, but it's AI", "cat": "wow", "char": "Azeroth", "src": "YouTube", "tool": "AI tools", "by": "", "len": "", "days": null, "counts": [0, 0, 0, 0, 0], "hue": 188, "format": "film", "lore": "whatif", "boost": 210, "url": "https://www.youtube.com/watch?v=P1wnb0lTNfg"}, {"id": "yt-mv2l57EdQj8", "yt": "mv2l57EdQj8", "title": "Jaina Proudmoore: Hero or Traitor? AI Warcraft Cinema", "cat": "wow", "char": "Jaina", "src": "YouTube", "tool": "AI tools", "by": "", "len": "", "days": null, "counts": [0, 0, 0, 0, 0], "hue": 235, "format": "short", "lore": "lore", "boost": 200, "url": "https://www.youtube.com/watch?v=mv2l57EdQj8"}, {"id": "yt-9sqOEJfa3DA", "yt": "9sqOEJfa3DA", "title": "The Children of Húrin – 1950's Super Panavision 70", "cat": "lotr", "char": "Middle-earth", "src": "YouTube", "tool": "AI tools", "by": "Abandoned Films", "len": "", "days": null, "counts": [0, 0, 0, 0, 0], "hue": 282, "format": "film", "lore": "whatif", "boost": 190, "url": "https://www.youtube.com/watch?v=9sqOEJfa3DA"}, {"id": "yt-qhYTS_JYP8Y", "yt": "qhYTS_JYP8Y", "title": "The Lord of the Rings: The Fall of Arnor – Trailer (AI Fanmade)", "cat": "lotr", "char": "Witch-king", "src": "YouTube", "tool": "AI tools", "by": "", "len": "", "days": null, "counts": [0, 0, 0, 0, 0], "hue": 329, "format": "film", "lore": "lore", "boost": 180, "url": "https://www.youtube.com/watch?v=qhYTS_JYP8Y"}, {"id": "yt-lPHPbkQu6uI", "yt": "lPHPbkQu6uI", "title": "Witch-king of Angmar: Middle-earth AI Cinematic", "cat": "lotr", "char": "Witch-king", "src": "YouTube", "tool": "AI tools", "by": "", "len": "", "days": null, "counts": [0, 0, 0, 0, 0], "hue": 16, "format": "film", "lore": "lore", "boost": 170, "url": "https://www.youtube.com/watch?v=lPHPbkQu6uI"}, {"id": "yt-Jt3cPiZIMhY", "yt": "Jt3cPiZIMhY", "title": "The Lord of the Rings by Pixar Studios – AI Generated Teaser Trailer", "cat": "lotr", "char": "Frodo", "src": "YouTube", "tool": "AI tools", "by": "", "len": "", "days": null, "counts": [0, 0, 0, 0, 0], "hue": 63, "format": "film", "lore": "whatif", "boost": 160, "url": "https://www.youtube.com/watch?v=Jt3cPiZIMhY"}, {"id": "yt-djQ0zCV9tbk", "yt": "djQ0zCV9tbk", "title": "Warhammer 40k – Immortal Imperium (AI Video)", "cat": "wh40k", "char": "Space Marines", "src": "YouTube", "tool": "AI tools", "by": "", "len": "", "days": null, "counts": [0, 0, 0, 0, 0], "hue": 110, "format": "film", "lore": "lore", "boost": 150, "url": "https://www.youtube.com/watch?v=djQ0zCV9tbk"}, {"id": "yt-2F89Xrueb6E", "yt": "2F89Xrueb6E", "title": "Fall of the Imperium – Warhammer 40K AI Trailer", "cat": "wh40k", "char": "Space Marines", "src": "YouTube", "tool": "AI tools", "by": "", "len": "", "days": null, "counts": [0, 0, 0, 0, 0], "hue": 157, "format": "film", "lore": "lore", "boost": 140, "url": "https://www.youtube.com/watch?v=2F89Xrueb6E"}, {"id": "yt-xpqc2TCzE_M", "yt": "xpqc2TCzE_M", "title": "What If Warhammer 40K Was a Real Movie (Reimagined with AI)", "cat": "wh40k", "char": "Space Marines", "src": "YouTube", "tool": "AI tools", "by": "", "len": "", "days": null, "counts": [0, 0, 0, 0, 0], "hue": 204, "format": "film", "lore": "whatif", "boost": 130, "url": "https://www.youtube.com/watch?v=xpqc2TCzE_M"}, {"id": "yt-QNu4bru0tF4", "yt": "QNu4bru0tF4", "title": "Dune – 1950's Super Panavision 70 (AI Vintage-Style Trailer)", "cat": "dune", "char": "Paul Atreides", "src": "YouTube", "tool": "AI tools", "by": "", "len": "", "days": null, "counts": [0, 0, 0, 0, 0], "hue": 251, "format": "film", "lore": "whatif", "boost": 120, "url": "https://www.youtube.com/watch?v=QNu4bru0tF4"}, {"id": "yt-1V6MmftCOBo", "yt": "1V6MmftCOBo", "title": "The Witcher 3 AI Movie Trailer", "cat": "witcher", "char": "Geralt", "src": "YouTube", "tool": "AI tools", "by": "", "len": "", "days": null, "counts": [0, 0, 0, 0, 0], "hue": 298, "format": "film", "lore": "lore", "boost": 110, "url": "https://www.youtube.com/watch?v=1V6MmftCOBo"}, {"id": "yt-LxwmhFldDr4", "yt": "LxwmhFldDr4", "title": "AI Remade The Witcher Exactly as Described in the Books", "cat": "witcher", "char": "Geralt", "src": "YouTube", "tool": "AI tools", "by": "", "len": "", "days": null, "counts": [0, 0, 0, 0, 0], "hue": 345, "format": "film", "lore": "lore", "boost": 100, "url": "https://www.youtube.com/watch?v=LxwmhFldDr4"}, {"id": "yt-KxUPlC_a02Y", "yt": "KxUPlC_a02Y", "title": "The Witcher 3 in Real Life (AI)", "cat": "witcher", "char": "Ciri", "src": "YouTube", "tool": "AI tools", "by": "", "len": "", "days": null, "counts": [0, 0, 0, 0, 0], "hue": 32, "format": "short", "lore": "whatif", "boost": 90, "url": "https://www.youtube.com/watch?v=KxUPlC_a02Y"}, {"id": "yt-gSAIv9mX78E", "yt": "gSAIv9mX78E", "title": "Toss a Coin to Your Witcher, but Every Line Is an AI Generated Image (4K)", "cat": "witchertv", "char": "Jaskier", "src": "YouTube", "tool": "AI tools", "by": "", "len": "", "days": null, "counts": [0, 0, 0, 0, 0], "hue": 79, "format": "film", "lore": "whatif", "boost": 80, "url": "https://www.youtube.com/watch?v=gSAIv9mX78E"}, {"id": "yt-VvJB7o4gIek", "yt": "VvJB7o4gIek", "title": "One Piece – Teaser Trailer (AI Generated)", "cat": "onepiece", "char": "Luffy", "src": "YouTube", "tool": "AI tools", "by": "", "len": "", "days": null, "counts": [0, 0, 0, 0, 0], "hue": 126, "format": "film", "lore": "whatif", "boost": 70, "url": "https://www.youtube.com/watch?v=VvJB7o4gIek"}, {"id": "yt-SQGd9jzMYlQ", "yt": "SQGd9jzMYlQ", "title": "Naruto: AI-Generated Trailer of a Live-Action Sequel", "cat": "naruto", "char": "Naruto", "src": "YouTube", "tool": "AI tools", "by": "", "len": "", "days": null, "counts": [0, 0, 0, 0, 0], "hue": 173, "format": "film", "lore": "whatif", "boost": 60, "url": "https://www.youtube.com/watch?v=SQGd9jzMYlQ"}, {"id": "yt-FupQKik3tHo", "yt": "FupQKik3tHo", "title": "AI League of Legends Cinematic: Troll Town! (Hailuo MiniMax)", "cat": "lol", "char": "Runeterra", "src": "YouTube", "tool": "AI tools", "by": "", "len": "", "days": null, "counts": [0, 0, 0, 0, 0], "hue": 220, "format": "film", "lore": "whatif", "boost": 50, "url": "https://www.youtube.com/watch?v=FupQKik3tHo"}, {"id": "yt-2_FybBOjVEM", "yt": "2_FybBOjVEM", "title": "A Minecraft Movie (2025) Opening Intro in Minecraft Style, Made by AI", "cat": "minecraft", "char": "Steve", "src": "YouTube", "tool": "AI tools", "by": "", "len": "", "days": null, "counts": [0, 0, 0, 0, 0], "hue": 267, "format": "film", "lore": "whatif", "boost": 40, "url": "https://www.youtube.com/watch?v=2_FybBOjVEM"}, {"id": "yt-6rC-Kq2VR7k", "yt": "6rC-Kq2VR7k", "title": "Tralalero Tralala vs All Italian Brainrot AI Animals Compilation", "cat": "brainrot", "char": "Tralalero Tralala", "src": "YouTube", "tool": "AI tools", "by": "", "len": "", "days": null, "counts": [0, 0, 0, 0, 0], "hue": 314, "format": "film", "lore": "whatif", "boost": 30, "url": "https://www.youtube.com/watch?v=6rC-Kq2VR7k"}, {"id": "yt-ETb16mgQr2c", "yt": "ETb16mgQr2c", "title": "Evolution of Tralalero Tralala (Guess the Italian Brainrot AI Animals)", "cat": "brainrot", "char": "Tralalero Tralala", "src": "YouTube", "tool": "AI tools", "by": "", "len": "", "days": null, "counts": [0, 0, 0, 0, 0], "hue": 1, "format": "film", "lore": "whatif", "boost": 20, "url": "https://www.youtube.com/watch?v=ETb16mgQr2c"}, {"id": "yt-Q2kURH3A_xc", "yt": "Q2kURH3A_xc", "title": "Tralalero Tralala Adopts Homeless Ballerina Cappuccina – AI Brainrot Story", "cat": "brainrot", "char": "Tralalero Tralala", "src": "YouTube", "tool": "AI tools", "by": "", "len": "", "days": null, "counts": [0, 0, 0, 0, 0], "hue": 48, "format": "film", "lore": "whatif", "boost": 10, "url": "https://www.youtube.com/watch?v=Q2kURH3A_xc"}]);
+// Game AI films embedded from YouTube (all checked as embeddable)
+FILMS.push(...[{"id":"yt-KFaAtKxI0uA","yt":"KFaAtKxI0uA","title":"ELDEN RING – 1980's Dark Fantasy","cat":"eldenring","char":"The Lands Between","src":"YouTube","tool":"AI tools","by":"SoraVerse","len":"2:14","days":null,"counts":[0,0,0,0,0],"hue":0,"format":"film","lore":"whatif","boost":295,"url":"https://www.youtube.com/watch?v=KFaAtKxI0uA"},{"id":"yt-pd5KABwWMPg","yt":"pd5KABwWMPg","title":"ELDEN RING – 1980s Live-Action Movie","cat":"eldenring","char":"The Lands Between","src":"YouTube","tool":"AI tools","by":"SoraVerse","len":"2:19","days":null,"counts":[0,0,0,0,0],"hue":0,"format":"film","lore":"whatif","boost":276,"url":"https://www.youtube.com/watch?v=pd5KABwWMPg"},{"id":"yt-GeymndUuf8A","yt":"GeymndUuf8A","title":"ELDEN RING: Shadow of the Erdtree – 1980's Dark Fantasy","cat":"eldenring","char":"Messmer","src":"YouTube","tool":"AI tools","by":"SoraVerse","len":"2:21","days":null,"counts":[0,0,0,0,0],"hue":0,"format":"film","lore":"whatif","boost":273,"url":"https://www.youtube.com/watch?v=GeymndUuf8A"},{"id":"yt-YmqyGH-zE6M","yt":"YmqyGH-zE6M","title":"ELDEN RING NIGHTREIGN – 1980s Dark Fantasy Movie","cat":"eldenring","char":"The Lands Between","src":"YouTube","tool":"AI tools","by":"SoraVerse","len":"1:42","days":null,"counts":[0,0,0,0,0],"hue":0,"format":"film","lore":"whatif","boost":263,"url":"https://www.youtube.com/watch?v=YmqyGH-zE6M"},{"id":"yt-G3ox_BAN2-M","yt":"G3ox_BAN2-M","title":"ELDEN RING | 1980's DARK FANTASY MOVIE","cat":"eldenring","char":"Radahn","src":"YouTube","tool":"AI tools","by":"Movie Hopper","len":"2:17","days":null,"counts":[0,0,0,0,0],"hue":0,"format":"film","lore":"whatif","boost":249,"url":"https://www.youtube.com/watch?v=G3ox_BAN2-M"},{"id":"yt-hEgCMHQp-VE","yt":"hEgCMHQp-VE","title":"DOTA 2 | 1980's DARK FANTASY MOVIE","cat":"dota2","char":"The Ancients","src":"YouTube","tool":"AI tools","by":"Movie Hopper","len":"11:15","days":null,"counts":[0,0,0,0,0],"hue":0,"format":"film","lore":"whatif","boost":258,"url":"https://www.youtube.com/watch?v=hEgCMHQp-VE"},{"id":"yt-vO1LxiJQCgQ","yt":"vO1LxiJQCgQ","title":"All Dota 2 Heroes – Realistic AI Animation","cat":"dota2","char":"The Ancients","src":"YouTube","tool":"AI tools","by":"Rudhiz","len":"10:45","days":null,"counts":[0,0,0,0,0],"hue":0,"format":"film","lore":"lore","boost":172,"url":"https://www.youtube.com/watch?v=vO1LxiJQCgQ"},{"id":"yt-oLv-lhOOzE0","yt":"oLv-lhOOzE0","title":"Dota 2 Cinematic — Juggernaut | Origin Story (AI Film)","cat":"dota2","char":"Juggernaut","src":"YouTube","tool":"AI tools","by":"DOTA 2 SPQR | AI Cinematics","len":"3:26","days":null,"counts":[0,0,0,0,0],"hue":0,"format":"film","lore":"lore","boost":157,"url":"https://www.youtube.com/watch?v=oLv-lhOOzE0"},{"id":"yt-YngQx66RNJk","yt":"YngQx66RNJk","title":"Dota 2 Cinematic — Drow Ranger | Origin Story (AI Film) — ORIGINS Ep. 1","cat":"dota2","char":"Drow Ranger","src":"YouTube","tool":"AI tools","by":"DOTA 2 SPQR | AI Cinematics","len":"2:09","days":null,"counts":[0,0,0,0,0],"hue":0,"format":"film","lore":"lore","boost":155,"url":"https://www.youtube.com/watch?v=YngQx66RNJk"},{"id":"yt-wbPKJctqGok","yt":"wbPKJctqGok","title":"Lina The Slayer | A Dota 2 AI Cinematic Tribute","cat":"dota2","char":"Lina","src":"YouTube","tool":"AI tools","by":"Dota 2 Live Action Movie","len":"1:34","days":null,"counts":[0,0,0,0,0],"hue":0,"format":"film","lore":"lore","boost":200,"url":"https://www.youtube.com/watch?v=wbPKJctqGok"},{"id":"yt-_igLgWqARgk","yt":"_igLgWqARgk","title":"Warcraft: Arthas vs Illidan Remastered | AI Cinematic (4K)","cat":"wc3","char":"Arthas","src":"YouTube","tool":"AI tools","by":"Mason Drake","len":"4:38","days":null,"counts":[0,0,0,0,0],"hue":0,"format":"film","lore":"lore","boost":223,"url":"https://www.youtube.com/watch?v=_igLgWqARgk"},{"id":"yt-sy4VKEY7Tts","yt":"sy4VKEY7Tts","title":"WARCRAFT III: Invasion of Kalimdor | Chapter Two: The Long March (AI Cinematic Film)","cat":"wc3","char":"Grom Hellscream","src":"YouTube","tool":"AI tools","by":"CurioCraft Productions","len":"13:00","days":null,"counts":[0,0,0,0,0],"hue":0,"format":"film","lore":"lore","boost":251,"url":"https://www.youtube.com/watch?v=sy4VKEY7Tts"},{"id":"yt-mQNgQAR1m8c","yt":"mQNgQAR1m8c","title":"Arthas – Call of Northrend | Cinematic short-film (Warcraft AI Movie)","cat":"wc3","char":"Arthas","src":"YouTube","tool":"AI tools","by":"Avaren","len":"7:04","days":null,"counts":[0,0,0,0,0],"hue":0,"format":"film","lore":"lore","boost":267,"url":"https://www.youtube.com/watch?v=mQNgQAR1m8c"},{"id":"yt-BJFzCp95UOI","yt":"BJFzCp95UOI","title":"Warcraft Reimagined as a Real Movie | Ultra Realistic AI Film (4K)","cat":"wow","char":"Azeroth","src":"YouTube","tool":"AI tools","by":"Oneshot","len":"2:59","days":null,"counts":[0,0,0,0,0],"hue":0,"format":"film","lore":"lore","boost":247,"url":"https://www.youtube.com/watch?v=BJFzCp95UOI"},{"id":"yt-a0lk_W_p49w","yt":"a0lk_W_p49w","title":"World of Warcraft: Life in Mulgore | Short Film | AI Live-Action | Cinematic","cat":"wow","char":"Azeroth","src":"YouTube","tool":"AI tools","by":"UzoBa","len":"2:50","days":null,"counts":[0,0,0,0,0],"hue":0,"format":"film","lore":"lore","boost":165,"url":"https://www.youtube.com/watch?v=a0lk_W_p49w"},{"id":"yt-K3GxGAunfhA","yt":"K3GxGAunfhA","title":"World of Warcraft: Life in Teldrassil | Short Film | AI Live-Action | Cinematic","cat":"wow","char":"Azeroth","src":"YouTube","tool":"AI tools","by":"UzoBa","len":"3:04","days":null,"counts":[0,0,0,0,0],"hue":0,"format":"film","lore":"lore","boost":149,"url":"https://www.youtube.com/watch?v=K3GxGAunfhA"},{"id":"yt-3u_xsXy0GzY","yt":"3u_xsXy0GzY","title":"WARHAMMER 40,000 | 1980's GRIMDARK MOVIE","cat":"wh40k","char":"Space Marines","src":"YouTube","tool":"AI tools","by":"Movie Hopper","len":"4:55","days":null,"counts":[0,0,0,0,0],"hue":0,"format":"film","lore":"whatif","boost":295,"url":"https://www.youtube.com/watch?v=3u_xsXy0GzY"},{"id":"yt-x0ezCfKaxrI","yt":"x0ezCfKaxrI","title":"WARHAMMER 40,000: DAWN OF WAR | 1980's GRIMDARK MOVIE","cat":"wh40k","char":"Space Marines","src":"YouTube","tool":"AI tools","by":"Movie Hopper","len":"24:43","days":null,"counts":[0,0,0,0,0],"hue":0,"format":"film","lore":"whatif","boost":265,"url":"https://www.youtube.com/watch?v=x0ezCfKaxrI"},{"id":"yt-34bXn4BSQSQ","yt":"34bXn4BSQSQ","title":"WARHAMMER 40K: The Awakening of Guilliman | AI Cinematic Film","cat":"wh40k","char":"Space Marines","src":"YouTube","tool":"AI tools","by":"APSN","len":"2:47","days":null,"counts":[0,0,0,0,0],"hue":0,"format":"film","lore":"lore","boost":220,"url":"https://www.youtube.com/watch?v=34bXn4BSQSQ"},{"id":"yt-zX-e9LRR_ko","yt":"zX-e9LRR_ko","title":"CRAFT (1979): The First Night | Episode 1","cat":"minecraft","char":"Steve","src":"YouTube","tool":"AI tools","by":"LatentDiffusion","len":"7:25","days":null,"counts":[0,0,0,0,0],"hue":0,"format":"film","lore":"whatif","boost":308,"url":"https://www.youtube.com/watch?v=zX-e9LRR_ko"},{"id":"yt-Ua2D-PM97xc","yt":"Ua2D-PM97xc","title":"CRAFT (1979): The Cove | Episode 2","cat":"minecraft","char":"Steve","src":"YouTube","tool":"AI tools","by":"LatentDiffusion","len":"9:02","days":null,"counts":[0,0,0,0,0],"hue":0,"format":"film","lore":"whatif","boost":290,"url":"https://www.youtube.com/watch?v=Ua2D-PM97xc"},{"id":"yt-VANHd4raCIU","yt":"VANHd4raCIU","title":"MINECRAFT – 1980s Dark Fantasy Horror Movie","cat":"minecraft","char":"Herobrine","src":"YouTube","tool":"AI tools","by":"SoraVerse","len":"2:00","days":null,"counts":[0,0,0,0,0],"hue":0,"format":"film","lore":"whatif","boost":285,"url":"https://www.youtube.com/watch?v=VANHd4raCIU"},{"id":"yt-_CVlHM8WX64","yt":"_CVlHM8WX64","title":"AI Recreated the Minecraft Movie Trailer – Better or Worse?","cat":"minecraft","char":"Steve","src":"YouTube","tool":"AI tools","by":"UmbertoFx","len":"1:47","days":null,"counts":[0,0,0,0,0],"hue":0,"format":"film","lore":"whatif","boost":249,"url":"https://www.youtube.com/watch?v=_CVlHM8WX64"},{"id":"yt-wP_xikXVCq4","yt":"wP_xikXVCq4","title":"GRAND THEFT AUTO VI – 1970s Live-Action Movie Trailer","cat":"gta6","char":"Vice City","src":"YouTube","tool":"AI tools","by":"SoraVerse","len":"1:33","days":null,"counts":[0,0,0,0,0],"hue":0,"format":"film","lore":"whatif","boost":258,"url":"https://www.youtube.com/watch?v=wP_xikXVCq4"},{"id":"yt-TNG6pxfFSBQ","yt":"TNG6pxfFSBQ","title":"GTA Vice City – 1980s Live-Action Movie","cat":"gta","char":"Vice City","src":"YouTube","tool":"AI tools","by":"SoraVerse","len":"1:31","days":null,"counts":[0,0,0,0,0],"hue":0,"format":"film","lore":"whatif","boost":302,"url":"https://www.youtube.com/watch?v=TNG6pxfFSBQ"},{"id":"yt-kRYoWUys1G4","yt":"kRYoWUys1G4","title":"GTA: Vice City – 80's Crime Movie Adaptation","cat":"gta","char":"Vice City","src":"YouTube","tool":"AI tools","by":"SoraVerse","len":"1:24","days":null,"counts":[0,0,0,0,0],"hue":0,"format":"film","lore":"whatif","boost":285,"url":"https://www.youtube.com/watch?v=kRYoWUys1G4"},{"id":"yt-4514wHdQ8g4","yt":"4514wHdQ8g4","title":"GTA Vice City Stories – 1980s Live-Action Movie","cat":"gta","char":"Vice City","src":"YouTube","tool":"AI tools","by":"SoraVerse","len":"1:24","days":null,"counts":[0,0,0,0,0],"hue":0,"format":"film","lore":"whatif","boost":267,"url":"https://www.youtube.com/watch?v=4514wHdQ8g4"},{"id":"yt-XWwHpRHl1Q0","yt":"XWwHpRHl1Q0","title":"GTA San Andreas as a 80's Gangstar Action Film","cat":"gta","char":"San Andreas","src":"YouTube","tool":"AI tools","by":"What if Ai draws","len":"1:46","days":null,"counts":[0,0,0,0,0],"hue":0,"format":"film","lore":"whatif","boost":284,"url":"https://www.youtube.com/watch?v=XWwHpRHl1Q0"},{"id":"yt-B6y0573bycw","yt":"B6y0573bycw","title":"Grand Theft Auto 5 – 1980's Live-Action Film","cat":"gta","char":"Los Santos","src":"YouTube","tool":"AI tools","by":"Network AI","len":"6:03","days":null,"counts":[0,0,0,0,0],"hue":0,"format":"film","lore":"whatif","boost":243,"url":"https://www.youtube.com/watch?v=B6y0573bycw"},{"id":"yt-4SqSm7kCTKE","yt":"4SqSm7kCTKE","title":"AI League of Legends Wild Rift Trailer","cat":"lol","char":"Runeterra","src":"YouTube","tool":"AI tools","by":"I'm Not Dave","len":"2:23","days":null,"counts":[0,0,0,0,0],"hue":0,"format":"film","lore":"whatif","boost":268,"url":"https://www.youtube.com/watch?v=4SqSm7kCTKE"},{"id":"yt-5gcrDfSZfrc","yt":"5gcrDfSZfrc","title":"The Calling of the Sands — A League of Legends AI Fan Film","cat":"lol","char":"Nasus","src":"YouTube","tool":"AI tools","by":"AfeAI","len":"3:55","days":null,"counts":[0,0,0,0,0],"hue":0,"format":"film","lore":"lore","boost":148,"url":"https://www.youtube.com/watch?v=5gcrDfSZfrc"},{"id":"yt-3l-ULUsHAKc","yt":"3l-ULUsHAKc","title":"The Calling of the Sands II — Nasus vs Renekton | LoL AI Fan Film","cat":"lol","char":"Nasus","src":"YouTube","tool":"AI tools","by":"AfeAI","len":"2:51","days":null,"counts":[0,0,0,0,0],"hue":0,"format":"film","lore":"lore","boost":151,"url":"https://www.youtube.com/watch?v=3l-ULUsHAKc"},{"id":"yt-Loy8Ba3Fc0I","yt":"Loy8Ba3Fc0I","title":"Jinx, Vi, Caitlyn & Ekko on the Arcane Set – League of Legends Live Action (AI)","cat":"arcane","char":"Jinx","src":"YouTube","tool":"AI tools","by":"Moon Biscuit","len":"1:12","days":null,"counts":[0,0,0,0,0],"hue":0,"format":"film","lore":"whatif","boost":272,"url":"https://www.youtube.com/watch?v=Loy8Ba3Fc0I"},{"id":"yt-PkmrIgpA9sc","yt":"PkmrIgpA9sc","title":"Age of Empires – AI Movie Trailer | Cinematic","cat":"aoe2","char":"Campaigns","src":"YouTube","tool":"AI tools","by":"Spectrum Films","len":"1:58","days":null,"counts":[0,0,0,0,0],"hue":0,"format":"film","lore":"lore","boost":166,"url":"https://www.youtube.com/watch?v=PkmrIgpA9sc"},{"id":"yt-aAcwJ28NRTQ","yt":"aAcwJ28NRTQ","title":"The Elder Scrolls V: SKYRIM – 1980s Dark Fantasy Film","cat":"elderscrolls","char":"Skyrim","src":"YouTube","tool":"AI tools","by":"SoraVerse","len":"3:37","days":null,"counts":[0,0,0,0,0],"hue":0,"format":"film","lore":"whatif","boost":251,"url":"https://www.youtube.com/watch?v=aAcwJ28NRTQ"},{"id":"yt-yHePYKmDGR4","yt":"yHePYKmDGR4","title":"SKYRIM | 1980's DARK FANTASY | SUPER PANAVISION 70","cat":"elderscrolls","char":"Skyrim","src":"YouTube","tool":"AI tools","by":"Movie Hopper","len":"2:16","days":null,"counts":[0,0,0,0,0],"hue":0,"format":"film","lore":"whatif","boost":251,"url":"https://www.youtube.com/watch?v=yHePYKmDGR4"},{"id":"yt-Vrbk_Jy8Qjw","yt":"Vrbk_Jy8Qjw","title":"TES V: SKYRIM – DRAGONBORN | 1980's DARK FANTASY MOVIE","cat":"elderscrolls","char":"Skyrim","src":"YouTube","tool":"AI tools","by":"Movie Hopper","len":"2:56","days":null,"counts":[0,0,0,0,0],"hue":0,"format":"film","lore":"whatif","boost":272,"url":"https://www.youtube.com/watch?v=Vrbk_Jy8Qjw"},{"id":"yt-vnlpAQEIHT0","yt":"vnlpAQEIHT0","title":"TES V: SKYRIM – DAWNGUARD | 1980's DARK FANTASY MOVIE","cat":"elderscrolls","char":"Skyrim","src":"YouTube","tool":"AI tools","by":"Movie Hopper","len":"2:50","days":null,"counts":[0,0,0,0,0],"hue":0,"format":"film","lore":"whatif","boost":271,"url":"https://www.youtube.com/watch?v=vnlpAQEIHT0"},{"id":"yt-4BRxwri9e_k","yt":"4BRxwri9e_k","title":"TES IV: OBLIVION | 1980's DARK FANTASY MOVIE","cat":"elderscrolls","char":"Oblivion","src":"YouTube","tool":"AI tools","by":"Movie Hopper","len":"2:47","days":null,"counts":[0,0,0,0,0],"hue":0,"format":"film","lore":"whatif","boost":239,"url":"https://www.youtube.com/watch?v=4BRxwri9e_k"},{"id":"yt-v0N0wAqqXJ8","yt":"v0N0wAqqXJ8","title":"The Legend of Zelda: Breath of the Wild (2027) | R-Rated AI Trailer","cat":"zelda","char":"Link","src":"YouTube","tool":"AI tools","by":"PJ Ace","len":"1:54","days":null,"counts":[0,0,0,0,0],"hue":0,"format":"film","lore":"whatif","boost":245,"url":"https://www.youtube.com/watch?v=v0N0wAqqXJ8"},{"id":"yt-0tXVP93KjGM","yt":"0tXVP93KjGM","title":"The Legend of Zelda: AI Movie Trailer! | Made by VideoMax AI & Midjourney","cat":"zelda","char":"Link","src":"YouTube","tool":"AI tools","by":"VideoMax_AI","len":"3:32","days":null,"counts":[0,0,0,0,0],"hue":0,"format":"film","lore":"whatif","boost":283,"url":"https://www.youtube.com/watch?v=0tXVP93KjGM"},{"id":"yt-2MdwPtQsALA","yt":"2MdwPtQsALA","title":"I Made My Own Zelda: Ocarina of Time Movie Trailer | Fan-Made AI Trailer","cat":"zelda","char":"Hyrule","src":"YouTube","tool":"AI tools","by":"Pocket Multiverse","len":"3:05","days":null,"counts":[0,0,0,0,0],"hue":0,"format":"film","lore":"whatif","boost":241,"url":"https://www.youtube.com/watch?v=2MdwPtQsALA"},{"id":"yt-TDrmRdn7k8A","yt":"TDrmRdn7k8A","title":"Fallout: New Vegas – 1970's Live-Action Movie","cat":"fallout","char":"New Vegas","src":"YouTube","tool":"AI tools","by":"SoraVerse","len":"1:17","days":null,"counts":[0,0,0,0,0],"hue":0,"format":"film","lore":"whatif","boost":286,"url":"https://www.youtube.com/watch?v=TDrmRdn7k8A"},{"id":"yt-42yUn5cm44A","yt":"42yUn5cm44A","title":"FALLOUT: New Vegas – 1960s Live-Action Movie Adaptation","cat":"fallout","char":"New Vegas","src":"YouTube","tool":"AI tools","by":"SoraVerse","len":"3:25","days":null,"counts":[0,0,0,0,0],"hue":0,"format":"film","lore":"whatif","boost":243,"url":"https://www.youtube.com/watch?v=42yUn5cm44A"},{"id":"yt-Cbz4PSWLWWk","yt":"Cbz4PSWLWWk","title":"Fallout New Vegas – 1950's Super Panavision 70","cat":"fallout","char":"New Vegas","src":"YouTube","tool":"AI tools","by":"PT5","len":"1:01","days":null,"counts":[0,0,0,0,0],"hue":0,"format":"film","lore":"whatif","boost":259,"url":"https://www.youtube.com/watch?v=Cbz4PSWLWWk"},{"id":"yt-UtOQgw7WEBU","yt":"UtOQgw7WEBU","title":"Starcraft – AI Movie Trailer","cat":"starcraft","char":"Terran","src":"YouTube","tool":"AI tools","by":"Abandoned Films","len":"1:54","days":null,"counts":[0,0,0,0,0],"hue":0,"format":"film","lore":"whatif","boost":283,"url":"https://www.youtube.com/watch?v=UtOQgw7WEBU"},{"id":"yt-3bVVIjEknwA","yt":"3bVVIjEknwA","title":"StarCraft AI Cinematic: Terran vs Zerg (The Invasion Begins)","cat":"starcraft","char":"Zerg","src":"YouTube","tool":"AI tools","by":"Sơn Tây Phạm Việt","len":"4:28","days":null,"counts":[0,0,0,0,0],"hue":0,"format":"film","lore":"lore","boost":218,"url":"https://www.youtube.com/watch?v=3bVVIjEknwA"},{"id":"yt-bF01w1BBlFQ","yt":"bF01w1BBlFQ","title":"DARK SOULS 2 – 1980s Dark Fantasy Movie","cat":"darksouls","char":"Drangleic","src":"YouTube","tool":"AI tools","by":"SoraVerse","len":"2:09","days":null,"counts":[0,0,0,0,0],"hue":0,"format":"film","lore":"whatif","boost":260,"url":"https://www.youtube.com/watch?v=bF01w1BBlFQ"},{"id":"yt-MArAJGYp81Q","yt":"MArAJGYp81Q","title":"What if DARK SOULS Was a 90s Action Movie? (AI-Generated Trailer)","cat":"darksouls","char":"Lordran","src":"YouTube","tool":"AI tools","by":"Lost Tape Cinema","len":"2:46","days":null,"counts":[0,0,0,0,0],"hue":0,"format":"film","lore":"whatif","boost":182,"url":"https://www.youtube.com/watch?v=MArAJGYp81Q"},{"id":"yt-cQkhwW-_1Xo","yt":"cQkhwW-_1Xo","title":"DARK SOULS but it's Ultra HD – AI Generated","cat":"darksouls","char":"Lordran","src":"YouTube","tool":"AI tools","by":"Illustrated","len":"1:33","days":null,"counts":[0,0,0,0,0],"hue":0,"format":"film","lore":"lore","boost":205,"url":"https://www.youtube.com/watch?v=cQkhwW-_1Xo"},{"id":"yt-UbbyOU9kQLE","yt":"UbbyOU9kQLE","title":"Diablo 2 – ACT 2 : Lut Gholein | AI Movie Trailer | 1990's Super Panavision 70 | Cinematic","cat":"diablo","char":"Lut Gholein","src":"YouTube","tool":"AI tools","by":"AI & I","len":"2:03","days":null,"counts":[0,0,0,0,0],"hue":0,"format":"film","lore":"whatif","boost":269,"url":"https://www.youtube.com/watch?v=UbbyOU9kQLE"},{"id":"yt-oq-1NLiX27A","yt":"oq-1NLiX27A","title":"DIABLO 2 – 1980s Dark Fantasy Movie","cat":"diablo","char":"Sanctuary","src":"YouTube","tool":"AI tools","by":"NovelRex","len":"1:49","days":null,"counts":[0,0,0,0,0],"hue":0,"format":"film","lore":"whatif","boost":194,"url":"https://www.youtube.com/watch?v=oq-1NLiX27A"},{"id":"yt-fTo7VUSibK4","yt":"fTo7VUSibK4","title":"THE WITCHER 3: Wild Hunt – 1980s Fantasy Adventure Movie","cat":"witcher","char":"Geralt","src":"YouTube","tool":"AI tools","by":"SoraVerse","len":"2:17","days":null,"counts":[0,0,0,0,0],"hue":0,"format":"film","lore":"whatif","boost":290,"url":"https://www.youtube.com/watch?v=fTo7VUSibK4"},{"id":"yt-ESMXomzaglQ","yt":"ESMXomzaglQ","title":"S.T.A.L.K.E.R.: CALL OF PRIPYAT | 1980's LIVE-ACTION MOVIE","cat":"stalker","char":"Pripyat","src":"YouTube","tool":"AI tools","by":"Movie Hopper","len":"3:15","days":null,"counts":[0,0,0,0,0],"hue":0,"format":"film","lore":"whatif","boost":273,"url":"https://www.youtube.com/watch?v=ESMXomzaglQ"}]);
+EPISODES.length=0;for(let i=SERIES.length-1;i>=0;i--)if(!SERIES[i].real)SERIES.splice(i,1);
+const ytFrame=id=>`<iframe src="https://www.youtube-nocookie.com/embed/${id}?rel=0" title="YouTube video player" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen style="position:absolute;inset:0;width:100%;height:100%;border:0"></iframe>`;
+let ticker=null;
+function render(){
+  const drafts={};let focusKey=null;
+  if(lastFilm===state.film&&state.view==="watch"){document.querySelectorAll(".cmform").forEach(fm=>{const v=fm.querySelector("textarea").value;if(v)drafts[fm.dataset.cparent]=v});focusKey=document.activeElement?.closest?.(".cmform")?.dataset.cparent??null}
+  lastFilm=state.view==="watch"?state.film:null;
+  renderWho();renderGuide();
+  clearInterval(ticker);ticker=null;tvNow=null;
+  ({watch:renderWatch,browse:renderBrowse,live:renderLive,liveplay:renderLivePlay,premieres:renderPremieres,tv:renderTV,battles:renderBattles,requests:renderRequests,contest:renderContest,playlists:renderPlaylists,creator:renderCreator,discord:renderDiscord,shorts:renderShorts,series:renderSeries}[state.view]||renderHomeF)();
+  paintAll();
+  document.querySelectorAll(".cmform").forEach(fm=>{const k=fm.dataset.cparent;const ta=fm.querySelector("textarea");if(drafts[k])ta.value=drafts[k];if(focusKey===k){ta.focus();ta.setSelectionRange(ta.value.length,ta.value.length)}});
+  if(state.view==="premieres")ticker=setInterval(tickPremieres,1000);
+  if(state.view==="tv")ticker=setInterval(tickTV,1000);
+  if(state.view==="contest")ticker=setInterval(()=>{const el=$("#cEnd");if(el)el.textContent=until(contestNow().end-Date.now())},1000);
+}
+function go(patch){Object.assign(state,patch);render();window.scrollTo({top:0})}
+
+/* dialogs */
+function openModal(html,onclick){$("#scrim").innerHTML=html;$("#scrim").hidden=false;$("#scrim").onclick=e=>{if(e.target===$("#scrim")||e.target.closest("[data-close]")){closeModal();return}onclick&&onclick(e)}}
+function closeModal(){$("#scrim").hidden=true;$("#scrim").onclick=null}
+function openSignin(reason){
+  openModal(`<div class="dlg" role="dialog" aria-modal="true" aria-label="Sign in"><h2>Sign in to Fanreelz</h2>
+    <p style="margin:0">${esc(reason||"Sign in to rate films, submit your own finds and keep track of what you've rated.")}</p>
+    <p class="vmeta" style="margin:0;font-size:13px">Sign-in with Google, Discord and email opens at launch. This is a preview of Fanreelz.</p>
+    <div class="row"><button class="btn" data-close>Got it</button></div></div>`);
+}
+function needAccount(reason){
+  if(acct.online&&!acct.readonly)return true;
+  if(acct.online){toast("This page is shared with you as view-only");return false}
+  openSignin(reason);return false;
+}
+function openProfile(){
+  const rated=Object.entries(myRatings).map(([id,r])=>({f:findFilm(id),r})).filter(x=>x.f).sort((a,b)=>b.r-a.r);
+  openModal(`<div class="dlg" role="dialog" aria-modal="true" aria-label="Your profile"><div class="row"><img class="avatar" id="pAv" alt="" style="width:48px;height:48px"><h2 id="pName"></h2></div>
+    <div class="vmeta">${rated.length} films rated · ${mySubs.length} submitted · signed in with your Claude account</div>
+    ${rated.length?`<ul class="plist">${rated.map(x=>`<li data-open="${esc(x.f.id)}"><span>${esc(x.f.title)}</span><span style="color:var(--star)">${"★".repeat(x.r)}</span></li>`).join("")}</ul>`:`<p class="vmeta">Nothing rated yet.</p>`}
+    <div class="row"><button class="btn ghost" data-close>Close</button></div></div>`,
+    e=>{const o=e.target.closest("[data-open]");if(o){closeModal();go({view:"watch",film:o.dataset.open})}});
+  $("#pAv").src=acct.me.avatarUrl;$("#pName").textContent=acct.me.name||"Your profile";
+}
+function openSubmit(){
+  if(!needAccount("Sign in to submit films, so others can see who found them."))return;
+  openModal(`<div class="dlg" role="dialog" aria-modal="true" aria-label="Submit a film"><h2>Submit an AI film</h2>
+   <form class="form" id="sf">
+    <label for="sUrl">Video link<input id="sUrl" type="url" required placeholder="https://youtube.com/watch?v=…"></label>
+    <label for="sTitle">Title<input id="sTitle" required maxlength="120"></label>
+    <label for="sCat">Category<select id="sCat">${GROUPS.map(g=>`<optgroup label="${esc(g.name)}">${g.cats.map(c=>`<option value="${c.id}" ${c.id===state.cat?"selected":""}>${esc(c.name)}</option>`).join("")}</optgroup>`).join("")}</select></label>
+    <label for="sChar">Character<select id="sChar"></select></label>
+    <label for="sTool">AI tool (if known)<select id="sTool">${TOOLS.map(t=>`<option>${t}</option>`).join("")}<option>Unknown</option></select></label>
+    <label for="sFmt">Format<select id="sFmt"><option value="auto">Detect from the link</option><option value="short">Short (under 90 seconds)</option><option value="film">Film</option><option value="episode">Episode of a series</option></select></label>
+    <p class="subnote" id="sDet"></p>
+    <div id="sSeries" class="form" hidden><label for="sSer">Series name<input id="sSer" maxlength="80" placeholder="e.g. Shadows of Azeroth"></label>
+      <div class="row"><label for="sSea">Season<input id="sSea" type="number" min="1" max="50" value="1" style="width:100px"></label><label for="sEp">Episode<input id="sEp" type="number" min="1" max="500" value="1" style="width:100px"></label></div></div>
+    <div class="row"><button class="btn" type="submit" id="sGo">Submit</button><button class="btn ghost" type="button" data-close>Cancel</button></div>
+   </form></div>`);
+  const fill=()=>{const c=CATS.find(c=>c.id===$("#sCat").value);$("#sChar").innerHTML=c.chars.map(ch=>`<option>${esc(ch)}</option>`).join("")};
+  fill();$("#sCat").onchange=fill;
+  const fmtNow=()=>$("#sFmt").value==="auto"?detectFormat($("#sUrl").value):$("#sFmt").value;
+  const syncFmt=()=>{const f=fmtNow();$("#sSeries").hidden=f!=="episode";$("#sDet").textContent=$("#sFmt").value==="auto"&&$("#sUrl").value?`Detected: ${{short:"Short",film:"Film",episode:"Episode of a series (playlist link)"}[f]}`:""};
+  $("#sFmt").onchange=syncFmt;$("#sUrl").oninput=syncFmt;
+  $("#sf").onsubmit=async e=>{e.preventDefault();const u=$("#sUrl").value.trim();
+    const fmt=fmtNow();if(fmt==="episode"&&!$("#sSer").value.trim()){toast("Add the series name");return}
+    if(!/^https:\/\//.test(u)){toast("Use a link that starts with https://");return}
+    const src=/tiktok/.test(u)?"TikTok":/(x\.com|twitter)/.test(u)?"X":/reddit/.test(u)?"Reddit":/vimeo/.test(u)?"Vimeo":"YouTube";
+    const f={id:"u"+Date.now().toString(36)+Math.random().toString(36).slice(2,6),title:$("#sTitle").value.trim(),cat:$("#sCat").value,char:$("#sChar").value,src,tool:$("#sTool").value,t:Date.now(),hue:Math.floor(Math.random()*360),url:u,format:fmt,...(fmt==="episode"?{seriesTitle:$("#sSer").value.trim(),season:Math.max(1,+$("#sSea").value||1),ep:Math.max(1,+$("#sEp").value||1)}:{})};
+    $("#sGo").disabled=true;
+    try{await acct.db.doc("submissions/"+acct.uid).set({films:[f,...mySubs].slice(0,200)});closeModal();toast((fmt==="short"?"Short":fmt==="episode"?"Episode":"Film")+" added to "+catName(f.cat));go({view:"home",cat:f.cat,char:null,format:fmt==="episode"?"series":fmt})}
+    catch(err){$("#sGo").disabled=false;if(err&&err.code==="invalid_argument"){acct.readonly=true;toast("This page is shared with you as view-only")}else toast("Couldn't submit the film. Try again in a moment.")}
+  };
+}
+async function saveRating(id,r){
+  const prev={...myRatings};myRatings={...myRatings,[id]:r};
+  try{await acct.db.doc("ratings/"+acct.uid).set({r:myRatings,t:Date.now()});return true}
+  catch(e){myRatings=prev;if(e&&e.code==="invalid_argument"){acct.readonly=true;toast("This page is shared with you as view-only")}else toast("Couldn't save your rating. Try again.");return false}
+}
+let tt;function toast(m){const t=$("#toast");t.textContent=m;t.hidden=false;clearTimeout(tt);tt=setTimeout(()=>t.hidden=true,2600)}
+
+/* events */
+document.addEventListener("click",async e=>{
+  if(e.target.closest("#scrim"))return;
+  if(e.target.closest("#menuBtn")){const sh=$("#shell");innerWidth<=860?sh.classList.toggle("open"):sh.classList.toggle("mini");return}
+  if(e.target.closest("#homeLogo")){go({view:"home",feed:"home",group:"All",cat:null,char:null,q:"",format:"all"});$("#q").value="";return}
+  if(e.target.closest("#signinBtn")){openSignin();return}
+  if(e.target.closest("#profileBtn")){openProfile();return}
+  if(e.target.closest("#submitBtn")){openSubmit();return}
+  const A=sel=>e.target.closest(sel);let x;
+  if(x=A("[data-csort]")){cSort=x.dataset.csort;render();return}
+  if(x=A("[data-creply]")){if(!needAccount("Sign in to reply."))return;replyTo=x.dataset.creply;render();document.querySelector(`.cmform[data-cparent="${CSS.escape(replyTo)}"] textarea`)?.focus();return}
+  if(A("[data-ccancel]")){replyTo=null;render();return}
+  if(x=A("[data-clike]")){likeComment(x.dataset.clike);return}
+  if(x=A("[data-cdel]")){deleteComment(x.dataset.cdel);return}
+  if(A("[data-creport]")){toast("Thanks. A moderator will review this comment.");return}
+  if(x=A("[data-fmtnav]")){$("#shell").classList.remove("open");go({view:"home",feed:"home",cat:null,char:null,format:x.dataset.fmtnav});return}
+  if(x=A("[data-fmt]")){state.format=x.dataset.fmt;go({});return}
+  if(x=A("[data-dur]")){state.dur=x.dataset.dur;render();return}
+  if(x=A("[data-short]")){openShorts(x.dataset.short);return}
+  if(x=A("[data-series]")){go({view:"series",series:x.dataset.series,season:1});return}
+  if(x=A("[data-season]")){state.season=+x.dataset.season;render();return}
+  if(x=A("[data-snav]")){stepShort(+x.dataset.snav);return}
+  if(x=A("[data-open-full]")){go({view:"watch",film:x.dataset.openFull});return}
+  if(x=A("[data-ctab]")){state.ctab=x.dataset.ctab;render();return}
+  if(A("#submitBtn2")){openSubmit();return}
+  if(A("[data-family]")){state.family=!state.family;store.set("fr_family",state.family);render();toast(state.family?"Family-friendly mode on":"Family-friendly mode off");return}
+  if(A("[data-family-info]")){toast("Marked as suitable for younger viewers");return}
+  if(A("[data-news]")){toggleNewsletter();return}
+  if(x=A("[data-lore]")){state.lore=x.dataset.lore;render();return}
+  if(x=A("[data-lore-go]")){go({view:"home",feed:"home",cat:x.dataset.cat,char:null,lore:x.dataset.loreGo});return}
+  if(x=A("[data-bpool]")){battle.pool=x.dataset.bpool;battle.pair=null;render();return}
+  if(x=A("[data-vote]")){castVote(x.dataset.vote);return}
+  if(x=A("[data-rsort]")){reqSort=x.dataset.rsort;render();return}
+  if(A("[data-newreq]")){openRequest("");return}
+  if(x=A("[data-upvote]")){toggleMap("upvotes",upDocs,x.dataset.upvote,"Sign in to vote for requests.");return}
+  if(x=A("[data-claim]")){toggleMap("claims",claimDocs,x.dataset.claim,"Sign in to take on a request.");return}
+  if(x=A("[data-creator]")){go({view:"creator",creator:x.dataset.creator,ctab:"film"});return}
+  if(x=A("[data-follow]")){toggleFollow(x.dataset.follow);return}
+  if(x=A("[data-tip]")){openTip(x.dataset.tip,x.dataset.tipfilm||"");return}
+  if(x=A("[data-commission]")){openRequest(x.dataset.commission);return}
+  if(x=A("[data-save]")){openSave(x.dataset.save);return}
+  if(x=A("[data-claimorig]")){openClaim(findFilm(x.dataset.claimorig));return}
+  if(A("[data-report]")){toast("Thanks. In the finished site a moderator would review this report.");return}
+  if(A("[data-copyprompt]")){const t=$("#promptText")?.textContent||"";try{await navigator.clipboard.writeText(t);toast("Prompt copied")}catch{const r=document.createRange();r.selectNodeContents($("#promptText"));const sel=getSelection();sel.removeAllRanges();sel.addRange(r);toast("Prompt selected, press Ctrl+C to copy")}return}
+  if(x=A("[data-soon]")){toast(x.dataset.soon+" is a concept and isn't available yet");return}
+  if(A("[data-plnew]")){if(!needAccount("Sign in to make playlists."))return;openModal(`<div class="dlg" role="dialog" aria-modal="true" aria-label="New playlist"><h2>New playlist</h2><form class="form" id="pln"><label for="plnName">Name<input id="plnName" required maxlength="80"></label><div class="row"><button class="btn" type="submit">Create</button><button class="btn ghost" type="button" data-close>Cancel</button></div></form></div>`);$("#pln").onsubmit=async ev=>{ev.preventDefault();const l={id:"pl"+Date.now().toString(36),name:$("#plnName").value.trim(),films:[]};if(await saveLists([l,...myLists()].slice(0,50))){closeModal();openList=l.id;render()}};return}
+  if(x=A("[data-plopen]")){openList=x.dataset.plopen||null;render();window.scrollTo({top:0});return}
+  if(x=A("[data-plremove]")){const [lid,fid]=x.dataset.plremove.split("|");await saveLists(myLists().map(l=>l.id===lid?{...l,films:l.films.filter(i=>i!==fid)}:l));render();return}
+  if(x=A("[data-pldelete]")){const lid=x.dataset.pldelete;if(await saveLists(myLists().filter(l=>l.id!==lid))){openList=null;render();toast("Playlist deleted")}return}
+  const vw=e.target.closest("[data-view]");if(vw){$("#shell").classList.remove("open");go({view:vw.dataset.view,cat:null,char:null});return}
+  const lo=e.target.closest("[data-liveopen]");if(lo){go({view:"liveplay",liveId:lo.dataset.liveopen});return}
+  const lp=e.target.closest("[data-liveplat]");if(lp){state.livePlat=lp.dataset.liveplat;render();return}
+  const tvb=e.target.closest("[data-tv]");if(tvb){state.tv=tvb.dataset.tv;render();return}
+  const rm=e.target.closest("[data-remind]");if(rm){const id=rm.dataset.remind;if(reminders[id])delete reminders[id];else reminders[id]=true;store.set("fr_remind",reminders);render();toast(reminders[id]?"Reminder saved in this browser":"Reminder removed");return}
+  const br=e.target.closest("[data-browse]");if(br){$("#shell").classList.remove("open");go({view:"browse",bgroup:br.dataset.browse,azLimit:60,cat:null,char:null});return}
+  if(e.target.closest("[data-more]")){state.azLimit+=60;render();return}
+  const fd=e.target.closest("[data-feed]");if(fd){$("#shell").classList.remove("open");go({view:"home",feed:fd.dataset.feed,cat:null,char:null,format:fd.dataset.feed==="home"?"all":state.format});return}
+  const c=e.target.closest("[data-cat]");if(c){$("#shell").classList.remove("open");go({view:"home",feed:"home",cat:c.dataset.cat,char:c.dataset.charGo||null,lore:"all"});return}
+  const g=e.target.closest("[data-group]");if(g){go({group:g.dataset.group});return}
+  const ch=e.target.closest("[data-char]");if(ch){go({char:ch.dataset.char||null});return}
+  const r=e.target.closest("[data-rate]");if(r){
+    if(!needAccount("Sign in to rate films. Your ratings count toward the top lists everyone sees."))return;
+    const k=+r.dataset.rate;if(await saveRating(state.film,k)){render();toast(`You rated it ${k} out of 5`)}return}
+  const o=e.target.closest("[data-open]");if(o){const f=findFilm(o.dataset.open);if(!f)return;if(f.format==="short"){openShorts(f.id);return}if(f.format==="episode"){watched[f.id]=true;store.set("fr_watched",watched)}go({view:"watch",film:f.id})}
+});
+document.addEventListener("keydown",e=>{if(e.key==="Escape")closeModal()});
+document.addEventListener("submit",async e=>{const fm=e.target.closest(".cmform");if(!fm)return;e.preventDefault();const btn=fm.querySelector('button[type="submit"]');btn.disabled=true;const ok=await postComment(fm.dataset.cparent,fm.querySelector("textarea").value);if(!ok&&document.body.contains(btn))btn.disabled=false});
+document.addEventListener("keydown",e=>{if(e.key==="Enter"&&(e.ctrlKey||e.metaKey)&&e.target.closest(".cmform")){e.preventDefault();e.target.closest(".cmform").requestSubmit()}});
+$("#sform").onsubmit=e=>{e.preventDefault();go({view:"home",feed:"home",q:$("#q").value.trim()})};
+$("#q").oninput=e=>{if(!e.target.value&&state.q)go({q:""})};
+let rt;addEventListener("resize",()=>{clearTimeout(rt);rt=setTimeout(()=>paintAll(),150)});
+render();
+loadLive();setInterval(()=>{if(!document.hidden)loadLive()},120000);
+
+async function resolveNames(){
+  if(!acct.user)return;const ids=[...new Set(sharedSubs.map(f=>f.byId).filter(Boolean))];if(!ids.length)return;
+  const ps=await acct.user.profiles(ids);let ch=false;for(const id of ids){const n=ps[id]?.name||"";if(names[id]!==n){names[id]=n;ch=true}}if(ch)render();
+}
+(async()=>{
+  if(!window.claude?.use)return;
+  const [user,db]=await Promise.all([claude.use("user"),claude.use("db")]);
+  if(!user||!db)return;const me=await user.me();if(!me.id)return;
+  Object.assign(acct,{user,db,uid:me.id,me,online:true});render();
+  db.collection("ratings").onSnapshot(snap=>{const agg={};
+    for(const d of snap.docs){const r=d.data()?.r;if(!r||typeof r!=="object")continue;
+      for(const [fid,v] of Object.entries(r)){const k=Math.round(+v);if(k<1||k>5)continue;(agg[fid]||(agg[fid]=[0,0,0,0,0]))[k-1]++}
+      if(d.id===acct.uid)myRatings={...r};}
+    community=agg;render();},()=>{});
+  startCommunity(db);
+  db.collection("submissions").onSnapshot(snap=>{const all=[],mine=[];
+    for(const d of snap.docs){const films=Array.isArray(d.data()?.films)?d.data().films:[];
+      for(const f of films){if(!f||!CATS.some(c=>c.id===f.cat)||typeof f.title!=="string")continue;
+        all.push({id:String(f.id),title:f.title.slice(0,120),cat:f.cat,char:String(f.char||""),src:String(f.src||"YouTube"),tool:String(f.tool||"Unknown"),len:"–",days:daysSince(+f.t||Date.now()),counts:[0,0,0,0,0],hue:(+f.hue||0)%360,url:/^https:\/\//.test(f.url)?f.url:"",byId:d.id,format:["short","film","episode"].includes(f.format)?f.format:"film",seriesTitle:String(f.seriesTitle||"").slice(0,80),season:Math.max(1,+f.season||1),ep:Math.max(1,+f.ep||1)});
+        if(d.id===acct.uid)mine.push(f);}}
+    sharedSubs=all;mySubs=mine;render();resolveNames();},()=>{});
+})();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,4 @@
+# Fanreelz on Netlify: the site is plain files, no build step.
+[build]
+  publish = "."
+  functions = "netlify/functions"
