@@ -654,7 +654,7 @@ function liveCat(l){const t=(l.title+" "+(l.game||"")).toLowerCase();let best=nu
 function renderLive(){
   const plat=state.livePlat||"All";
   const head=`<h1 class="sect-h" style="font-size:24px;margin-top:16px">${icon("live")} Live now</h1>
-    <p class="lede">Creators making AI films live on Twitch and YouTube right now. The list updates by itself every couple of minutes.</p>${liveState.demo?`<div class="familybar">Test mode: showing popular Twitch streams on any topic, so you can check that Live now works. Remove ?livetest from the address to see the real list.</div>`:""}`;
+    <p class="lede">Creators making AI films live on Twitch and YouTube right now. The list updates by itself every couple of minutes.</p>${liveState.demo?`<div class="familybar">Test mode: showing popular Twitch streams and unfiltered YouTube results, so you can check that Live now works. Remove ?livetest from the address to see the real list.</div>`:""}`;
   if(!LIVE.length){$("#main").innerHTML=head+`<div class="empty">${icon("live")}<h2 style="margin:10px 0 6px;font-size:18px;color:var(--fg)">Nobody is live right now</h2><p style="margin:0">${liveState.checked?`Last checked ${agoT(Date.parse(liveState.checked))}.`:"Checking Twitch and YouTube…"} When a creator goes live making AI films, they show up here.</p></div>`;return}
   const list=LIVE.filter(l=>plat==="All"||l.platform===plat).sort((a,b)=>b.viewers-a.viewers);
   const total=list.reduce((a,l)=>a+l.viewers,0);
@@ -668,6 +668,9 @@ function renderLivePlay(){
   if(!l){$("#main").innerHTML=`<div class="empty" style="margin-top:40px"><h2 style="margin:0 0 6px;font-size:18px;color:var(--fg)">This stream has ended</h2><p style="margin:0 0 14px">The creator is no longer live.</p><button class="btn" data-view="live">See who is live</button></div>`;return}
   const host=location.hostname,parents=[...new Set([host,host.replace(/^www\./,""),"www."+host.replace(/^www\./,"")])].map(h=>"parent="+encodeURIComponent(h)).join("&");
   const dark=matchMedia("(prefers-color-scheme: dark)").matches;
+  if(l.platform==="YouTube"&&l.embeddable===false){$("#main").innerHTML=`<div class="watch"><div><a class="player" href="${esc(l.url)}" target="_blank" rel="noopener" style="display:block">${l.thumb?`<img class="ytthumb" src="${esc(l.thumb)}" alt="">`:""}<span class="play"><span><svg viewBox="0 0 12 12"><path d="M2 1l9 5-9 5z"/></svg>Watch live on YouTube</span></span></a>
+    <h1 class="wtitle"><span class="nowtag">LIVE</span> ${esc(l.title)}</h1><div class="wbar"><div class="owner">${cav(l.ch,40)}<div><b>${esc(l.ch)}</b><small>${fmtN(l.viewers)} watching on YouTube</small></div></div></div>
+    <p class="vmeta" style="font-size:12px;margin-top:12px">The creator doesn't allow this stream to play on other sites, so it opens on YouTube.</p></div></div>`;return}
   const player=l.platform==="Twitch"?`https://player.twitch.tv/?channel=${encodeURIComponent(l.channel)}&${parents}&autoplay=true&muted=false`:`https://www.youtube-nocookie.com/embed/${encodeURIComponent(l.video)}?autoplay=1&rel=0`;
   const chat=l.platform==="Twitch"?`https://www.twitch.tv/embed/${encodeURIComponent(l.channel)}/chat?${parents}${dark?"&darkpopout":""}`:`https://www.youtube.com/live_chat?v=${encodeURIComponent(l.video)}&embed_domain=${encodeURIComponent(host)}`;
   const c=liveCat(l);
@@ -685,7 +688,7 @@ async function loadLive(){
   if(!/^https?:$/.test(location.protocol))return;
   const get=u=>fetch(u,{headers:{Accept:"application/json"}}).then(r=>r.ok?r.json():{streams:[]}).catch(()=>({streams:[]}));
   const demo=new URLSearchParams(location.search).has("livetest");liveState.demo=demo;
-  const [tw,yt]=await Promise.all([get("/api/live"+(demo?"?demo=1":"")),demo?{streams:[]}:get("/api/live-youtube")]);
+  const [tw,yt]=await Promise.all([get("/api/live"+(demo?"?demo=1":"")),get("/api/live-youtube"+(demo?"?demo=1":""))]);
   const next=[...(tw.streams||[]),...(yt.streams||[])].filter(l=>l&&l.id&&l.title);
   liveState.checked=tw.checked||yt.checked||new Date().toISOString();
   const changed=JSON.stringify(next.map(l=>[l.id,l.viewers]))!==JSON.stringify(LIVE.map(l=>[l.id,l.viewers]));
