@@ -1657,7 +1657,12 @@ async function startSupabase(){
   let cfg={};try{cfg=await (await fetch("/api/config")).json()}catch(e){return null}
   if(!cfg.supabaseUrl||!cfg.supabaseAnonKey)return null;
   try{await loadScript("https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js")}catch(e){return null}
-  sb=window.supabase.createClient(cfg.supabaseUrl,cfg.supabaseAnonKey,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true,flowType:"pkce"}});
+  // Our own storage for the sign-in: kept in memory too, and every removal is logged, so a lost sign-in can be traced.
+  const mem={},sbStorage={
+    getItem:k=>{try{const v=localStorage.getItem(k);if(v!=null)return v}catch(e){}return mem[k]??null},
+    setItem:(k,v)=>{mem[k]=v;try{localStorage.setItem(k,v)}catch(e){console.warn("[fanreelz auth] could not save sign-in in this browser:",e.message)}},
+    removeItem:k=>{console.warn("[fanreelz auth] sign-in data removed:",k);console.trace();delete mem[k];try{localStorage.removeItem(k)}catch(e){}}};
+  sb=window.supabase.createClient(cfg.supabaseUrl,cfg.supabaseAnonKey,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true,flowType:"pkce",storage:sbStorage,debug:/[?&]authdebug/.test(location.search)}});
   const {data:{session}}=await sb.auth.getSession();
   {const q=new URLSearchParams(location.search),h=new URLSearchParams(location.hash.slice(1));const er=q.get("error_description")||h.get("error_description");if(er)setTimeout(()=>toast("Sign-in failed: "+er.slice(0,140)),600)}
   if(/[?&](code|error)=/.test(location.search)){const u=new URL(location.href);["code","error","error_description","error_code"].forEach(k=>u.searchParams.delete(k));history.replaceState(history.state,"",u.pathname+u.search+u.hash)}
