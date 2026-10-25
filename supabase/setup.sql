@@ -66,3 +66,9 @@ create policy "delete own docs" on public.docs for delete using (owner = auth.ui
 do $$ begin
   alter publication supabase_realtime add table public.docs;
 exception when duplicate_object then null; end $$;
+
+-- 4. Access for the website (needed on newer Supabase projects, harmless on older ones)
+grant usage on schema public to anon, authenticated;
+grant select on public.docs, public.profiles to anon, authenticated;
+grant insert, update, delete on public.docs to authenticated;
+grant update on public.profiles to authenticated;

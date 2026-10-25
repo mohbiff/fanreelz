@@ -828,7 +828,7 @@ let allVotes=[],myVotes=[],reqDocs={},upDocs={},claimDocs={},plDocs={},myFollows
 const docOf=(col,uid)=>acct.db.doc(col+"/"+uid);
 async function writeOwn(col,data){
   try{await docOf(col,acct.uid).set(data);return true}
-  catch(e){if(e&&e.code==="invalid_argument"){acct.readonly=true;toast("This page is shared with you as view-only")}else toast("Couldn't save. Try again in a moment.");return false}
+  catch(e){if(e&&e.code==="invalid_argument"){acct.readonly=true;toast("This page is shared with you as view-only")}else{console.warn("Fanreelz save failed",e);toast("Couldn't save"+(sb&&e&&e.message?": "+String(e.message).slice(0,120):". Try again in a moment."))}return false}
 }
 
 /* ---------- Fan Battles ---------- */
@@ -1547,9 +1547,9 @@ function openSubmit(){
 async function saveRating(id,r){
   const prev={...myRatings};myRatings={...myRatings,[id]:r};
   try{await acct.db.doc("ratings/"+acct.uid).set({r:myRatings,t:Date.now()});return true}
-  catch(e){myRatings=prev;if(e&&e.code==="invalid_argument"){acct.readonly=true;toast("This page is shared with you as view-only")}else toast("Couldn't save your rating. Try again.");return false}
+  catch(e){myRatings=prev;if(e&&e.code==="invalid_argument"){acct.readonly=true;toast("This page is shared with you as view-only")}else{console.warn("Fanreelz rating failed",e);toast("Couldn't save your rating"+(sb&&e&&e.message?": "+String(e.message).slice(0,120):". Try again."))}return false}
 }
-let tt;function toast(m){const t=$("#toast");t.textContent=m;t.hidden=false;clearTimeout(tt);tt=setTimeout(()=>t.hidden=true,2600)}
+let tt;function toast(m){const t=$("#toast");t.textContent=m;t.hidden=false;clearTimeout(tt);tt=setTimeout(()=>t.hidden=true,m.length>60?6000:2600)}
 
 /* events */
 document.addEventListener("click",async e=>{
@@ -1659,6 +1659,7 @@ async function startSupabase(){
   try{await loadScript("https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js")}catch(e){return null}
   sb=window.supabase.createClient(cfg.supabaseUrl,cfg.supabaseAnonKey,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true,flowType:"pkce"}});
   const {data:{session}}=await sb.auth.getSession();
+  {const q=new URLSearchParams(location.search),h=new URLSearchParams(location.hash.slice(1));const er=q.get("error_description")||h.get("error_description");if(er)setTimeout(()=>toast("Sign-in failed: "+er.slice(0,140)),600)}
   if(/[?&](code|error)=/.test(location.search)){const u=new URL(location.href);["code","error","error_description","error_code"].forEach(k=>u.searchParams.delete(k));history.replaceState(history.state,"",u.pathname+u.search+u.hash)}
   let signedIn=!!session;
   sb.auth.onAuthStateChange((ev,sess)=>{if(!!sess!==signedIn)location.reload()});
