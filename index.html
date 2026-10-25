@@ -688,7 +688,9 @@ function paintAll(root=document){root.querySelectorAll("canvas[data-f]").forEach
 /* Fanreelz views: one per film per visit, counted in the database (table film_views) */
 let VIEWS={};const counted=new Set();
 const viewsOf=f=>VIEWS[f.id]||0;
-const viewTxt=f=>{const v=viewsOf(f);return v?`${fmtN(v)} view${v===1?"":"s"} · `:""};
+/* Fanreelz views are counted from day one but only shown from 100 up; until then the YouTube count is shown */
+const VIEW_MIN=100;
+const viewTxt=f=>{const v=viewsOf(f);return v>=VIEW_MIN?`${fmtN(v)} views · `:f.ytViews?`${fmtN(f.ytViews)} YouTube views · `:""};
 function countView(f){if(!f||counted.has(f.id))return;let seen=[];try{seen=JSON.parse(sessionStorage.getItem("fr_seen")||"[]")}catch(e){}
   counted.add(f.id);if(seen.includes(f.id))return;VIEWS[f.id]=viewsOf(f)+1;
   try{sessionStorage.setItem("fr_seen",JSON.stringify([...seen,f.id].slice(-500)))}catch(e){}
@@ -734,6 +736,7 @@ function toggleShortsFull(force){
       if(!on&&document.fullscreenElement)document.exitFullscreen().catch(()=>{})}catch(e){}
   if(state.view==="shorts")render();
 }
+["fullscreenchange","webkitfullscreenchange"].forEach(ev=>document.addEventListener(ev,()=>{if(!fsEl()&&fsPending){fsPending=false;setTimeout(render,50)}}));
 document.addEventListener("fullscreenchange",()=>{if(!document.fullscreenElement&&document.body.classList.contains("spfs")){document.body.classList.remove("spfs");if(state.view==="shorts")render()}});
 document.addEventListener("keydown",e=>{if(e.key==="Escape"&&document.body.classList.contains("spfs"))toggleShortsFull(false)});
 function setTheme(t){try{localStorage.setItem("fr_theme",t)}catch(e){}document.documentElement.dataset.theme=t;render()}
@@ -806,6 +809,7 @@ function renderWatch(){
   addHistory(state.film);
   const f=findFilm(state.film);if(!f){state.view="home";return renderHome()}
   const s=stats(f),max=Math.max(...s.c),mine=myRatings[f.id]||0;countView(f);
+  let keepYt=null;{const old=document.querySelector(".player iframe");if(f.yt&&old&&old.dataset.fid==="yt-"+f.yt&&document.body.moveBefore){try{$("#frameHold").moveBefore(old,null);keepYt=old}catch(e){keepYt=null}}}
   const next=nextFor(f);
   const url=f.url||"https://www.youtube.com/results?search_query="+encodeURIComponent(f.title+" AI film");
   $("#main").innerHTML=`<div class="watch"><div>
@@ -813,7 +817,7 @@ function renderWatch(){
     ${f.format==="episode"?`<button class="serieslink" data-series="${esc(f.seriesId)}">${esc(findSeries(f.seriesId)?.title||"Series")} · Season ${f.season}, Episode ${f.ep}</button>`:""}<h1 class="wtitle" ${f.format==="episode"?'style="margin-top:4px"':""}>${esc(f.title)}${f.real?'<span class="pill">Real</span>':""}${isVerified(f)?'<span class="pill">Verified original</span>':""}</h1>
     <div class="wbar">${(f.real||f.yt||f.tt||f.ig||f.vm||f.dm)?`<div class="owner">${cav(byName(f),40)}<div><b>${esc(byName(f)||"YouTube creator")}</b><small>${esc(catName(f.cat))} · ${esc(f.char)}</small></div></div>`:`<button class="owner link" data-creator="${esc(f.byId||f.by)}">${cav(byName(f),40)}<div><b>${esc(byName(f)||"YouTube creator")}</b><small>${fmtN(followerCount(f.byId||f.by))} followers · ${esc(catName(f.cat))}</small></div></button>`}
       <div class="ratebox" role="group" aria-label="Rate this film"><span>${mine?"Your rating":"Rate"}</span>${[1,2,3,4,5].map(k=>`<button data-rate="${k}" class="${k<=mine?"on":""}" aria-label="${k} stars">★</button>`).join("")}</div></div>
-    <div class="desc"><div class="top2">${viewsOf(f).toLocaleString("en-US")} view${viewsOf(f)===1?"":"s"} on Fanreelz${f.ytViews?` · ${fmtN(f.ytViews)} on YouTube`:""} · ${s.n?`★ ${s.avg.toFixed(1)} from ${s.n.toLocaleString("en-US")} ratings`:"No ratings yet"} · ${f.days==null?"":ago(f.days)+" · "}${esc(f.src)} · made with ${esc(f.tool)}</div>
+    <div class="desc"><div class="top2">${[viewsOf(f)>=VIEW_MIN?viewsOf(f).toLocaleString("en-US")+" views on Fanreelz":"",f.ytViews?f.ytViews.toLocaleString("en-US")+" views on YouTube":""].filter(Boolean).map(x=>x+" · ").join("")}${s.n?`★ ${s.avg.toFixed(1)} from ${s.n.toLocaleString("en-US")} ratings`:"No ratings yet"} · ${f.days==null?"":ago(f.days)+" · "}${esc(f.src)} · made with ${esc(f.tool)}</div>
       <div class="dist">${[5,4,3,2,1].map(k=>`<span>${k}★</span><span class="bar"><i style="width:${max?s.c[k-1]/max*100:0}%"></i></span><span>${fmtN(s.c[k-1])}</span>`).join("")}</div>
       <div class="tags"><button data-cat="${f.cat}">${esc(catName(f.cat))}</button><button data-cat="${f.cat}" data-char-go="${esc(f.char)}">${esc(f.char)}</button><button data-cat="${f.cat}" data-lore-go="${loreOf(f)}">${loreOf(f)==="lore"?"Lore-accurate":"What if"}</button>${isKids(f)?'<button data-family-info="">Family-friendly</button>':""}</div>
       ${f.real||f.yt||f.tt||f.ig||f.vm||f.dm||f.byId?"":`<div class="howmade"><b>How it was made</b><div class="vmeta">Tool: ${esc(f.tool)} · Prompt shared by ${esc(byName(f)||"YouTube creator")}</div><div class="prompt" id="promptText">${esc(promptOf(f))}</div><div class="row"><button class="btn ghost" data-copyprompt="" style="padding:6px 12px">Copy prompt</button></div></div>`}
@@ -821,7 +825,7 @@ function renderWatch(){
     <div class="wactions">${f.real||f.yt||f.tt||f.ig||f.vm||f.dm?"":`<button data-tip="${esc(f.byId||f.by)}" data-tipfilm="${esc(f.id)}">${icon("heart")}Tip</button>`}<button data-save="${esc(f.id)}">${icon("save")}Save</button><button data-share="${esc(f.id)}">${icon("share")}Share</button><button data-later="${esc(f.id)}" class="${myLater.some(x=>x.id===f.id)?"on":""}">${icon("clock")}${myLater.some(x=>x.id===f.id)?"Saved":"Watch later"}</button>${isVerified(f)?"":`<button data-claimorig="${esc(f.id)}">${icon("shield")}Is this yours?</button>`}<button data-report="${esc(f.id)}">${icon("flag")}Report re-upload</button></div>
   </div><aside class="upnext"><h3>${f.format==="episode"?"Next episodes":"Up next"}</h3>${next.map(x=>`<button class="mini-v" data-open="${esc(x.id)}"><div class="thumb"><canvas data-f="${esc(x.id)}"></canvas><span class="len">${esc(x.len)}</span></div><div class="vtext"><h4 class="vtitle">${esc(x.title)}</h4><div class="vmeta">${esc(byName(x)||"YouTube creator")}</div><div class="vmeta">${metaLine(x)}</div></div></button>`).join("")}</aside></div>`;
   $(".watch>div").insertAdjacentHTML("beforeend",commentsHtml(f));
-  if(f.yt){$(".player").innerHTML=ytFrame(f.yt);$(".player").insertAdjacentHTML("afterend",`<div class="ythelp">${f.age?'<b>18+</b>Age-restricted on YouTube. ':''}Does YouTube ask you to sign in? Allow cookies for youtube.com in this browser, or <a href="${esc(f.url||"https://www.youtube.com/watch?v="+f.yt)}" target="_blank" rel="noopener">watch on YouTube ↗</a></div>`)}
+  if(f.yt){if(keepYt){const pl=$(".player");pl.innerHTML="";try{pl.moveBefore(keepYt,null)}catch(e){pl.appendChild(keepYt)}}else $(".player").innerHTML=ytFrame(f.yt);$(".player").insertAdjacentHTML("afterend",`<div class="ythelp">${f.age?'<b>18+</b>Age-restricted on YouTube. ':''}Does YouTube ask you to sign in? Allow cookies for youtube.com in this browser, or <a href="${esc(f.url||"https://www.youtube.com/watch?v="+f.yt)}" target="_blank" rel="noopener">watch on YouTube ↗</a></div>`)}
   if(f.tt)$(".player").innerHTML=ttFrame(f.tt);
   if(f.ig||f.vm||f.dm)$(".player").innerHTML=extFrame(f);
 }
@@ -1760,7 +1764,10 @@ const ttFrame=id=>`<iframe data-fid="tt-${id}" src="https://www.tiktok.com/playe
 const ytFrame=id=>`<iframe data-fid="yt-${id}" src="https://www.youtube.com/embed/${id}?rel=0&autoplay=1&playsinline=1&enablejsapi=1" title="YouTube video player" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen style="position:absolute;inset:0;width:100%;height:100%;border:0"></iframe>`;
 let ticker=null;
 let renderHard=false;
+let fsPending=false;
+const fsEl=()=>document.fullscreenElement||document.webkitFullscreenElement||null;
 function render(){
+  if(!renderHard&&fsEl()&&!document.body.classList.contains("spfs")){fsPending=true;return}
   if(state.view==="liveplay"&&!renderHard&&$("#lchat")&&$("#lchat").dataset.live===state.liveId){renderGuide();updateLiveChat();return}
   renderHard=false;stopPreview();
   const drafts={};let focusKey=null;
