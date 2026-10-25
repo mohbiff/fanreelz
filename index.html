@@ -18,7 +18,8 @@
 <meta property="og:url" content="https://fanreelz.com/">
 <meta property="og:type" content="website">
 <meta name="twitter:card" content="summary">
-<style>html{color-scheme:light}:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px/1.45 system-ui,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style>
+<script>try{document.documentElement.dataset.theme=localStorage.getItem("fr_theme")||"dark"}catch(e){document.documentElement.dataset.theme="dark"}</script>
+<style>html{color-scheme:dark}:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px/1.45 system-ui,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style>
 </head>
 <body>
 <title>Fanreelz – Where AI fan films find their fans</title>
@@ -366,6 +367,17 @@ img.cav.uimg{object-fit:cover;background:var(--chip);display:block}
 .gi.youhead{font-weight:700;justify-content:flex-start}.gi.youhead .i{width:16px;height:16px;margin-left:2px}
 .youshelf{margin-bottom:34px}.youshelf .wbar{margin:0 0 12px}.youshelf .grid{grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:28px 14px}
 .youhero{display:flex;align-items:center;gap:16px;margin:20px 0 30px}.youhero img{width:72px;height:72px;border-radius:50%}.youhero h1{margin:0;font-size:26px}
+.tabbar{display:none}
+@media (max-width:860px){
+  .tabbar{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:40;height:calc(54px + env(safe-area-inset-bottom,0px));padding-bottom:env(safe-area-inset-bottom,0px);background:var(--bg);border-top:1px solid var(--line)}
+  .tb{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;background:none;border:0;color:var(--fg);font:inherit;font-size:10.5px;cursor:pointer;padding:0}
+  .tb .i{width:24px;height:24px}.tb.on{font-weight:700}.tb.on .i{stroke-width:2.4}
+  .tbplus .i{width:30px;height:30px;padding:4px;border:1.5px solid var(--fg);border-radius:50%}
+  .tbav{width:24px;height:24px;border-radius:50%;object-fit:cover}
+  main{padding-bottom:calc(70px + env(safe-area-inset-bottom,0px))!important}
+  .toast{bottom:calc(66px + env(safe-area-inset-bottom,0px))!important}
+  .createbtn{display:none!important}
+}
 .authbtns{display:flex;flex-direction:column;gap:10px;margin-top:4px}
 .authbtn{display:flex;align-items:center;justify-content:center;gap:10px;height:46px;border-radius:12px;border:1px solid var(--line);background:var(--surface);color:var(--fg);font:inherit;font-weight:600;font-size:15px;cursor:pointer}
 .authbtn:hover{background:var(--hover)}
@@ -472,6 +484,7 @@ img.cav.uimg{object-fit:cover;background:var(--chip);display:block}
   <nav class="guide" id="guide" aria-label="Guide"></nav>
   <main id="main"></main>
 </div>
+<nav class="tabbar" id="tabbar" aria-label="Main"></nav>
 <div class="scrim" id="scrim" hidden></div>
 <div class="toast" id="toast" hidden></div>
 <script>
@@ -627,7 +640,17 @@ function card(f,rank){
   <div class="vmeta">${metaLine(f)}</div></div></div></button>`;
 }
 
-function renderGuide(){
+function renderTabbar(){
+  const t=(on,attr,ic,label)=>`<button class="tb ${on?"on":""}" ${attr} aria-label="${label}">${icon(ic)}<span>${label}</span></button>`;
+  const youOn=["you","history","later","liked","yourvideos","user","playlists"].includes(state.view);
+  $("#tabbar").innerHTML=t(state.view==="home"&&!state.cat&&state.feed==="home"&&!state.q,'data-feed="home"',"home","Home")+
+    t(state.view==="shorts",'data-tabshorts=""',"short","Shorts")+
+    `<button class="tb tbplus" id="submitBtn2b" aria-label="Submit a film"><svg class="i" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button>`+
+    t(state.view==="live"||state.view==="liveplay",'data-view="live"',"live","Live")+
+    `<button class="tb ${youOn?"on":""}" data-view="you" aria-label="You">${acct.online&&acct.me?.avatarUrl?`<img class="tbav" src="${esc(acct.me.avatarUrl)}" alt="" referrerpolicy="no-referrer">`:icon("user")}<span>You</span></button>`;
+}
+function setTheme(t){try{localStorage.setItem("fr_theme",t)}catch(e){}document.documentElement.dataset.theme=t;render()}
+function renderGuide(){renderTabbar();
   const fi=(k,label,ic)=>`<button class="gi ${state.view==="home"&&!state.cat&&state.feed===k&&(k!=="home"||state.format==="all")?"on":""}" data-feed="${k}">${icon(ic)}<span>${label}</span></button>`;
   const fnav=(k,label)=>`<button class="gi ${(state.view==="home"&&!state.cat&&state.feed==="home"&&state.format===k)||(k==="short"&&state.view==="shorts")||(k==="series"&&state.view==="series")?"on":""}" data-fmtnav="${k}">${icon(k)}<span>${label}</span></button>`;
   const T=trendingByGroup();
@@ -641,6 +664,7 @@ function renderGuide(){
     `<hr><h4>Community</h4>`+[["battles","Fan Battles","battle"],["requests","Requests","req"],["contest","Weekly contest","trophy"],["playlists","Playlists","list"],["discord","Discord bot","bot"]].map(([v,l,ic])=>`<button class="gi ${state.view===v?"on":""}" data-view="${v}">${icon(ic)}<span>${l}</span></button>`).join("")+
     `<button class="gi ${state.view==="about"?"on":""}" data-view="about">${icon("info")}<span>About us</span></button>`+
     (matchMedia("(display-mode: standalone)").matches||navigator.standalone?"":`<button class="gi" data-install="">${icon("save")}<span>Install app</span></button>`)+
+    `<button class="gi" data-theme-next="">${icon("info")}<span>Appearance: ${({dark:"Dark",light:"Light",system:"Device theme"})[document.documentElement.dataset.theme]||"Dark"}</span></button>`+
     GROUPS.map(g=>{const top=T[g.name].slice(0,3).map(x=>x.c);
       if(state.cat&&g.cats.some(c=>c.id===state.cat)&&!top.some(c=>c.id===state.cat))top.push(CATS.find(c=>c.id===state.cat));
       return `<hr><h4>${esc(g.name)}<span class="trendlbl">Trending</span></h4>`+top.map((c,i)=>`<button class="gi cat ${state.cat===c.id?"on":""}" data-cat="${c.id}"><span class="dot" style="background:hsl(${hueOf(c.id)},50%,42%)">${esc(c.name[0])}</span><span>${esc(c.name)}</span></button>`).join("")+
@@ -767,7 +791,7 @@ function renderLivePlay(){
   const l=LIVE.find(x=>x.id===state.liveId);
   if(!l){$("#main").innerHTML=`<div class="empty" style="margin-top:40px"><h2 style="margin:0 0 6px;font-size:18px;color:var(--fg)">This stream has ended</h2><p style="margin:0 0 14px">The creator is no longer live.</p><button class="btn" data-view="live">See who is live</button></div>`;return}
   const host=location.hostname,parents=[...new Set([host,host.replace(/^www\./,""),"www."+host.replace(/^www\./,"")])].map(h=>"parent="+encodeURIComponent(h)).join("&");
-  const dark=matchMedia("(prefers-color-scheme: dark)").matches;
+  const th=document.documentElement.dataset.theme,dark=th==="dark"||(th!=="light"&&matchMedia("(prefers-color-scheme: dark)").matches);
   if(l.platform==="YouTube"&&l.embeddable===false){$("#main").innerHTML=`<div class="watch"><div><a class="player" href="${esc(l.url)}" target="_blank" rel="noopener" style="display:block">${l.thumb?`<img class="ytthumb" src="${esc(l.thumb)}" alt="">`:""}<span class="play"><span><svg viewBox="0 0 12 12"><path d="M2 1l9 5-9 5z"/></svg>Watch live on YouTube</span></span></a>
     <h1 class="wtitle"><span class="nowtag">LIVE</span> ${esc(l.title)}</h1><div class="wbar"><div class="owner">${cav(l.ch,40)}<div><b>${esc(l.ch)}</b><small>${fmtN(l.viewers)} watching on YouTube</small></div></div></div>
     <p class="vmeta" style="font-size:12px;margin-top:12px">The creator doesn't allow this stream to play on other sites, so it opens on YouTube.</p></div></div>`;return}
@@ -1735,6 +1759,9 @@ document.addEventListener("click",async e=>{
   const A=sel=>e.target.closest(sel);let x;
   if(x=A("[data-share]")){shareFilm(x.dataset.share,!!x.dataset.shareShort);return}
   if(A("[data-install]")){installApp();return}
+  if(A("[data-theme-next]")){const order=["dark","light","system"],cur=document.documentElement.dataset.theme||"dark";setTheme(order[(order.indexOf(cur)+1)%3]);return}
+  if(A("#submitBtn2b")){openSubmit();return}
+  if(A("[data-tabshorts]")){go({view:"shorts",shortList:null,shortI:0,film:null});return}
   if(x=A("[data-user]")){closeModal&&!$("#scrim").hidden&&closeModal();go({view:"user",user:x.dataset.user,utab:"liked"});return}
   if(x=A("[data-utab]")){state.utab=x.dataset.utab;render();try{history.replaceState({fr:navSnap(),y:scrollY},"",pathFor(state))}catch(e){}return}
   if((x=A("[data-copylink]"))&&!A("#scrim")){try{navigator.clipboard.writeText(x.dataset.copylink);toast("Profile link copied")}catch(e){}return}
