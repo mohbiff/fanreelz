@@ -853,7 +853,7 @@ function renderLivePlay(){
     <div class="wbar"><div class="owner">${cav(l.ch,40)}<div><b>${esc(l.ch)}</b><small>${fmtN(l.viewers)} watching on ${esc(l.platform)}${c?" · "+esc(catName(c)):""}</small></div></div>
       <div class="row" style="gap:8px"><button class="btn ${liveLiked()?"":"ghost"}" data-livelike="" id="liveLikeBtn">${icon("heart")} <span id="liveLikes">${liveLikeCount()||"Like"}</span></button>
       <a class="btn ghost" style="text-decoration:none" href="${esc(l.url)}" target="_blank" rel="noopener">Open on ${esc(l.platform)} ↗</a></div></div>
-    <p class="vmeta" style="font-size:12px;margin-top:12px">The stream and chat come straight from ${esc(l.platform)}. To chat, sign in to ${esc(l.platform)} in the chat window.</p>
+    <p class="vmeta" style="font-size:12px;margin-top:12px">The stream plays straight from ${esc(l.platform)}. Chat with other fans in Fanreelz chat, or switch to ${esc(l.platform)} chat to talk with the streamer&#39;s own viewers.</p>
   </div><aside class="livechat"><div class="lctabs" role="tablist"><button role="tab" class="${liveTab==="fz"?"on":""}" data-livetab="fz">Fanreelz chat</button><button role="tab" class="${liveTab==="pl"?"on":""}" data-livetab="pl">${esc(l.platform)} chat</button></div>
     <div class="lcbody" ${liveTab==="fz"?"":"hidden"}><div class="lclist" id="lchat" data-live="${esc(l.id)}"></div>
       <form class="lcform" id="lcform"><input id="lcinput" maxlength="300" autocomplete="off" placeholder="${acct.online?"Chat with other fans…":"Sign in to chat"}" aria-label="Chat message"><button class="btn" type="submit">Send</button></form></div>
