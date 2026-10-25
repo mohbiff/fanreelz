@@ -348,6 +348,9 @@ main{min-width:0;padding-right:max(16px,env(safe-area-inset-right,0px));padding-
 .sharerow{display:flex;gap:8px}.shareinp{flex:1;min-width:0;height:40px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--fg);padding:0 12px;font:inherit;font-size:14px}
 .sharegrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:8px}
 .sharebtn{display:flex;align-items:center;justify-content:center;height:40px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--fg);font:inherit;font-weight:600;font-size:14px;text-decoration:none;cursor:pointer}.sharebtn:hover{background:var(--hover)}
+.gi.youhead{font-weight:700;justify-content:flex-start}.gi.youhead .i{width:16px;height:16px;margin-left:2px}
+.youshelf{margin-bottom:34px}.youshelf .wbar{margin:0 0 12px}.youshelf .grid{grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:28px 14px}
+.youhero{display:flex;align-items:center;gap:16px;margin:20px 0 30px}.youhero img{width:72px;height:72px;border-radius:50%}.youhero h1{margin:0;font-size:26px}
 .authbtns{display:flex;flex-direction:column;gap:10px;margin-top:4px}
 .authbtn{display:flex;align-items:center;justify-content:center;gap:10px;height:46px;border-radius:12px;border:1px solid var(--line);background:var(--surface);color:var(--fg);font:inherit;font-weight:600;font-size:15px;cursor:pointer}
 .authbtn:hover{background:var(--hover)}
@@ -577,7 +580,7 @@ const byName=f=>f.byId?(f.byId===acct.uid?"You":(names[f.byId]||"Fanreelz member
 const hueOf=s=>{let h=0;for(const ch of String(s))h=(h*31+ch.charCodeAt(0))%360;return h};
 const cav=(name0,size,name=name0||"YouTube")=>`<span class="cav" style="background:hsl(${hueOf(name)},45%,42%)${size?`;width:${size}px;height:${size}px`:""}" aria-hidden="true">${esc((String(name).replace(/^@/,"")[0]||"?").toUpperCase())}</span>`;
 const daysSince=t=>Math.max(0,Math.floor((Date.now()-t)/864e5));
-const I={share:'<path d="M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7M16 6l-4-4-4 4M12 2v13"/>',info:'<circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 7.5v.5"/>',home:'<path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/>',top:'<path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/>',
+const I={user:'<circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/>',clock:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',like:'<path d="M7 11v9H4v-9zM7 11l4-8a2 2 0 0 1 2 2v4h5.5a2 2 0 0 1 2 2.3l-1.2 7A2 2 0 0 1 17.3 20H7"/>',share:'<path d="M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7M16 6l-4-4-4 4M12 2v13"/>',info:'<circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 7.5v.5"/>',home:'<path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/>',top:'<path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/>',
   fresh:'<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>',mine:'<path d="M5 4h14v17l-7-4-7 4z"/>',list:'<path d="M9 6h11M9 12h11M9 18h11M4.5 6h.01M4.5 12h.01M4.5 18h.01"/>',trend:'<path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/>',live:'<circle cx="12" cy="12" r="2.5"/><path d="M7.8 7.8a6 6 0 0 0 0 8.4M16.2 7.8a6 6 0 0 1 0 8.4M5 5a10 10 0 0 0 0 14M19 5a10 10 0 0 1 0 14"/>',prem:'<rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4"/>',tv:'<rect x="3" y="6" width="18" height="13" rx="2"/><path d="M8 3l4 3 4-3"/>',battle:'<path d="M14.5 17.5L3 6V3h3l11.5 11.5M13 19l6-6M16 16l4 4M9.5 17.5L21 6V3h-3L6.5 14.5M11 19l-6-6M8 16l-4 4"/>',req:'<path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-4 10.5c.8.8 1 1.5 1 2.5h6c0-1 .2-1.7 1-2.5A6 6 0 0 0 12 3z"/>',trophy:'<path d="M8 4h8v5a4 4 0 0 1-8 0zM8 6H4a3 3 0 0 0 4 4M16 6h4a3 3 0 0 1-4 4M12 13v4M8 21h8M10 17h4v4"/>',bot:'<rect x="4" y="8" width="16" height="11" rx="3"/><path d="M12 4v4M9 13h.01M15 13h.01M9 16h6"/>',save:'<path d="M4 6h12M4 12h12M4 18h7M18 14v7M14.5 17.5h7"/>',flag:'<path d="M5 21V4h11l-2 4 2 4H5"/>',shield:'<path d="M12 3l8 3v6c0 4.5-3.4 8-8 9-4.6-1-8-4.5-8-9V6z"/><path d="M8.5 12l2.5 2.5 4.5-5"/>',short:'<rect x="7" y="3" width="10" height="18" rx="2.5"/><path d="M11 9.5v5l3.5-2.5z"/>',series:'<rect x="3" y="8" width="14" height="12" rx="2"/><path d="M7 5h12a2 2 0 0 1 2 2v9"/>',heart:'<path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/>',film:'<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M7 5v14M17 5v14M3 9.5h4M17 9.5h4M3 14.5h4M17 14.5h4"/>'};
 const filmTrend=f=>(stats(f).n+(f.real?3000:0)+(f.boost||0))*Math.exp(-(f.days??14)/21);
 function trendingByGroup(){const per={};for(const f of allFilms())per[f.cat]=(per[f.cat]||0)+filmTrend(f);const m={};for(const g of GROUPS)m[g.name]=g.cats.map(c=>({c,s:per[c.id]||0})).sort((a,b)=>b.s-a.s);return m}
@@ -611,8 +614,12 @@ function renderGuide(){
   const fi=(k,label,ic)=>`<button class="gi ${state.view==="home"&&!state.cat&&state.feed===k&&(k!=="home"||state.format==="all")?"on":""}" data-feed="${k}">${icon(ic)}<span>${label}</span></button>`;
   const fnav=(k,label)=>`<button class="gi ${(state.view==="home"&&!state.cat&&state.feed==="home"&&state.format===k)||(k==="short"&&state.view==="shorts")||(k==="series"&&state.view==="series")?"on":""}" data-fmtnav="${k}">${icon(k)}<span>${label}</span></button>`;
   const T=trendingByGroup();
-  $("#guide").innerHTML=fi("home","Home","home")+fnav("short","Shorts")+fnav("series","Series")+fi("top","Top rated","top")+fi("new","New","fresh")+fi("mine","Your ratings","mine")+
+  $("#guide").innerHTML=fi("home","Home","home")+fnav("short","Shorts")+fnav("series","Series")+fi("top","Top rated","top")+fi("new","New","fresh")+
     `<button class="gi ${state.view==="browse"?"on":""}" data-browse="All">${icon("list")}<span>Browse all</span></button><hr>`+
+    `<button class="gi youhead ${state.view==="you"?"on":""}" data-view="you"><span>You</span><svg class="i" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></button>`+
+    [["channel","Your channel","user"],["history","History","clock"],["playlists","Playlists","list"],["later","Watch later","clock"],["liked","Liked videos","like"],["yourvideos","Your videos","film"]]
+      .map(([v,l,ic])=>`<button class="gi ${state.view===v||(v==="channel"&&state.view==="creator"&&state.creator===acct.uid)?"on":""}" data-you="${v}">${icon(ic)}<span>${l}</span></button>`).join("")+
+    fi("mine","Your ratings","mine")+`<hr>`+
     `<button class="gi ${state.view==="live"?"on":""}" data-view="live">${icon("live")}<span>Live now</span>${LIVE.length?`<span class="livecount">${LIVE.length}</span>`:""}</button>`+[["premieres","Premieres","prem"],["tv","Fanreelz TV","tv"]].map(([v,l,ic])=>`<button class="gi ${state.view===v?"on":""}" data-view="${v}">${icon(ic)}<span>${l}</span></button>`).join("")+
     `<hr><h4>Community</h4>`+[["battles","Fan Battles","battle"],["requests","Requests","req"],["contest","Weekly contest","trophy"],["playlists","Playlists","list"],["discord","Discord bot","bot"]].map(([v,l,ic])=>`<button class="gi ${state.view===v?"on":""}" data-view="${v}">${icon(ic)}<span>${l}</span></button>`).join("")+
     `<button class="gi ${state.view==="about"?"on":""}" data-view="about">${icon("info")}<span>About us</span></button>`+
@@ -667,6 +674,7 @@ function renderHome(){
   $("#main").innerHTML=html;
 }
 function renderWatch(){
+  addHistory(state.film);
   const f=findFilm(state.film);if(!f){state.view="home";return renderHome()}
   const s=stats(f),max=Math.max(...s.c),mine=myRatings[f.id]||0;
   const next=nextFor(f);
@@ -681,7 +689,7 @@ function renderWatch(){
       <div class="tags"><button data-cat="${f.cat}">${esc(catName(f.cat))}</button><button data-cat="${f.cat}" data-char-go="${esc(f.char)}">${esc(f.char)}</button><button data-cat="${f.cat}" data-lore-go="${loreOf(f)}">${loreOf(f)==="lore"?"Lore-accurate":"What if"}</button>${isKids(f)?'<button data-family-info="">Family-friendly</button>':""}</div>
       ${f.real||f.yt||f.tt||f.ig||f.vm||f.dm||f.byId?"":`<div class="howmade"><b>How it was made</b><div class="vmeta">Tool: ${esc(f.tool)} · Prompt shared by ${esc(byName(f)||"YouTube creator")}</div><div class="prompt" id="promptText">${esc(promptOf(f))}</div><div class="row"><button class="btn ghost" data-copyprompt="" style="padding:6px 12px">Copy prompt</button></div></div>`}
       <div class="vmeta" style="font-size:12px">The video plays at the source, so the creator gets the views.</div></div>
-    <div class="wactions">${f.real||f.yt||f.tt||f.ig||f.vm||f.dm?"":`<button data-tip="${esc(f.byId||f.by)}" data-tipfilm="${esc(f.id)}">${icon("heart")}Tip</button>`}<button data-save="${esc(f.id)}">${icon("save")}Save</button><button data-share="${esc(f.id)}">${icon("share")}Share</button>${isVerified(f)?"":`<button data-claimorig="${esc(f.id)}">${icon("shield")}Is this yours?</button>`}<button data-report="${esc(f.id)}">${icon("flag")}Report re-upload</button></div>
+    <div class="wactions">${f.real||f.yt||f.tt||f.ig||f.vm||f.dm?"":`<button data-tip="${esc(f.byId||f.by)}" data-tipfilm="${esc(f.id)}">${icon("heart")}Tip</button>`}<button data-save="${esc(f.id)}">${icon("save")}Save</button><button data-share="${esc(f.id)}">${icon("share")}Share</button><button data-later="${esc(f.id)}" class="${myLater.some(x=>x.id===f.id)?"on":""}">${icon("clock")}${myLater.some(x=>x.id===f.id)?"Saved":"Watch later"}</button>${isVerified(f)?"":`<button data-claimorig="${esc(f.id)}">${icon("shield")}Is this yours?</button>`}<button data-report="${esc(f.id)}">${icon("flag")}Report re-upload</button></div>
   </div><aside class="upnext"><h3>${f.format==="episode"?"Next episodes":"Up next"}</h3>${next.map(x=>`<button class="mini-v" data-open="${esc(x.id)}"><div class="thumb"><canvas data-f="${esc(x.id)}"></canvas><span class="len">${esc(x.len)}</span></div><div class="vtext"><h4 class="vtitle">${esc(x.title)}</h4><div class="vmeta">${esc(byName(x)||"YouTube creator")}</div><div class="vmeta">${metaLine(x)}</div></div></button>`).join("")}</aside></div>`;
   $(".watch>div").insertAdjacentHTML("beforeend",commentsHtml(f));
   if(f.yt)$(".player").innerHTML=ytFrame(f.yt);
@@ -1111,6 +1119,47 @@ function renderDiscord(){
      <div class="cm-embed"><b>Top 3 Dota 2 AI films this week</b>${top.map((f,i)=>`<div class="cm-row"><span class="rk">${i+1}</span><span>${esc(f.title)}<br><small class="vmeta">by ${esc(byName(f)||"YouTube creator")} · ★ ${stats(f).avg.toFixed(1)}</small></span></div>`).join("")}<small class="vmeta">See all on Fanreelz · /fanreel top dota2</small></div></div></div></div>`;
 }
 
+/* ---------- You: history, watch later, liked, your videos ---------- */
+let myHistory=store.get("fr_history",[]),myLater=store.get("fr_later",[]);const youTimers={};
+const privDoc=name=>acct.db.doc("data/users/"+acct.uid+"/"+name);
+function saveYou(name,items){
+  if(name==="history")myHistory=items;else myLater=items;
+  if(!acct.online){store.set(name==="history"?"fr_history":"fr_later",items);return}
+  clearTimeout(youTimers[name]);youTimers[name]=setTimeout(()=>privDoc(name).set({items}).catch(e=>console.warn("save "+name,e)),name==="history"?1500:0);
+}
+function addHistory(id){if(!id||!findFilm(id))return;if(myHistory[0]?.id===id)return;saveYou("history",[{id,t:Date.now()},...myHistory.filter(x=>x.id!==id)].slice(0,300))}
+function toggleLater(id){if(!needAccount("Sign in to save films to Watch later."))return;const on=myLater.some(x=>x.id===id);
+  saveYou("later",on?myLater.filter(x=>x.id!==id):[{id,t:Date.now()},...myLater].slice(0,500));toast(on?"Removed from Watch later":"Saved to Watch later");render()}
+function startYou(db){
+  if(!acct.uid)return;const local=store.get("fr_history",[]);
+  db.doc("data/users/"+acct.uid+"/history").onSnapshot(d=>{const items=d.exists&&Array.isArray(d.data()?.items)?d.data().items:[];
+    if(local.length){const merged=[...local,...items].filter((x,i,a)=>a.findIndex(y=>y.id===x.id)===i).sort((a,b)=>b.t-a.t).slice(0,300);local.length=0;store.set("fr_history",[]);saveYou("history",merged)}else myHistory=items;if(["you","history"].includes(state.view))render()},()=>{});
+  db.doc("data/users/"+acct.uid+"/later").onSnapshot(d=>{myLater=d.exists&&Array.isArray(d.data()?.items)?d.data().items:[];if(["you","later"].includes(state.view))render()},()=>{});
+}
+const likedFilms=()=>Object.entries(myRatings).filter(([,r])=>r>=4).map(([id])=>findFilm(id)).filter(Boolean);
+const yourVideos=()=>(mySubs||[]).map(f=>findFilm(String(f.id))).filter(Boolean);
+const filmsOf=list=>list.map(x=>findFilm(x.id)).filter(Boolean);
+function youShelf(title,view,films,empty){return `<section class="youshelf"><div class="wbar"><h2 class="sect-h" style="margin:0">${title}</h2>${films.length?`<button class="btn ghost" data-you="${view}">See all</button>`:""}</div>
+  ${films.length?`<div class="grid">${films.slice(0,4).map(f=>card(f)).join("")}</div>`:`<p class="vmeta">${empty}</p>`}</section>`}
+function renderYou(){
+  if(!acct.online){$("#main").innerHTML=`<div class="about"><h1 class="ab-h">You</h1><p class="ab-lede">Sign in to keep your history, Watch later list, liked films, playlists and your own channel in one place, on every device.</p><button class="btn" id="signinBtn">Sign in</button>
+    ${myHistory.length?youShelf("History (this browser)","history",filmsOf(myHistory),""):""}</div>`;return}
+  $("#main").innerHTML=`<div class="youhero"><img alt="" src="${esc(acct.me.avatarUrl||"")}"><div><h1>${esc(acct.me.name||"You")}</h1><button class="chip" data-you="channel">View your channel</button></div></div>`+
+    youShelf("History","history",filmsOf(myHistory),"Films you watch show up here.")+
+    youShelf("Watch later","later",filmsOf(myLater),"Press Watch later on a film to save it for later.")+
+    youShelf("Liked videos","liked",likedFilms(),"Films you rate 4 or 5 stars show up here.")+
+    youShelf("Your videos","yourvideos",yourVideos(),"Films you submit show up here.")+
+    `<section class="youshelf"><div class="wbar"><h2 class="sect-h" style="margin:0">Playlists</h2><button class="btn ghost" data-view="playlists">See all</button></div><p class="vmeta">${myLists().length} playlist${myLists().length===1?"":"s"}</p></section>`;
+}
+function renderYouList(){
+  const v=state.view,meta={history:["History","clock",filmsOf(myHistory),"Films you watch show up here."],later:["Watch later","clock",filmsOf(myLater),"Press Watch later on a film to save it here."],
+    liked:["Liked videos","like",likedFilms(),"Films you rate 4 or 5 stars show up here."],yourvideos:["Your videos","film",yourVideos(),"Films you submit show up here. Press Submit to add one."]}[v];
+  if(v!=="history"&&!acct.online){$("#main").innerHTML=`<div class="about"><h1 class="ab-h">${meta[0]}</h1><p class="ab-lede">Sign in to see this.</p><button class="btn" id="signinBtn">Sign in</button></div>`;return}
+  $("#main").innerHTML=`<div class="wbar" style="margin-top:16px"><h1 class="sect-h" style="font-size:24px;margin:0">${icon(meta[1])} ${meta[0]}</h1>${v==="history"&&meta[2].length?`<button class="btn ghost" data-clearhistory="">Clear history</button>`:""}</div>
+    <p class="lede" style="margin-top:8px">${meta[2].length} film${meta[2].length===1?"":"s"}</p>
+    ${meta[2].length?`<div class="grid">${meta[2].map(f=>`<div class="plitem">${card(f)}${v==="later"?`<button class="remind" data-later="${esc(f.id)}">Remove</button>`:""}</div>`).join("")}</div>`:`<div class="empty">${meta[3]}</div>`}`;
+}
+
 /* ---------- Sharing ---------- */
 function shareUrl(f,short){return "https://fanreelz.com"+(short?"/shorts/":"/film/")+encodeURIComponent(f.id)}
 async function shareFilm(id,short){
@@ -1312,7 +1361,7 @@ function openShorts(id){
 function renderShorts(){
   if(!state.shortList||!state.shortList.length){const id=state.film&&findFilm(state.film)?state.film:null;state.shortList=id?[id,...shuffledShorts([id])]:shuffledShorts([]);state.shortI=0}
   let list=state.shortList||[];const f=findFilm(list[state.shortI]);if(!f){state.view="home";return renderHomeF()}
-  state.film=f.id;const s=stats(f),mine=myRatings[f.id]||0;
+  state.film=f.id;addHistory(f.id);const s=stats(f),mine=myRatings[f.id]||0;
   const url=f.url||"https://www.youtube.com/results?search_query="+encodeURIComponent(f.title+" AI short");
   if(state.shortI+1>=list.length){const more=shuffledShorts(list.slice(-4));if(more.length){state.shortList=[...list,...more];list=state.shortList}}
   const nx=findFilm(list[state.shortI+1]);
@@ -1495,7 +1544,7 @@ function render(){stopPreview();
   lastFilm=state.view==="watch"?state.film:null;
   renderWho();renderGuide();
   clearInterval(ticker);ticker=null;tvNow=null;
-  ({watch:renderWatch,browse:renderBrowse,live:renderLive,liveplay:renderLivePlay,premieres:renderPremieres,tv:renderTV,battles:renderBattles,requests:renderRequests,contest:renderContest,playlists:renderPlaylists,creator:renderCreator,discord:renderDiscord,about:renderAbout,shorts:renderShorts,series:renderSeries}[state.view]||renderHomeF)();
+  ({watch:renderWatch,browse:renderBrowse,live:renderLive,liveplay:renderLivePlay,premieres:renderPremieres,tv:renderTV,battles:renderBattles,requests:renderRequests,contest:renderContest,playlists:renderPlaylists,creator:renderCreator,discord:renderDiscord,about:renderAbout,you:renderYou,history:renderYouList,later:renderYouList,liked:renderYouList,yourvideos:renderYouList,shorts:renderShorts,series:renderSeries}[state.view]||renderHomeF)();
   paintAll();
   document.querySelectorAll(".cmform").forEach(fm=>{const k=fm.dataset.cparent;const ta=fm.querySelector("textarea");if(drafts[k])ta.value=drafts[k];if(focusKey===k){ta.focus();ta.setSelectionRange(ta.value.length,ta.value.length)}});
   if(state.view==="premieres")ticker=setInterval(tickPremieres,1000);
@@ -1505,7 +1554,7 @@ function render(){stopPreview();
 const NAVKEYS=["view","feed","group","cat","char","q","film","format","dur","series","season","creator","shortList","shortI","bgroup","ctab","tv","lore"];
 const navSnap=()=>JSON.parse(JSON.stringify(Object.fromEntries(NAVKEYS.map(k=>[k,state[k]]))));
 /* Every page gets its own address (fanreelz.com/film/…, /shorts/…, /about …) so links can be shared and reloaded. */
-const PAGES=["about","live","premieres","tv","battles","requests","contest","playlists","discord","browse"];
+const PAGES=["you","history","later","liked","yourvideos","about","live","premieres","tv","battles","requests","contest","playlists","discord","browse"];
 function pathFor(st){
   const e=encodeURIComponent;
   switch(st.view){
@@ -1545,7 +1594,7 @@ const urlNow=()=>location.pathname+location.search;
 function go(patch){
   try{history.replaceState({fr:navSnap(),y:window.scrollY},"")}catch(e){}
   Object.assign(state,patch);render();window.scrollTo({top:0});
-  try{history.pushState({fr:navSnap(),y:0},"",pathFor(state))}catch(e){}
+  try{history.pushState({fr:navSnap(),y:0},"",signinInUrl()?location.href:pathFor(state))}catch(e){}
 }
 window.addEventListener("popstate",e=>{const h=e.state;if(!h||!h.fr){Object.assign(state,{view:"home",feed:"home",cat:null,char:null,q:"",format:"all"},parsePath());render();return}Object.assign(state,h.fr);render();requestAnimationFrame(()=>window.scrollTo({top:h.y||0}))});
 
@@ -1622,6 +1671,11 @@ document.addEventListener("click",async e=>{
   if(e.target.closest("#submitBtn")){openSubmit();return}
   const A=sel=>e.target.closest(sel);let x;
   if(x=A("[data-share]")){shareFilm(x.dataset.share,!!x.dataset.shareShort);return}
+  if(x=A("[data-later]")){toggleLater(x.dataset.later);return}
+  if(A("[data-clearhistory]")){saveYou("history",[]);render();toast("History cleared");return}
+  if(x=A("[data-you]")){$("#shell").classList.remove("open");const v=x.dataset.you;
+    if(v==="channel"){if(!needAccount("Sign in to see your channel."))return;go({view:"creator",creator:acct.uid,ctab:"film"});return}
+    if(v==="playlists"){go({view:"playlists"});return}go({view:v,cat:null,char:null});return}
   if(x=A("[data-csort]")){cSort=x.dataset.csort;render();return}
   if(x=A("[data-creply]")){if(!needAccount("Sign in to reply."))return;replyTo=x.dataset.creply;render();document.querySelector(`.cmform[data-cparent="${CSS.escape(replyTo)}"] textarea`)?.focus();return}
   if(A("[data-ccancel]")){replyTo=null;render();return}
@@ -1686,7 +1740,8 @@ $("#q").oninput=e=>{if(!e.target.value&&state.q)go({q:""})};
 let rt;addEventListener("resize",()=>{clearTimeout(rt);rt=setTimeout(()=>paintAll(),150)});
 Object.assign(state,parsePath());if(state.q)$("#q").value=state.q;
 render();
-try{history.replaceState({fr:navSnap(),y:0},"",pathFor(state))}catch(e){}
+function signinInUrl(){return /[?&#](code|error|access_token)=/.test(location.search+location.hash)}
+try{history.replaceState({fr:navSnap(),y:0},"",signinInUrl()?location.href:pathFor(state))}catch(e){}
 loadLive();setInterval(()=>{if(!document.hidden)loadLive()},120000);
 
 async function resolveNames(){
@@ -1730,6 +1785,7 @@ async function startSupabase(){
   const {data:{session}}=await sb.auth.getSession();
   {const q=new URLSearchParams(location.search),h=new URLSearchParams(location.hash.slice(1));const er=q.get("error_description")||h.get("error_description");if(er)setTimeout(()=>toast("Sign-in failed: "+er.slice(0,140)),600)}
   if(/[?&](code|error)=/.test(location.search)){const u=new URL(location.href);["code","error","error_description","error_code"].forEach(k=>u.searchParams.delete(k));history.replaceState(history.state,"",u.pathname+u.search+u.hash)}
+  if(/[#&](error|access_token)=/.test(location.hash))history.replaceState(history.state,"",location.pathname+location.search);
   let signedIn=!!session;sbToken=session?.access_token||null;
   sb.auth.onAuthStateChange((ev,sess)=>{if(sess?.access_token)sbToken=sess.access_token;sbTokenNote=ev;if(!!sess!==signedIn&&ev!=="TOKEN_REFRESHED")location.reload()});
   const u=session?.user;let me=null;
@@ -1776,7 +1832,7 @@ async function sbSignOut(){if(sb){await sb.auth.signOut();location.reload()}}
       for(const [fid,v] of Object.entries(r)){const k=Math.round(+v);if(k<1||k>5)continue;(agg[fid]||(agg[fid]=[0,0,0,0,0]))[k-1]++}
       if(d.id===acct.uid)myRatings={...r};}
     community=agg;render();},()=>{});
-  startCommunity(db);
+  startCommunity(db);startYou(db);
   db.collection("submissions").onSnapshot(snap=>{const all=[],mine=[];
     for(const d of snap.docs){const films=Array.isArray(d.data()?.films)?d.data().films:[];
       for(const f of films){if(!f||!CATS.some(c=>c.id===f.cat)||typeof f.title!=="string")continue;
