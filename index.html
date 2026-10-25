@@ -228,7 +228,15 @@ main{min-width:0;padding-right:max(16px,env(safe-area-inset-right,0px));padding-
 .thumb.stack{isolation:isolate}
 .sbadge{position:absolute;right:8px;bottom:8px;background:rgba(0,0,0,.78);color:#fff;font-size:12px;font-weight:700;padding:2px 8px;border-radius:4px;display:flex;gap:5px;align-items:center}
 .sbadge svg.i{width:14px;height:14px}
-.shorts-view{display:grid;grid-template-columns:auto minmax(0,320px);justify-content:center;gap:28px;padding-top:16px;align-items:start}
+.shorts-view{display:grid;grid-template-columns:auto minmax(0,320px);justify-content:center;gap:28px;padding-top:16px;align-items:start;--sph:min(calc(100vh - 230px),720px)}
+.spcol{display:flex;flex-direction:column;align-items:center;gap:12px;height:calc(100vh - 90px);overflow:hidden}
+.shorts-view .sp{height:var(--sph);flex:none}
+.spnext{position:relative;flex:none;width:calc(var(--sph) * 9 / 16);max-width:calc(100vw - 32px);height:240px;padding:0;border:0;border-radius:14px;overflow:hidden;background:#000;cursor:pointer;opacity:.75;transition:opacity .2s,transform .2s}
+.spnext:hover{opacity:1;transform:translateY(-4px)}
+.spnext .thumb{position:absolute;inset:0;aspect-ratio:auto;height:auto;border-radius:0}
+.spnext .thumb img,.spnext .thumb .tttile{width:100%;height:100%;object-fit:cover}
+.spnext-l{position:absolute;left:0;right:0;top:0;padding:10px 12px 28px;color:#fff;font-size:13px;font-weight:600;text-align:left;background:linear-gradient(rgba(0,0,0,.75),transparent);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;z-index:2}
+.spnext .ttbadge,.spnext .len{display:none}
 .sp{position:relative;height:min(calc(100vh - 110px),760px);aspect-ratio:9/16;max-width:calc(100vw - 32px);border-radius:14px;overflow:hidden;background:#000}
 .sp canvas{width:100%;height:100%;display:block}
 .sp .ov{position:absolute;inset:auto 0 auto 0;top:0;padding:14px 16px 40px;background:linear-gradient(rgba(0,0,0,.75),transparent)!important;background:linear-gradient(transparent,rgba(0,0,0,.85));color:#fff;display:flex;flex-direction:column;gap:6px;pointer-events:none}
@@ -253,7 +261,7 @@ main{min-width:0;padding-right:max(16px,env(safe-area-inset-right,0px));padding-
 .eptext b{font-size:15px}
 .serieslink{background:none;border:0;padding:0;color:var(--accent);font-weight:700;margin-top:12px;display:block}
 .subnote{margin:0;color:var(--muted);font-size:12px}
-@media (max-width:860px){.shorts-view{grid-template-columns:minmax(0,1fr);justify-items:center}.sp{height:calc(100vh - 260px);min-height:360px}.sside{width:100%}.sside .comments{max-height:none;overflow:visible}.ep{grid-template-columns:28px 120px minmax(0,1fr)}.ep .azscore{display:none}}
+@media (max-width:860px){.shorts-view{grid-template-columns:minmax(0,1fr);justify-items:center}.shorts-view{--sph:max(360px,calc(100vh - 300px))}.spcol{height:auto;overflow:visible}.spnext{height:120px}.sside{width:100%}.sside .comments{max-height:none;overflow:visible}.ep{grid-template-columns:28px 120px minmax(0,1fr)}.ep .azscore{display:none}}
 .tipamts{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 .tipamts .chip.on{background:var(--fg);color:var(--bg)}
 .tipother{display:flex;align-items:center;gap:6px;font-weight:600;font-size:13px}
@@ -1207,9 +1215,12 @@ function renderShorts(){
   const list=state.shortList||[];const f=findFilm(list[state.shortI]);if(!f){state.view="home";return renderHomeF()}
   state.film=f.id;const s=stats(f),mine=myRatings[f.id]||0;
   const url=f.url||"https://www.youtube.com/results?search_query="+encodeURIComponent(f.title+" AI short");
-  $("#main").innerHTML=`<div class="shorts-view"><div class="sp"><canvas data-f="${esc(f.id)}"></canvas>
+  if(state.shortI+1>=list.length){const more=shuffledShorts(list.slice(-4));if(more.length){state.shortList=[...list,...more];list=state.shortList}}
+  const nx=findFilm(list[state.shortI+1]);
+  $("#main").innerHTML=`<div class="shorts-view"><div class="spcol"><div class="sp"><canvas data-f="${esc(f.id)}"></canvas>
      <a class="play" href="${esc(url)}" target="_blank" rel="noopener"><span><svg viewBox="0 0 12 12"><path d="M2 1l9 5-9 5z"/></svg>Watch on ${esc(f.src)}</span></a>
      <div class="ov"><span class="vmeta" style="color:#fff;opacity:.85">${esc(catName(f.cat))} · ${esc(f.char)} · ${esc(f.len)}</span><b>${esc(f.title)}</b></div></div>
+   ${nx?`<button class="spnext" data-snav="1" aria-label="Next short: ${esc(nx.title)}"><div class="thumb vert"><canvas data-f="${esc(nx.id)}"></canvas></div><span class="spnext-l">↓ Next: ${esc(nx.title)}</span></button>`:""}</div>
    <div class="sside">
      ${(f.real||f.yt||f.tt||f.ig||f.vm||f.dm)?`<div class="owner">${cav(byName(f),40)}<div><b>${esc(byName(f)||"YouTube creator")}</b></div></div>`:`<button class="owner link" data-creator="${esc(f.byId||f.by)}">${cav(byName(f),40)}<div><b>${esc(byName(f)||"YouTube creator")}</b><small>${fmtN(followerCount(f.byId||f.by))} followers</small></div></button>`}
      <div class="vmeta">${s.n?`★ ${s.avg.toFixed(1)} from ${fmtN(s.n)} ratings`:"No ratings yet"} · ${f.days==null?"on "+esc(f.src):ago(f.days)}</div>
@@ -1351,13 +1362,25 @@ function spToggle(){
 document.addEventListener("click",e=>{if(e.target.closest(".spcatch")){e.preventDefault();e.stopPropagation();spToggle()}},true);
 document.addEventListener("touchstart",e=>{if(e.target.closest(".spcatch"))spTouchY=e.touches[0].clientY},{passive:true});
 document.addEventListener("touchend",e=>{if(spTouchY==null)return;const dy=spTouchY-e.changedTouches[0].clientY;spTouchY=null;if(Math.abs(dy)>50)stepShort(dy>0?1:-1)},{passive:true});
-/* TikTok's player can't be muted by a link setting, only by a message once it is ready */
+/* The short being watched should play with sound. Browsers sometimes start embedded players muted,
+   so ask the player to unmute and play once it has loaded. */
+function spWake(){
+  const fr=document.querySelector(".sp iframe"),f=findFilm(state.film);if(!fr||!f||spPaused)return;const w=fr.contentWindow;
+  if(f.yt){w.postMessage(JSON.stringify({event:"listening",id:"sp"}),"*");w.postMessage(JSON.stringify({event:"command",func:"unMute",args:[]}),"*");w.postMessage(JSON.stringify({event:"command",func:"playVideo",args:[]}),"*")}
+  else if(f.vm){w.postMessage(JSON.stringify({method:"setVolume",value:1}),"*");w.postMessage(JSON.stringify({method:"play"}),"*")}
+}
+document.addEventListener("load",e=>{if(e.target.matches?.(".sp iframe")){spWake();setTimeout(spWake,800);setTimeout(spWake,2000)}},true);
+/* TikTok's player can't be muted or unmuted by a link setting, only by messages once it is ready */
 addEventListener("message",e=>{
   let host="";try{host=new URL(e.origin).hostname}catch(x){}if(!/(^|\.)tiktok\.com$/.test(host))return;
   let d=e.data;if(typeof d==="string"){try{d=JSON.parse(d)}catch(x){return}}
   if(!d||!d["x-tiktok-player"]||d.type!=="onPlayerReady")return;
-  const fr=[...document.querySelectorAll(".hovprev iframe")].find(i=>i.contentWindow===e.source);
-  if(fr){e.source.postMessage({"x-tiktok-player":true,type:"mute"},"*");e.source.postMessage({"x-tiktok-player":true,type:"play"},"*")}
+  const send=t=>{try{e.source.postMessage({"x-tiktok-player":true,type:t},"*")}catch(x){}};
+  const hov=[...document.querySelectorAll(".hovprev iframe")].some(i=>i.contentWindow===e.source);
+  const main=[...document.querySelectorAll(".sp iframe, .player iframe")].some(i=>i.contentWindow===e.source);
+  // send play a few times: TikTok ignores play until the video data has arrived
+  if(hov){send("mute");[0,400,1200,2500].forEach(t=>setTimeout(()=>send("play"),t))}
+  else if(main&&!spPaused){[0,400,1200].forEach(t=>setTimeout(()=>{send("unMute");send("play")},t))}
 });
 const EXT=[{p:"tt",name:"TikTok"},{p:"ig",name:"Instagram"},{p:"vm",name:"Vimeo"},{p:"dm",name:"Dailymotion"}];
 const extOf=f=>EXT.find(x=>f[x.p]);
