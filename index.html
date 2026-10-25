@@ -519,7 +519,7 @@ function trendingByGroup(){const per={};for(const f of allFilms())per[f.cat]=(pe
 const icon=k=>`<svg class="i" viewBox="0 0 24 24">${I[k]}</svg>`;
 
 function paint(cv,f){
-  const xp=extOf(f);if(xp){const im=document.createElement("img"),p=cv.parentNode;im.src="/api/thumb?p="+xp.p+"&id="+encodeURIComponent(f[xp.p])+(f.ttUser?"&u="+encodeURIComponent(f.ttUser):"");im.alt="";im.loading="lazy";im.className="ytthumb";im.onerror=()=>{const d=document.createElement("div");d.className="tttile";d.innerHTML="<b></b><span></span>";d.firstChild.textContent=xp.name;d.lastChild.textContent=f.title;im.replaceWith(d)};cv.replaceWith(im);p&&p.insertAdjacentHTML("beforeend",'<span class="ttbadge">'+xp.name+'</span>');return}
+  const xp=extOf(f);if(xp){const im=document.createElement("img"),p=cv.parentNode;im.src="/api/thumb?p="+xp.p+"&id="+encodeURIComponent(f[xp.p])+(f.ttUser?"&u="+encodeURIComponent(f.ttUser):"");im.alt="";im.loading="lazy";im.className="ytthumb";im.onerror=()=>{if(xp.p==="tt"&&!im.dataset.retry){im.dataset.retry=1;fetch("https://www.tiktok.com/oembed?url="+encodeURIComponent(f.url)).then(r=>r.json()).then(j=>{if(j.thumbnail_url)im.src=j.thumbnail_url;else throw 0}).catch(()=>im.onerror());return}const d=document.createElement("div");d.className="tttile";d.innerHTML="<b></b><span></span>";d.firstChild.textContent=xp.name;d.lastChild.textContent=f.title;im.replaceWith(d)};cv.replaceWith(im);p&&p.insertAdjacentHTML("beforeend",'<span class="ttbadge">'+xp.name+'</span>');return}
   if(f.yt){const im=document.createElement("img");im.src="https://i.ytimg.com/vi/"+f.yt+"/hqdefault.jpg";im.alt="";im.loading="lazy";im.className="ytthumb";cv.replaceWith(im);return}
   const r=cv.getBoundingClientRect();const w=Math.max(80,Math.round(r.width||320)),h=Math.max(45,Math.round(r.height||w*9/16));
   const dpr=Math.min(2,window.devicePixelRatio||1);cv.width=w*dpr;cv.height=h*dpr;const x=cv.getContext("2d");x.scale(dpr,dpr);
@@ -1309,7 +1309,15 @@ function render(){
   if(state.view==="tv")ticker=setInterval(tickTV,1000);
   if(state.view==="contest")ticker=setInterval(()=>{const el=$("#cEnd");if(el)el.textContent=until(contestNow().end-Date.now())},1000);
 }
-function go(patch){Object.assign(state,patch);render();window.scrollTo({top:0})}
+const NAVKEYS=["view","feed","group","cat","char","q","film","format","dur","series","season","creator","shortList","shortI","bgroup","ctab","tv","lore"];
+const navSnap=()=>JSON.parse(JSON.stringify(Object.fromEntries(NAVKEYS.map(k=>[k,state[k]]))));
+function go(patch){
+  try{history.replaceState({fr:navSnap(),y:window.scrollY},"")}catch(e){}
+  Object.assign(state,patch);render();window.scrollTo({top:0});
+  try{history.pushState({fr:navSnap(),y:0},"")}catch(e){}
+}
+window.addEventListener("popstate",e=>{const h=e.state;if(!h||!h.fr)return;Object.assign(state,h.fr);render();requestAnimationFrame(()=>window.scrollTo({top:h.y||0}))});
+try{history.replaceState({fr:navSnap(),y:0},"")}catch(e){}
 
 /* dialogs */
 function openModal(html,onclick){$("#scrim").innerHTML=html;$("#scrim").hidden=false;$("#scrim").onclick=e=>{if(e.target===$("#scrim")||e.target.closest("[data-close]")){closeModal();return}onclick&&onclick(e)}}

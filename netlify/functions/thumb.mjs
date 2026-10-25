@@ -39,10 +39,11 @@ export default async (req) => {
   if (!id || (p === "tt" && !u)) return new Response("missing id", { status: 400 });
   try {
     const src = await imageUrl(p, u, id);
-    if (!src) throw new Error("no thumbnail");
-    const img = await fetch(src, { headers: { "User-Agent": UA } });
-    const type = img.headers.get("content-type") || "";
-    if (!img.ok || !type.startsWith("image/")) throw new Error("bad image");
+    if (!src) throw new Error("no thumbnail from " + p);
+    const img = await fetch(src, { headers: { "User-Agent": UA, Referer: "https://www.tiktok.com/" } });
+    let type = img.headers.get("content-type") || "";
+    if (!img.ok || type.startsWith("text/")) throw new Error("bad image " + img.status);
+    if (!type.startsWith("image/")) type = "image/jpeg";
     return new Response(img.body, {
       headers: {
         "Content-Type": type,
@@ -50,7 +51,8 @@ export default async (req) => {
         "Netlify-CDN-Cache-Control": "public, durable, s-maxage=2592000, stale-while-revalidate=86400",
       },
     });
-  } catch {
+  } catch (e) {
+    if (q.get("debug")) return new Response("thumb failed: " + String(e.message || e), { status: 404, headers: { "Cache-Control": "no-store" } });
     // The page shows its own platform tile when the image fails to load. Try again in an hour.
     return new Response("not found", { status: 404, headers: { "Netlify-CDN-Cache-Control": "public, durable, s-maxage=3600" } });
   }
