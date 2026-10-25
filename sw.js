@@ -1,6 +1,6 @@
 // Fanreelz service worker: makes the site installable as an app and shows the last loaded page offline.
 // It only handles pages and icons on fanreelz.com itself; sign-in, the API and video players always go straight to the network.
-const CACHE = "fanreelz-v1";
+const CACHE = "fanreelz-v2";
 self.addEventListener("install", (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(["/", "/icons/icon-192.png", "/icons/icon-512.png"])).then(() => self.skipWaiting()));
 });
