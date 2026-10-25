@@ -341,7 +341,7 @@ img.cav.uimg{object-fit:cover;background:var(--chip);display:block}
 .sprail button{display:flex;flex-direction:column;align-items:center;gap:3px;background:none;border:0;padding:0;color:#fff;font:inherit;font-size:12px;font-weight:600;cursor:pointer;text-shadow:0 1px 3px rgba(0,0,0,.6)}
 .spb{width:46px;height:46px;border-radius:50%;background:rgba(0,0,0,.45);display:grid;place-items:center;backdrop-filter:blur(6px)}
 .spb svg{width:24px;height:24px;fill:none;stroke:#fff;stroke-width:2;stroke-linejoin:round;stroke-linecap:round}
-.spb.on svg{fill:#fbbf24;stroke:#fbbf24}
+.spb.on svg{fill:#fbbf24;stroke:#fbbf24}.spb.liked svg{fill:#ff3d5a;stroke:#ff3d5a}
 .spsheet{position:absolute;left:0;right:0;bottom:0;max-height:70%;overflow:auto;z-index:7;background:var(--surface);color:var(--fg);border-radius:16px 16px 0 0;padding:14px 16px 20px;box-shadow:0 -10px 30px rgba(0,0,0,.4);animation:sheetin .2s ease-out;overscroll-behavior:contain}
 .spsheet .comments{margin-top:6px;max-height:none;overflow:visible}
 .spsheet-h{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}.spsheet-h button{background:var(--chip);border:0;color:var(--fg);width:36px;height:36px;border-radius:50%;font-size:16px;cursor:pointer}
@@ -369,7 +369,12 @@ body.spfs .tabbar{display:none}
 .tttile b{display:none}
 .tttile span{display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden;opacity:.85}
 .ytthumb{display:block;width:100%;height:100%;object-fit:cover;background:var(--chip)}
-.livechat{height:min(70vh,640px);border-radius:12px;overflow:hidden;background:var(--chip)}
+.livechat{height:min(70vh,640px);border-radius:12px;overflow:hidden;background:var(--surface);border:1px solid var(--line);display:flex;flex-direction:column}
+.lctabs{display:flex;border-bottom:1px solid var(--line)}.lctabs button{flex:1;background:none;border:0;border-bottom:2px solid transparent;padding:11px 8px;font:inherit;font-weight:600;color:var(--muted);cursor:pointer}.lctabs button.on{color:var(--fg);border-bottom-color:var(--accent)}
+.lcbody{flex:1;min-height:0;display:flex;flex-direction:column}
+.lclist{flex:1;overflow-y:auto;padding:10px 12px;display:flex;flex-direction:column;gap:8px;overscroll-behavior:contain}
+.lcmsg{display:flex;gap:8px;align-items:flex-start;font-size:13.5px;line-height:1.4;word-break:break-word}.lcmsg .cav{width:24px;height:24px;font-size:11px}
+.lcform{display:flex;gap:8px;padding:10px;border-top:1px solid var(--line)}.lcform input{flex:1;min-width:0;height:38px;border-radius:19px;border:1px solid var(--line);background:var(--bg);color:var(--fg);padding:0 14px;font:inherit}.lcform .btn{padding:0 16px;height:38px}
 .vid.live{}
 .livecount{margin-left:auto;background:var(--live);color:#fff;font-size:11px;font-weight:800;border-radius:999px;padding:1px 7px}
 .upnext{display:flex;flex-direction:column;gap:8px}
@@ -846,9 +851,37 @@ function renderLivePlay(){
     <div class="player"><iframe src="${esc(player)}" title="Live stream" allow="autoplay; fullscreen; encrypted-media; picture-in-picture" allowfullscreen style="position:absolute;inset:0;width:100%;height:100%;border:0"></iframe></div>
     <h1 class="wtitle"><span class="nowtag">LIVE</span> ${esc(l.title)}</h1>
     <div class="wbar"><div class="owner">${cav(l.ch,40)}<div><b>${esc(l.ch)}</b><small>${fmtN(l.viewers)} watching on ${esc(l.platform)}${c?" · "+esc(catName(c)):""}</small></div></div>
-      <a class="btn ghost" style="text-decoration:none" href="${esc(l.url)}" target="_blank" rel="noopener">Open on ${esc(l.platform)} ↗</a></div>
+      <div class="row" style="gap:8px"><button class="btn ${liveLiked()?"":"ghost"}" data-livelike="" id="liveLikeBtn">${icon("heart")} <span id="liveLikes">${liveLikeCount()||"Like"}</span></button>
+      <a class="btn ghost" style="text-decoration:none" href="${esc(l.url)}" target="_blank" rel="noopener">Open on ${esc(l.platform)} ↗</a></div></div>
     <p class="vmeta" style="font-size:12px;margin-top:12px">The stream and chat come straight from ${esc(l.platform)}. To chat, sign in to ${esc(l.platform)} in the chat window.</p>
-  </div><aside class="livechat"><iframe src="${esc(chat)}" title="Live chat" style="width:100%;height:100%;border:0"></iframe></aside></div>`;
+  </div><aside class="livechat"><div class="lctabs" role="tablist"><button role="tab" class="${liveTab==="fz"?"on":""}" data-livetab="fz">Fanreelz chat</button><button role="tab" class="${liveTab==="pl"?"on":""}" data-livetab="pl">${esc(l.platform)} chat</button></div>
+    <div class="lcbody" ${liveTab==="fz"?"":"hidden"}><div class="lclist" id="lchat" data-live="${esc(l.id)}"></div>
+      <form class="lcform" id="lcform"><input id="lcinput" maxlength="300" autocomplete="off" placeholder="${acct.online?"Chat with other fans…":"Sign in to chat"}" aria-label="Chat message"><button class="btn" type="submit">Send</button></form></div>
+    <div class="lcbody" ${liveTab==="pl"?"":"hidden"}>${liveTab==="pl"||liveChatLoaded?`<iframe src="${esc(chat)}" title="${esc(l.platform)} chat" style="width:100%;height:100%;border:0"></iframe>`:""}</div></aside></div>`;
+  if(liveTab==="pl")liveChatLoaded=true;
+  updateLiveChat();
+}
+/* Fanreelz live chat: messages from the last 12 hours for this channel, stored like comments on "live-<stream id>" */
+let liveTab="fz",liveChatLoaded=false;
+const liveLiked=()=>!!(likeDocs[acct.uid]?.ids||{})[liveKey()];
+const liveLikeCount=()=>Object.values(likeDocs).filter(d=>d?.ids?.[liveKey()]).length;
+const liveKey=()=>"live-"+state.liveId;
+function liveMessages(){const since=Date.now()-12*3600e3;return filmComments(liveKey()).filter(c=>c.t>since&&!c.parent).sort((a,b)=>a.t-b.t).slice(-150)}
+function updateLiveChat(){
+  const lb=$("#liveLikeBtn");if(lb){lb.classList.toggle("ghost",!liveLiked());$("#liveLikes").textContent=liveLikeCount()||"Like"}
+  const box=$("#lchat");if(!box)return;const atEnd=box.scrollHeight-box.scrollTop-box.clientHeight<60;
+  const msgs=liveMessages();
+  box.innerHTML=msgs.length?msgs.map(m=>`<div class="lcmsg"><button class="cmav" data-user="${esc(m.uid)}" aria-label="${esc(cname(m.uid))}">${uav(m.uid,24)}</button><div><button class="cmname" data-user="${esc(m.uid)}" style="color:hsl(${hueOf(cname(m.uid))},70%,${document.documentElement.dataset.theme==="light"?"35%":"68%"})">${esc(cname(m.uid))}</button> <span>${esc(m.text)}</span></div></div>`).join(""):`<p class="vmeta" style="margin:auto;text-align:center;padding:20px">No messages yet. Say hi to the other fans watching!</p>`;
+  if(atEnd||box.dataset.first!=="1"){box.scrollTop=box.scrollHeight;box.dataset.first="1"}
+}
+async function sendLive(text){
+  if(!needAccount("Sign in to chat with other fans."))return false;
+  text=text.trim();if(!text)return false;
+  const c={id:"c"+Date.now().toString(36)+Math.random().toString(36).slice(2,5),film:liveKey(),text:text.slice(0,300),t:Date.now(),parent:""};
+  // keep my own old live messages short: only the newest 100 live lines, all normal comments kept
+  const mine=myComments(),liveOld=mine.filter(x=>String(x.film).startsWith("live-")).slice(0,100),rest=mine.filter(x=>!String(x.film).startsWith("live-"));
+  const next=[c,...liveOld,...rest].slice(0,500);
+  if(await writeOwn("comments",{items:next})){commentDocs[acct.uid]={items:next};updateLiveChat();return true}return false;
 }
 /* Ask Netlify which creators are live (see netlify/functions). Only works on the deployed site. */
 const liveState={checked:null};
@@ -1517,6 +1550,7 @@ function renderShorts(){
     const nC=filmComments(f.id).length,full=document.body.classList.contains("spfs");
     sp.insertAdjacentHTML("beforeend",`<div class="sprail">
       <button data-spsheet="rate" aria-label="Rate"><span class="spb ${mine?"on":""}"><svg viewBox="0 0 24 24"><path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/></svg></span><small>${s.n?s.avg.toFixed(1):"Rate"}</small></button>
+      <button data-splike="${esc(f.id)}" aria-label="Like"><span class="spb ${(likeDocs[acct.uid]?.ids||{})["film-"+f.id]?"liked":""}"><svg viewBox="0 0 24 24"><path d="M12 20s-7-4.4-9-8.6C1.6 8.3 3.5 5 6.8 5c2 0 3.4 1.1 4.2 2.4C11.8 6.1 13.2 5 15.2 5 18.5 5 20.4 8.3 19 11.4 17 15.6 12 20 12 20z"/></svg></span><small>${Object.values(likeDocs).filter(d=>d?.ids?.["film-"+f.id]).length||"Like"}</small></button>
       <button data-spsheet="comments" aria-label="Comments"><span class="spb"><svg viewBox="0 0 24 24"><path d="M4 5h16v11H9l-5 4z"/></svg></span><small>${nC}</small></button>
       <button data-share="${esc(f.id)}" data-share-short="1" aria-label="Share"><span class="spb"><svg viewBox="0 0 24 24"><path d="M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7M16 6l-4-4-4 4M12 2v13"/></svg></span><small>Share</small></button>
       <button data-spfull="" aria-label="${full?"Exit full screen":"Full screen"}"><span class="spb"><svg viewBox="0 0 24 24"><path d="${full?"M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5":"M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"}"/></svg></span><small>${full?"Exit":"Full"}</small></button>
@@ -1603,7 +1637,7 @@ async function postComment(parent,text){
 }
 async function deleteComment(id){const next=myComments().filter(c=>c.id!==id&&c.parent!==id);if(await writeOwn("comments",{items:next})){commentDocs[acct.uid]={items:next};render();toast("Comment deleted")}}
 async function likeComment(id){
-  if(!needAccount("Sign in to like comments."))return;
+  if(!needAccount("Sign in to like."))return;
   const cur={...(likeDocs[acct.uid]?.ids||{})};if(cur[id])delete cur[id];else cur[id]=true;
   if(await writeOwn("commentlikes",{ids:cur})){likeDocs[acct.uid]={ids:cur};render()}
 }
@@ -1684,7 +1718,10 @@ const extFrame=f=>f.ig?vFrame(`https://www.instagram.com/reel/${f.ig}/embed/`,"I
 const ttFrame=id=>`<iframe data-fid="tt-${id}" src="https://www.tiktok.com/player/v1/${id}?music_info=1&description=1&rel=0&autoplay=1" title="TikTok video player" allow="autoplay; fullscreen; encrypted-media; picture-in-picture" allowfullscreen style="position:absolute;top:0;bottom:0;left:50%;transform:translateX(-50%);height:100%;aspect-ratio:9/16;max-width:100%;border:0;background:#000"></iframe>`;
 const ytFrame=id=>`<iframe data-fid="yt-${id}" src="https://www.youtube-nocookie.com/embed/${id}?rel=0&autoplay=1&playsinline=1&enablejsapi=1" title="YouTube video player" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen style="position:absolute;inset:0;width:100%;height:100%;border:0"></iframe>`;
 let ticker=null;
-function render(){stopPreview();
+let renderHard=false;
+function render(){
+  if(state.view==="liveplay"&&!renderHard&&$("#lchat")&&$("#lchat").dataset.live===state.liveId){renderGuide();updateLiveChat();return}
+  renderHard=false;stopPreview();
   const drafts={};let focusKey=null;
   if(lastFilm===state.film&&state.view==="watch"){document.querySelectorAll(".cmform").forEach(fm=>{const v=fm.querySelector("textarea").value;if(v)drafts[fm.dataset.cparent]=v});focusKey=document.activeElement?.closest?.(".cmform")?.dataset.cparent??null}
   lastFilm=state.view==="watch"?state.film:null;
@@ -1740,6 +1777,7 @@ function parsePath(){
 }
 const urlNow=()=>location.pathname+location.search;
 function go(patch){
+  renderHard=true;
   if(patch.view&&patch.view!=="shorts"&&document.body.classList.contains("spfs"))toggleShortsFull(false);
   spSheet="";
   const fromMenu=menuPushed;menuPushed=false;$("#guide").style.transform="";
@@ -1830,6 +1868,9 @@ document.addEventListener("click",async e=>{
   if(A("[data-install]")){installApp();return}
   if(A("[data-theme-next]")){const order=["dark","light","system"],cur=document.documentElement.dataset.theme||"dark";setTheme(order[(order.indexOf(cur)+1)%3]);return}
   if(A("#submitBtn2b")){openSubmit();return}
+  if(A("[data-livelike]")){likeComment(liveKey());return}
+  if(x=A("[data-splike]")){likeComment("film-"+x.dataset.splike);return}
+  if(x=A("[data-livetab]")){liveTab=x.dataset.livetab;renderHard=true;render();return}
   if(x=A("[data-spsheet]")){const v=x.dataset.spsheet;spSheet=spSheet===v?"":v;render();return}
   if(A("[data-spfull]")){toggleShortsFull();return}
   if(A("[data-tabshorts]")){go({view:"shorts",shortList:null,shortI:0,film:null});return}
@@ -1898,7 +1939,8 @@ document.addEventListener("click",async e=>{
   const o=e.target.closest("[data-open]");if(o){const f=findFilm(o.dataset.open);if(!f)return;if(f.format==="short"){openShorts(f.id);return}if(f.format==="episode"){watched[f.id]=true;store.set("fr_watched",watched)}go({view:"watch",film:f.id})}
 });
 document.addEventListener("keydown",e=>{if(e.key==="Escape")closeModal()});
-document.addEventListener("submit",async e=>{const fm=e.target.closest(".cmform");if(!fm)return;e.preventDefault();const btn=fm.querySelector('button[type="submit"]');btn.disabled=true;const ok=await postComment(fm.dataset.cparent,fm.querySelector("textarea").value);if(!ok&&document.body.contains(btn))btn.disabled=false});
+document.addEventListener("submit",async e=>{
+  if(e.target.id==="lcform"){e.preventDefault();const i=$("#lcinput");const v=i.value;i.value="";if(!(await sendLive(v)))i.value=v;i.focus();return}const fm=e.target.closest(".cmform");if(!fm)return;e.preventDefault();const btn=fm.querySelector('button[type="submit"]');btn.disabled=true;const ok=await postComment(fm.dataset.cparent,fm.querySelector("textarea").value);if(!ok&&document.body.contains(btn))btn.disabled=false});
 document.addEventListener("keydown",e=>{if(e.key==="Enter"&&(e.ctrlKey||e.metaKey)&&e.target.closest(".cmform")){e.preventDefault();e.target.closest(".cmform").requestSubmit()}});
 $("#sform").onsubmit=e=>{e.preventDefault();go({view:"home",feed:"home",q:$("#q").value.trim()})};
 $("#q").oninput=e=>{if(!e.target.value&&state.q)go({q:""})};
