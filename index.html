@@ -418,6 +418,10 @@ body.spfs .tabbar{display:none}
 }
 .inststeps{margin:0;padding-left:22px;display:flex;flex-direction:column;gap:8px;line-height:1.45}.shareglyph{display:inline-block;padding:0 5px;border:1px solid var(--line);border-radius:6px}
 .sharehint{position:fixed;left:50%;bottom:calc(14px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);font-size:34px;color:#fff;text-shadow:0 2px 8px rgba(0,0,0,.6);animation:hintbob 1s ease-in-out infinite alternate;pointer-events:none}@keyframes hintbob{to{transform:translate(-50%,8px)}}
+.agebadge{position:absolute;left:8px;top:8px;z-index:3;font-size:11px;font-weight:800;background:#d6283c;color:#fff;padding:2px 7px;border-radius:5px}
+.agegate{position:absolute;inset:0;display:block;color:#fff;text-decoration:none}.agegate img{width:100%;height:100%;object-fit:cover;filter:blur(14px) brightness(.45)}
+.agegate span{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;text-align:center;padding:20px;font-size:15px}
+.agegate b{font-size:30px;background:#d6283c;padding:4px 14px;border-radius:8px}.agegate em{font-style:normal;font-weight:700;background:#fff;color:#111;padding:9px 18px;border-radius:20px}
 .authbtns{display:flex;flex-direction:column;gap:10px;margin-top:4px}
 .authbtn{display:flex;align-items:center;justify-content:center;gap:10px;height:46px;border-radius:12px;border:1px solid var(--line);background:var(--surface);color:var(--fg);font:inherit;font-weight:600;font-size:15px;cursor:pointer}
 .authbtn:hover{background:var(--hover)}
@@ -644,7 +648,7 @@ const state={format:"all",dur:"any",shortList:null,shortI:0,series:null,season:1
 const $=s=>document.querySelector(s);
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const rawFilms=()=>[...sharedSubs.filter(f=>f.format!=="episode"),...FILMS];
-const allFilms=()=>state.family?rawFilms().filter(isKids):rawFilms();
+const allFilms=()=>state.family?rawFilms().filter(f=>!f.age&&isKids(f)):rawFilms();
 const findFilm=id=>rawFilms().find(f=>f.id===id)||allEpisodes().find(e=>e.id===id);
 const groupOf=catId=>GROUPS.find(g=>g.cats.some(c=>c.id===catId));
 const catName=id=>CATS.find(c=>c.id===id)?.name||id;
@@ -664,6 +668,7 @@ const icon=k=>`<svg class="i" viewBox="0 0 24 24">${I[k]}</svg>`;
 
 function paint(cv,f){
   const xp=extOf(f);if(xp){const im=document.createElement("img"),p=cv.parentNode;im.src="/api/thumb?p="+xp.p+"&id="+encodeURIComponent(f[xp.p])+(f.ttUser?"&u="+encodeURIComponent(f.ttUser):"");im.alt="";im.loading="lazy";im.className="ytthumb extthumb";im.onerror=()=>{const d=document.createElement("div");d.className="tttile";d.style.setProperty("--h",f.hue||0);d.innerHTML="<b></b><span></span>";d.firstChild.textContent=xp.name;d.lastChild.textContent=f.title;im.replaceWith(d)};cv.replaceWith(im);p&&p.insertAdjacentHTML("beforeend",'<span class="ttbadge">'+xp.name+'</span>');return}
+  if(f.age&&cv.parentNode)cv.parentNode.insertAdjacentHTML("beforeend",'<span class="agebadge">18+</span>');
   if(f.yt){const im=document.createElement("img");im.src="https://i.ytimg.com/vi/"+f.yt+"/hqdefault.jpg";im.alt="";im.loading="lazy";im.className="ytthumb";cv.replaceWith(im);return}
   const r=cv.getBoundingClientRect();const w=Math.max(80,Math.round(r.width||320)),h=Math.max(45,Math.round(r.height||w*9/16));
   const dpr=Math.min(2,window.devicePixelRatio||1);cv.width=w*dpr;cv.height=h*dpr;const x=cv.getContext("2d");x.scale(dpr,dpr);
@@ -802,7 +807,8 @@ function renderWatch(){
     <div class="wactions">${f.real||f.yt||f.tt||f.ig||f.vm||f.dm?"":`<button data-tip="${esc(f.byId||f.by)}" data-tipfilm="${esc(f.id)}">${icon("heart")}Tip</button>`}<button data-save="${esc(f.id)}">${icon("save")}Save</button><button data-share="${esc(f.id)}">${icon("share")}Share</button><button data-later="${esc(f.id)}" class="${myLater.some(x=>x.id===f.id)?"on":""}">${icon("clock")}${myLater.some(x=>x.id===f.id)?"Saved":"Watch later"}</button>${isVerified(f)?"":`<button data-claimorig="${esc(f.id)}">${icon("shield")}Is this yours?</button>`}<button data-report="${esc(f.id)}">${icon("flag")}Report re-upload</button></div>
   </div><aside class="upnext"><h3>${f.format==="episode"?"Next episodes":"Up next"}</h3>${next.map(x=>`<button class="mini-v" data-open="${esc(x.id)}"><div class="thumb"><canvas data-f="${esc(x.id)}"></canvas><span class="len">${esc(x.len)}</span></div><div class="vtext"><h4 class="vtitle">${esc(x.title)}</h4><div class="vmeta">${esc(byName(x)||"YouTube creator")}</div><div class="vmeta">${metaLine(x)}</div></div></button>`).join("")}</aside></div>`;
   $(".watch>div").insertAdjacentHTML("beforeend",commentsHtml(f));
-  if(f.yt)$(".player").innerHTML=ytFrame(f.yt);
+  if(f.yt&&f.age)$(".player").innerHTML=ageGate(f);
+  else if(f.yt)$(".player").innerHTML=ytFrame(f.yt);
   if(f.tt)$(".player").innerHTML=ttFrame(f.tt);
   if(f.ig||f.vm||f.dm)$(".player").innerHTML=extFrame(f);
 }
@@ -1562,6 +1568,7 @@ function renderShorts(){
   if(f.ig||f.vm||f.dm){const sp=$(".sp");sp.querySelector("canvas")?.remove();sp.querySelector(".play")?.remove();sp.insertAdjacentHTML("afterbegin",f.ig?extFrame(f):extFrame(f).replace("inset:0","inset:0;top:25%;height:50%"))}
   if(f.tt||f.yt){const sp=$(".sp");sp.querySelector("canvas")?.remove();sp.querySelector(".play")?.remove();
     if(keepFrame){try{sp.moveBefore(keepFrame,sp.firstChild)}catch(e){sp.insertBefore(keepFrame,sp.firstChild)}}
+    else if(f.age)sp.insertAdjacentHTML("afterbegin",ageGate(f));
     else sp.insertAdjacentHTML("afterbegin",f.tt?ttFrame(f.tt).replace("?music_info=1","?fullscreen_button=0&music_info=1"):ytFrame(f.yt).replace("&enablejsapi=1","&enablejsapi=1&fs=0"))}
   if(spSlide){const sp=$(".sp");if(sp){sp.classList.add(spSlide>0?"slideup":"slidedown")}spSlide=0}
   if(!keepFrame)spPaused=false;{const sp=$(".sp");if(sp){
@@ -1678,6 +1685,7 @@ FILMS.push(...[{"id": "yt-KS2j7TJBtZ4", "yt": "KS2j7TJBtZ4", "title": "WARCRAFT 
    TikTok and Instagram cards get a soft colour animation instead, because those players can't be muted. */
 let hovT=null,hovEl=null;
 function previewSrc(f){
+  if(f.age)return "";
   if(f.yt)return `https://www.youtube-nocookie.com/embed/${f.yt}?autoplay=1&mute=1&controls=0&modestbranding=1&playsinline=1&rel=0&loop=1&playlist=${f.yt}`;
   if(f.vm)return `https://player.vimeo.com/video/${f.vm}?background=1&muted=1&autoplay=1&dnt=1`;
   if(f.dm)return `https://geo.dailymotion.com/player.html?video=${f.dm}&mute=true&autoplay=true&controls=false`;
@@ -1729,6 +1737,7 @@ addEventListener("message",e=>{
   if(hov){send("mute");[0,400,1200,2500].forEach(t=>setTimeout(()=>send("play"),t))}
   else if(main&&!spPaused){[0,400,1200].forEach(t=>setTimeout(()=>{send("unMute");send("play")},t))}
 });
+const ageGate=f=>`<a class="agegate" href="${esc(f.url)}" target="_blank" rel="noopener"><img src="https://i.ytimg.com/vi/${esc(f.yt)}/hqdefault.jpg" alt="" referrerpolicy="no-referrer"><span><b>18+</b>This AI film is age-restricted on YouTube, so it can only play there.<em>Watch on YouTube ↗</em></span></a>`;
 const EXT=[{p:"tt",name:"TikTok"},{p:"ig",name:"Instagram"},{p:"vm",name:"Vimeo"},{p:"dm",name:"Dailymotion"}];
 const extOf=f=>EXT.find(x=>f[x.p]);
 const vFrame=(src,title)=>`<iframe src="${src}" title="${title}" allow="autoplay; fullscreen; encrypted-media; picture-in-picture" allowfullscreen style="position:absolute;top:0;bottom:0;left:50%;transform:translateX(-50%);height:100%;aspect-ratio:9/16;max-width:100%;border:0;background:#000"></iframe>`;
@@ -2066,7 +2075,7 @@ async function sbSave(col,id,data){
 async function loadCatalog(){
   if(!sb)return;const rows=[];
   for(let from=0;from<30000;from+=1000){
-    const {data,error}=await sb.from("catalog").select("id,video_id,title,channel,cat,char,lore,format,duration,published_at").order("views",{ascending:false}).range(from,from+999);
+    const {data,error}=await sb.from("catalog").select("*").order("views",{ascending:false}).range(from,from+999);
     if(error||!data){if(error)console.warn("catalogue",error.message);break}
     rows.push(...data);if(data.length<1000)break;
   }
@@ -2076,7 +2085,7 @@ async function loadCatalog(){
     FILMS.push({id:r.id,yt:r.video_id,title:r.title,cat:r.cat,char:r.char||"",src:"YouTube",tool:"AI tools",by:r.channel||"",
       len:d?`${Math.floor(d/60)}:${String(d%60).padStart(2,"0")}`:"",days:r.published_at?daysSince(Date.parse(r.published_at)):null,
       counts:[0,0,0,0,0],hue:(k*47)%360,format:r.format==="short"?"short":"film",lore:r.lore||"whatif",boost:Math.max(0,20-k/50),
-      url:"https://www.youtube.com/watch?v="+r.video_id});n++});
+      url:"https://www.youtube.com/watch?v="+r.video_id,age:!!r.age_restricted});n++});
   if(n){console.log("Fanreelz catalogue:",n,"films");render()}
 }
 async function sbSignIn(provider){

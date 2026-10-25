@@ -96,13 +96,16 @@ async function run() {
       const map = Object.fromEntries((det.items || []).map((d) => [d.id, d]));
       for (const r of batch) {
         const d = map[r.v];
-        if (!d || !d.status?.embeddable || d.status?.privacyStatus !== "public" || d.contentDetails?.contentRating?.ytRating === "ytAgeRestricted") continue;
+        if (!d || !d.status?.embeddable || d.status?.privacyStatus !== "public") continue;
+        // Age-restricted AI films are kept, but YouTube won't play them on other sites: the page links out instead
+        const age = d.contentDetails?.contentRating?.ytRating === "ytAgeRestricted";
         const secs = iso(d.contentDetails.duration);
         if (secs < 8) continue;
         keep.push({
           id: "yt-" + r.v, platform: "YouTube", video_id: r.v, title: r.t.slice(0, 200), channel: ch.title, channel_id: ch.channel_id,
           cat: r.cat, char: r.char, lore: r.lore, format: secs <= 75 ? "short" : "film", duration: secs,
           views: +(d.statistics?.viewCount || 0), published_at: r.at,
+          age_restricted: age,
         });
       }
     }

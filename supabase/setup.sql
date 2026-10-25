@@ -110,8 +110,10 @@ create table if not exists public.catalog (
   views bigint default 0,
   published_at timestamptz,
   added_at timestamptz not null default now(),
-  hidden boolean not null default false
+  hidden boolean not null default false,
+  age_restricted boolean not null default false
 );
+alter table public.catalog add column if not exists age_restricted boolean not null default false;
 create index if not exists catalog_views on public.catalog (views desc);
 alter table public.catalog enable row level security;
 drop policy if exists "catalog is public" on public.catalog;
