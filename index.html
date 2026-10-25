@@ -418,6 +418,8 @@ body.spfs .tabbar{display:none}
 }
 .inststeps{margin:0;padding-left:22px;display:flex;flex-direction:column;gap:8px;line-height:1.45}.shareglyph{display:inline-block;padding:0 5px;border:1px solid var(--line);border-radius:6px}
 .sharehint{position:fixed;left:50%;bottom:calc(14px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);font-size:34px;color:#fff;text-shadow:0 2px 8px rgba(0,0,0,.6);animation:hintbob 1s ease-in-out infinite alternate;pointer-events:none}@keyframes hintbob{to{transform:translate(-50%,8px)}}
+.ythelp{margin:8px 0 0;font-size:12.5px;color:var(--muted,#9a9aa8)}.ythelp a{color:var(--accent);font-weight:700}.ythelp b,.spyt b{background:#d6283c;color:#fff;font-size:11px;padding:1px 6px;border-radius:5px;margin-right:6px}
+.spyt{position:absolute;left:10px;top:10px;z-index:6;font-size:12px;font-weight:700;color:#fff;text-decoration:none;background:rgba(0,0,0,.55);padding:5px 10px;border-radius:14px}
 .agebadge{position:absolute;left:8px;top:8px;z-index:3;font-size:11px;font-weight:800;background:#d6283c;color:#fff;padding:2px 7px;border-radius:5px}
 .agegate{position:absolute;inset:0;display:block;color:#fff;text-decoration:none}.agegate img{width:100%;height:100%;object-fit:cover;filter:blur(14px) brightness(.45)}
 .agegate span{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;text-align:center;padding:20px;font-size:15px}
@@ -683,7 +685,19 @@ function paint(cv,f){
 }
 function paintAll(root=document){root.querySelectorAll("canvas[data-f]").forEach(cv=>{const f=findFilm(cv.dataset.f);if(f)paint(cv,f)});root.querySelectorAll("canvas[data-s]").forEach(cv=>{const x=findSeries(cv.dataset.s);if(x)paint(cv,{hue:x.hue,title:x.title})})}
 
-const metaLine=f=>{const s=stats(f);return `${s.n?`<span class="st">★</span> ${s.avg.toFixed(1)} · ${fmtN(s.n)} ratings`:"No ratings yet"} · ${f.days==null?"on "+esc(f.src):ago(f.days)}`};
+/* Fanreelz views: one per film per visit, counted in the database (table film_views) */
+let VIEWS={};const counted=new Set();
+const viewsOf=f=>VIEWS[f.id]||0;
+const viewTxt=f=>{const v=viewsOf(f);return v?`${fmtN(v)} view${v===1?"":"s"} · `:""};
+function countView(f){if(!f||counted.has(f.id))return;let seen=[];try{seen=JSON.parse(sessionStorage.getItem("fr_seen")||"[]")}catch(e){}
+  counted.add(f.id);if(seen.includes(f.id))return;VIEWS[f.id]=viewsOf(f)+1;
+  try{sessionStorage.setItem("fr_seen",JSON.stringify([...seen,f.id].slice(-500)))}catch(e){}
+  if(sb)sb.rpc("add_view",{p_id:f.id}).then(({error})=>{if(error)console.warn("view",error.message)})}
+async function loadViews(){if(!sb)return;const all={};
+  for(let from=0;from<200000;from+=1000){const {data,error}=await sb.from("film_views").select("id,n").range(from,from+999);
+    if(error||!data){if(error)console.warn("views",error.message);break}data.forEach(r=>all[r.id]=+r.n||0);if(data.length<1000)break}
+  for(const k in VIEWS)if(counted.has(k))all[k]=Math.max(all[k]||0,VIEWS[k]);VIEWS=all;if(Object.keys(all).length)render()}
+const metaLine=f=>{const s=stats(f);return `${viewTxt(f)}${s.n?`<span class="st">★</span> ${s.avg.toFixed(1)} · ${fmtN(s.n)} ratings`:"No ratings yet"} · ${f.days==null?"on "+esc(f.src):ago(f.days)}`};
 function card(f,rank){
   return `<button class="vid" data-open="${esc(f.id)}"><div class="thumb"><canvas data-f="${esc(f.id)}"></canvas>${rank?`<span class="rank">${rank}</span>`:""}<span class="len">${esc(f.len)}</span></div>
   <div class="vinfo">${cav(byName(f))}<div class="vtext"><h3 class="vtitle">${esc(f.title)}</h3>
@@ -791,7 +805,7 @@ function renderHome(){
 function renderWatch(){
   addHistory(state.film);
   const f=findFilm(state.film);if(!f){state.view="home";return renderHome()}
-  const s=stats(f),max=Math.max(...s.c),mine=myRatings[f.id]||0;
+  const s=stats(f),max=Math.max(...s.c),mine=myRatings[f.id]||0;countView(f);
   const next=nextFor(f);
   const url=f.url||"https://www.youtube.com/results?search_query="+encodeURIComponent(f.title+" AI film");
   $("#main").innerHTML=`<div class="watch"><div>
@@ -799,7 +813,7 @@ function renderWatch(){
     ${f.format==="episode"?`<button class="serieslink" data-series="${esc(f.seriesId)}">${esc(findSeries(f.seriesId)?.title||"Series")} · Season ${f.season}, Episode ${f.ep}</button>`:""}<h1 class="wtitle" ${f.format==="episode"?'style="margin-top:4px"':""}>${esc(f.title)}${f.real?'<span class="pill">Real</span>':""}${isVerified(f)?'<span class="pill">Verified original</span>':""}</h1>
     <div class="wbar">${(f.real||f.yt||f.tt||f.ig||f.vm||f.dm)?`<div class="owner">${cav(byName(f),40)}<div><b>${esc(byName(f)||"YouTube creator")}</b><small>${esc(catName(f.cat))} · ${esc(f.char)}</small></div></div>`:`<button class="owner link" data-creator="${esc(f.byId||f.by)}">${cav(byName(f),40)}<div><b>${esc(byName(f)||"YouTube creator")}</b><small>${fmtN(followerCount(f.byId||f.by))} followers · ${esc(catName(f.cat))}</small></div></button>`}
       <div class="ratebox" role="group" aria-label="Rate this film"><span>${mine?"Your rating":"Rate"}</span>${[1,2,3,4,5].map(k=>`<button data-rate="${k}" class="${k<=mine?"on":""}" aria-label="${k} stars">★</button>`).join("")}</div></div>
-    <div class="desc"><div class="top2">${s.n?`★ ${s.avg.toFixed(1)} from ${s.n.toLocaleString("en-US")} ratings`:"No ratings yet"} · ${f.days==null?"":ago(f.days)+" · "}${esc(f.src)} · made with ${esc(f.tool)}</div>
+    <div class="desc"><div class="top2">${viewsOf(f).toLocaleString("en-US")} view${viewsOf(f)===1?"":"s"} on Fanreelz${f.ytViews?` · ${fmtN(f.ytViews)} on YouTube`:""} · ${s.n?`★ ${s.avg.toFixed(1)} from ${s.n.toLocaleString("en-US")} ratings`:"No ratings yet"} · ${f.days==null?"":ago(f.days)+" · "}${esc(f.src)} · made with ${esc(f.tool)}</div>
       <div class="dist">${[5,4,3,2,1].map(k=>`<span>${k}★</span><span class="bar"><i style="width:${max?s.c[k-1]/max*100:0}%"></i></span><span>${fmtN(s.c[k-1])}</span>`).join("")}</div>
       <div class="tags"><button data-cat="${f.cat}">${esc(catName(f.cat))}</button><button data-cat="${f.cat}" data-char-go="${esc(f.char)}">${esc(f.char)}</button><button data-cat="${f.cat}" data-lore-go="${loreOf(f)}">${loreOf(f)==="lore"?"Lore-accurate":"What if"}</button>${isKids(f)?'<button data-family-info="">Family-friendly</button>':""}</div>
       ${f.real||f.yt||f.tt||f.ig||f.vm||f.dm||f.byId?"":`<div class="howmade"><b>How it was made</b><div class="vmeta">Tool: ${esc(f.tool)} · Prompt shared by ${esc(byName(f)||"YouTube creator")}</div><div class="prompt" id="promptText">${esc(promptOf(f))}</div><div class="row"><button class="btn ghost" data-copyprompt="" style="padding:6px 12px">Copy prompt</button></div></div>`}
@@ -807,8 +821,7 @@ function renderWatch(){
     <div class="wactions">${f.real||f.yt||f.tt||f.ig||f.vm||f.dm?"":`<button data-tip="${esc(f.byId||f.by)}" data-tipfilm="${esc(f.id)}">${icon("heart")}Tip</button>`}<button data-save="${esc(f.id)}">${icon("save")}Save</button><button data-share="${esc(f.id)}">${icon("share")}Share</button><button data-later="${esc(f.id)}" class="${myLater.some(x=>x.id===f.id)?"on":""}">${icon("clock")}${myLater.some(x=>x.id===f.id)?"Saved":"Watch later"}</button>${isVerified(f)?"":`<button data-claimorig="${esc(f.id)}">${icon("shield")}Is this yours?</button>`}<button data-report="${esc(f.id)}">${icon("flag")}Report re-upload</button></div>
   </div><aside class="upnext"><h3>${f.format==="episode"?"Next episodes":"Up next"}</h3>${next.map(x=>`<button class="mini-v" data-open="${esc(x.id)}"><div class="thumb"><canvas data-f="${esc(x.id)}"></canvas><span class="len">${esc(x.len)}</span></div><div class="vtext"><h4 class="vtitle">${esc(x.title)}</h4><div class="vmeta">${esc(byName(x)||"YouTube creator")}</div><div class="vmeta">${metaLine(x)}</div></div></button>`).join("")}</aside></div>`;
   $(".watch>div").insertAdjacentHTML("beforeend",commentsHtml(f));
-  if(f.yt&&f.age)$(".player").innerHTML=ageGate(f);
-  else if(f.yt)$(".player").innerHTML=ytFrame(f.yt);
+  if(f.yt){$(".player").innerHTML=ytFrame(f.yt);$(".player").insertAdjacentHTML("afterend",`<div class="ythelp">${f.age?'<b>18+</b>Age-restricted on YouTube. ':''}Does YouTube ask you to sign in? Allow cookies for youtube.com in this browser, or <a href="${esc(f.url||"https://www.youtube.com/watch?v="+f.yt)}" target="_blank" rel="noopener">watch on YouTube ↗</a></div>`)}
   if(f.tt)$(".player").innerHTML=ttFrame(f.tt);
   if(f.ig||f.vm||f.dm)$(".player").innerHTML=extFrame(f);
 }
@@ -1548,7 +1561,7 @@ function renderShorts(){
     if(old&&old.dataset.fid&&old.dataset.fid===want&&document.body.moveBefore){try{$("#frameHold").moveBefore(old,null);keepFrame=old}catch(e){keepFrame=null}}}
   if(!state.shortList||!state.shortList.length){const id=state.film&&findFilm(state.film)?state.film:null;state.shortList=id?[id,...shuffledShorts([id])]:shuffledShorts([]);state.shortI=0}
   let list=state.shortList||[];const f=findFilm(list[state.shortI]);if(!f){state.view="home";return renderHomeF()}
-  state.film=f.id;addHistory(f.id);const s=stats(f),mine=myRatings[f.id]||0;
+  state.film=f.id;addHistory(f.id);countView(f);const s=stats(f),mine=myRatings[f.id]||0;
   const url=f.url||"https://www.youtube.com/results?search_query="+encodeURIComponent(f.title+" AI short");
   if(state.shortI+1>=list.length){const more=shuffledShorts(list.slice(-4));if(more.length){state.shortList=[...list,...more];list=state.shortList}}
   const nx=findFilm(list[state.shortI+1]);
@@ -1558,7 +1571,7 @@ function renderShorts(){
    ${nx?`<button class="spnext" data-snav="1" aria-label="Next short: ${esc(nx.title)}"><div class="thumb vert"><canvas data-f="${esc(nx.id)}"></canvas></div><span class="spnext-l">↓ Next: ${esc(nx.title)}</span></button>`:""}</div>
    <div class="sside">
      ${(f.real||f.yt||f.tt||f.ig||f.vm||f.dm)?`<div class="owner">${cav(byName(f),40)}<div><b>${esc(byName(f)||"YouTube creator")}</b></div></div>`:`<button class="owner link" data-creator="${esc(f.byId||f.by)}">${cav(byName(f),40)}<div><b>${esc(byName(f)||"YouTube creator")}</b><small>${fmtN(followerCount(f.byId||f.by))} followers</small></div></button>`}
-     <div class="vmeta">${s.n?`★ ${s.avg.toFixed(1)} from ${fmtN(s.n)} ratings`:"No ratings yet"} · ${f.days==null?"on "+esc(f.src):ago(f.days)}</div>
+     <div class="vmeta">${viewTxt(f)}${s.n?`★ ${s.avg.toFixed(1)} from ${fmtN(s.n)} ratings`:"No ratings yet"} · ${f.days==null?"on "+esc(f.src):ago(f.days)}</div>
      <div class="ratebox" role="group" aria-label="Rate this short" style="align-self:flex-start"><span>${mine?"Your rating":"Rate"}</span>${[1,2,3,4,5].map(k=>`<button data-rate="${k}" class="${k<=mine?"on":""}" aria-label="${k} stars">★</button>`).join("")}</div>
      <div class="wactions" style="margin-top:0">${f.real||f.yt||f.tt||f.ig||f.vm||f.dm?"":`<button data-tip="${esc(f.byId||f.by)}" data-tipfilm="${esc(f.id)}">${icon("heart")}Tip</button>`}<button data-save="${esc(f.id)}">${icon("save")}Save</button><button data-share="${esc(f.id)}" data-share-short="1">${icon("share")}Share</button><button data-open-full="${esc(f.id)}">${icon("film")}Details</button></div>
      <div class="snav"><button class="iconbtn navb" data-snav="-1" aria-label="Previous short" ${state.shortI===0?"disabled":""}><svg class="i" viewBox="0 0 24 24"><path d="M6 15l6-6 6 6"/></svg></button>
@@ -1568,11 +1581,11 @@ function renderShorts(){
   if(f.ig||f.vm||f.dm){const sp=$(".sp");sp.querySelector("canvas")?.remove();sp.querySelector(".play")?.remove();sp.insertAdjacentHTML("afterbegin",f.ig?extFrame(f):extFrame(f).replace("inset:0","inset:0;top:25%;height:50%"))}
   if(f.tt||f.yt){const sp=$(".sp");sp.querySelector("canvas")?.remove();sp.querySelector(".play")?.remove();
     if(keepFrame){try{sp.moveBefore(keepFrame,sp.firstChild)}catch(e){sp.insertBefore(keepFrame,sp.firstChild)}}
-    else if(f.age)sp.insertAdjacentHTML("afterbegin",ageGate(f));
     else sp.insertAdjacentHTML("afterbegin",f.tt?ttFrame(f.tt).replace("?music_info=1","?fullscreen_button=0&music_info=1"):ytFrame(f.yt).replace("&enablejsapi=1","&enablejsapi=1&fs=0"))}
   if(spSlide){const sp=$(".sp");if(sp){sp.classList.add(spSlide>0?"slideup":"slidedown")}spSlide=0}
   if(!keepFrame)spPaused=false;{const sp=$(".sp");if(sp){
     if(sp.querySelector("iframe"))sp.insertAdjacentHTML("beforeend",'<div class="spcatch" aria-hidden="true"></div><div class="spicon" aria-hidden="true"></div>');
+    if(f.yt&&sp.querySelector("iframe"))sp.insertAdjacentHTML("beforeend",`<a class="spyt" href="${esc(f.url||"https://www.youtube.com/watch?v="+f.yt)}" target="_blank" rel="noopener">${f.age?"<b>18+</b>":""}Watch on YouTube ↗</a>`);
     const nC=filmComments(f.id).length,full=document.body.classList.contains("spfs");
     sp.insertAdjacentHTML("beforeend",`<div class="sprail">
       <button data-spsheet="rate" aria-label="Rate"><span class="spb ${mine?"on":""}"><svg viewBox="0 0 24 24"><path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/></svg></span><small>${s.n?s.avg.toFixed(1):"Rate"}</small></button>
@@ -1744,7 +1757,7 @@ const vFrame=(src,title)=>`<iframe src="${src}" title="${title}" allow="autoplay
 const wFrame=(src,title)=>`<iframe src="${src}" title="${title}" allow="autoplay; fullscreen; encrypted-media; picture-in-picture" allowfullscreen style="position:absolute;inset:0;width:100%;height:100%;border:0"></iframe>`;
 const extFrame=f=>f.ig?vFrame(`https://www.instagram.com/reel/${f.ig}/embed/`,"Instagram video player"):f.vm?wFrame(`https://player.vimeo.com/video/${f.vm}?dnt=1&autoplay=1`,"Vimeo video player"):f.dm?wFrame(`https://geo.dailymotion.com/player.html?video=${f.dm}&autoplay=1`,"Dailymotion video player"):"";
 const ttFrame=id=>`<iframe data-fid="tt-${id}" src="https://www.tiktok.com/player/v1/${id}?music_info=1&description=1&rel=0&autoplay=1" title="TikTok video player" allow="autoplay; fullscreen; encrypted-media; picture-in-picture" allowfullscreen style="position:absolute;top:0;bottom:0;left:50%;transform:translateX(-50%);height:100%;aspect-ratio:9/16;max-width:100%;border:0;background:#000"></iframe>`;
-const ytFrame=id=>`<iframe data-fid="yt-${id}" src="https://www.youtube-nocookie.com/embed/${id}?rel=0&autoplay=1&playsinline=1&enablejsapi=1" title="YouTube video player" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen style="position:absolute;inset:0;width:100%;height:100%;border:0"></iframe>`;
+const ytFrame=id=>`<iframe data-fid="yt-${id}" src="https://www.youtube.com/embed/${id}?rel=0&autoplay=1&playsinline=1&enablejsapi=1" title="YouTube video player" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen style="position:absolute;inset:0;width:100%;height:100%;border:0"></iframe>`;
 let ticker=null;
 let renderHard=false;
 function render(){
@@ -2055,6 +2068,7 @@ async function startSupabase(){
   const user={me:async()=>me||{},profiles:async ids=>{const out={};if(!ids.length)return out;
     const {data}=await sb.from("profiles").select("id,name,avatar_url").in("id",ids.slice(0,300));for(const r of data||[])out[r.id]={name:r.name||"Fan",avatar:r.avatar_url||""};return out}};
   loadCatalog().catch(e=>console.warn("catalogue",e));
+  loadViews().catch(e=>console.warn("views",e));
   return {user,db:supabaseDb(me?.id||null),me};
 }
 /* Save one document. Sends the signed-in user's token explicitly, and if the database still
@@ -2085,7 +2099,7 @@ async function loadCatalog(){
     FILMS.push({id:r.id,yt:r.video_id,title:r.title,cat:r.cat,char:r.char||"",src:"YouTube",tool:"AI tools",by:r.channel||"",
       len:d?`${Math.floor(d/60)}:${String(d%60).padStart(2,"0")}`:"",days:r.published_at?daysSince(Date.parse(r.published_at)):null,
       counts:[0,0,0,0,0],hue:(k*47)%360,format:r.format==="short"?"short":"film",lore:r.lore||"whatif",boost:Math.max(0,20-k/50),
-      url:"https://www.youtube.com/watch?v="+r.video_id,age:!!r.age_restricted});n++});
+      url:"https://www.youtube.com/watch?v="+r.video_id,age:!!r.age_restricted,ytViews:+r.views||0});n++});
   if(n){console.log("Fanreelz catalogue:",n,"films");render()}
 }
 async function sbSignIn(provider){

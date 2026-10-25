@@ -142,3 +142,17 @@ language sql security definer set search_path = public as $$
 $$;
 revoke all on function public.requeue_done_channels() from public, anon, authenticated;
 grant execute on function public.requeue_done_channels() to service_role;
+
+-- 7. Fanreelz views: one count per film per visit. Anyone can read; only add_view can add.
+create table if not exists public.film_views (id text primary key, n bigint not null default 0, updated_at timestamptz not null default now());
+alter table public.film_views enable row level security;
+drop policy if exists "views are public" on public.film_views;
+create policy "views are public" on public.film_views for select using (true);
+grant select on public.film_views to anon, authenticated;
+create or replace function public.add_view(p_id text) returns void
+language sql security definer set search_path = public as $$
+  insert into public.film_views (id, n) values (left(p_id, 80), 1)
+  on conflict (id) do update set n = public.film_views.n + 1, updated_at = now();
+$$;
+revoke all on function public.add_view(text) from public;
+grant execute on function public.add_view(text) to anon, authenticated;
