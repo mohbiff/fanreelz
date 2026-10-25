@@ -8,7 +8,7 @@
 // The old path /api/tiktok-thumb?u=&id= still works.
 
 const UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36";
-const decode = (s) => s.replace(/\\u0026/g, "&").replace(/&amp;/g, "&").replace(/\\\//g, "/");
+const decode = (s) => s.replace(/\\u002F/gi, "/").replace(/\\u0026/g, "&").replace(/&amp;/g, "&").replace(/\\\//g, "/");
 
 async function imageUrl(p, u, id, tries = []) {
   if (p === "tt") {
@@ -18,7 +18,7 @@ async function imageUrl(p, u, id, tries = []) {
     try {
       const r = await fetch("https://www.tiktok.com/oembed?url=" + encodeURIComponent(page), { headers: H });
       tries.push("tiktok oembed " + r.status);
-      if (r.ok) { const j = await r.json(); if (j.thumbnail_url) return j.thumbnail_url; tries.push("tiktok oembed: no thumbnail_url"); }
+      if (r.ok) { const t = await r.text(); let j = {}; try { j = JSON.parse(t); } catch {} if (j.thumbnail_url) return j.thumbnail_url; tries.push("tiktok oembed body: " + t.slice(0, 300)); }
     } catch (e) { tries.push("tiktok oembed error " + (e.message || e)); }
     // 2. TikTok's embed page (the cover image is in its data)
     try {
@@ -26,9 +26,13 @@ async function imageUrl(p, u, id, tries = []) {
       tries.push("tiktok embed " + r.status);
       if (r.ok) {
         const html = await r.text();
-        const m = html.match(/"(?:originCover|cover|dynamicCover)":"(https:[^"]+)"/);
-        if (m) return decode(m[1]);
-        tries.push("tiktok embed: no cover in page");
+        const flat = decode(html);
+        const m = flat.match(/"(?:originCover|cover|dynamicCover|covers|thumbnailUrl|thumbnail_url)"\s*:\s*\[?\s*"(https?:[^"]+)"/)
+          || flat.match(/<meta[^>]+property="og:image"[^>]+content="([^"]+)"/)
+          || flat.match(/(https:\/\/[^"'\s]*tiktokcdn[^"'\s]*(?:~tplv|\.jpe?g|\.webp|\.image)[^"'\s]*)/);
+        if (m) return decode(m[1]).replace(/&amp;/g, "&");
+        const i = flat.search(/cover/i);
+        tries.push("tiktok embed: no cover, " + html.length + " chars, title: " + ((html.match(/<title>([^<]*)/) || [])[1] || "-") + (i >= 0 ? ", near 'cover': " + flat.slice(Math.max(0, i - 60), i + 200) : ", the word cover is not in the page"));
       }
     } catch (e) { tries.push("tiktok embed error " + (e.message || e)); }
     // 3. noembed.com, a public oEmbed relay
