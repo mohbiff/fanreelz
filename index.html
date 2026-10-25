@@ -1633,7 +1633,7 @@ async function resolveNames(){
    The site was first built against a small document store (collections of per-user documents).
    This adapter gives Supabase the same shape, so every feature (ratings, comments, votes, playlists,
    follows, requests, tips, submissions) saves for real without being rewritten. */
-let sb=null;
+let sb=null,sbToken=null,sbTokenNote="";
 const loadScript=src=>new Promise((ok,bad)=>{const t=document.createElement("script");t.src=src;t.onload=ok;t.onerror=bad;document.head.appendChild(t)});
 const initialAvatar=name=>{const n=(name||"F").trim()[0]?.toUpperCase()||"F",h=hnum(name||"F")%360;
   return "data:image/svg+xml,"+encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40"><rect width="40" height="40" rx="20" fill="hsl(${h} 55% 45%)"/><text x="20" y="26" font-family="system-ui,sans-serif" font-size="18" font-weight="700" fill="#fff" text-anchor="middle">${n.replace(/[<&>"]/g,"")}</text></svg>`)};
@@ -1661,8 +1661,8 @@ async function startSupabase(){
   const {data:{session}}=await sb.auth.getSession();
   {const q=new URLSearchParams(location.search),h=new URLSearchParams(location.hash.slice(1));const er=q.get("error_description")||h.get("error_description");if(er)setTimeout(()=>toast("Sign-in failed: "+er.slice(0,140)),600)}
   if(/[?&](code|error)=/.test(location.search)){const u=new URL(location.href);["code","error","error_description","error_code"].forEach(k=>u.searchParams.delete(k));history.replaceState(history.state,"",u.pathname+u.search+u.hash)}
-  let signedIn=!!session;
-  sb.auth.onAuthStateChange((ev,sess)=>{if(!!sess!==signedIn)location.reload()});
+  let signedIn=!!session;sbToken=session?.access_token||null;
+  sb.auth.onAuthStateChange((ev,sess)=>{if(sess?.access_token)sbToken=sess.access_token;sbTokenNote=ev;if(!!sess!==signedIn&&ev!=="TOKEN_REFRESHED")location.reload()});
   const u=session?.user;let me=null;
   if(u){const meta=u.user_metadata||{};const {data:prof}=await sb.from("profiles").select("name,avatar_url").eq("id",u.id).maybeSingle();
     const name=prof?.name||meta.full_name||meta.name||meta.user_name||"Fan";
@@ -1675,15 +1675,15 @@ async function startSupabase(){
    doesn't see a signed-in user, refreshes the sign-in once and tries again. */
 const jwtInfo=t=>{try{const p=JSON.parse(atob(t.split(".")[1].replace(/-/g,"+").replace(/_/g,"/")));return {role:p.role,exp:p.exp,sub:p.sub}}catch(e){return {}}};
 async function sbSave(col,id,data){
-  const call=async()=>{const {data:{session}}=await sb.auth.getSession();
-    const tok=session?.access_token;const q=sb.rpc("save_doc",{p_col:col,p_id:id,p_data:data});
+  const call=async()=>{const g=await sb.auth.getSession();if(g.error)sbTokenNote="getSession: "+g.error.message;
+    const tok=g.data?.session?.access_token||sbToken;const q=sb.rpc("save_doc",{p_col:col,p_id:id,p_data:data});
     if(tok&&q.headers)q.headers["Authorization"]="Bearer "+tok;
     const r=await q;return {error:r.error,tok}};
   let {error,tok}=await call();
-  if(error&&/not see you as signed in/.test(error.message||"")){await sb.auth.refreshSession().catch(()=>{});({error,tok}=await call())}
+  if(error&&/not see you as signed in/.test(error.message||"")){const rr=await sb.auth.refreshSession().catch(e=>({error:e}));if(rr?.data?.session?.access_token)sbToken=rr.data.session.access_token;else if(rr?.error)sbTokenNote="refresh: "+(rr.error.message||rr.error);({error,tok}=await call())}
   if(error){const i=tok?jwtInfo(tok):null;
     console.warn("Fanreelz save failed",error,i);
-    throw new Error((error.message||"error")+(i?` [token role: ${i.role||"?"}, expires ${i.exp?new Date(i.exp*1000).toLocaleTimeString():"?"}]`:" [no sign-in token in this browser]"))}
+    throw new Error((error.message||"error")+(i?` [token role: ${i.role||"?"}, expires ${i.exp?new Date(i.exp*1000).toLocaleTimeString():"?"}]`:" [no sign-in token in this browser]")+(sbTokenNote?` [${sbTokenNote}]`:""))}
 }
 async function sbSignIn(provider){
   if(!sb)return;try{localStorage.setItem("fr_back",JSON.stringify(history.state?.fr||null))}catch(e){}
