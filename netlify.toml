@@ -2,3 +2,82 @@
 [build]
   publish = "."
   functions = "netlify/functions"
+
+# Every page has its own address (fanreelz.com/film/…, /about …). They are all served by index.html,
+# which reads the address and opens the right page. Real files (privacy.html, terms.html) and /api/* are untouched.
+[[redirects]]
+  from = "/film/*"
+  to = "/index.html"
+  status = 200
+[[redirects]]
+  from = "/shorts/*"
+  to = "/index.html"
+  status = 200
+[[redirects]]
+  from = "/shorts"
+  to = "/index.html"
+  status = 200
+[[redirects]]
+  from = "/series/*"
+  to = "/index.html"
+  status = 200
+[[redirects]]
+  from = "/creator/*"
+  to = "/index.html"
+  status = 200
+[[redirects]]
+  from = "/c/*"
+  to = "/index.html"
+  status = 200
+[[redirects]]
+  from = "/feed/*"
+  to = "/index.html"
+  status = 200
+[[redirects]]
+  from = "/live/*"
+  to = "/index.html"
+  status = 200
+[[redirects]]
+  from = "/search"
+  to = "/index.html"
+  status = 200
+[[redirects]]
+  from = "/about"
+  to = "/index.html"
+  status = 200
+[[redirects]]
+  from = "/live"
+  to = "/index.html"
+  status = 200
+[[redirects]]
+  from = "/premieres"
+  to = "/index.html"
+  status = 200
+[[redirects]]
+  from = "/tv"
+  to = "/index.html"
+  status = 200
+[[redirects]]
+  from = "/battles"
+  to = "/index.html"
+  status = 200
+[[redirects]]
+  from = "/requests"
+  to = "/index.html"
+  status = 200
+[[redirects]]
+  from = "/contest"
+  to = "/index.html"
+  status = 200
+[[redirects]]
+  from = "/playlists"
+  to = "/index.html"
+  status = 200
+[[redirects]]
+  from = "/discord"
+  to = "/index.html"
+  status = 200
+[[redirects]]
+  from = "/browse"
+  to = "/index.html"
+  status = 200
