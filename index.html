@@ -303,6 +303,14 @@ main{min-width:0;padding-right:max(16px,env(safe-area-inset-right,0px));padding-
 .hovprev{position:absolute;inset:0;z-index:2;background:#000;pointer-events:none;animation:hovin .35s ease}
 .hovprev iframe{position:absolute;top:50%;left:50%;width:100%;height:100%;transform:translate(-50%,-50%);border:0;pointer-events:none}
 .thumb.vert .hovprev iframe{width:auto;height:100%;aspect-ratio:16/9}
+.hovprev.v iframe,.thumb .hovprev iframe[src*="tiktok"]{width:auto;height:100%;aspect-ratio:9/16}
+.spcatch{position:absolute;inset:0 0 64px 0;z-index:3;cursor:pointer;touch-action:none}
+.sp .ov{z-index:4}
+.spicon{position:absolute;inset:0;margin:auto;width:72px;height:72px;border-radius:50%;z-index:5;pointer-events:none;opacity:0;background:rgba(0,0,0,.55) center/30px no-repeat}
+.spicon.paused{background-image:url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 24 24%27%3E%3Cpath fill=%27white%27 d=%27M6 5h4v14H6zM14 5h4v14h-4z%27/%3E%3C/svg%3E")}
+.spicon.playing{background-image:url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 24 24%27%3E%3Cpath fill=%27white%27 d=%27M8 5v14l11-7z%27/%3E%3C/svg%3E")}
+.spicon.show{animation:spflash .7s ease}
+@keyframes spflash{0%{opacity:0;transform:scale(.8)}25%{opacity:1;transform:scale(1)}100%{opacity:0;transform:scale(1.15)}}
 @keyframes hovin{from{opacity:0}to{opacity:1}}
 .thumb:hover .tttile{animation:ttdrift 4s ease-in-out infinite alternate;background-size:160% 160%}
 @keyframes ttdrift{0%{background-position:0% 0%}100%{background-position:100% 100%}}
@@ -1193,8 +1201,7 @@ function renderHomeF(){
 function openShorts(id){
   const f=findFilm(id);if(!f)return;
   const pool=allFilms().filter(x=>x.format==="short");
-  const same=pool.filter(x=>x.id!==id&&x.cat===f.cat),other=pool.filter(x=>x.id!==id&&x.cat!==f.cat).sort((a,b)=>filmTrend(b)-filmTrend(a));
-  go({view:"shorts",shortList:[f,...same,...other].map(x=>x.id),shortI:0,film:id});
+  go({view:"shorts",shortList:[id,...shuffledShorts([id])],shortI:0,film:id});
 }
 function renderShorts(){
   const list=state.shortList||[];const f=findFilm(list[state.shortI]);if(!f){state.view="home";return renderHomeF()}
@@ -1209,16 +1216,22 @@ function renderShorts(){
      <div class="ratebox" role="group" aria-label="Rate this short" style="align-self:flex-start"><span>${mine?"Your rating":"Rate"}</span>${[1,2,3,4,5].map(k=>`<button data-rate="${k}" class="${k<=mine?"on":""}" aria-label="${k} stars">★</button>`).join("")}</div>
      <div class="wactions" style="margin-top:0">${f.real||f.yt||f.tt||f.ig||f.vm||f.dm?"":`<button data-tip="${esc(f.byId||f.by)}" data-tipfilm="${esc(f.id)}">${icon("heart")}Tip</button>`}<button data-save="${esc(f.id)}">${icon("save")}Save</button><button data-open-full="${esc(f.id)}">${icon("film")}Details</button></div>
      <div class="snav"><button class="iconbtn navb" data-snav="-1" aria-label="Previous short" ${state.shortI===0?"disabled":""}><svg class="i" viewBox="0 0 24 24"><path d="M6 15l6-6 6 6"/></svg></button>
-       <span class="vmeta">${state.shortI+1} / ${list.length}</span>
-       <button class="iconbtn navb" data-snav="1" aria-label="Next short" ${state.shortI>=list.length-1?"disabled":""}><svg class="i" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></button></div>
-     <p class="vmeta" style="font-size:12px;margin:0">Use the arrow keys or scroll to move between shorts.</p>${commentsHtml(f)}</div></div>`;
+       <span class="vmeta">Short ${state.shortI+1}</span>
+       <button class="iconbtn navb" data-snav="1" aria-label="Next short"><svg class="i" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></button></div>
+     <p class="vmeta" style="font-size:12px;margin:0">Scroll, swipe or use the arrow keys for the next short. Click the video to pause.</p>${commentsHtml(f)}</div></div>`;
   if(f.ig||f.vm||f.dm){const sp=$(".sp");sp.querySelector("canvas")?.remove();sp.querySelector(".play")?.remove();sp.insertAdjacentHTML("afterbegin",f.ig?extFrame(f):extFrame(f).replace("inset:0","inset:0;top:25%;height:50%"))}
   if(f.tt){const sp=$(".sp");sp.querySelector("canvas")?.remove();sp.querySelector(".play")?.remove();sp.insertAdjacentHTML("afterbegin",ttFrame(f.tt))}
   if(f.yt){const sp=$(".sp");sp.querySelector("canvas")?.remove();sp.querySelector(".play")?.remove();sp.insertAdjacentHTML("afterbegin",ytFrame(f.yt))}
+  spPaused=false;{const sp=$(".sp");if(sp&&sp.querySelector("iframe"))sp.insertAdjacentHTML("beforeend",'<div class="spcatch" aria-hidden="true"></div><div class="spicon" aria-hidden="true"></div>')}
 }
-function stepShort(d){const n=(state.shortList||[]).length;const i=Math.min(n-1,Math.max(0,state.shortI+d));if(i!==state.shortI){state.shortI=i;render()}}
+function shuffledShorts(skip){const a=allFilms().filter(x=>x.format==="short"&&!skip.includes(x.id)).map(x=>x.id);for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+function stepShort(d){
+  let list=state.shortList||[];const i=Math.max(0,state.shortI+d);
+  if(i>=list.length){const more=shuffledShorts(list.slice(-4));if(!more.length)return;list=state.shortList=[...list,...more]}
+  if(i!==state.shortI){state.shortI=i;render()}
+}
 let wheelLock=0;
-addEventListener("wheel",e=>{if(state.view!=="shorts"||!e.target.closest(".sp"))return;e.preventDefault();const t=Date.now();if(t-wheelLock<450)return;wheelLock=t;stepShort(e.deltaY>0?1:-1)},{passive:false});
+addEventListener("wheel",e=>{if(state.view!=="shorts"||!e.target.closest(".shorts-view")||e.target.closest(".sside"))return;e.preventDefault();const t=Date.now();if(t-wheelLock<450)return;wheelLock=t;stepShort(e.deltaY>0?1:-1)},{passive:false});
 addEventListener("keydown",e=>{if(state.view!=="shorts"||!$("#scrim").hidden||e.target.closest("input,select,textarea"))return;if(e.key==="ArrowDown"){e.preventDefault();stepShort(1)}if(e.key==="ArrowUp"){e.preventDefault();stepShort(-1)}});
 
 /* series page */
@@ -1311,7 +1324,8 @@ let hovT=null,hovEl=null;
 function previewSrc(f){
   if(f.yt)return `https://www.youtube-nocookie.com/embed/${f.yt}?autoplay=1&mute=1&controls=0&modestbranding=1&playsinline=1&rel=0&loop=1&playlist=${f.yt}`;
   if(f.vm)return `https://player.vimeo.com/video/${f.vm}?background=1&muted=1&autoplay=1&dnt=1`;
-  if(f.dm)return `https://geo.dailymotion.com/player.html?video=${f.dm}&mute=1&autoplay=1&controls=0`;
+  if(f.dm)return `https://geo.dailymotion.com/player.html?video=${f.dm}&mute=true&autoplay=true&controls=false`;
+  if(f.tt)return `https://www.tiktok.com/player/v1/${f.tt}?autoplay=0&controls=0&progress_bar=0&play_button=0&volume_control=0&fullscreen_button=0&timestamp=0&loop=1&music_info=0&description=0&rel=0&native_context_menu=0&closed_caption=0`;
   return "";
 }
 function stopPreview(){clearTimeout(hovT);if(hovEl){hovEl.querySelector(".hovprev")?.remove();hovEl=null}}
@@ -1320,16 +1334,38 @@ document.addEventListener("pointerover",e=>{
   const card=e.target.closest("[data-open],[data-short]");const th=card?.querySelector(".thumb");
   if(!th||th===hovEl)return;stopPreview();
   const f=findFilm(card.dataset.open||card.dataset.short);const src=f&&previewSrc(f);if(!src)return;
-  hovEl=th;hovT=setTimeout(()=>{if(hovEl!==th)return;th.insertAdjacentHTML("beforeend",`<div class="hovprev"><iframe src="${src}" allow="autoplay; encrypted-media" tabindex="-1" aria-hidden="true" title=""></iframe></div>`)},700);
+  hovEl=th;hovT=setTimeout(()=>{if(hovEl!==th)return;th.insertAdjacentHTML("beforeend",`<div class="hovprev"><iframe src="${src}" allow="autoplay; encrypted-media" tabindex="-1" aria-hidden="true" title=""></iframe></div>`)},f.tt?900:700);
 });
 document.addEventListener("pointerout",e=>{if(hovEl&&!hovEl.closest("[data-open],[data-short]")?.contains(e.relatedTarget))stopPreview()});
+/* Shorts: the player sits inside a frame that swallows scroll and swipe, so a see-through layer
+   above it (leaving the player's own control bar free) takes scroll/swipe for next/previous and a click for pause. */
+let spPaused=false,spTouchY=null;
+function spToggle(){
+  const fr=document.querySelector(".sp iframe"),f=findFilm(state.film);if(!fr||!f)return;
+  spPaused=!spPaused;const w=fr.contentWindow,cmd=spPaused?"pause":"play";
+  if(f.yt)w.postMessage(JSON.stringify({event:"command",func:cmd+"Video",args:[]}),"*");
+  else if(f.tt)w.postMessage({"x-tiktok-player":true,type:cmd},"*");
+  else if(f.vm)w.postMessage(JSON.stringify({method:cmd}),"*");
+  const ic=document.querySelector(".spicon");if(ic){ic.className="spicon "+(spPaused?"paused":"playing");void ic.offsetWidth;ic.classList.add("show")}
+}
+document.addEventListener("click",e=>{if(e.target.closest(".spcatch")){e.preventDefault();e.stopPropagation();spToggle()}},true);
+document.addEventListener("touchstart",e=>{if(e.target.closest(".spcatch"))spTouchY=e.touches[0].clientY},{passive:true});
+document.addEventListener("touchend",e=>{if(spTouchY==null)return;const dy=spTouchY-e.changedTouches[0].clientY;spTouchY=null;if(Math.abs(dy)>50)stepShort(dy>0?1:-1)},{passive:true});
+/* TikTok's player can't be muted by a link setting, only by a message once it is ready */
+addEventListener("message",e=>{
+  let host="";try{host=new URL(e.origin).hostname}catch(x){}if(!/(^|\.)tiktok\.com$/.test(host))return;
+  let d=e.data;if(typeof d==="string"){try{d=JSON.parse(d)}catch(x){return}}
+  if(!d||!d["x-tiktok-player"]||d.type!=="onPlayerReady")return;
+  const fr=[...document.querySelectorAll(".hovprev iframe")].find(i=>i.contentWindow===e.source);
+  if(fr){e.source.postMessage({"x-tiktok-player":true,type:"mute"},"*");e.source.postMessage({"x-tiktok-player":true,type:"play"},"*")}
+});
 const EXT=[{p:"tt",name:"TikTok"},{p:"ig",name:"Instagram"},{p:"vm",name:"Vimeo"},{p:"dm",name:"Dailymotion"}];
 const extOf=f=>EXT.find(x=>f[x.p]);
 const vFrame=(src,title)=>`<iframe src="${src}" title="${title}" allow="autoplay; fullscreen; encrypted-media; picture-in-picture" allowfullscreen style="position:absolute;top:0;bottom:0;left:50%;transform:translateX(-50%);height:100%;aspect-ratio:9/16;max-width:100%;border:0;background:#000"></iframe>`;
 const wFrame=(src,title)=>`<iframe src="${src}" title="${title}" allow="autoplay; fullscreen; encrypted-media; picture-in-picture" allowfullscreen style="position:absolute;inset:0;width:100%;height:100%;border:0"></iframe>`;
 const extFrame=f=>f.ig?vFrame(`https://www.instagram.com/reel/${f.ig}/embed/`,"Instagram video player"):f.vm?wFrame(`https://player.vimeo.com/video/${f.vm}?dnt=1&autoplay=1`,"Vimeo video player"):f.dm?wFrame(`https://geo.dailymotion.com/player.html?video=${f.dm}&autoplay=1`,"Dailymotion video player"):"";
 const ttFrame=id=>`<iframe src="https://www.tiktok.com/player/v1/${id}?music_info=1&description=1&rel=0&autoplay=1" title="TikTok video player" allow="autoplay; fullscreen; encrypted-media; picture-in-picture" allowfullscreen style="position:absolute;top:0;bottom:0;left:50%;transform:translateX(-50%);height:100%;aspect-ratio:9/16;max-width:100%;border:0;background:#000"></iframe>`;
-const ytFrame=id=>`<iframe src="https://www.youtube-nocookie.com/embed/${id}?rel=0&autoplay=1&playsinline=1" title="YouTube video player" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen style="position:absolute;inset:0;width:100%;height:100%;border:0"></iframe>`;
+const ytFrame=id=>`<iframe src="https://www.youtube-nocookie.com/embed/${id}?rel=0&autoplay=1&playsinline=1&enablejsapi=1" title="YouTube video player" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen style="position:absolute;inset:0;width:100%;height:100%;border:0"></iframe>`;
 let ticker=null;
 function render(){stopPreview();
   const drafts={};let focusKey=null;
