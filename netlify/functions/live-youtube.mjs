@@ -20,7 +20,11 @@ const json = (body, seconds) =>
   });
 
 export default async (req) => {
-  const demo = new URL(req.url).searchParams.get("demo") === "1";
+  const params = new URL(req.url).searchParams;
+  const demo = params.get("demo") === "1";
+  // Test mode only: try another search text with &q=..., or turn off safe search with &safe=none
+  const query = demo && params.get("q") ? params.get("q").slice(0, 100) : QUERY;
+  const safe = demo && params.get("safe") === "none" ? "none" : "strict";
   const key = Netlify.env.get("YOUTUBE_API_KEY");
   if (!key) return json({ streams: [], error: "YouTube key is not set yet" }, 300);
 
@@ -28,7 +32,7 @@ export default async (req) => {
     const search = new URL("https://www.googleapis.com/youtube/v3/search");
     search.search = new URLSearchParams({
       part: "snippet", eventType: "live", type: "video", maxResults: "25",
-      q: QUERY, safeSearch: "strict", key,
+      q: query, safeSearch: safe, key,
     });
     const r = await fetch(search);
     if (!r.ok) throw new Error("YouTube search failed: " + r.status);
@@ -37,7 +41,7 @@ export default async (req) => {
       !block.has((it.snippet.channelTitle || "").toLowerCase()) && !block.has((it.snippet.channelId || "").toLowerCase()));
     // Test mode (/api/live-youtube?demo=1): everything YouTube returned, unfiltered
     const items = demo ? raw : raw.filter((it) => AI_WORDS.test(it.snippet.title + " " + it.snippet.description));
-    if (!items.length) return json({ streams: [], found: raw.length, demo, checked: new Date().toISOString() }, 1200);
+    if (!items.length) return json({ streams: [], found: raw.length, demo, query, checked: new Date().toISOString() }, 1200);
 
     // Viewer counts (1 quota unit)
     const ids = items.map((it) => it.id.videoId).join(",");
@@ -62,7 +66,7 @@ export default async (req) => {
       ...(demo ? { demo: true } : {}),
     })).sort((a, b) => b.viewers - a.viewers);
 
-    return json({ streams: out, found: raw.length, demo, checked: new Date().toISOString() }, 1200);
+    return json({ streams: out, found: raw.length, demo, query, checked: new Date().toISOString() }, 1200);
   } catch (e) {
     return json({ streams: [], error: String(e.message || e) }, 300);
   }
