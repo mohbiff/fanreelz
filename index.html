@@ -4,6 +4,15 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="description" content="The home of AI fan films. Discover, rate and support the best AI-made films about the games, books, anime and series you love – and get your own films seen.">
+<link rel="manifest" href="/manifest.webmanifest">
+<meta name="theme-color" content="#111118">
+<link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Fanreelz">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta property="og:image" content="https://fanreelz.com/icons/icon-512.png">
 <meta property="og:title" content="Fanreelz – Where AI fan films find their fans">
 <meta property="og:description" content="The home of AI fan films. Discover, rate and support the best AI-made fan films – and get your own films seen.">
 <meta property="og:url" content="https://fanreelz.com/">
@@ -631,6 +640,7 @@ function renderGuide(){
     `<button class="gi ${state.view==="live"?"on":""}" data-view="live">${icon("live")}<span>Live now</span>${LIVE.length?`<span class="livecount">${LIVE.length}</span>`:""}</button>`+[["premieres","Premieres","prem"],["tv","Fanreelz TV","tv"]].map(([v,l,ic])=>`<button class="gi ${state.view===v?"on":""}" data-view="${v}">${icon(ic)}<span>${l}</span></button>`).join("")+
     `<hr><h4>Community</h4>`+[["battles","Fan Battles","battle"],["requests","Requests","req"],["contest","Weekly contest","trophy"],["playlists","Playlists","list"],["discord","Discord bot","bot"]].map(([v,l,ic])=>`<button class="gi ${state.view===v?"on":""}" data-view="${v}">${icon(ic)}<span>${l}</span></button>`).join("")+
     `<button class="gi ${state.view==="about"?"on":""}" data-view="about">${icon("info")}<span>About us</span></button>`+
+    (matchMedia("(display-mode: standalone)").matches||navigator.standalone?"":`<button class="gi" data-install="">${icon("save")}<span>Install app</span></button>`)+
     GROUPS.map(g=>{const top=T[g.name].slice(0,3).map(x=>x.c);
       if(state.cat&&g.cats.some(c=>c.id===state.cat)&&!top.some(c=>c.id===state.cat))top.push(CATS.find(c=>c.id===state.cat));
       return `<hr><h4>${esc(g.name)}<span class="trendlbl">Trending</span></h4>`+top.map((c,i)=>`<button class="gi cat ${state.cat===c.id?"on":""}" data-cat="${c.id}"><span class="dot" style="background:hsl(${hueOf(c.id)},50%,42%)">${esc(c.name[0])}</span><span>${esc(c.name)}</span></button>`).join("")+
@@ -1724,6 +1734,7 @@ document.addEventListener("click",async e=>{
   if(e.target.closest("#submitBtn")){openSubmit();return}
   const A=sel=>e.target.closest(sel);let x;
   if(x=A("[data-share]")){shareFilm(x.dataset.share,!!x.dataset.shareShort);return}
+  if(A("[data-install]")){installApp();return}
   if(x=A("[data-user]")){closeModal&&!$("#scrim").hidden&&closeModal();go({view:"user",user:x.dataset.user,utab:"liked"});return}
   if(x=A("[data-utab]")){state.utab=x.dataset.utab;render();try{history.replaceState({fr:navSnap(),y:scrollY},"",pathFor(state))}catch(e){}return}
   if((x=A("[data-copylink]"))&&!A("#scrim")){try{navigator.clipboard.writeText(x.dataset.copylink);toast("Profile link copied")}catch(e){}return}
@@ -1799,6 +1810,14 @@ render();
 function signinInUrl(){return /[?&#](code|error|access_token)=/.test(location.search+location.hash)}
 try{history.replaceState({fr:navSnap(),y:0},"",signinInUrl()?location.href:pathFor(state))}catch(e){}
 loadLive();setInterval(()=>{if(!document.hidden)loadLive()},120000);
+/* Installable app: register the service worker, and offer an Install button where the browser supports it */
+if("serviceWorker" in navigator&&location.protocol==="https:")navigator.serviceWorker.register("/sw.js").catch(()=>{});
+let installPrompt=null;addEventListener("beforeinstallprompt",e=>{e.preventDefault();installPrompt=e;renderGuide()});
+async function installApp(){if(installPrompt){installPrompt.prompt();await installPrompt.userChoice.catch(()=>{});installPrompt=null;renderGuide();return}
+  const ios=/iphone|ipad|ipod/i.test(navigator.userAgent);
+  openModal(`<div class="dlg" role="dialog" aria-modal="true" aria-label="Install Fanreelz"><h2>Install the Fanreelz app</h2>
+   <p style="margin:0">${ios?"In Safari, tap the <b>Share</b> button, then <b>Add to Home Screen</b>.":"Open your browser menu and choose <b>Install app</b> or <b>Add to Home screen</b>."}</p>
+   <p class="vmeta" style="margin:0">Fanreelz then opens full screen from your home screen, like any other app.</p><div class="row"><button class="btn" data-close>Got it</button></div></div>`)}
 
 async function resolveNames(){
   if(!acct.user)return;const ids=[...new Set(sharedSubs.map(f=>f.byId).filter(Boolean))];if(!ids.length)return;

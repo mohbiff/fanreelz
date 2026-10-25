@@ -1,0 +1,22 @@
+{
+  "name": "Fanreelz – AI fan films",
+  "short_name": "Fanreelz",
+  "description": "The home of AI fan films. Discover, rate and support AI-made films about the games, books, anime and series you love.",
+  "id": "/",
+  "start_url": "/?source=app",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#111118",
+  "theme_color": "#111118",
+  "categories": ["entertainment", "games", "social"],
+  "icons": [
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "Shorts", "url": "/shorts", "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }] },
+    { "name": "Live now", "url": "/live", "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }] }
+  ]
+}
