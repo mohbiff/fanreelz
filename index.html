@@ -688,8 +688,8 @@ function paintAll(root=document){root.querySelectorAll("canvas[data-f]").forEach
 /* Fanreelz views: one per film per visit, counted in the database (table film_views) */
 let VIEWS={};const counted=new Set();
 const viewsOf=f=>VIEWS[f.id]||0;
-/* Fanreelz views are counted from day one but only shown from 100 up; until then the YouTube count is shown */
-const VIEW_MIN=100;
+/* Fanreelz views are counted from day one but not shown yet; the YouTube count is shown instead */
+const VIEW_MIN=Infinity; // hidden for now; set a number (e.g. 1000) to start showing Fanreelz views
 const viewTxt=f=>{const v=viewsOf(f);return v>=VIEW_MIN?`${fmtN(v)} views · `:f.ytViews?`${fmtN(f.ytViews)} YouTube views · `:""};
 function countView(f){if(!f||counted.has(f.id))return;let seen=[];try{seen=JSON.parse(sessionStorage.getItem("fr_seen")||"[]")}catch(e){}
   counted.add(f.id);if(seen.includes(f.id))return;VIEWS[f.id]=viewsOf(f)+1;
