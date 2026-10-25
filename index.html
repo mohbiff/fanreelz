@@ -1649,7 +1649,7 @@ function supabaseDb(uid){
     doc(path){const [col,id]=split(path);return {
       onSnapshot(cb,err){watch(col,async()=>{const {data,error}=await sb.from("docs").select("data").eq("col",col).eq("id",id).maybeSingle();
         if(error){err&&err(error);return}cb({id,exists:!!data,data:()=>data?.data})})},
-      async set(data){if(!uid)throw new Error("signed out");const {error}=await sb.rpc("save_doc",{p_col:col,p_id:id,p_data:data});if(error)throw error;run(col)}
+      async set(data){if(!uid)throw new Error("signed out");await sbSave(col,id,data);run(col)}
     }}
   };
 }
@@ -1670,6 +1670,20 @@ async function startSupabase(){
   const user={me:async()=>me||{},profiles:async ids=>{const out={};if(!ids.length)return out;
     const {data}=await sb.from("profiles").select("id,name").in("id",ids.slice(0,300));for(const r of data||[])out[r.id]={name:r.name||"Fan"};return out}};
   return {user,db:supabaseDb(me?.id||null),me};
+}
+/* Save one document. Sends the signed-in user's token explicitly, and if the database still
+   doesn't see a signed-in user, refreshes the sign-in once and tries again. */
+const jwtInfo=t=>{try{const p=JSON.parse(atob(t.split(".")[1].replace(/-/g,"+").replace(/_/g,"/")));return {role:p.role,exp:p.exp,sub:p.sub}}catch(e){return {}}};
+async function sbSave(col,id,data){
+  const call=async()=>{const {data:{session}}=await sb.auth.getSession();
+    const tok=session?.access_token;const q=sb.rpc("save_doc",{p_col:col,p_id:id,p_data:data});
+    if(tok&&q.headers)q.headers["Authorization"]="Bearer "+tok;
+    const r=await q;return {error:r.error,tok}};
+  let {error,tok}=await call();
+  if(error&&/not see you as signed in/.test(error.message||"")){await sb.auth.refreshSession().catch(()=>{});({error,tok}=await call())}
+  if(error){const i=tok?jwtInfo(tok):null;
+    console.warn("Fanreelz save failed",error,i);
+    throw new Error((error.message||"error")+(i?` [token role: ${i.role||"?"}, expires ${i.exp?new Date(i.exp*1000).toLocaleTimeString():"?"}]`:" [no sign-in token in this browser]"))}
 }
 async function sbSignIn(provider){
   if(!sb)return;try{localStorage.setItem("fr_back",JSON.stringify(history.state?.fr||null))}catch(e){}
