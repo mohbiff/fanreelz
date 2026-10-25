@@ -1,0 +1,68 @@
+-- Fanreelz database setup. Paste this whole file into Supabase → SQL Editor → New query → Run.
+-- Safe to run again: it only creates what is missing.
+
+-- 1. Public profile per signed-in user (name and picture from Google or Discord; never the email)
+create table if not exists public.profiles (
+  id uuid primary key references auth.users on delete cascade,
+  name text,
+  avatar_url text,
+  created_at timestamptz not null default now()
+);
+alter table public.profiles enable row level security;
+drop policy if exists "profiles are public" on public.profiles;
+create policy "profiles are public" on public.profiles for select using (true);
+drop policy if exists "users edit their own profile" on public.profiles;
+create policy "users edit their own profile" on public.profiles for update using (auth.uid() = id) with check (auth.uid() = id);
+
+create or replace function public.handle_new_user() returns trigger
+language plpgsql security definer set search_path = public as $$
+begin
+  insert into public.profiles (id, name, avatar_url)
+  values (
+    new.id,
+    left(coalesce(new.raw_user_meta_data->>'full_name', new.raw_user_meta_data->>'name', new.raw_user_meta_data->>'user_name', 'Fan'), 60),
+    new.raw_user_meta_data->>'avatar_url'
+  )
+  on conflict (id) do nothing;
+  return new;
+end $$;
+drop trigger if exists on_auth_user_created on auth.users;
+create trigger on_auth_user_created after insert on auth.users for each row execute function public.handle_new_user();
+
+-- 2. Everything fans save: ratings, comments, votes, playlists, follows, requests, tips, submissions.
+--    One row per user per collection; everyone can read, only the owner can write their own row.
+create table if not exists public.docs (
+  col text not null,
+  id text not null,
+  data jsonb not null default '{}'::jsonb,
+  owner uuid not null default auth.uid() references auth.users on delete cascade,
+  updated_at timestamptz not null default now(),
+  primary key (col, id),
+  constraint docs_known_col check (
+    col in ('ratings','submissions','votes','tips','comments','commentlikes','requests','upvotes','claims','playlists','follows')
+    or col like 'data/users/%'),
+  constraint docs_size check (pg_column_size(data) < 300000)
+);
+alter table public.docs replica identity full;
+alter table public.docs enable row level security;
+
+drop policy if exists "read shared docs" on public.docs;
+create policy "read shared docs" on public.docs for select
+  using (col not like 'data/users/%' or owner = auth.uid());
+
+drop policy if exists "write own docs" on public.docs;
+create policy "write own docs" on public.docs for insert
+  with check (owner = auth.uid() and (id = auth.uid()::text or col = 'data/users/' || auth.uid()::text));
+
+drop policy if exists "update own docs" on public.docs;
+create policy "update own docs" on public.docs for update
+  using (owner = auth.uid())
+  with check (owner = auth.uid() and (id = auth.uid()::text or col = 'data/users/' || auth.uid()::text));
+
+drop policy if exists "delete own docs" on public.docs;
+create policy "delete own docs" on public.docs for delete using (owner = auth.uid());
+
+-- 3. Live updates (new ratings and comments show up without reloading)
+do $$ begin
+  alter publication supabase_realtime add table public.docs;
+exception when duplicate_object then null; end $$;
