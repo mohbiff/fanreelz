@@ -5,7 +5,7 @@
 
 const SEARCHES = ["AI film", "AI movie", "AI short film", "AI animation", "AI cinematic", "AI trailer"];
 const AI_WORDS = /\b(ai|a\.i\.|kling|sora|runway|veo|midjourney|hailuo|minimax|pika|seedance|higgsfield|comfyui|stable diffusion|luma)\b/i;
-const FILM_WORDS = /(film|movie|cinematic|animation|animated|trailer|short|scene|story|music video|episode|series|fan ?made)/i;
+const FILM_WORDS = /(film|movie|cinema|cinematic|animation|animated|anime|trailer|short|scene|story|music video|episode|series|parody|fan ?made)/i;
 
 // LIVE_BLOCKLIST (Netlify environment variable): channel names that should never be shown, comma-separated.
 const blocked = () => new Set((Netlify.env.get("LIVE_BLOCKLIST") || "").split(",").map((s) => s.trim().toLowerCase()).filter(Boolean));

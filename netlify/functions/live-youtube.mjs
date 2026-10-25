@@ -3,9 +3,11 @@
 // A YouTube live search costs 100 of the 10,000 free daily quota units, so this answer is cached
 // on Netlify's CDN for 20 minutes (about 72 searches a day, roughly 7,300 units).
 
-// YouTube applies "|" to single words, so this reads: "AI" AND (film OR movie OR cinematic OR animation OR trailer)
-const QUERY = "AI film|movie|cinematic|animation|trailer";
+// Tested: "AI film" with safe search off returns live AI streams; strict safe search returns none.
+const QUERY = "AI film";
 const AI_WORDS = /\b(ai|a\.i\.|kling|sora|runway|veo|midjourney|hailuo|minimax|pika|seedance|higgsfield|luma)\b/i;
+// The TITLE must name both AI and something film-like, so cat videos and music loops stay out.
+const FILM_WORDS = /(film|movie|cinema|cinematic|animation|animated|anime|trailer|short|story|episode|series|parody|fan ?made)/i;
 
 // LIVE_BLOCKLIST (Netlify environment variable): channel names that should never be shown, comma-separated.
 const blocked = () => new Set((Netlify.env.get("LIVE_BLOCKLIST") || "").split(",").map((s) => s.trim().toLowerCase()).filter(Boolean));
@@ -24,7 +26,7 @@ export default async (req) => {
   const demo = params.get("demo") === "1";
   // Test mode only: try another search text with &q=..., or turn off safe search with &safe=none
   const query = demo && params.get("q") ? params.get("q").slice(0, 100) : QUERY;
-  const safe = demo && params.get("safe") === "none" ? "none" : "strict";
+  const safe = demo && ["strict", "moderate"].includes(params.get("safe")) ? params.get("safe") : "none";
   const key = Netlify.env.get("YOUTUBE_API_KEY");
   if (!key) return json({ streams: [], error: "YouTube key is not set yet" }, 300);
 
@@ -40,7 +42,7 @@ export default async (req) => {
     const raw = ((await r.json()).items || []).filter((it) =>
       !block.has((it.snippet.channelTitle || "").toLowerCase()) && !block.has((it.snippet.channelId || "").toLowerCase()));
     // Test mode (/api/live-youtube?demo=1): everything YouTube returned, unfiltered
-    const items = demo ? raw : raw.filter((it) => AI_WORDS.test(it.snippet.title + " " + it.snippet.description));
+    const items = demo ? raw : raw.filter((it) => AI_WORDS.test(it.snippet.title) && FILM_WORDS.test(it.snippet.title));
     if (!items.length) return json({ streams: [], found: raw.length, demo, query, checked: new Date().toISOString() }, 1200);
 
     // Viewer counts (1 quota unit)
