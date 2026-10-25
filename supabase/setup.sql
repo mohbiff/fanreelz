@@ -141,3 +141,4 @@ language sql security definer set search_path = public as $$
   where status = 'done' and checked_at < now() - interval '7 days';
 $$;
 revoke all on function public.requeue_done_channels() from public, anon, authenticated;
+grant execute on function public.requeue_done_channels() to service_role;
