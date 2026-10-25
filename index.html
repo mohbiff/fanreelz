@@ -1649,7 +1649,7 @@ function supabaseDb(uid){
     doc(path){const [col,id]=split(path);return {
       onSnapshot(cb,err){watch(col,async()=>{const {data,error}=await sb.from("docs").select("data").eq("col",col).eq("id",id).maybeSingle();
         if(error){err&&err(error);return}cb({id,exists:!!data,data:()=>data?.data})})},
-      async set(data){if(!uid)throw new Error("signed out");const {error}=await sb.from("docs").upsert({col,id,data,owner:uid,updated_at:new Date().toISOString()});if(error)throw error;run(col)}
+      async set(data){if(!uid)throw new Error("signed out");const {error}=await sb.rpc("save_doc",{p_col:col,p_id:id,p_data:data});if(error)throw error;run(col)}
     }}
   };
 }

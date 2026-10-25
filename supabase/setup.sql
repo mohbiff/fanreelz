@@ -72,3 +72,23 @@ grant usage on schema public to anon, authenticated;
 grant select on public.docs, public.profiles to anon, authenticated;
 grant insert, update, delete on public.docs to authenticated;
 grant update on public.profiles to authenticated;
+
+-- 5. Saving goes through this function: the database itself works out who is signed in,
+--    and reports clearly if it can't see a signed-in user.
+create or replace function public.save_doc(p_col text, p_id text, p_data jsonb) returns void
+language plpgsql security definer set search_path = public as $$
+declare uid uuid := auth.uid();
+begin
+  if uid is null then
+    raise exception 'The database does not see you as signed in (role: %)', coalesce(auth.role(), 'none');
+  end if;
+  if not (p_id = uid::text or p_col = 'data/users/' || uid::text) then
+    raise exception 'You can only save your own data';
+  end if;
+  insert into public.docs (col, id, data, owner, updated_at)
+  values (p_col, p_id, coalesce(p_data, '{}'::jsonb), uid, now())
+  on conflict (col, id) do update set data = excluded.data, updated_at = now()
+  where public.docs.owner = uid;
+end $$;
+revoke all on function public.save_doc(text, text, jsonb) from public;
+grant execute on function public.save_doc(text, text, jsonb) to anon, authenticated;
