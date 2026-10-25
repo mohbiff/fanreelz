@@ -10,10 +10,34 @@
 const UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36";
 const decode = (s) => s.replace(/\\u0026/g, "&").replace(/&amp;/g, "&").replace(/\\\//g, "/");
 
-async function imageUrl(p, u, id) {
+async function imageUrl(p, u, id, tries = []) {
   if (p === "tt") {
-    const r = await fetch("https://www.tiktok.com/oembed?url=" + encodeURIComponent(`https://www.tiktok.com/@${u}/video/${id}`));
-    return r.ok ? (await r.json()).thumbnail_url : "";
+    const page = `https://www.tiktok.com/@${u}/video/${id}`;
+    const H = { "User-Agent": UA, "Accept-Language": "en-US,en;q=0.9", Accept: "application/json,text/html;q=0.9,*/*;q=0.8" };
+    // 1. TikTok's own oEmbed
+    try {
+      const r = await fetch("https://www.tiktok.com/oembed?url=" + encodeURIComponent(page), { headers: H });
+      tries.push("tiktok oembed " + r.status);
+      if (r.ok) { const j = await r.json(); if (j.thumbnail_url) return j.thumbnail_url; tries.push("tiktok oembed: no thumbnail_url"); }
+    } catch (e) { tries.push("tiktok oembed error " + (e.message || e)); }
+    // 2. TikTok's embed page (the cover image is in its data)
+    try {
+      const r = await fetch(`https://www.tiktok.com/embed/v2/${id}`, { headers: H });
+      tries.push("tiktok embed " + r.status);
+      if (r.ok) {
+        const html = await r.text();
+        const m = html.match(/"(?:originCover|cover|dynamicCover)":"(https:[^"]+)"/);
+        if (m) return decode(m[1]);
+        tries.push("tiktok embed: no cover in page");
+      }
+    } catch (e) { tries.push("tiktok embed error " + (e.message || e)); }
+    // 3. noembed.com, a public oEmbed relay
+    try {
+      const r = await fetch("https://noembed.com/embed?url=" + encodeURIComponent(page), { headers: H });
+      tries.push("noembed " + r.status);
+      if (r.ok) { const j = await r.json(); if (j.thumbnail_url) return j.thumbnail_url; tries.push("noembed: " + (j.error || "no thumbnail_url")); }
+    } catch (e) { tries.push("noembed error " + (e.message || e)); }
+    return "";
   }
   if (p === "vm") {
     const r = await fetch(`https://vimeo.com/api/oembed.json?width=640&url=${encodeURIComponent("https://vimeo.com/" + id)}`);
@@ -37,9 +61,11 @@ export default async (req) => {
   const u = (q.get("u") || "").replace(/[^\w.]/g, "");
   const id = (q.get("id") || "").replace(/[^\w-]/g, "");
   if (!id || (p === "tt" && !u)) return new Response("missing id", { status: 400 });
+  const tries = [];
   try {
-    const src = await imageUrl(p, u, id);
+    const src = await imageUrl(p, u, id, tries);
     if (!src) throw new Error("no thumbnail from " + p);
+    tries.push("image " + src.slice(0, 80));
     const img = await fetch(src, { headers: { "User-Agent": UA, Referer: "https://www.tiktok.com/" } });
     let type = img.headers.get("content-type") || "";
     if (!img.ok || type.startsWith("text/")) throw new Error("bad image " + img.status);
@@ -52,7 +78,7 @@ export default async (req) => {
       },
     });
   } catch (e) {
-    if (q.get("debug")) return new Response("thumb failed: " + String(e.message || e), { status: 404, headers: { "Cache-Control": "no-store" } });
+    if (q.get("debug")) return new Response("thumb failed: " + String(e.message || e) + "\n" + tries.join("\n"), { status: 404, headers: { "Cache-Control": "no-store" } });
     // The page shows its own platform tile when the image fails to load. Try again in an hour.
     return new Response("not found", { status: 404, headers: { "Netlify-CDN-Cache-Control": "public, durable, s-maxage=3600" } });
   }
