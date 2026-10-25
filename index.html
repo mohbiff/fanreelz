@@ -617,7 +617,7 @@ function renderGuide(){
   $("#guide").innerHTML=fi("home","Home","home")+fnav("short","Shorts")+fnav("series","Series")+fi("top","Top rated","top")+fi("new","New","fresh")+
     `<button class="gi ${state.view==="browse"?"on":""}" data-browse="All">${icon("list")}<span>Browse all</span></button><hr>`+
     `<button class="gi youhead ${state.view==="you"?"on":""}" data-view="you"><span>You</span><svg class="i" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></button>`+
-    [["channel","Your channel","user"],["history","History","clock"],["playlists","Playlists","list"],["later","Watch later","clock"],["liked","Liked videos","like"],["yourvideos","Your videos","film"]]
+    [["channel","Creator page","user"],["history","History","clock"],["playlists","Playlists","list"],["later","Watch later","clock"],["liked","Liked videos","like"],["yourvideos","Your videos","film"]]
       .map(([v,l,ic])=>`<button class="gi ${state.view===v||(v==="channel"&&state.view==="creator"&&state.creator===acct.uid)?"on":""}" data-you="${v}">${icon(ic)}<span>${l}</span></button>`).join("")+
     fi("mine","Your ratings","mine")+`<hr>`+
     `<button class="gi ${state.view==="live"?"on":""}" data-view="live">${icon("live")}<span>Live now</span>${LIVE.length?`<span class="livecount">${LIVE.length}</span>`:""}</button>`+[["premieres","Premieres","prem"],["tv","Fanreelz TV","tv"]].map(([v,l,ic])=>`<button class="gi ${state.view===v?"on":""}" data-view="${v}">${icon(ic)}<span>${l}</span></button>`).join("")+
@@ -1144,7 +1144,7 @@ function youShelf(title,view,films,empty){return `<section class="youshelf"><div
 function renderYou(){
   if(!acct.online){$("#main").innerHTML=`<div class="about"><h1 class="ab-h">You</h1><p class="ab-lede">Sign in to keep your history, Watch later list, liked films, playlists and your own channel in one place, on every device.</p><button class="btn" id="signinBtn">Sign in</button>
     ${myHistory.length?youShelf("History (this browser)","history",filmsOf(myHistory),""):""}</div>`;return}
-  $("#main").innerHTML=`<div class="youhero"><img alt="" src="${esc(acct.me.avatarUrl||"")}"><div><h1>${esc(acct.me.name||"You")}</h1><button class="chip" data-you="channel">View your channel</button></div></div>`+
+  $("#main").innerHTML=`<div class="youhero"><img alt="" src="${esc(acct.me.avatarUrl||"")}"><div><h1>${esc(acct.me.name||"You")}</h1><button class="chip" data-you="channel">View your creator page</button></div></div>`+
     youShelf("History","history",filmsOf(myHistory),"Films you watch show up here.")+
     youShelf("Watch later","later",filmsOf(myLater),"Press Watch later on a film to save it for later.")+
     youShelf("Liked videos","liked",likedFilms(),"Films you rate 4 or 5 stars show up here.")+
@@ -1674,7 +1674,7 @@ document.addEventListener("click",async e=>{
   if(x=A("[data-later]")){toggleLater(x.dataset.later);return}
   if(A("[data-clearhistory]")){saveYou("history",[]);render();toast("History cleared");return}
   if(x=A("[data-you]")){$("#shell").classList.remove("open");const v=x.dataset.you;
-    if(v==="channel"){if(!needAccount("Sign in to see your channel."))return;go({view:"creator",creator:acct.uid,ctab:"film"});return}
+    if(v==="channel"){if(!needAccount("Sign in to see your creator page."))return;go({view:"creator",creator:acct.uid,ctab:"film"});return}
     if(v==="playlists"){go({view:"playlists"});return}go({view:v,cat:null,char:null});return}
   if(x=A("[data-csort]")){cSort=x.dataset.csort;render();return}
   if(x=A("[data-creply]")){if(!needAccount("Sign in to reply."))return;replyTo=x.dataset.creply;render();document.querySelector(`.cmform[data-cparent="${CSS.escape(replyTo)}"] textarea`)?.focus();return}
