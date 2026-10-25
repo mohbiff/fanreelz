@@ -7,6 +7,9 @@ const SEARCHES = ["AI film", "AI movie", "AI short film", "AI animation", "AI ci
 const AI_WORDS = /\b(ai|a\.i\.|kling|sora|runway|veo|midjourney|hailuo|minimax|pika|seedance|higgsfield|comfyui|stable diffusion|luma)\b/i;
 const FILM_WORDS = /(film|movie|cinematic|animation|animated|trailer|short|scene|story|music video|episode|series|fan ?made)/i;
 
+// LIVE_BLOCKLIST (Netlify environment variable): channel names that should never be shown, comma-separated.
+const blocked = () => new Set((Netlify.env.get("LIVE_BLOCKLIST") || "").split(",").map((s) => s.trim().toLowerCase()).filter(Boolean));
+
 let cachedToken = null; // reused while the function instance stays warm
 
 async function appToken(id, secret) {
@@ -48,11 +51,13 @@ export default async (req) => {
 
   try {
     const token = await appToken(id, secret);
+    const block = blocked();
+    const allowed = (s) => !block.has((s.user_login || "").toLowerCase()) && !block.has((s.user_name || "").toLowerCase());
 
     // Test mode (/api/live?demo=1): the most-watched safe streams on Twitch right now, any topic.
     if (demo) {
       const top = await helix("streams?first=20", id, token);
-      const out = top.filter((s) => s.type === "live" && !s.is_mature).slice(0, 4).map((s) => ({
+      const out = top.filter((s) => s.type === "live" && !s.is_mature && allowed(s)).slice(0, 4).map((s) => ({
         id: "tw-" + s.user_login, platform: "Twitch", channel: s.user_login, ch: s.user_name,
         title: s.title, game: s.game_name || "", viewers: s.viewer_count || 0,
         thumb: (s.thumbnail_url || "").replace("{width}", "640").replace("{height}", "360"),
@@ -86,7 +91,7 @@ export default async (req) => {
     }
 
     const out = streams
-      .filter((s) => s.type === "live" && !s.is_mature)
+      .filter((s) => s.type === "live" && !s.is_mature && allowed(s))
       .map((s) => ({
         id: "tw-" + s.user_login,
         platform: "Twitch",

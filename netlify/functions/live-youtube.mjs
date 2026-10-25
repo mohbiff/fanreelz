@@ -7,6 +7,9 @@
 const QUERY = "AI film|movie|cinematic|animation|trailer";
 const AI_WORDS = /\b(ai|a\.i\.|kling|sora|runway|veo|midjourney|hailuo|minimax|pika|seedance|higgsfield|luma)\b/i;
 
+// LIVE_BLOCKLIST (Netlify environment variable): channel names that should never be shown, comma-separated.
+const blocked = () => new Set((Netlify.env.get("LIVE_BLOCKLIST") || "").split(",").map((s) => s.trim().toLowerCase()).filter(Boolean));
+
 const json = (body, seconds) =>
   new Response(JSON.stringify(body), {
     headers: {
@@ -29,7 +32,9 @@ export default async (req) => {
     });
     const r = await fetch(search);
     if (!r.ok) throw new Error("YouTube search failed: " + r.status);
-    const raw = (await r.json()).items || [];
+    const block = blocked();
+    const raw = ((await r.json()).items || []).filter((it) =>
+      !block.has((it.snippet.channelTitle || "").toLowerCase()) && !block.has((it.snippet.channelId || "").toLowerCase()));
     // Test mode (/api/live-youtube?demo=1): everything YouTube returned, unfiltered
     const items = demo ? raw : raw.filter((it) => AI_WORDS.test(it.snippet.title + " " + it.snippet.description));
     if (!items.length) return json({ streams: [], found: raw.length, demo, checked: new Date().toISOString() }, 1200);
