@@ -92,3 +92,50 @@ begin
 end $$;
 revoke all on function public.save_doc(text, text, jsonb) from public;
 grant execute on function public.save_doc(text, text, jsonb) to anon, authenticated;
+
+-- 6. The film catalogue filled by the YouTube importer (Netlify function import-youtube).
+--    Everyone can read it; only the importer (service role key, kept in Netlify) can write.
+create table if not exists public.catalog (
+  id text primary key,
+  platform text not null default 'YouTube',
+  video_id text not null,
+  title text not null,
+  channel text,
+  channel_id text,
+  cat text not null,
+  char text,
+  lore text,
+  format text not null default 'film',
+  duration int,
+  views bigint default 0,
+  published_at timestamptz,
+  added_at timestamptz not null default now(),
+  hidden boolean not null default false
+);
+create index if not exists catalog_views on public.catalog (views desc);
+alter table public.catalog enable row level security;
+drop policy if exists "catalog is public" on public.catalog;
+create policy "catalog is public" on public.catalog for select using (not hidden);
+grant select on public.catalog to anon, authenticated;
+
+create table if not exists public.catalog_channels (
+  channel_id text primary key,
+  title text,
+  uploads text,
+  status text not null default 'new',
+  next_page text,
+  ai_count int not null default 0,
+  seen_count int not null default 0,
+  checked_at timestamptz
+);
+alter table public.catalog_channels enable row level security;
+
+create table if not exists public.import_state (key text primary key, value jsonb);
+alter table public.import_state enable row level security;
+
+create or replace function public.requeue_done_channels() returns void
+language sql security definer set search_path = public as $$
+  update public.catalog_channels set status = 'reading', next_page = null
+  where status = 'done' and checked_at < now() - interval '7 days';
+$$;
+revoke all on function public.requeue_done_channels() from public, anon, authenticated;

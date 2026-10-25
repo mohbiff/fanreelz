@@ -1,0 +1,128 @@
+// Fanreelz importer: grows the catalogue with AI fan films from YouTube, every 2 hours.
+//
+// How it stays inside YouTube's free daily quota (10,000 units; the live search already uses about 7,200):
+//  1. One search per run (100 units) for a rotating topic, to discover channels that make AI fan films.
+//  2. A channel counts as an "AI channel" when most of its recent uploads look AI-made.
+//  3. For AI channels it reads the upload list (1 unit per 50 videos) and keeps the fan films.
+//  4. Video details (length, embeddable, age limit) cost 1 unit per 50 videos.
+// About 150–250 units per run, 12 runs a day.
+//
+// Needs in Netlify: YOUTUBE_API_KEY, SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY (secret; never in the page).
+import { classify, AI_RE } from "./lib/classify.mjs";
+
+const TOPICS = [
+  "AI fan film", "AI movie trailer", "as an 80s dark fantasy film", "1950s super panavision 70", "AI live action anime",
+  "AI cinematic warcraft", "AI warhammer 40k film", "AI lord of the rings film", "AI skyrim movie", "AI dark souls film",
+  "AI elden ring movie", "AI league of legends cinematic", "AI dota 2 movie", "AI minecraft movie", "AI roblox movie",
+  "AI GTA 6 trailer", "AI zelda movie", "AI naruto live action", "AI one piece live action", "AI dragon ball live action",
+  "AI berserk live action", "AI game of thrones 1950s", "AI harry potter 1950s", "AI dune trailer", "AI witcher film",
+  "AI fallout 1950s", "AI starcraft movie", "AI diablo movie", "italian brainrot AI story", "veo 3 short film",
+  "kling ai short film", "sora ai short film", "AI mythology film", "AI D&D movie", "AI age of empires cinematic",
+];
+const PER_RUN_CHANNELS = 6, PAGES_PER_CHANNEL = 4, MIN_AI_SHARE = 0.5;
+
+const yt = async (path, params) => {
+  const u = new URL("https://www.googleapis.com/youtube/v3/" + path);
+  u.search = new URLSearchParams({ ...params, key: Netlify.env.get("YOUTUBE_API_KEY") });
+  const r = await fetch(u);
+  if (!r.ok) throw new Error(`YouTube ${path} ${r.status}: ${(await r.text()).slice(0, 200)}`);
+  return r.json();
+};
+function db() {
+  const url = Netlify.env.get("SUPABASE_URL"), key = Netlify.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  const h = { apikey: key, "Content-Type": "application/json" };
+  if (!key.startsWith("sb_secret_")) h.Authorization = "Bearer " + key;
+  const call = async (method, path, body, extra = {}) => {
+    const r = await fetch(url + "/rest/v1/" + path, { method, headers: { ...h, ...extra }, body: body ? JSON.stringify(body) : undefined });
+    if (!r.ok) throw new Error(`Supabase ${method} ${path.split("?")[0]} ${r.status}: ${(await r.text()).slice(0, 200)}`);
+    return r.status === 204 ? null : r.json().catch(() => null);
+  };
+  return {
+    get: (path) => call("GET", path),
+    post: (path, body) => call("POST", path, body),
+    upsert: (table, rows) => rows.length ? call("POST", table, rows, { Prefer: "resolution=merge-duplicates,return=minimal" }) : null,
+  };
+}
+const iso = (d) => { const m = /PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/.exec(d || ""); return m ? (+m[1] || 0) * 3600 + (+m[2] || 0) * 60 + (+m[3] || 0) : 0; };
+
+async function run() {
+  if (!Netlify.env.get("YOUTUBE_API_KEY") || !Netlify.env.get("SUPABASE_SERVICE_ROLE_KEY") || !Netlify.env.get("SUPABASE_URL"))
+    return { error: "Missing YOUTUBE_API_KEY, SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY" };
+  const sb = db(), log = [];
+  const state = ((await sb.get("import_state?key=eq.youtube&select=value"))[0] || {}).value || { topic: 0 };
+
+  // 1. Discover channels with one search
+  const topic = TOPICS[state.topic % TOPICS.length];
+  const found = await yt("search", { part: "snippet", type: "video", q: topic, maxResults: "50", safeSearch: "moderate", videoEmbeddable: "true" });
+  const newChannels = {};
+  for (const it of found.items || []) {
+    const s = it.snippet;
+    if (AI_RE.test(s.title) || AI_RE.test(s.description)) newChannels[s.channelId] = s.channelTitle;
+  }
+  const known = new Set((await sb.get("catalog_channels?select=channel_id")).map((c) => c.channel_id));
+  const fresh = Object.entries(newChannels).filter(([id]) => !known.has(id));
+  if (fresh.length) {
+    const info = await yt("channels", { part: "contentDetails,snippet", id: fresh.map(([id]) => id).slice(0, 50).join(",") });
+    await sb.upsert("catalog_channels", (info.items || []).map((c) => ({
+      channel_id: c.id, title: c.snippet.title, uploads: c.contentDetails.relatedPlaylists.uploads, status: "new", next_page: null,
+    })));
+  }
+  log.push(`topic "${topic}": ${fresh.length} new channels`);
+
+  // 2. Work through channels: new ones first, then ones with more pages to read
+  const queue = await sb.get(`catalog_channels?status=in.(new,reading)&order=status.asc,checked_at.asc.nullsfirst&limit=${PER_RUN_CHANNELS}`);
+  let added = 0;
+  for (const ch of queue) {
+    let page = ch.next_page || undefined, rows = [], aiCount = ch.ai_count || 0, seen = ch.seen_count || 0, isAi = ch.status === "reading";
+    for (let p = 0; p < PAGES_PER_CHANNEL; p++) {
+      const pl = await yt("playlistItems", { part: "snippet", playlistId: ch.uploads, maxResults: "50", ...(page ? { pageToken: page } : {}) }).catch(() => null);
+      if (!pl) { page = null; break; }
+      const items = (pl.items || []).filter((i) => i.snippet?.resourceId?.videoId && i.snippet.title !== "Private video" && i.snippet.title !== "Deleted video");
+      seen += items.length; aiCount += items.filter((i) => AI_RE.test(i.snippet.title) || AI_RE.test(i.snippet.description || "")).length;
+      if (!isAi) isAi = seen >= 10 && aiCount / seen >= MIN_AI_SHARE;
+      for (const i of items) {
+        const c = classify(i.snippet.title, i.snippet.description || "", isAi);
+        if (c) rows.push({ v: i.snippet.resourceId.videoId, t: i.snippet.title, at: i.snippet.publishedAt, ...c });
+      }
+      page = pl.nextPageToken || null;
+      if (!page) break;
+      if (!isAi && seen >= 50) break; // not an AI channel: stop reading it
+    }
+    // 3. Details for the candidates: embeddable, not age-restricted, length
+    const keep = [];
+    for (let i = 0; i < rows.length; i += 50) {
+      const batch = rows.slice(i, i + 50);
+      const det = await yt("videos", { part: "contentDetails,status,statistics", id: batch.map((r) => r.v).join(",") }).catch(() => ({ items: [] }));
+      const map = Object.fromEntries((det.items || []).map((d) => [d.id, d]));
+      for (const r of batch) {
+        const d = map[r.v];
+        if (!d || !d.status?.embeddable || d.status?.privacyStatus !== "public" || d.contentDetails?.contentRating?.ytRating === "ytAgeRestricted") continue;
+        const secs = iso(d.contentDetails.duration);
+        if (secs < 8) continue;
+        keep.push({
+          id: "yt-" + r.v, platform: "YouTube", video_id: r.v, title: r.t.slice(0, 200), channel: ch.title, channel_id: ch.channel_id,
+          cat: r.cat, char: r.char, lore: r.lore, format: secs <= 75 ? "short" : "film", duration: secs,
+          views: +(d.statistics?.viewCount || 0), published_at: r.at,
+        });
+      }
+    }
+    await sb.upsert("catalog", keep);
+    added += keep.length;
+    await sb.upsert("catalog_channels", [{
+      channel_id: ch.channel_id, title: ch.title, uploads: ch.uploads, next_page: page,
+      status: !isAi && seen >= 50 ? "skipped" : page ? "reading" : "done", ai_count: aiCount, seen_count: seen, checked_at: new Date().toISOString(),
+    }]);
+    log.push(`${ch.title}: ${keep.length} films (${isAi ? "AI channel" : "mixed"}, ${page ? "more to read" : "finished"})`);
+  }
+  // Finished channels are re-checked for new uploads about once a week
+  await sb.post("rpc/requeue_done_channels", {}).catch(() => null);
+  await sb.upsert("import_state", [{ key: "youtube", value: { topic: state.topic + 1, last: new Date().toISOString(), added } }]);
+  return { added, log };
+}
+
+export default async () => {
+  try { const r = await run(); console.log(JSON.stringify(r)); return new Response(JSON.stringify(r), { headers: { "Content-Type": "application/json" } }); }
+  catch (e) { console.error(e); return new Response(JSON.stringify({ error: String(e.message || e) }), { status: 500 }); }
+};
+
+export const config = { schedule: "17 */2 * * *" };

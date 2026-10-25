@@ -2045,6 +2045,7 @@ async function startSupabase(){
     me={id:u.id,name,avatarUrl:prof?.avatar_url||meta.avatar_url||initialAvatar(name),provider:u.app_metadata?.provider||""}}
   const user={me:async()=>me||{},profiles:async ids=>{const out={};if(!ids.length)return out;
     const {data}=await sb.from("profiles").select("id,name,avatar_url").in("id",ids.slice(0,300));for(const r of data||[])out[r.id]={name:r.name||"Fan",avatar:r.avatar_url||""};return out}};
+  loadCatalog().catch(e=>console.warn("catalogue",e));
   return {user,db:supabaseDb(me?.id||null),me};
 }
 /* Save one document. Sends the signed-in user's token explicitly, and if the database still
@@ -2060,6 +2061,23 @@ async function sbSave(col,id,data){
   if(error){const i=tok?jwtInfo(tok):null;
     console.warn("Fanreelz save failed",error,i);
     throw new Error((error.message||"error")+(i?` [token role: ${i.role||"?"}, expires ${i.exp?new Date(i.exp*1000).toLocaleTimeString():"?"}]`:" [no sign-in token in this browser]")+(sbTokenNote?` [${sbTokenNote}]`:""))}
+}
+/* The big catalogue: AI fan films the importer has found on YouTube, read from the database in pages of 1,000 */
+async function loadCatalog(){
+  if(!sb)return;const rows=[];
+  for(let from=0;from<30000;from+=1000){
+    const {data,error}=await sb.from("catalog").select("id,video_id,title,channel,cat,char,lore,format,duration,published_at").order("views",{ascending:false}).range(from,from+999);
+    if(error||!data){if(error)console.warn("catalogue",error.message);break}
+    rows.push(...data);if(data.length<1000)break;
+  }
+  const have=new Set(FILMS.map(f=>f.id)),known=new Set(CATS.map(c=>c.id));let n=0;
+  rows.forEach((r,k)=>{if(have.has(r.id)||!known.has(r.cat))return;have.add(r.id);
+    const d=+r.duration||0;
+    FILMS.push({id:r.id,yt:r.video_id,title:r.title,cat:r.cat,char:r.char||"",src:"YouTube",tool:"AI tools",by:r.channel||"",
+      len:d?`${Math.floor(d/60)}:${String(d%60).padStart(2,"0")}`:"",days:r.published_at?daysSince(Date.parse(r.published_at)):null,
+      counts:[0,0,0,0,0],hue:(k*47)%360,format:r.format==="short"?"short":"film",lore:r.lore||"whatif",boost:Math.max(0,20-k/50),
+      url:"https://www.youtube.com/watch?v="+r.video_id});n++});
+  if(n){console.log("Fanreelz catalogue:",n,"films");render()}
 }
 async function sbSignIn(provider){
   if(!sb)return;try{localStorage.setItem("fr_back",JSON.stringify(history.state?.fr||null))}catch(e){}
