@@ -3,11 +3,16 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="description" content="Fanreelz collects the best AI fan films about games, books and series, rated by fans.">
+<meta name="description" content="The home of AI fan films. Discover, rate and support the best AI-made films about the games, books, anime and series you love – and get your own films seen.">
+<meta property="og:title" content="Fanreelz – Where AI fan films find their fans">
+<meta property="og:description" content="The home of AI fan films. Discover, rate and support the best AI-made fan films – and get your own films seen.">
+<meta property="og:url" content="https://fanreelz.com/">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary">
 <style>html{color-scheme:light}:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px/1.45 system-ui,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style>
 </head>
 <body>
-<title>Fanreelz – AI fan films, ranked by fans</title>
+<title>Fanreelz – Where AI fan films find their fans</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@700;800&family=Figtree:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap">
 <style>
@@ -41,6 +46,8 @@ svg.i{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stro
 .zz{display:inline-block;color:var(--accent);font-size:1.32em;line-height:.8;transform:skewX(-14deg) translateY(.04em);margin-left:.02em;position:relative;font-weight:800}
 .zz::after{content:"";position:absolute;left:-.06em;right:-.12em;bottom:-.2em;height:.13em;border-radius:.1em;background:var(--accent);transform:skewX(14deg)}
 .logo{display:flex;align-items:center;gap:7px;font-family:var(--display);font-weight:800;font-size:18px;letter-spacing:-.03em;background:none;border:0;padding:0}
+.word-tag{font-family:inherit;font-weight:500;font-size:12.5px;letter-spacing:0;color:var(--muted);margin-left:6px;padding-left:11px;border-left:1px solid var(--line);white-space:nowrap}
+@media (max-width:1100px){.logo .word-tag{display:none}}
 .logo .mark{width:26px;height:26px;color:var(--accent);display:grid;place-items:center}
 .logo .mark svg{width:26px;height:26px}
 .searchwrap{flex:1;display:flex;justify-content:center;min-width:0}
@@ -338,6 +345,24 @@ main{min-width:0;padding-right:max(16px,env(safe-area-inset-right,0px));padding-
 .viewers{position:absolute;left:8px;bottom:8px;font-size:12px;font-weight:600;background:rgba(0,0,0,.75);color:#fff;padding:1px 6px;border-radius:4px}
 .plat{display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:700;color:var(--muted)}
 .lede{color:var(--muted);margin:-6px 0 22px;max-width:70ch}
+.about{max-width:900px;padding:28px 0 40px}
+.ab-kicker{margin:0 0 8px;font-size:13px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--accent)}
+.ab-h{font-family:var(--display);font-size:clamp(28px,4.4vw,44px);line-height:1.08;letter-spacing:-.03em;margin:0 0 16px}
+.ab-lede{font-size:17px;line-height:1.6;color:var(--fg);max-width:68ch;margin:0 0 26px}
+.ab-stats{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+.ab-stats div{flex:1 1 150px;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px 16px}
+.ab-stats b{display:block;font-family:var(--display);font-size:28px;letter-spacing:-.02em}
+.ab-stats span{font-size:13px;color:var(--muted)}
+.ab-h2{font-family:var(--display);font-size:22px;letter-spacing:-.02em;margin:36px 0 14px}
+.abgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px}
+.abcard{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px}
+.abcard .i{width:22px;height:22px;color:var(--accent)}
+.abcard h3{font-size:15px;margin:10px 0 6px}
+.abcard p{margin:0;font-size:14px;line-height:1.5;color:var(--muted)}
+.ab-steps,.ab-list{margin:0;padding-left:22px;display:flex;flex-direction:column;gap:10px;line-height:1.55;max-width:70ch}
+.ab-list{padding-left:20px}
+.ab-cta{margin-top:40px;display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;background:var(--accent-soft);border-radius:16px;padding:20px 22px}
+.ab-cta h2{margin:0 0 4px;font-size:20px}.ab-cta p{margin:0;color:var(--muted)}
 .prem{display:grid;grid-template-columns:240px minmax(0,1fr) auto;gap:16px;align-items:center;padding:14px 0;border-bottom:1px solid var(--line)}
 .prem .thumb{border-radius:10px}
 .prem .when{display:flex;flex-direction:column;align-items:flex-end;gap:8px;text-align:right}
@@ -407,7 +432,7 @@ main{min-width:0;padding-right:max(16px,env(safe-area-inset-right,0px));padding-
 <div style="background:var(--accent);color:var(--ink-on-accent);text-align:center;font-weight:700;font-size:13px;padding:7px 16px">Preview: Fanreelz launches soon. The films are real AI fan films from YouTube, TikTok and Vimeo; ratings open at launch.</div>
 <header class="top">
   <button class="iconbtn" id="menuBtn" aria-label="Menu"><svg class="i" viewBox="0 0 24 24"><path d="M3 6h18M3 12h18M3 18h18"/></svg></button>
-  <button class="logo" id="homeLogo" aria-label="Fanreelz home"><span class="mark"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2.4"/><circle cx="12" cy="12" r="2" fill="currentColor"/><circle cx="12" cy="6.5" r="2.2" fill="currentColor"/><circle cx="17.2" cy="14.8" r="2.2" fill="currentColor"/><circle cx="6.8" cy="14.8" r="2.2" fill="currentColor"/></svg></span><span class="word">Fanreel<span class="zz">z</span></span></button>
+  <button class="logo" id="homeLogo" aria-label="Fanreelz home"><span class="mark"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2.4"/><circle cx="12" cy="12" r="2" fill="currentColor"/><circle cx="12" cy="6.5" r="2.2" fill="currentColor"/><circle cx="17.2" cy="14.8" r="2.2" fill="currentColor"/><circle cx="6.8" cy="14.8" r="2.2" fill="currentColor"/></svg></span><span class="word">Fanreel<span class="zz">z</span></span><span class="word-tag">The home of AI fan films</span></button>
   <div class="searchwrap"><form class="search" id="sform" role="search"><input id="q" type="search" placeholder="Search" aria-label="Search films, games, characters"><button type="submit" aria-label="Search"><svg class="i" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M20 20l-4.8-4.8"/></svg></button></form></div>
   <div class="actions">
     <button class="createbtn" id="submitBtn" aria-label="Submit a film"><svg class="i" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg><b>Submit</b></button>
@@ -544,7 +569,7 @@ const byName=f=>f.byId?(f.byId===acct.uid?"You":(names[f.byId]||"Fanreelz member
 const hueOf=s=>{let h=0;for(const ch of String(s))h=(h*31+ch.charCodeAt(0))%360;return h};
 const cav=(name0,size,name=name0||"YouTube")=>`<span class="cav" style="background:hsl(${hueOf(name)},45%,42%)${size?`;width:${size}px;height:${size}px`:""}" aria-hidden="true">${esc((String(name).replace(/^@/,"")[0]||"?").toUpperCase())}</span>`;
 const daysSince=t=>Math.max(0,Math.floor((Date.now()-t)/864e5));
-const I={home:'<path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/>',top:'<path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/>',
+const I={info:'<circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 7.5v.5"/>',home:'<path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/>',top:'<path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/>',
   fresh:'<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>',mine:'<path d="M5 4h14v17l-7-4-7 4z"/>',list:'<path d="M9 6h11M9 12h11M9 18h11M4.5 6h.01M4.5 12h.01M4.5 18h.01"/>',trend:'<path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/>',live:'<circle cx="12" cy="12" r="2.5"/><path d="M7.8 7.8a6 6 0 0 0 0 8.4M16.2 7.8a6 6 0 0 1 0 8.4M5 5a10 10 0 0 0 0 14M19 5a10 10 0 0 1 0 14"/>',prem:'<rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4"/>',tv:'<rect x="3" y="6" width="18" height="13" rx="2"/><path d="M8 3l4 3 4-3"/>',battle:'<path d="M14.5 17.5L3 6V3h3l11.5 11.5M13 19l6-6M16 16l4 4M9.5 17.5L21 6V3h-3L6.5 14.5M11 19l-6-6M8 16l-4 4"/>',req:'<path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-4 10.5c.8.8 1 1.5 1 2.5h6c0-1 .2-1.7 1-2.5A6 6 0 0 0 12 3z"/>',trophy:'<path d="M8 4h8v5a4 4 0 0 1-8 0zM8 6H4a3 3 0 0 0 4 4M16 6h4a3 3 0 0 1-4 4M12 13v4M8 21h8M10 17h4v4"/>',bot:'<rect x="4" y="8" width="16" height="11" rx="3"/><path d="M12 4v4M9 13h.01M15 13h.01M9 16h6"/>',save:'<path d="M4 6h12M4 12h12M4 18h7M18 14v7M14.5 17.5h7"/>',flag:'<path d="M5 21V4h11l-2 4 2 4H5"/>',shield:'<path d="M12 3l8 3v6c0 4.5-3.4 8-8 9-4.6-1-8-4.5-8-9V6z"/><path d="M8.5 12l2.5 2.5 4.5-5"/>',short:'<rect x="7" y="3" width="10" height="18" rx="2.5"/><path d="M11 9.5v5l3.5-2.5z"/>',series:'<rect x="3" y="8" width="14" height="12" rx="2"/><path d="M7 5h12a2 2 0 0 1 2 2v9"/>',heart:'<path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/>',film:'<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M7 5v14M17 5v14M3 9.5h4M17 9.5h4M3 14.5h4M17 14.5h4"/>'};
 const filmTrend=f=>(stats(f).n+(f.real?3000:0)+(f.boost||0))*Math.exp(-(f.days??14)/21);
 function trendingByGroup(){const per={};for(const f of allFilms())per[f.cat]=(per[f.cat]||0)+filmTrend(f);const m={};for(const g of GROUPS)m[g.name]=g.cats.map(c=>({c,s:per[c.id]||0})).sort((a,b)=>b.s-a.s);return m}
@@ -582,6 +607,7 @@ function renderGuide(){
     `<button class="gi ${state.view==="browse"?"on":""}" data-browse="All">${icon("list")}<span>Browse all</span></button><hr>`+
     `<button class="gi ${state.view==="live"?"on":""}" data-view="live">${icon("live")}<span>Live now</span>${LIVE.length?`<span class="livecount">${LIVE.length}</span>`:""}</button>`+[["premieres","Premieres","prem"],["tv","Fanreelz TV","tv"]].map(([v,l,ic])=>`<button class="gi ${state.view===v?"on":""}" data-view="${v}">${icon(ic)}<span>${l}</span></button>`).join("")+
     `<hr><h4>Community</h4>`+[["battles","Fan Battles","battle"],["requests","Requests","req"],["contest","Weekly contest","trophy"],["playlists","Playlists","list"],["discord","Discord bot","bot"]].map(([v,l,ic])=>`<button class="gi ${state.view===v?"on":""}" data-view="${v}">${icon(ic)}<span>${l}</span></button>`).join("")+
+    `<button class="gi ${state.view==="about"?"on":""}" data-view="about">${icon("info")}<span>About us</span></button>`+
     GROUPS.map(g=>{const top=T[g.name].slice(0,3).map(x=>x.c);
       if(state.cat&&g.cats.some(c=>c.id===state.cat)&&!top.some(c=>c.id===state.cat))top.push(CATS.find(c=>c.id===state.cat));
       return `<hr><h4>${esc(g.name)}<span class="trendlbl">Trending</span></h4>`+top.map((c,i)=>`<button class="gi cat ${state.cat===c.id?"on":""}" data-cat="${c.id}"><span class="dot" style="background:hsl(${hueOf(c.id)},50%,42%)">${esc(c.name[0])}</span><span>${esc(c.name)}</span></button>`).join("")+
@@ -1077,6 +1103,50 @@ function renderDiscord(){
      <div class="cm-embed"><b>Top 3 Dota 2 AI films this week</b>${top.map((f,i)=>`<div class="cm-row"><span class="rk">${i+1}</span><span>${esc(f.title)}<br><small class="vmeta">by ${esc(byName(f)||"YouTube creator")} · ★ ${stats(f).avg.toFixed(1)}</small></span></div>`).join("")}<small class="vmeta">See all on Fanreelz · /fanreel top dota2</small></div></div></div></div>`;
 }
 
+/* ---------- About us ---------- */
+function renderAbout(){
+  const films=allFilms(),nCats=new Set(films.map(f=>f.cat)).size,nSrc=new Set(films.filter(f=>f.src).map(f=>f.src)).size;
+  const card=(ic,h,t)=>`<div class="abcard">${icon(ic)}<h3>${h}</h3><p>${t}</p></div>`;
+  $("#main").innerHTML=`<div class="about">
+   <p class="ab-kicker">About Fanreelz</p>
+   <h1 class="ab-h">Where AI fan films find their fans</h1>
+   <p class="ab-lede">AI tools have made it possible for one person to make a film about Arthas, Jinx, Gandalf or Goku that would have needed a studio a few years ago. Thousands of these films are being made every week, but they are scattered across YouTube, TikTok and the rest of the internet, buried between everything else. Fanreelz brings them together in one place, sorted by the worlds and characters you love, and lets fans decide which ones are best.</p>
+   <div class="ab-stats"><div><b>${films.length}</b><span>AI fan films</span></div><div><b>${nCats}</b><span>worlds and categories</span></div><div><b>${nSrc}</b><span>platforms</span></div></div>
+
+   <h2 class="ab-h2">For fans</h2>
+   <div class="abgrid">
+    ${card("list","Find films about your world","Browse by game, book, anime, series or a single character. Looking for the best Sylvanas film? It's one click away.")}
+    ${card("top","Rate and rank","Your ratings decide the top lists. Rankings weigh the number of votes, so one lucky 5-star rating can't beat a film loved by hundreds.")}
+    ${card("battle","Join the fun","Vote in Fan Battles, enter the weekly contest, build playlists and ask creators for the film you want to see next.")}
+   </div>
+
+   <h2 class="ab-h2">For AI creators</h2>
+   <div class="abgrid">
+    ${card("trophy","Get seen by the right audience","Your film shows up exactly where fans of that world are looking, not lost in an endless general feed.")}
+    ${card("heart","Get support","Fans can tip creators directly and request new films. The goal is simple: fans fund the films they want made.")}
+    ${card("film","Keep your views","We never copy or re-upload your work. Every film plays through the original YouTube, TikTok or Vimeo player, so the views, likes and credit stay on your channel.")}
+   </div>
+
+   <h2 class="ab-h2">How it works</h2>
+   <ol class="ab-steps">
+    <li><b>We collect.</b> Fanreelz finds AI fan films on YouTube, TikTok, Vimeo, Instagram and Dailymotion several times a day, and creators can submit their own.</li>
+    <li><b>We sort.</b> Every film gets a home: its world, its characters and its format, whether it's a full film, a short or a series.</li>
+    <li><b>Fans decide.</b> Ratings, battles and contests push the best films to the top of each category.</li>
+   </ol>
+
+   <h2 class="ab-h2">Our principles</h2>
+   <ul class="ab-list">
+    <li><b>Credit belongs to creators.</b> Every film links back to its maker and plays on its original platform.</li>
+    <li><b>Fan-made, not official.</b> Fanreelz is an independent fan site. The worlds and characters belong to their owners, and we are not affiliated with any studio or publisher.</li>
+    <li><b>Safe for fans.</b> No content that sexualises anyone who looks young, no deepfakes of real people, and a family mode for younger viewers.</li>
+    <li><b>Quick takedowns.</b> If you own a film or the rights to a world and want something removed, contact us and we will act quickly.</li>
+   </ul>
+
+   <div class="ab-cta"><div><h2>Made an AI fan film?</h2><p>Submit it and let the fans decide.</p></div><div class="row"><button class="btn" id="submitBtn2">Submit a film</button><button class="btn ghost" data-browse="All">Browse all films</button></div></div>
+   <p class="note">Fanreelz is in preview. Ratings, comments and sign-in open at launch. Contact and takedown requests: <a href="mailto:hello@fanreelz.com">hello@fanreelz.com</a></p>
+  </div>`;
+}
+
 /* ---------- Newsletter ---------- */
 async function toggleNewsletter(){
   if(!needAccount("Sign in to get the weekly top 10 by email."))return;
@@ -1396,7 +1466,7 @@ function render(){stopPreview();
   lastFilm=state.view==="watch"?state.film:null;
   renderWho();renderGuide();
   clearInterval(ticker);ticker=null;tvNow=null;
-  ({watch:renderWatch,browse:renderBrowse,live:renderLive,liveplay:renderLivePlay,premieres:renderPremieres,tv:renderTV,battles:renderBattles,requests:renderRequests,contest:renderContest,playlists:renderPlaylists,creator:renderCreator,discord:renderDiscord,shorts:renderShorts,series:renderSeries}[state.view]||renderHomeF)();
+  ({watch:renderWatch,browse:renderBrowse,live:renderLive,liveplay:renderLivePlay,premieres:renderPremieres,tv:renderTV,battles:renderBattles,requests:renderRequests,contest:renderContest,playlists:renderPlaylists,creator:renderCreator,discord:renderDiscord,about:renderAbout,shorts:renderShorts,series:renderSeries}[state.view]||renderHomeF)();
   paintAll();
   document.querySelectorAll(".cmform").forEach(fm=>{const k=fm.dataset.cparent;const ta=fm.querySelector("textarea");if(drafts[k])ta.value=drafts[k];if(focusKey===k){ta.focus();ta.setSelectionRange(ta.value.length,ta.value.length)}});
   if(state.view==="premieres")ticker=setInterval(tickPremieres,1000);
