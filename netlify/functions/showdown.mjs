@@ -111,14 +111,7 @@ async function run() {
   const byVotes = [...list].sort((x, y) => (votes[y.key]?.total || 0) - (votes[x.key]?.total || 0));
   const save = (m, data) => sb.upsert("showdown_verdicts", [{ key: m.key, data: { a: m.a, b: m.b, ...data }, updated_at: new Date().toISOString() }]);
 
-  // 1. research (new matchups first, then old research)
-  const needR = byVotes.find((m) => !rows[m.key]?.research) || byVotes.find((m) => rows[m.key]?.status !== "canon" && old(rows[m.key]?.research?.at, RESEARCH_DAYS));
-  if (needR) {
-    const res = await research(needR);
-    await save(needR, { ...(rows[needR.key] || {}), research: res, status: res.canon_fight ? "canon" : "open" });
-    return { did: "research", key: needR.key, canon: res.canon_fight };
-  }
-  // 2. weigh the matchup with the most new votes
+  // 1. weigh (fans are waiting for these) the matchup with the most new votes
   const ready = byVotes.filter((m) => {
     const r = rows[m.key], v = votes[m.key]; if (!r || r.status !== "open" || !v) return false;
     if (v.total < MIN_LIVE || Math.min(v.a.length, v.b.length) < MIN_PER_SIDE) return false;
@@ -130,6 +123,13 @@ async function run() {
     const verdict = await weigh(m, rows[m.key].research, v.a, v.b);
     await save(m, { ...rows[m.key], verdict: { ...verdict, total: v.total } });
     return { did: "verdict", key: m.key, pa: verdict.pa, per_side: verdict.per_side };
+  }
+  // 2. research (new matchups first, then old research)
+  const needR = byVotes.find((m) => !rows[m.key]?.research) || byVotes.find((m) => rows[m.key]?.status !== "canon" && old(rows[m.key]?.research?.at, RESEARCH_DAYS));
+  if (needR) {
+    const res = await research(needR);
+    await save(needR, { ...(rows[needR.key] || {}), research: res, status: res.canon_fight ? "canon" : "open" });
+    return { did: "research", key: needR.key, canon: res.canon_fight };
   }
   return { did: "nothing" };
 }

@@ -1250,6 +1250,8 @@ const REQ_SEED=[
   {id:"rs7",title:"Gandalf vs the Balrog from the Balrog's point of view",cat:"lotr",char:"Gandalf",note:"",votes:150,t:T1-15*864e5,claimedBy:[]},
   {id:"rs8",title:"Italian brainrot cinematic universe trailer",cat:"brainrot",char:"Tralalero Tralala",note:"",votes:96,t:T1-3*36e5,claimedBy:[]}];
 let reqSort="top";
+/* A menu click opens the start page of that section: forget any open playlist, battle pool or list sorting */
+function resetSections(){openList=null;reqSort="top";battle.pool="all";battle.pair=null}
 function allRequests(){
   const list=REQ_SEED.map(r=>({...r,example:true}));
   for(const [uid,d] of Object.entries(reqDocs))for(const r of (Array.isArray(d.items)?d.items:[])){
@@ -2211,7 +2213,7 @@ document.addEventListener("click",async e=>{
   if(x=A("[data-plopen]")){openList=x.dataset.plopen||null;render();window.scrollTo({top:0});return}
   if(x=A("[data-plremove]")){const [lid,fid]=x.dataset.plremove.split("|");await saveLists(myLists().map(l=>l.id===lid?{...l,films:l.films.filter(i=>i!==fid)}:l));render();return}
   if(x=A("[data-pldelete]")){const lid=x.dataset.pldelete;if(await saveLists(myLists().filter(l=>l.id!==lid))){openList=null;render();toast("Playlist deleted")}return}
-  const vw=e.target.closest("[data-view]");if(vw){$("#shell").classList.remove("open");go({view:vw.dataset.view,cat:null,char:null,sd:null,sdcat:"all",user:vw.dataset.view==="user"?state.user:null});return}
+  const vw=e.target.closest("[data-view]");if(vw){$("#shell").classList.remove("open");resetSections();go({view:vw.dataset.view,cat:null,char:null,sd:null,sdcat:"all",utab:"liked",azLimit:60,user:vw.dataset.view==="user"?state.user:null});window.scrollTo(0,0);return}
   const lo=e.target.closest("[data-liveopen]");if(lo){go({view:"liveplay",liveId:lo.dataset.liveopen});return}
   const lp=e.target.closest("[data-liveplat]");if(lp){state.livePlat=lp.dataset.liveplat;render();return}
   const tvb=e.target.closest("[data-tv]");if(tvb){state.tv=tvb.dataset.tv;render();return}
