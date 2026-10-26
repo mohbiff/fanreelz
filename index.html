@@ -191,6 +191,7 @@ body.wfs .player{position:fixed;inset:0;z-index:9000;width:100vw;height:100vh;he
 .bplay{position:relative;width:100%;aspect-ratio:16/9;border-radius:12px;overflow:hidden;background:#000}.bplay .vid,.bplay .thumb{width:100%;height:100%;display:block}.bplay .thumb{aspect-ratio:auto}
 .bplay.vert{aspect-ratio:9/16;width:min(100%,calc(70vh * 9 / 16));margin:0 auto}.bplay .thumb img,.bplay .thumb canvas{width:100%;height:100%;object-fit:cover}
 .bpbtn{position:absolute;inset:0;margin:auto;width:64px;height:64px;border-radius:50%;background:rgba(0,0,0,.6);display:grid;place-items:center}.bpbtn svg{width:24px;height:24px;fill:#fff;margin-left:3px}
+.sdsum{font-weight:700;font-size:16px}.sdwhy-h{font-size:15px;margin:14px 0 4px}.sdwhy p{margin:0 0 10px;line-height:1.55}.sddec{margin:6px 0 12px}.sddec ul{margin:4px 0;padding-left:18px}
 .sdhot{align-self:flex-start;font-size:11px;font-weight:800;padding:2px 8px;border-radius:10px;background:#d6283c;color:#fff}.linkbtn{all:unset;cursor:pointer;color:var(--accent);font-weight:700}
 .sdgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px;margin:14px 0}
 .sdcard{all:unset;cursor:pointer;display:flex;flex-direction:column;gap:8px;padding:16px;border-radius:14px;background:var(--card,#1c1a24);border:1px solid var(--line,#2a2735)}.sdcard:hover{border-color:var(--accent)}
@@ -1171,7 +1172,9 @@ function renderShowdown(){
    <div class="arena">${side(m.a,"a")}<div class="vs">VS</div>${side(m.b,"b")}</div>
    <section class="sdresult">${st==="checking"?`<p class="vmeta">Fanreelz is checking canon on the web. Voting is already open.</p>`
      :st==="gathering"?`<p><b>${v.total} of ${SD_MIN} votes.</b> The result goes live at ${SD_MIN} votes.</p>`
-     :st==="live"?`${r?.verdict?`<h2 class="sect-h" style="font-size:18px">Fanreelz verdict</h2>${sdBar(r.verdict.pa,m.a,m.b,"big")}<p>${esc(r.verdict.summary)}</p>
+     :st==="live"?`${r?.verdict?`<h2 class="sect-h" style="font-size:18px">Fanreelz verdict</h2>${sdBar(r.verdict.pa,m.a,m.b,"big")}<p class="sdsum">${esc(r.verdict.summary)}</p>
+       ${r.verdict.why?`<h3 class="sdwhy-h">Why this result</h3><div class="sdwhy">${r.verdict.why.split(/\n\s*\n/).map(t=>`<p>${esc(t.trim())}</p>`).join("")}</div>`:""}
+       ${r.verdict.deciding?.length?`<div class="sddec"><b>Deciding factors</b><ul>${r.verdict.deciding.map(p=>`<li>${esc(p)}</li>`).join("")}</ul></div>`:""}
        <div class="sdpoints"><div><b>${esc(m.a)}</b><ul>${r.verdict.a_points.map(p=>`<li>${esc(p)}</li>`).join("")}</ul></div><div><b>${esc(m.b)}</b><ul>${r.verdict.b_points.map(p=>`<li>${esc(p)}</li>`).join("")}</ul></div></div>
        <p class="vmeta">Canon research plus ${r.verdict.per_side} written argument${r.verdict.per_side===1?"":"s"} from each side · updated ${when(r.verdict.at)}. Weighed again as new votes come in.</p>`
        :`<p class="vmeta">The Fanreelz verdict comes when both sides have at least 2 written reasons.</p>`}
