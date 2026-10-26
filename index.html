@@ -1840,7 +1840,7 @@ function renderHomeF(){
   if(state.feed==="mine"&&!c)html+=`<h2 class="sect-h">${icon("mine")} Your ratings</h2>`;
   html+=fmtTabs(films.length+shorts.length+series.length,films.length,shorts.length,series.length);
   const sub=c&&state.format!=="short"&&state.format!=="series"?`<div class="lorebar">${[["all","All films"],["lore","Lore-accurate"],["whatif","What if"]].map(([k,l])=>`<button class="${state.lore===k?"on":""}" data-lore="${k}">${l}</button>`).join("")}</div>`:"";
-  const empty=`<div class="empty">${state.feed==="mine"?(acct.online?"You haven't rated anything here yet.":"Sign in to see what you've rated."):"Nothing here yet. Submit the first one."}</div>`;
+  const empty=`<div class="empty">${state.feed==="mine"?(acct.online?"You haven't rated anything here yet.":"Sign in to see what you've rated."):c&&!state.q?`<b style="display:block;color:var(--fg);font-size:17px;margin-bottom:6px">No ${esc(c.name)} films yet</b>Fanreelz searches YouTube every hour and adds new AI fan films here automatically.<br>Know a good one? <button class="btn" data-submitcat="" style="margin-top:14px">Submit a film</button>`:"Nothing here yet. Submit the first one."}</div>`;
   if(state.format==="film"){
     const fl=films.filter(durOk);
     html+=sub+`<div class="lorebar">${DUR.map(([k,l])=>`<button class="${state.dur===k?"on":""}" data-dur="${k}">${l}</button>`).join("")}</div>`;
@@ -2361,6 +2361,7 @@ document.addEventListener("click",async e=>{
   if(x=A("[data-open-full]")){go({view:"watch",film:x.dataset.openFull});return}
   if(x=A("[data-ctab]")){state.ctab=x.dataset.ctab;render();return}
   if(A("#submitBtn2")){openSubmit();return}
+  if(A("[data-submitcat]")){openSubmit();return}
   if(A("[data-family]")){state.family=!state.family;store.set("fr_family",state.family);render();toast(state.family?"Family-friendly mode on":"Family-friendly mode off");return}
   if(A("[data-family-info]")){toast("Marked as suitable for younger viewers");return}
   if(A("[data-news]")){toggleNewsletter();return}
