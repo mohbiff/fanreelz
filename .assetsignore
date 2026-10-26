@@ -8,3 +8,4 @@ worker
 wrangler.jsonc
 node_modules
 *.md
+.wrangler
