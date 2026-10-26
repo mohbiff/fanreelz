@@ -188,6 +188,9 @@ body.wfs .player{position:fixed;inset:0;z-index:9000;width:100vw;height:100vh;he
 .azscore{font-family:var(--mono);font-size:12px;color:var(--star);text-align:right;font-variant-numeric:tabular-nums}
 .morebtn{margin-top:16px}
 @media (max-width:600px){.azrow{grid-template-columns:minmax(0,1fr) 48px;row-gap:2px}.azcat{grid-column:1;grid-row:2}.azscore{grid-column:2;grid-row:1/3}}
+.bplay{position:relative;width:100%;aspect-ratio:16/9;border-radius:12px;overflow:hidden;background:#000}.bplay .vid,.bplay .thumb{width:100%;height:100%;display:block}.bplay .thumb{aspect-ratio:auto}
+.bplay.vert{aspect-ratio:9/16;width:min(100%,calc(70vh * 9 / 16));margin:0 auto}.bplay .thumb img,.bplay .thumb canvas{width:100%;height:100%;object-fit:cover}
+.bpbtn{position:absolute;inset:0;margin:auto;width:64px;height:64px;border-radius:50%;background:rgba(0,0,0,.6);display:grid;place-items:center}.bpbtn svg{width:24px;height:24px;fill:#fff;margin-left:3px}
 .arena{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);gap:20px;align-items:start}
 .bside{display:flex;flex-direction:column;gap:8px;min-width:0}
 .vs{align-self:center;font-family:var(--display);font-weight:800;font-size:28px;color:var(--accent)}
@@ -1036,7 +1039,7 @@ function renderBattles(){
   if(!battle.pair||!battle.pair.every(id=>battlePool().some(f=>f.id===id)))newPair();
   const pool=battlePool();const {R,W,L}=eloTable(pool);
   const board=[...pool].sort((x,y)=>R[y.id]-R[x.id]).slice(0,10);
-  const side=id=>{const f=findFilm(id);return `<div class="bside"><button class="vid" data-open="${esc(f.id)}"><div class="thumb"><canvas data-f="${esc(f.id)}"></canvas><span class="len">${esc(f.len)}</span></div></button>
+  const side=id=>{const f=findFilm(id);const can=f.yt||f.tt||f.ig||f.vm||f.dm,vert=f.format==="short"||f.tt||f.ig;return `<div class="bside"><div class="bplay ${vert?"vert":""}" data-bfilm="${esc(f.id)}">${f.age?"":`<button class="vid" ${can?`data-bplay="${esc(f.id)}"`:`data-open="${esc(f.id)}"`} aria-label="Play ${esc(f.title)}"><div class="thumb"><canvas data-f="${esc(f.id)}"></canvas>${f.len?`<span class="len">${esc(f.len)}</span>`:""}${can?'<span class="bpbtn" aria-hidden="true"><svg viewBox="0 0 12 12"><path d="M2 1l9 5-9 5z"/></svg></span>':""}</div></button>`}</div>
     <h3 class="vtitle" style="font-size:18px">${esc(f.title)}</h3><div class="vmeta">${esc(byName(f)||"YouTube creator")} · ${esc(catName(f.cat))} · ${esc(f.char)}</div>
     <button class="btn pick" data-vote="${esc(f.id)}">Pick this one</button></div>`};
   $("#main").innerHTML=`<div class="chips">${pools.map(p=>`<button class="chip ${battle.pool===p.id?"on":""}" data-bpool="${p.id}">${esc(p.name)}</button>`).join("")}</div>
@@ -1048,8 +1051,13 @@ function renderBattles(){
    <div class="azlist">${board.map((f,i)=>`<button class="azrow" data-open="${esc(f.id)}"><span class="aztitle"><span class="rk">${i+1}</span>${esc(f.title)}</span><span class="azcat">${esc(catName(f.cat))} · ${W[f.id]||0} wins, ${L[f.id]||0} losses</span><span class="azscore">${Math.round(R[f.id])}</span></button>`).join("")}</div>
    <p class="note">Ranking starts from each film's star rating and moves with every vote cast on this page.</p>`;
 }
+/* Fan Battles: the video plays right here; starting one stops the other */
+const bFrame=f=>f.yt?ytFrame(f.yt):f.tt?ttFrame(f.tt):extFrame(f);
+function playBattle(id){document.querySelectorAll(".bplay").forEach(el=>{if(el.querySelector("iframe")&&el.dataset.bfilm!==id){const g=findFilm(el.dataset.bfilm);if(g){el.innerHTML=`<button class="vid" data-bplay="${esc(g.id)}" aria-label="Play ${esc(g.title)}"><div class="thumb"><canvas data-f="${esc(g.id)}"></canvas><span class="bpbtn" aria-hidden="true"><svg viewBox="0 0 12 12"><path d="M2 1l9 5-9 5z"/></svg></span></div></button>`;paintAll(el)}}});
+  const el=document.querySelector(`.bplay[data-bfilm="${CSS.escape(id)}"]`),f=findFilm(id);if(el&&f){el.innerHTML=bFrame(f);el.classList.add("on")}}
+document.addEventListener("click",e=>{const b=e.target.closest("[data-bplay]");if(b){e.preventDefault();e.stopPropagation();playBattle(b.dataset.bplay)}},true);
 async function castVote(winner){
-  if(!battle.pair)return;
+  if(!battle.pair)return;renderHard=true;
   if(winner==="skip"){newPair();render();return}
   if(!needAccount("Sign in to vote in Fan Battles."))return;
   const loser=battle.pair.find(id=>id!==winner);
@@ -1073,7 +1081,7 @@ function allRequests(){
   const list=REQ_SEED.map(r=>({...r,example:true}));
   for(const [uid,d] of Object.entries(reqDocs))for(const r of (Array.isArray(d.items)?d.items:[])){
     if(!r||typeof r.title!=="string"||!CATS.some(c=>c.id===r.cat))continue;
-    list.push({id:String(r.id),title:r.title.slice(0,140),cat:r.cat,char:String(r.char||""),note:String(r.note||"").slice(0,300),forCreator:String(r.forCreator||""),votes:0,t:+r.t||Date.now(),claimedBy:[],byId:uid});}
+    list.push({id:String(r.id),title:r.title.slice(0,140),cat:r.cat,topic:String(r.topic||"").slice(0,60),char:String(r.char||""),note:String(r.note||"").slice(0,300),forCreator:String(r.forCreator||""),votes:0,t:+r.t||Date.now(),claimedBy:[],byId:uid});}
   const up={},cl={};
   for(const [uid,d] of Object.entries(upDocs))for(const id of Object.keys(d.ids||{}))if(d.ids[id])up[id]=(up[id]||0)+1;
   for(const [uid,d] of Object.entries(claimDocs))for(const id of Object.keys(d.ids||{}))if(d.ids[id])(cl[id]||(cl[id]=[])).push(uid);
@@ -1094,7 +1102,7 @@ function renderRequests(){
    <div class="reqlist">${list.length?list.map(r=>`<div class="req">
      <button class="upv ${up[r.id]?"on":""}" data-upvote="${esc(r.id)}" aria-label="Vote up"><svg class="i" viewBox="0 0 24 24"><path d="M12 5l7 8h-4v6H9v-6H5z"/></svg><b>${fmtN(r.total)}</b></button>
      <div class="rbody"><h3>${esc(r.title)}</h3>
-       <div class="vmeta">${esc(catName(r.cat))} · ${esc(r.char)} · ${ago(daysSince(r.t))}${r.byId?` · by ${esc(r.byId===acct.uid?"you":(names[r.byId]||"a Fanreelz member"))}`:""}</div>
+       <div class="vmeta">${esc(r.topic||catName(r.cat))}${r.char&&r.char!==r.topic?" · "+esc(r.char):""} · ${ago(daysSince(r.t))}${r.byId?` · by ${esc(r.byId===acct.uid?"you":(names[r.byId]||"a Fanreelz member"))}`:""}</div>
        ${r.note?`<p class="rnote">${esc(r.note)}</p>`:""}
        <div class="row" style="gap:8px">${r.forCreator?`<span class="pill">Commission for ${esc(r.forCreator)}</span>`:""}${r.madeFilm?'<span class="pill">Made</span>':""}${r.claimers.length?`<span class="vmeta">Claimed by ${esc(r.claimers.join(", "))}</span>`:""}</div></div>
      <button class="remind ${cl[r.id]?"on":""}" data-claim="${esc(r.id)}">${cl[r.id]?"✓ You're making it":"I'll make it"}</button></div>`).join(""):`<div class="empty">No requests here yet.</div>`}</div>
@@ -1105,14 +1113,15 @@ function openRequest(forCreator){
   openModal(`<div class="dlg" role="dialog" aria-modal="true" aria-label="Request a film"><h2>${forCreator?"Commission "+esc(forCreator):"Request a film"}</h2>
     ${forCreator?`<p class="vmeta" style="margin:0">Your request goes to ${esc(forCreator)} and shows under Commissions. In the finished site the creator would reply with a price.</p>`:""}
     <form class="form" id="rf"><label for="rTitle">What should the film be about?<input id="rTitle" required maxlength="140" placeholder="e.g. Crystal Maiden origin story"></label>
-    <label for="rCat">Category<select id="rCat">${GROUPS.map(g=>`<optgroup label="${esc(g.name)}">${g.cats.map(c=>`<option value="${c.id}" ${c.id===state.cat?"selected":""}>${esc(c.name)}</option>`).join("")}</optgroup>`).join("")}</select></label>
-    <label for="rChar">Character<select id="rChar"></select></label>
+    ${catFields("r",state.cat)}
     <label for="rNote">Details (optional)<input id="rNote" maxlength="300" placeholder="Tone, length, scenes you want"></label>
     <div class="row"><button class="btn" type="submit" id="rGo">Post request</button><button class="btn ghost" type="button" data-close>Cancel</button></div></form></div>`);
-  const fill=()=>{const c=CATS.find(c=>c.id===$("#rCat").value);$("#rChar").innerHTML=c.chars.map(ch=>`<option>${esc(ch)}</option>`).join("")};fill();$("#rCat").onchange=fill;
-  $("#rf").onsubmit=async e=>{e.preventDefault();$("#rGo").disabled=true;
+  wireCatFields("r");
+  $("#rf").onsubmit=async e=>{e.preventDefault();const cc=readCatFields("r");
+    if(badText($("#rTitle").value,cc.topic,cc.char,$("#rNote").value)){toast(BAD_MSG);return}
+    $("#rGo").disabled=true;
     const mine=Array.isArray(reqDocs[acct.uid]?.items)?reqDocs[acct.uid].items:[];
-    const r={id:"q"+Date.now().toString(36)+Math.random().toString(36).slice(2,5),title:$("#rTitle").value.trim(),cat:$("#rCat").value,char:$("#rChar").value,note:$("#rNote").value.trim(),t:Date.now(),forCreator:forCreator||""};
+    const r={id:"q"+Date.now().toString(36)+Math.random().toString(36).slice(2,5),title:$("#rTitle").value.trim(),cat:cc.cat,char:cc.char,...(cc.topic?{topic:cc.topic}:{}),note:$("#rNote").value.trim(),t:Date.now(),forCreator:forCreator||""};
     if(await writeOwn("requests",{items:[r,...mine].slice(0,100)})){closeModal();reqSort=forCreator?"commissions":"new";go({view:"requests"});toast(forCreator?"Commission sent":"Request posted")}else $("#rGo").disabled=false};
 }
 async function toggleMap(col,docs,id,label){
@@ -1789,6 +1798,7 @@ const fsEl=()=>document.fullscreenElement||document.webkitFullscreenElement||nul
 function render(){
   if(state.view!=="watch"&&document.body.classList.contains("wfs")){document.body.classList.remove("wfs");$("#wfsClose")?.remove();wfsPushed=false}
   if(!renderHard&&fsEl()&&!document.body.classList.contains("spfs")){fsPending=true;return}
+  if(!renderHard&&state.view==="battles"&&document.querySelector(".bplay iframe")){renderGuide();return}
   if(state.view==="liveplay"&&!renderHard&&$("#lchat")&&$("#lchat").dataset.live===state.liveId){renderGuide();updateLiveChat();return}
   renderHard=false;stopPreview();
   const drafts={};let focusKey=null;
@@ -1896,14 +1906,33 @@ function openProfile(){
     e=>{if(e.target.closest("[data-signout]")){sbSignOut();return}const u=e.target.closest("[data-user]");if(u){closeModal();go({view:"user",user:u.dataset.user,utab:"liked"});return}const o=e.target.closest("[data-open]");if(o){closeModal();go({view:"watch",film:o.dataset.open})}});
   $("#pAv").src=acct.me.avatarUrl;$("#pName").textContent=acct.me.name||"Your profile";
 }
+/* ---------- Typeable category and character with suggestions (like a search box); anything not listed can still be typed ---------- */
+const catFields=(p,defCat)=>{const dc=CATS.find(c=>c.id===defCat);return `<label for="${p}Cat">Category (game, book, series, anime…)<input id="${p}Cat" list="${p}CatList" required maxlength="60" autocomplete="off" placeholder="Start typing, e.g. Warcraft" value="${dc?esc(dc.name):""}"></label>
+    <datalist id="${p}CatList">${GROUPS.flatMap(g=>g.cats.map(c=>`<option value="${esc(c.name)}">${esc(g.name)}</option>`)).join("")}</datalist>
+    <label for="${p}Char">Character or place (optional)<input id="${p}Char" list="${p}CharList" maxlength="60" autocomplete="off" placeholder="e.g. Arthas"></label>
+    <datalist id="${p}CharList"></datalist><p class="subnote" id="${p}CatNote"></p>`};
+const findCat=t=>{t=String(t||"").trim().toLowerCase();return t?CATS.find(c=>c.name.toLowerCase()===t||c.id===t)||CATS.find(c=>c.chars.some(ch=>ch.toLowerCase()===t))||null:null};
+function wireCatFields(p){const ci=$("#"+p+"Cat"),dl=$("#"+p+"CharList"),note=$("#"+p+"CatNote");
+  const sync=()=>{const c=findCat(ci.value);const seen=new Set();const chars=c?[...c.chars,...rawFilms().filter(f=>f.cat===c.id).map(f=>f.char)]:[];
+    dl.innerHTML=chars.filter(ch=>ch&&!seen.has(ch.toLowerCase())&&seen.add(ch.toLowerCase())).slice(0,40).map(ch=>`<option value="${esc(ch)}">`).join("");
+    note.textContent=ci.value.trim()&&!c?"New category: it will show under Original worlds until we add it to the list.":""};
+  ci.addEventListener("input",sync);sync()}
+/* returns {cat,char,topic} from what was typed */
+function readCatFields(p){const typed=$("#"+p+"Cat").value.trim().slice(0,60),ch=$("#"+p+"Char").value.trim().slice(0,60),c=findCat(typed);
+  const asChar=c&&c.name.toLowerCase()!==typed.toLowerCase()&&c.id!==typed.toLowerCase()?c.chars.find(x=>x.toLowerCase()===typed.toLowerCase()):"";
+  return c?{cat:c.id,char:ch||asChar||c.chars[c.chars.length-1]||c.name,topic:""}:{cat:"original",char:ch||typed,topic:typed}}
+/* Blocks sexual, hateful and illegal words in text people post (titles, categories, characters, notes) */
+const BAD_RE=new RegExp("\\b("+["sex","sexy","sexual","porn\\w*","porr\\w*","nudes?","nudity","naked","nsfw","xxx","hentai","onlyfans","boobs?","boobies","tits?","titties","pussy","dicks","dickhead","cocks?","cum","blowjobs?","handjobs?","orgasm\\w*","horny","milf","fetish\\w*","bdsm","erotic\\w*","rapes?","raped","raping","rapist","incest\\w*","p[ae]dos?","p[ae]dophil\\w*","lolis?","shota","child ?porn","nigg\\w*","neger\\w*","fags?","faggots?","retards?","retarded","kikes?","chinks?","spics?","trann(y|ies)","whores?","sluts?","slutty","hora","horor","fitta\\w*","knull\\w*","kuk(ar|en|arna)?","mongo","blatte\\w*","cunts?","kkk","bomb ?making","make (a )?bomb","buy (cocaine|meth|heroin|drugs)","köp (kokain|knark)","kill (all|them|yourself)","kys"].join("|")+")\\b","i");
+const cleanText=t=>String(t||"").toLowerCase().replace(/[0]/g,"o").replace(/[1!|]/g,"i").replace(/3/g,"e").replace(/[4@]/g,"a").replace(/[5$]/g,"s").replace(/7/g,"t").replace(/(\w)[._*-](?=\w)/g,"$1");
+const badText=(...ts)=>ts.some(t=>BAD_RE.test(cleanText(t)));
+const BAD_MSG="That text isn't allowed on Fanreelz. Keep titles and names free of sexual, hateful or illegal content.";
 function openSubmit(){
   if(!needAccount("Sign in to submit films, so others can see who found them."))return;
   openModal(`<div class="dlg" role="dialog" aria-modal="true" aria-label="Submit a film"><h2>Submit an AI film</h2>
    <form class="form" id="sf">
     <label for="sUrl">Video link<input id="sUrl" type="url" required placeholder="https://youtube.com/watch?v=…"></label>
     <label for="sTitle">Title<input id="sTitle" required maxlength="120"></label>
-    <label for="sCat">Category<select id="sCat">${GROUPS.map(g=>`<optgroup label="${esc(g.name)}">${g.cats.map(c=>`<option value="${c.id}" ${c.id===state.cat?"selected":""}>${esc(c.name)}</option>`).join("")}</optgroup>`).join("")}</select></label>
-    <label for="sChar">Character<select id="sChar"></select></label>
+    ${catFields("s",state.cat)}
     <label for="sTool">AI tool (if known)<select id="sTool">${TOOLS.map(t=>`<option>${t}</option>`).join("")}<option>Unknown</option></select></label>
     <label for="sFmt">Format<select id="sFmt"><option value="auto">Detect from the link</option><option value="short">Short (under 90 seconds)</option><option value="film">Film</option><option value="episode">Episode of a series</option></select></label>
     <p class="subnote" id="sDet"></p>
@@ -1911,18 +1940,18 @@ function openSubmit(){
       <div class="row"><label for="sSea">Season<input id="sSea" type="number" min="1" max="50" value="1" style="width:100px"></label><label for="sEp">Episode<input id="sEp" type="number" min="1" max="500" value="1" style="width:100px"></label></div></div>
     <div class="row"><button class="btn" type="submit" id="sGo">Submit</button><button class="btn ghost" type="button" data-close>Cancel</button></div>
    </form></div>`);
-  const fill=()=>{const c=CATS.find(c=>c.id===$("#sCat").value);$("#sChar").innerHTML=c.chars.map(ch=>`<option>${esc(ch)}</option>`).join("")};
-  fill();$("#sCat").onchange=fill;
+  wireCatFields("s");
   const fmtNow=()=>$("#sFmt").value==="auto"?detectFormat($("#sUrl").value):$("#sFmt").value;
   const syncFmt=()=>{const f=fmtNow();$("#sSeries").hidden=f!=="episode";$("#sDet").textContent=$("#sFmt").value==="auto"&&$("#sUrl").value?`Detected: ${{short:"Short",film:"Film",episode:"Episode of a series (playlist link)"}[f]}`:""};
   $("#sFmt").onchange=syncFmt;$("#sUrl").oninput=syncFmt;
   $("#sf").onsubmit=async e=>{e.preventDefault();const u=$("#sUrl").value.trim();
     const fmt=fmtNow();if(fmt==="episode"&&!$("#sSer").value.trim()){toast("Add the series name");return}
     if(!/^https:\/\//.test(u)){toast("Use a link that starts with https://");return}
+    const cc=readCatFields("s");if(badText($("#sTitle").value,cc.topic,cc.char,$("#sSer").value)){toast(BAD_MSG);return}
     const src=parseVid(u).src||(/(x\.com|twitter)/.test(u)?"X":/reddit/.test(u)?"Reddit":"YouTube");
-    const f={id:"u"+Date.now().toString(36)+Math.random().toString(36).slice(2,6),title:$("#sTitle").value.trim(),cat:$("#sCat").value,char:$("#sChar").value,src,tool:$("#sTool").value,t:Date.now(),hue:Math.floor(Math.random()*360),url:u,format:fmt,...(fmt==="episode"?{seriesTitle:$("#sSer").value.trim(),season:Math.max(1,+$("#sSea").value||1),ep:Math.max(1,+$("#sEp").value||1)}:{})};
+    const f={id:"u"+Date.now().toString(36)+Math.random().toString(36).slice(2,6),title:$("#sTitle").value.trim(),cat:cc.cat,char:cc.char,...(cc.topic?{topic:cc.topic}:{}),src,tool:$("#sTool").value,t:Date.now(),hue:Math.floor(Math.random()*360),url:u,format:fmt,...(fmt==="episode"?{seriesTitle:$("#sSer").value.trim(),season:Math.max(1,+$("#sSea").value||1),ep:Math.max(1,+$("#sEp").value||1)}:{})};
     $("#sGo").disabled=true;
-    try{await acct.db.doc("submissions/"+acct.uid).set({films:[f,...mySubs].slice(0,200)});closeModal();toast((fmt==="short"?"Short":fmt==="episode"?"Episode":"Film")+" added to "+catName(f.cat));go({view:"home",cat:f.cat,char:null,format:fmt==="episode"?"series":fmt})}
+    try{await acct.db.doc("submissions/"+acct.uid).set({films:[f,...mySubs].slice(0,200)});closeModal();toast((fmt==="short"?"Short":fmt==="episode"?"Episode":"Film")+" added to "+(f.topic||catName(f.cat)));go({view:"home",cat:f.cat,char:null,format:fmt==="episode"?"series":fmt})}
     catch(err){$("#sGo").disabled=false;if(err&&err.code==="invalid_argument"){acct.readonly=true;toast("This page is shared with you as view-only")}else toast("Couldn't submit the film. Try again in a moment.")}
   };
 }
@@ -2166,7 +2195,7 @@ async function sbSignOut(){if(sb){await sb.auth.signOut();location.reload()}}
   db.collection("submissions").onSnapshot(snap=>{const all=[],mine=[];
     for(const d of snap.docs){const films=Array.isArray(d.data()?.films)?d.data().films:[];
       for(const f of films){if(!f||!CATS.some(c=>c.id===f.cat)||typeof f.title!=="string")continue;
-        all.push({id:String(f.id),title:f.title.slice(0,120),cat:f.cat,char:String(f.char||""),src:String(f.src||"YouTube"),tool:String(f.tool||"Unknown"),len:"",days:daysSince(+f.t||Date.now()),counts:[0,0,0,0,0],hue:(+f.hue||0)%360,url:/^https:\/\//.test(f.url)?f.url:"",byId:d.id,...(/^https:\/\//.test(f.url)?parseVid(f.url):{}),format:["short","film","episode"].includes(f.format)?f.format:"film",seriesTitle:String(f.seriesTitle||"").slice(0,80),season:Math.max(1,+f.season||1),ep:Math.max(1,+f.ep||1)});
+        all.push({id:String(f.id),title:f.title.slice(0,120),cat:f.cat,char:String(f.char||""),src:String(f.src||"YouTube"),tool:String(f.tool||"Unknown"),len:"",days:daysSince(+f.t||Date.now()),counts:[0,0,0,0,0],hue:(+f.hue||0)%360,url:/^https:\/\//.test(f.url)?f.url:"",byId:d.id,topic:String(f.topic||"").slice(0,60),...(/^https:\/\//.test(f.url)?parseVid(f.url):{}),format:["short","film","episode"].includes(f.format)?f.format:"film",seriesTitle:String(f.seriesTitle||"").slice(0,80),season:Math.max(1,+f.season||1),ep:Math.max(1,+f.ep||1)});
         if(d.id===acct.uid)mine.push(f);}}
     sharedSubs=all;mySubs=mine;render();resolveNames();},()=>{});
 })();
