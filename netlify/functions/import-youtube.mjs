@@ -18,6 +18,7 @@ const TOPICS = [
   "AI berserk live action", "AI game of thrones 1950s", "AI harry potter 1950s", "AI dune trailer", "AI witcher film",
   "AI fallout 1950s", "AI starcraft movie", "AI diablo movie", "italian brainrot AI story", "veo 3 short film",
   "kling ai short film", "sora ai short film", "AI mythology film", "AI D&D movie", "AI age of empires cinematic",
+  "Fruit Love Island episode", "AI series episode 1", "AI web series episode", "AI animated series episode", "AI anime series episode 1", "AI cinematic series part 1", "AI sitcom episode", "AI fan series season 1",
   "AI pokemon live action", "AI fortnite movie", "AI warcraft 3 cinematic remake", "AI world of warcraft movie",
 ];
 const PAGES_PER_CHANNEL = 4, MIN_AI_SHARE = 0.5;

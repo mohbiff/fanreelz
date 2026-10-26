@@ -54,6 +54,11 @@ export function classify(title, description = "", channelIsAi = false) {
       return { cat: c.id, char, lore };
     }
   }
+  // An AI series episode that names no franchise (a dating show, a sitcom, an original drama): AI series.
+  if (/\b(episode|ep\.? ?\d|s\d{1,2} ?e\d{1,3}|season \d|part \d|chapter \d|web series|mini.?series)\b/i.test(title)) {
+    const char = /love island|dating|reality|bachelor|island/i.test(all) ? "Reality" : /comedy|sitcom|funny|brainrot/i.test(all) ? "Comedy" : "Drama";
+    return { cat: "aiseries", char, lore: "lore" };
+  }
   // An AI short film that names no franchise: an original world.
   if (/(ai|a\.i\.) (short )?film|short film|ai movie|ai cinematic|veo ?3|sora|kling|seedance/i.test(title) && FILM_RE.test(t)) {
     const char = /horror|haunt|ghost|demon|nightmare/i.test(all) ? "Horror" : /space|robot|alien|future|cyber|android|planet|sci-?fi/i.test(all) ? "Sci-fi" : /dragon|magic|kingdom|knight|wizard|fantasy|myth/i.test(all) ? "Fantasy" : "Drama";
