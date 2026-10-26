@@ -26,7 +26,8 @@ const ALIASES = {
   dragonball: ["dragon ball", "dbz", "goku", "vegeta", "frieza", "super saiyan"], dnd: ["dungeons & dragons", "dungeons and dragons", "d&d", "baldur's gate"],
   pathfinder: ["pathfinder"], got: ["game of thrones", "house of the dragon", "westeros", "targaryen", "daenerys", "jon snow"],
   mtg: ["magic the gathering", "magic: the gathering", "planeswalker"], hearthstone: ["hearthstone"],
-  pokemon: ["pokemon", "pokémon", "pikachu", "charizard", "mewtwo"], fortnite: ["fortnite", "jonesy", "peely"],
+  pokemon: ["pokemon", "pokémon", "pikachu", "charizard", "mewtwo"], fortnite: ["fortnite", "jonesy", "peely", "battle bus", "tilted towers"],
+  rocketleague: ["rocket league", "rocketleague"],
   myth: ["mythology", "zeus", "odin", "thor ", "anubis", "olympus", "valhalla", "greek gods", "norse gods"],
   whatif: ["harry potter", "hogwarts", "rick and morty", "simpsons", "star wars", "jedi", "darth", "marvel", "avengers", "batman", "spider-man", "spiderman", "lego", "barbie", "shrek", "toy story", "disney", "pixar"],
 };
