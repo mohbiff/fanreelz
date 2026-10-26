@@ -89,7 +89,10 @@ async function run() {
   }
 
   // 2. Work through channels: new ones first, then ones with more pages to read
-  const queue = await sb.get(`catalog_channels?status=in.(new,reading)&order=status.asc,checked_at.asc.nullsfirst&limit=${PER_RUN_CHANNELS}`);
+  // Followed channels (official AI series) go first, so new channels from searches can't push them back forever
+  const seeds = await sb.get(`catalog_channels?status=in.(new,reading)&channel_id=in.(${SEED_CHANNELS.join(",")})&order=checked_at.asc.nullsfirst&limit=1`);
+  const rest = await sb.get(`catalog_channels?status=in.(new,reading)&order=status.asc,checked_at.asc.nullsfirst&limit=${PER_RUN_CHANNELS}`);
+  const queue = [...seeds, ...rest.filter((c) => !seeds.some((x) => x.channel_id === c.channel_id))].slice(0, PER_RUN_CHANNELS);
   let added = 0;
   for (const ch of queue) {
     let page = ch.next_page || undefined, rows = [], aiCount = ch.ai_count || 0, seen = ch.seen_count || 0, isAi = ch.status === "reading";
