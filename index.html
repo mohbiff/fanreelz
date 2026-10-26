@@ -201,7 +201,9 @@ body.wfs .player{position:fixed;inset:0;z-index:9000;width:100vw;height:100vh;he
 .bpbtn{position:absolute;inset:0;margin:auto;width:64px;height:64px;border-radius:50%;background:rgba(0,0,0,.6);display:grid;place-items:center}.bpbtn svg{width:24px;height:24px;fill:#fff;margin-left:3px}
 .sdsum{font-weight:700;font-size:16px}.sdwhy-h{font-size:15px;margin:14px 0 4px}.sdwhy p{margin:0 0 10px;line-height:1.55}.sddec{margin:6px 0 12px}.sddec ul{margin:4px 0;padding-left:18px}
 .switchbox{margin-top:14px;padding:14px;border-radius:12px;background:var(--card,#1c1a24)}
-.sdhot{align-self:flex-start;font-size:11px;font-weight:800;padding:2px 8px;border-radius:10px;background:#d6283c;color:#fff}.linkbtn{all:unset;cursor:pointer;color:var(--accent);font-weight:700}
+.sdhot{align-self:flex-start;font-size:11px;font-weight:800;padding:2px 8px;border-radius:10px;background:#d6283c;color:#fff}.fyempty{padding:18px;border-radius:14px;background:var(--card,#1c1a24);margin:6px 0 16px}.fyempty h2{margin:0 0 6px}.fyempty p{margin:0;color:var(--muted)}
+.chip.foryou{font-weight:700}
+.linkbtn{all:unset;cursor:pointer;color:var(--accent);font-weight:700}
 .sdgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px;margin:14px 0}
 .sdcard{all:unset;cursor:pointer;display:flex;flex-direction:column;gap:8px;padding:16px;border-radius:14px;background:var(--card,#1c1a24);border:1px solid var(--line,#2a2735)}.sdcard:hover{border-color:var(--accent)}
 .sdvs{display:flex;align-items:center;gap:10px;font-size:16px;flex-wrap:wrap}.sdvs span{color:var(--accent);font-weight:900;font-size:13px}
@@ -800,7 +802,7 @@ function renderWho(){
 function feedList(){
   const q=state.q.toLowerCase();
   let list=allFilms().filter(f=>(!state.cat||f.cat===state.cat)&&(!state.char||f.char===state.char)&&
-    (state.cat||state.group==="All"||groupOf(f.cat)?.name===state.group)&&
+    (state.cat||state.group==="All"||state.group===FOR_YOU||groupOf(f.cat)?.name===state.group)&&
     (!q||[f.title,f.char,catName(f.cat),byName(f),f.tool].join(" ").toLowerCase().includes(q)));
   if(state.feed==="mine"&&!state.cat)list=list.filter(f=>myRatings[f.id]);
   if(state.cat&&state.lore!=="all")list=list.filter(f=>loreOf(f)===state.lore);
@@ -810,7 +812,7 @@ function feedList(){
 function renderHome(){
   const c=CATS.find(c=>c.id===state.cat);
   const chips=c?[`<button class="chip ${!state.char?"on":""}" data-char="">All</button>`,...c.chars.map(ch=>`<button class="chip ${state.char===ch?"on":""}" data-char="${esc(ch)}">${esc(ch)}</button>`)]
-    :["All",...GROUPS.map(g=>g.name)].map(g=>`<button class="chip ${state.group===g?"on":""}" data-group="${esc(g)}">${esc(g)}</button>`);
+    :[FOR_YOU,"All",...GROUPS.map(g=>g.name)].map(g=>`<button class="chip ${state.group===g?"on":""} ${g===FOR_YOU?"foryou":""}" data-group="${esc(g)}">${g===FOR_YOU?"✨ ":""}${esc(g)}</button>`);
   const list=feedList();
   let html=`<div class="chips">${chips.join("")}</div>`;
   if(state.family)html+=`<div class="familybar">${icon("shield")} Family-friendly mode is on. Only films suited for younger viewers are shown.<button data-family="">Turn off</button></div>`;
@@ -1719,13 +1721,51 @@ function seriesCard(s){const st=seriesStats(s),ss=seasonsOf(s);
 function fmtTabs(nAll,nFilm,nShort,nSeries){
   return `<div class="fmtbar" role="tablist">${[["all","All",nAll],["film","Films",nFilm],["short","Shorts",nShort],["series","Series",nSeries]].map(([k,l,n])=>`<button role="tab" aria-selected="${state.format===k}" class="${state.format===k?"on":""}" data-fmt="${k}">${l}<small>${n}</small></button>`).join("")}</div>`}
 
+/* ---------- For you: films picked from what this viewer watches, rates, saves and votes on ---------- */
+const FOR_YOU="For you";
+function interests(){
+  const cat={},ch={},now=Date.now(),add=(o,k,w)=>{if(k)o[k]=(o[k]||0)+w};
+  myHistory.slice(0,150).forEach((h,i)=>{const f=findFilm(h.id);if(!f)return;const w=Math.exp(-(now-(+h.t||now))/(14*864e5))+(i<10?.5:0);add(cat,f.cat,w);add(ch,f.cat+"|"+f.char,w*1.5)});
+  for(const [id,r] of Object.entries(myRatings)){const f=findFilm(id);if(!f)continue;add(cat,f.cat,(r-3)*.8);add(ch,f.cat+"|"+f.char,(r-3))}
+  myLater.forEach(x=>{const f=findFilm(x.id);if(f){add(cat,f.cat,.6);add(ch,f.cat+"|"+f.char,.6)}});
+  try{for(const [key] of Object.entries(sdVotes[acct.uid]?.a||{})){const m=sdList().find(x=>x.key===key);if(m)sdCats(m).forEach(id=>add(cat,id,.5))}}catch(e){}
+  return {cat,ch,n:myHistory.length+Object.keys(myRatings).length+myLater.length};
+}
+// same order all day, new mix tomorrow
+const dayJitter=id=>{let h=hnum(id+new Date().toDateString());return (h%1000)/1000};
+function forYouList(kind){
+  const I=interests(),seen=new Set(myHistory.slice(0,60).map(x=>x.id));
+  const pool=allFilms().filter(f=>(kind==="short")===(f.format==="short")&&!seen.has(f.id)&&!(f.age));
+  const g={};for(const [k,v] of Object.entries(I.cat)){const gn=groupOf(k)?.name;if(gn)g[gn]=(g[gn]||0)+v}
+  return pool.map(f=>({f,s:(I.cat[f.cat]||0)+(I.ch[f.cat+"|"+f.char]||0)*1.2+(g[groupOf(f.cat)?.name]||0)*.25+Math.log1p(filmTrend(f))*.15+dayJitter(f.id)*.6}))
+    .sort((a,b)=>b.s-a.s).map(x=>x.f);
+}
+function forYouHtml(){
+  const I=interests();
+  if(I.n<2){const top=[...allFilms()].filter(f=>f.format!=="short").sort((a,b)=>filmTrend(b)-filmTrend(a)).slice(0,12);
+    return `<div class="fyempty"><h2>✨ For you</h2><p>Watch, rate or save a few films and this page learns what you like: your worlds, your characters, your kind of AI films. Start with what's trending.</p></div><div class="grid">${top.map(f=>card(f)).join("")}</div>`}
+  const films=forYouList("film"),shorts=forYouList("short");
+  // "Because you watched" rows for the two most recent different worlds
+  const rows=[],used=new Set(films.slice(0,8).map(f=>f.id));
+  for(const h of myHistory){const f=findFilm(h.id);if(!f||rows.some(r=>r.f.cat===f.cat))continue;
+    const like=films.filter(x=>x.cat===f.cat&&!used.has(x.id)).slice(0,8);if(like.length>=3){like.forEach(x=>used.add(x.id));rows.push({f,like})}if(rows.length>=2)break}
+  const topCats=Object.entries(I.cat).filter(([,v])=>v>0).sort((a,b)=>b[1]-a[1]).slice(0,4).map(([k])=>k);
+  let html=`<h1 class="sect-h" style="font-size:24px;margin-top:4px">✨ For you</h1><p class="lede" style="margin:-4px 0 12px">Picked from what you watch, rate and save.${topCats.length?` You seem to like ${topCats.map(k=>`<button class="linkbtn" data-cat="${esc(k)}">${esc(catName(k))}</button>`).join(", ")}.`:""}</p>`;
+  html+=`<section class="shelf"><h2>${icon("trend")} Top picks for you</h2><div class="shelfrow">${films.slice(0,8).map(f=>card(f)).join("")}</div></section>`;
+  if(shorts.length)html+=`<section class="shelf"><h2>${icon("short")} Shorts for you<button class="seeall" data-fmt="short">See all</button></h2><div class="shortrow">${shorts.slice(0,12).map(shortCard).join("")}</div></section>`;
+  rows.forEach(r=>html+=`<section class="shelf"><h2>Because you watched <button class="linkbtn" data-open="${esc(r.f.id)}">${esc(r.f.title.length>50?r.f.title.slice(0,50)+"…":r.f.title)}</button></h2><div class="shelfrow">${r.like.map(f=>card(f)).join("")}</div></section>`);
+  const rest=films.filter(f=>!used.has(f.id)).slice(0,48);
+  if(rest.length)html+=`<h2 class="sect-h">${icon("film")} More for you</h2><div class="grid">${rest.map(f=>card(f)).join("")}</div>`;
+  return html;
+}
 function renderHomeF(){
   const c=CATS.find(x=>x.id===state.cat);
   const chips=c?[`<button class="chip ${!state.char?"on":""}" data-char="">All</button>`,...c.chars.map(ch=>`<button class="chip ${state.char===ch?"on":""}" data-char="${esc(ch)}">${esc(ch)}</button>`)]
-    :["All",...GROUPS.map(g=>g.name)].map(g=>`<button class="chip ${state.group===g?"on":""}" data-group="${esc(g)}">${esc(g)}</button>`);
+    :[FOR_YOU,"All",...GROUPS.map(g=>g.name)].map(g=>`<button class="chip ${state.group===g?"on":""} ${g===FOR_YOU?"foryou":""}" data-group="${esc(g)}">${g===FOR_YOU?"✨ ":""}${esc(g)}</button>`);
   const base=feedList(),films=base.filter(f=>f.format!=="short"),shorts=base.filter(f=>f.format==="short"),series=seriesList();
   let html=`<div class="chips">${chips.join("")}</div>`;
   if(state.family)html+=`<div class="familybar">${icon("shield")} Family-friendly mode is on. Only films suited for younger viewers are shown.<button data-family="">Turn off</button></div>`;
+  if(!c&&!state.q&&state.group===FOR_YOU){$("#main").innerHTML=html+forYouHtml();return}
   if(c)html+=`<h1 class="sect-h" style="font-size:24px;margin-top:4px">${cav(c.name,48)} ${esc(c.name)}<span class="vmeta" style="font-size:14px;font-weight:500">${films.length} films · ${shorts.length} shorts · ${series.length} series</span></h1>`;
   if(state.q&&!c){const q=state.q.toLowerCase();const mc=CATS.filter(x=>x.name.toLowerCase().includes(q)||x.chars.some(ch=>ch.toLowerCase().includes(q)));
     html+=`<h1 class="sect-h" style="font-size:22px">Results for “${esc(state.q)}”</h1>`;
@@ -2284,6 +2324,7 @@ $("#sform").onsubmit=e=>{e.preventDefault();go({view:"home",feed:"home",q:$("#q"
 $("#q").oninput=e=>{if(!e.target.value&&state.q)go({q:""})};
 let rt;addEventListener("resize",()=>{clearTimeout(rt);rt=setTimeout(()=>paintAll(),150)});
 Object.assign(state,parsePath());if(state.q)$("#q").value=state.q;
+if(state.view==="home"&&!state.cat&&!state.q&&state.feed==="home"&&location.pathname==="/"&&!location.search&&myHistory.length>=3)state.group=FOR_YOU;
 /* A link to a film the page hasn't loaded yet (catalogue and member films arrive a moment later): keep the address and open it once it exists */
 var pendingLink=(()=>{const m=location.pathname.match(/^\/(film|shorts)\/([^/]+)/);if(!m)return null;let id=m[2];try{id=decodeURIComponent(id)}catch(e){}return findFilm(id)?null:{kind:m[1],id}})();
 render();
