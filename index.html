@@ -1534,7 +1534,7 @@ function toggleLater(id){if(!needAccount("Sign in to save films to Watch later."
 function startYou(db){
   if(!acct.uid)return;const local=store.get("fr_history",[]);
   db.doc("data/users/"+acct.uid+"/history").onSnapshot(d=>{const items=d.exists&&Array.isArray(d.data()?.items)?d.data().items:[];
-    if(local.length){const merged=[...local,...items].filter((x,i,a)=>a.findIndex(y=>y.id===x.id)===i).sort((a,b)=>b.t-a.t).slice(0,300);local.length=0;store.set("fr_history",[]);saveYou("history",merged)}else myHistory=items;if(["you","history"].includes(state.view))render()},()=>{});
+    if(local.length){const merged=[...local,...items].filter((x,i,a)=>a.findIndex(y=>y.id===x.id)===i).sort((a,b)=>b.t-a.t).slice(0,300);local.length=0;store.set("fr_history",[]);saveYou("history",merged)}else myHistory=items;if(["you","history"].includes(state.view))render();maybeForYou()},()=>{});
   db.doc("data/users/"+acct.uid+"/later").onSnapshot(d=>{myLater=d.exists&&Array.isArray(d.data()?.items)?d.data().items:[];if(["you","later"].includes(state.view))render()},()=>{});
 }
 const likedFilms=()=>Object.entries(myRatings).filter(([,r])=>r>=4).map(([id])=>findFilm(id)).filter(Boolean);
@@ -1722,7 +1722,9 @@ function fmtTabs(nAll,nFilm,nShort,nSeries){
   return `<div class="fmtbar" role="tablist">${[["all","All",nAll],["film","Films",nFilm],["short","Shorts",nShort],["series","Series",nSeries]].map(([k,l,n])=>`<button role="tab" aria-selected="${state.format===k}" class="${state.format===k?"on":""}" data-fmt="${k}">${l}<small>${n}</small></button>`).join("")}</div>`}
 
 /* ---------- For you: films picked from what this viewer watches, rates, saves and votes on ---------- */
-const FOR_YOU="For you";
+const FOR_YOU="For you";let groupTouched=false;
+// a signed-in viewer's history arrives a moment after the page opens: switch to For you then, unless they already picked a tab
+function maybeForYou(){if(!groupTouched&&state.view==="home"&&state.group==="All"&&!state.cat&&!state.q&&state.feed==="home"&&(!state.format||state.format==="all")&&myHistory.length>=3){state.group=FOR_YOU;render()}}
 function interests(){
   const cat={},ch={},now=Date.now(),add=(o,k,w)=>{if(k)o[k]=(o[k]||0)+w};
   myHistory.slice(0,150).forEach((h,i)=>{const f=findFilm(h.id);if(!f)return;const w=Math.exp(-(now-(+h.t||now))/(14*864e5))+(i<10?.5:0);add(cat,f.cat,w);add(ch,f.cat+"|"+f.char,w*1.5)});
@@ -2309,7 +2311,7 @@ document.addEventListener("click",async e=>{
   if(e.target.closest("[data-more]")){state.azLimit+=60;render();return}
   const fd=e.target.closest("[data-feed]");if(fd){$("#shell").classList.remove("open");go({view:"home",feed:fd.dataset.feed,cat:null,char:null,format:fd.dataset.feed==="home"?"all":state.format});return}
   const c=e.target.closest("[data-cat]");if(c){$("#shell").classList.remove("open");go({view:"home",feed:"home",cat:c.dataset.cat,char:c.dataset.charGo||null,lore:"all"});return}
-  const g=e.target.closest("[data-group]");if(g){go({group:g.dataset.group});return}
+  const g=e.target.closest("[data-group]");if(g){groupTouched=true;go({group:g.dataset.group});return}
   const ch=e.target.closest("[data-char]");if(ch){go({char:ch.dataset.char||null});return}
   const r=e.target.closest("[data-rate]");if(r){
     if(!needAccount("Sign in to rate films. Your ratings count toward the top lists everyone sees."))return;
