@@ -930,7 +930,7 @@ function renderLivePlay(){
     <h1 class="wtitle"><span class="nowtag">LIVE</span> ${esc(l.title)}</h1><div class="wbar"><div class="owner">${cav(l.ch,40)}<div><b>${esc(l.ch)}</b><small>${fmtN(l.viewers)} watching on YouTube</small></div></div></div>
     <p class="vmeta" style="font-size:12px;margin-top:12px">The creator doesn't allow this stream to play on other sites, so it opens on YouTube.</p></div></div>`;return}
   const player=l.platform==="Twitch"?`https://player.twitch.tv/?channel=${encodeURIComponent(l.channel)}&${parents}&autoplay=true&muted=false`:`https://www.youtube-nocookie.com/embed/${encodeURIComponent(l.video)}?autoplay=1&rel=0`;
-  const chat=l.platform==="Twitch"?`https://www.twitch.tv/embed/${encodeURIComponent(l.channel)}/chat?${parents}${dark?"&darkpopout":""}`:`https://www.youtube.com/live_chat?v=${encodeURIComponent(l.video)}&embed_domain=${encodeURIComponent(host)}`;
+  const chat=l.platform==="Twitch"?`https://www.twitch.tv/embed/${encodeURIComponent(l.channel)}/chat?${parents}${dark?"&darkpopout":""}`:`https://www.youtube.com/live_chat?v=${encodeURIComponent(l.video)}&embed_domain=${encodeURIComponent(host)}${dark?"&dark_theme=1":""}`;
   const c=liveCat(l);
   $("#main").innerHTML=`<div class="watch"><div>
     <div class="player"><iframe src="${esc(player)}" title="Live stream" allow="autoplay; fullscreen; encrypted-media; picture-in-picture" allowfullscreen style="position:absolute;inset:0;width:100%;height:100%;border:0"></iframe></div>
