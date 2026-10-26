@@ -2276,9 +2276,11 @@ $("#sform").onsubmit=e=>{e.preventDefault();go({view:"home",feed:"home",q:$("#q"
 $("#q").oninput=e=>{if(!e.target.value&&state.q)go({q:""})};
 let rt;addEventListener("resize",()=>{clearTimeout(rt);rt=setTimeout(()=>paintAll(),150)});
 Object.assign(state,parsePath());if(state.q)$("#q").value=state.q;
+/* A link to a film the page hasn't loaded yet (catalogue and member films arrive a moment later): keep the address and open it once it exists */
+var pendingLink=(()=>{const m=location.pathname.match(/^\/(film|shorts)\/([^/]+)/);if(!m)return null;let id=m[2];try{id=decodeURIComponent(id)}catch(e){}return findFilm(id)?null:{kind:m[1],id}})();
 render();
 function signinInUrl(){return /[?&#](code|error|access_token)=/.test(location.search+location.hash)}
-try{history.replaceState({fr:navSnap(),y:0},"",signinInUrl()?location.href:pathFor(state))}catch(e){}
+try{history.replaceState({fr:navSnap(),y:0},"",signinInUrl()||pendingLink?location.href:pathFor(state))}catch(e){}
 loadLive();setInterval(()=>{if(!document.hidden)loadLive()},120000);
 /* Installable app: register the service worker, and offer an Install button where the browser supports it */
 if("serviceWorker" in navigator&&location.protocol==="https:")navigator.serviceWorker.register("/sw.js").catch(()=>{});
@@ -2336,7 +2338,13 @@ function supabaseDb(uid){
 }
 var discordAppId=""; // var: the page can be drawn before this line runs (a link straight to /discord)
 /* A link that arrived for a film the page hadn't loaded yet (catalogue or member films load a moment later) opens once it exists */
-function openLinkedFilm(){if(state.view!=="home")return;const p=parsePath();if((p.view==="watch"||p.view==="shorts")&&p.film)Object.assign(state,p)}
+function openLinkedFilm(){
+  if(!pendingLink||!findFilm(pendingLink.id))return;
+  const want=pendingLink.kind==="film"?"/film/":"/shorts/";
+  if(location.pathname.startsWith(want)&&(state.view==="home"||state.view==="shorts")){
+    Object.assign(state,pendingLink.kind==="film"?{view:"watch",film:pendingLink.id}:{view:"shorts",film:pendingLink.id,shortList:null,shortI:0});renderHard=true;
+    try{history.replaceState({fr:navSnap(),y:0},"",pathFor(state))}catch(e){}}
+  pendingLink=null}
 async function startSupabase(){
   let cfg={};try{cfg=await (await fetch("/api/config")).json()}catch(e){return null}
   discordAppId=String(cfg.discordAppId||"");if(state.view==="discord")render();
