@@ -869,7 +869,7 @@ function renderWatch(){
       <div class="tags"><button data-cat="${f.cat}">${esc(catName(f.cat))}</button><button data-cat="${f.cat}" data-char-go="${esc(f.char)}">${esc(f.char)}</button><button data-cat="${f.cat}" data-lore-go="${loreOf(f)}">${loreOf(f)==="lore"?"Lore-accurate":"What if"}</button>${isKids(f)?'<button data-family-info="">Family-friendly</button>':""}</div>
       ${f.real||f.yt||f.tt||f.ig||f.vm||f.dm||f.byId?"":`<div class="howmade"><b>How it was made</b><div class="vmeta">Tool: ${esc(f.tool)} · Prompt shared by ${esc(byName(f)||"YouTube creator")}</div><div class="prompt" id="promptText">${esc(promptOf(f))}</div><div class="row"><button class="btn ghost" data-copyprompt="" style="padding:6px 12px">Copy prompt</button></div></div>`}
       <div class="vmeta" style="font-size:12px">The video plays at the source, so the creator gets the views.</div></div>
-    <div class="wactions">${f.real||f.yt||f.tt||f.ig||f.vm||f.dm?"":`<button data-tip="${esc(f.byId||f.by)}" data-tipfilm="${esc(f.id)}">${icon("heart")}Tip</button>`}<button data-save="${esc(f.id)}">${icon("save")}Save</button><button data-share="${esc(f.id)}">${icon("share")}Share</button><button data-later="${esc(f.id)}" class="${myLater.some(x=>x.id===f.id)?"on":""}">${icon("clock")}${myLater.some(x=>x.id===f.id)?"Saved":"Watch later"}</button>${isVerified(f)?"":`<button data-claimorig="${esc(f.id)}">${icon("shield")}Is this yours?</button>`}<button data-report="${esc(f.id)}">${icon("flag")}Report re-upload</button></div>
+    <div class="wactions">${f.real||f.yt||f.tt||f.ig||f.vm||f.dm?"":`<button data-tip="${esc(f.byId||f.by)}" data-tipfilm="${esc(f.id)}">${icon("heart")}Tip</button>`}<button data-save="${esc(f.id)}">${icon("save")}Save</button><button data-share="${esc(f.id)}">${icon("share")}Share</button><button data-later="${esc(f.id)}" class="${myLater.some(x=>x.id===f.id)?"on":""}">${icon("clock")}${myLater.some(x=>x.id===f.id)?"Saved":"Watch later"}</button>${isVerified(f)?"":`<button data-claimorig="${esc(f.id)}">${icon("shield")}Is this yours?</button>`}<button data-report="${esc(f.id)}">${icon("flag")}Report re-upload</button>${isMod&&f.yt?`<button data-adminhide="${esc(f.id)}">${icon("shield")}Hide from Fanreelz</button>`:""}</div>
   </div><aside class="upnext"><h3>${f.seriesId&&findSeries(f.seriesId)?"Next episodes":"Up next"}</h3>${next.map(x=>`<button class="mini-v" data-open="${esc(x.id)}"><div class="thumb"><canvas data-f="${esc(x.id)}"></canvas><span class="len">${esc(x.len)}</span></div><div class="vtext"><h4 class="vtitle">${esc(x.title)}</h4><div class="vmeta">${esc(byName(x)||"YouTube creator")}</div><div class="vmeta">${metaLine(x)}</div></div></button>`).join("")}</aside></div>`;
   $(".watch>div").insertAdjacentHTML("beforeend",commentsHtml(f));
   if(f.yt){if(keepYt){const pl=$(".player");pl.innerHTML="";try{pl.moveBefore(keepYt,null)}catch(e){pl.appendChild(keepYt)}if(keepEnd)pl.appendChild(keepEnd)}else $(".player").innerHTML=ytFrame(f.yt);$(".player").insertAdjacentHTML("afterend",`<div class="ythelp">${f.age?'<b>18+</b>Age-restricted on YouTube. ':''}Does YouTube ask you to sign in? Allow cookies for youtube.com in this browser, or <a href="${esc(f.url||"https://www.youtube.com/watch?v="+f.yt)}" target="_blank" rel="noopener">watch on YouTube ↗</a></div>`)}
@@ -1902,7 +1902,7 @@ function renderShorts(){
      <div class="snav"><button class="iconbtn navb" data-snav="-1" aria-label="Previous short" ${state.shortI===0?"disabled":""}><svg class="i" viewBox="0 0 24 24"><path d="M6 15l6-6 6 6"/></svg></button>
        <span class="vmeta">Short ${state.shortI+1}</span>
        <button class="iconbtn navb" data-snav="1" aria-label="Next short"><svg class="i" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></button></div>
-     <p class="vmeta" style="font-size:12px;margin:0">Scroll, swipe or use the arrow keys for the next short. Click the video to pause.</p>${commentsHtml(f)}</div></div>`;
+     <p class="vmeta" style="font-size:12px;margin:0">Scroll, swipe or use the arrow keys for the next short. Click the video to pause.</p>${isMod&&f.yt?`<button class="btn ghost" data-adminhide="${esc(f.id)}">${icon("shield")} Hide from Fanreelz</button>`:""}${commentsHtml(f)}</div></div>`;
   if(f.ig||f.vm||f.dm){const sp=$(".sp");sp.querySelector("canvas")?.remove();sp.querySelector(".play")?.remove();sp.insertAdjacentHTML("afterbegin",f.ig?extFrame(f):extFrame(f).replace("inset:0","inset:0;top:25%;height:50%"))}
   if(f.tt||f.yt){const sp=$(".sp");sp.querySelector("canvas")?.remove();sp.querySelector(".play")?.remove();
     if(keepFrame){try{sp.moveBefore(keepFrame,sp.firstChild)}catch(e){sp.insertBefore(keepFrame,sp.firstChild)}}
@@ -2365,6 +2365,7 @@ document.addEventListener("click",async e=>{
   if(x=A("[data-clike]")){likeComment(x.dataset.clike);return}
   if(x=A("[data-cdel]")){deleteComment(x.dataset.cdel);return}
   if(x=A("[data-cmod]")){modRemove(x.dataset.cmod);return}
+  if(x=A("[data-adminhide]")){const id=x.dataset.adminhide;if(!confirm("Hide this film from Fanreelz for everyone?"))return;modCall({action:"hide",id}).then(r=>{if(r.ok){const i=FILMS.findIndex(f=>f.id===id);if(i>=0)FILMS.splice(i,1);toast("Film hidden");go({view:"home"})}else toast("Couldn't hide: "+(r.error||"error"))});return}
   if(x=A("[data-adminrun]")){adminDo({action:"run",job:x.dataset.adminrun},x.dataset.adminrun==="showdown"?"Running the showdown judge":"Running the importer");return}
   if(A("[data-creport]")){toast("Thanks. A moderator will review this comment.");return}
   if(x=A("[data-fmtnav]")){$("#shell").classList.remove("open");go({view:"home",feed:"home",cat:null,char:null,format:x.dataset.fmtnav});return}
@@ -2541,7 +2542,7 @@ async function sbSave(col,id,data){
 async function loadCatalog(){
   if(!sb)return;const rows=[];
   for(let from=0;from<30000;from+=1000){
-    const {data,error}=await sb.from("catalog").select("*").order("views",{ascending:false}).range(from,from+999);
+    const {data,error}=await sb.from("catalog").select("*").eq("hidden",false).order("views",{ascending:false}).range(from,from+999);
     if(error||!data){if(error)console.warn("catalogue",error.message);break}
     rows.push(...data);if(data.length<1000)break;
   }

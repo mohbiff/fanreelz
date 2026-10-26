@@ -7,7 +7,7 @@ export const AI_RE = /(\bai\b|\ba\.i\.|artificial intelligence|\bsora\b|\bveo ?[
 // Words that show it is a film, trailer, story or series rather than a tutorial or news.
 export const FILM_RE = /(film|movie|cinema|cinematic|trailer|teaser|short|story|episode|\bep\.? ?\d|series|live[- ]action|in real life|reimagined|re-imagined|as an? \d0'?s|panavision|dark fantasy|parody|saga|chapter|part \d|music video)/i;
 // Things that are not fan films.
-export const BLOCK_RE = /(tutorial|how to|how i made|prompt(s)? (guide|tips)|course|explained|react(s|ing|ion|ions)?\b|review|news|podcast|livestream|\blive stream\b|stream highlights|top \d+|ranking|tier list|unboxing|speedrun|gameplay walkthrough|patch notes|nsfw|18\+|onlyfans|hentai|gore|sexy|bikini|\bhot\b|deepfake|starring [A-Z][a-z]+ [A-Z])/i;
+export const BLOCK_RE = /(tutorial|how to|how i made|prompt(s)? (guide|tips)|course|explained|react(s|ing|ion|ions)?\b|review|news|podcast|livestream|\blive stream\b|stream highlights|top \d+|ranking|tier list|unboxing|speedrun|gameplay|walkthrough|\b[1-4]v[1-4]\b|ranked|outplayed|road to (gc|ssl|grand champ)|patch notes|nsfw|18\+|onlyfans|hentai|gore|sexy|bikini|\bhot\b|deepfake|starring [A-Z][a-z]+ [A-Z])/i;
 
 // Extra names that point to a category (the category's own name and characters are added automatically).
 const ALIASES = {

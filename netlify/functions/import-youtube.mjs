@@ -162,8 +162,9 @@ export async function searchNow(q) {
   const rows = [], chans = {};
   for (const it of found.items || []) {
     const sn = it.snippet, v = it.id?.videoId;
-    if (!v || !(AI_RE.test(sn.title) || AI_RE.test(sn.description || ""))) continue;
-    const c = classify(sn.title, sn.description || "", true);
+    // stricter than the channel importer: the title itself must say it's AI-made (descriptions mention "AI" for bots, tools…)
+    if (!v || !AI_RE.test(sn.title)) continue;
+    const c = classify(sn.title, sn.description || "", false);
     if (!c) continue;
     rows.push({ v, t: sn.title.replace(/&amp;/g, "&").replace(/&#39;/g, "'").replace(/&quot;/g, '"'), at: sn.publishedAt, ch: sn.channelTitle, chId: sn.channelId, ...c });
     chans[sn.channelId] = true;

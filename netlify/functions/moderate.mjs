@@ -1,6 +1,6 @@
 // Admin tools: remove anyone's comment, find AI films on YouTube now, or start the importer / showdown judge by hand.
 // POST /api/moderate with the signed-in user's token. Body {action:"check"} answers whether this user is an admin;
-// {action:"remove", owner:"<user id>", id:"<comment id>"} removes that comment and its replies.
+// {action:"remove", owner:"<user id>", id:"<comment id>"} removes that comment and its replies; {action:"hide", id:"yt-…"} hides a film.
 // Needs: ADMIN_EMAILS (comma-separated sign-in emails of the admins), SUPABASE_URL, SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY (secret).
 import importYoutube, { searchNow } from "./import-youtube.mjs";
 import showdown from "./showdown.mjs";
@@ -30,6 +30,13 @@ export default async (req) => {
     if (!job) return json({ error: "unknown job" }, 400);
     const r = await job(req);
     return new Response(r.body, { status: r.status, headers: { "Content-Type": "application/json", "Cache-Control": "no-store" } });
+  }
+  if (body.action === "hide") {
+    if (!/^yt-[\w-]{6,20}$/.test(String(body.id || ""))) return json({ error: "bad film id" }, 400);
+    const key = Netlify.env.get("SUPABASE_SERVICE_ROLE_KEY"), h = { apikey: key, "Content-Type": "application/json", Prefer: "return=minimal" };
+    if (!key.startsWith("sb_secret_")) h.Authorization = "Bearer " + key;
+    const r = await fetch(Netlify.env.get("SUPABASE_URL") + "/rest/v1/catalog?id=eq." + encodeURIComponent(body.id), { method: "PATCH", headers: h, body: JSON.stringify({ hidden: true }) });
+    return r.ok ? json({ ok: true }) : json({ error: "save failed " + r.status }, 500);
   }
   if (body.action !== "remove" || !body.owner || !body.id) return json({ error: "bad request" }, 400);
 
