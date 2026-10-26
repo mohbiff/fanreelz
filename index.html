@@ -2282,7 +2282,7 @@ try{history.replaceState({fr:navSnap(),y:0},"",signinInUrl()?location.href:pathF
 loadLive();setInterval(()=>{if(!document.hidden)loadLive()},120000);
 /* Installable app: register the service worker, and offer an Install button where the browser supports it */
 if("serviceWorker" in navigator&&location.protocol==="https:")navigator.serviceWorker.register("/sw.js").catch(()=>{});
-let installPrompt=null;addEventListener("beforeinstallprompt",e=>{e.preventDefault();installPrompt=e;renderGuide()});
+var installPrompt=null;addEventListener("beforeinstallprompt",e=>{e.preventDefault();installPrompt=e;renderGuide()});
 async function installApp(){
   if($("#shell").classList.contains("open"))closeMenu();
   if(installPrompt){installPrompt.prompt();await installPrompt.userChoice.catch(()=>{});installPrompt=null;renderGuide();return}
@@ -2314,7 +2314,7 @@ async function resolveNames(){
    The site was first built against a small document store (collections of per-user documents).
    This adapter gives Supabase the same shape, so every feature (ratings, comments, votes, playlists,
    follows, requests, tips, submissions) saves for real without being rewritten. */
-let sb=null,sbToken=null,sbTokenNote="";
+var sb=null,sbToken=null,sbTokenNote=""; // var: pages opened by a direct link are drawn before this line runs
 const loadScript=src=>new Promise((ok,bad)=>{const t=document.createElement("script");t.src=src;t.onload=ok;t.onerror=bad;document.head.appendChild(t)});
 const initialAvatar=name=>{const n=(name||"F").trim()[0]?.toUpperCase()||"F",h=hnum(name||"F")%360;
   return "data:image/svg+xml,"+encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40"><rect width="40" height="40" rx="20" fill="hsl(${h} 55% 45%)"/><text x="20" y="26" font-family="system-ui,sans-serif" font-size="18" font-weight="700" fill="#fff" text-anchor="middle">${n.replace(/[<&>"]/g,"")}</text></svg>`)};
@@ -2334,7 +2334,7 @@ function supabaseDb(uid){
     }}
   };
 }
-let discordAppId="";
+var discordAppId=""; // var: the page can be drawn before this line runs (a link straight to /discord)
 /* A link that arrived for a film the page hadn't loaded yet (catalogue or member films load a moment later) opens once it exists */
 function openLinkedFilm(){if(state.view!=="home")return;const p=parsePath();if((p.view==="watch"||p.view==="shorts")&&p.film)Object.assign(state,p)}
 async function startSupabase(){
