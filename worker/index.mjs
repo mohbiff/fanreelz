@@ -7,6 +7,7 @@ import discordRegister from "../netlify/functions/discord-register.mjs";
 import importYoutube from "../netlify/functions/import-youtube.mjs";
 import liveYoutube from "../netlify/functions/live-youtube.mjs";
 import live from "../netlify/functions/live.mjs";
+import moderate from "../netlify/functions/moderate.mjs";
 import showdown from "../netlify/functions/showdown.mjs";
 import thumb from "../netlify/functions/thumb.mjs";
 import { withSeo, sitemap } from "./seo.mjs";
@@ -17,6 +18,7 @@ const ROUTES = {
   "/api/discord-register": discordRegister,
   "/api/live-youtube": liveYoutube,
   "/api/live": live,
+  "/api/moderate": moderate,
   "/api/thumb": thumb,
   "/api/tiktok-thumb": thumb,
 };

@@ -1982,7 +1982,7 @@ function commentsHtml(f){
   top.sort(cSort==="new"?(a,b)=>b.t-a.t:(a,b)=>(b.likes-a.likes)||(b.t-a.t));
   const mine=likeDocs[acct.uid]?.ids||{};
   const one=(c,r)=>`<div class="cm ${r?"reply":""}"><button class="cmav" data-user="${esc(c.uid)}" aria-label="Open ${esc(cname(c.uid))}'s profile">${uav(c.uid)}</button><div class="cmbody"><div class="cmhead"><button class="cmname" data-user="${esc(c.uid)}">${esc(cname(c.uid))}</button><span class="vmeta" style="font-size:12px">${agoT(c.t)}</span></div><p>${esc(c.text)}</p>
-    <div class="cmact"><button class="${mine[c.id]?"on":""}" data-clike="${esc(c.id)}" aria-label="Like">${icon("heart")} ${c.likes||""}</button>${r?"":`<button data-creply="${esc(c.id)}">Reply</button>`}${c.uid===acct.uid?`<button data-cdel="${esc(c.id)}">Delete</button>`:`<button data-creport="">Report</button>`}</div>${replyTo===c.id?composer(c.id):""}</div></div>`;
+    <div class="cmact"><button class="${mine[c.id]?"on":""}" data-clike="${esc(c.id)}" aria-label="Like">${icon("heart")} ${c.likes||""}</button>${r?"":`<button data-creply="${esc(c.id)}">Reply</button>`}${c.uid===acct.uid?`<button data-cdel="${esc(c.id)}">Delete</button>`:isMod?`<button data-cmod="${esc(c.uid)}|${esc(c.id)}">Remove</button>`:`<button data-creport="">Report</button>`}</div>${replyTo===c.id?composer(c.id):""}</div></div>`;
   return `<section class="comments" aria-label="Comments"><div class="row" style="justify-content:space-between"><h2 class="sect-h" style="margin:0">${all.length} comment${all.length===1?"":"s"}</h2><div class="row" style="gap:6px">${[["top","Top"],["new","Newest"]].map(([k,l])=>`<button class="chip ${cSort===k?"on":""}" data-csort="${k}">${l}</button>`).join("")}</div></div>
     ${composer("")}
     <div class="cmlist">${top.length?top.map(c=>one(c,false)+kids(c.id).map(x=>one(x,true)).join("")).join(""):`<p class="vmeta" style="margin:0">No comments yet. Start the conversation.</p>`}</div></section>`;
@@ -1996,6 +1996,13 @@ async function postComment(parent,text){
   if(await writeOwn("comments",{items:next})){commentDocs[acct.uid]={items:next};const fm=document.querySelector(`.cmform[data-cparent="${CSS.escape(parent||"")}"] textarea`);if(fm)fm.value="";replyTo=null;render();toast(parent?"Reply posted":"Comment posted");return true}
   return false;
 }
+var isMod=false;
+async function modCall(body){const r=await fetch("/api/moderate",{method:"POST",headers:{"Content-Type":"application/json",Authorization:"Bearer "+(sbToken||"")},body:JSON.stringify(body)});return r.json().catch(()=>({}))}
+async function checkMod(){if(!sbToken)return;try{const r=await modCall({action:"check"});if(r.admin){isMod=true;render()}}catch{}}
+async function modRemove(v){const i=v.indexOf("|"),owner=v.slice(0,i),id=v.slice(i+1);
+  if(!confirm("Remove this comment for everyone?"))return;
+  const r=await modCall({action:"remove",owner,id});
+  if(r.ok){const d=commentDocs[owner];if(d&&Array.isArray(d.items))d.items=d.items.filter(c=>String(c.id)!==id&&String(c.parent||"")!==id);render();toast("Comment removed")}else toast("Couldn't remove: "+(r.error||"error"))}
 async function deleteComment(id){const next=myComments().filter(c=>c.id!==id&&c.parent!==id);if(await writeOwn("comments",{items:next})){commentDocs[acct.uid]={items:next};render();toast("Comment deleted")}}
 async function likeComment(id){
   if(!needAccount("Sign in to like."))return;
@@ -2334,6 +2341,7 @@ document.addEventListener("click",async e=>{
   if(A("[data-ccancel]")){replyTo=null;render();return}
   if(x=A("[data-clike]")){likeComment(x.dataset.clike);return}
   if(x=A("[data-cdel]")){deleteComment(x.dataset.cdel);return}
+  if(x=A("[data-cmod]")){modRemove(x.dataset.cmod);return}
   if(A("[data-creport]")){toast("Thanks. A moderator will review this comment.");return}
   if(x=A("[data-fmtnav]")){$("#shell").classList.remove("open");go({view:"home",feed:"home",cat:null,char:null,format:x.dataset.fmtnav});return}
   if(x=A("[data-fmt]")){state.format=x.dataset.fmt;go({});return}
@@ -2487,6 +2495,7 @@ async function startSupabase(){
     const {data}=await sb.from("profiles").select("id,name,avatar_url").in("id",ids.slice(0,300));for(const r of data||[])out[r.id]={name:r.name||"Fan",avatar:r.avatar_url||""};return out}};
   loadCatalog().catch(e=>console.warn("catalogue",e));
   loadViews().catch(e=>console.warn("views",e));
+  if(u)setTimeout(checkMod,0);
   return {user,db:supabaseDb(me?.id||null),me};
 }
 /* Save one document. Sends the signed-in user's token explicitly, and if the database still
