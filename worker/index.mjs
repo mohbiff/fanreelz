@@ -9,6 +9,7 @@ import liveYoutube from "../netlify/functions/live-youtube.mjs";
 import live from "../netlify/functions/live.mjs";
 import showdown from "../netlify/functions/showdown.mjs";
 import thumb from "../netlify/functions/thumb.mjs";
+import { withSeo, sitemap } from "./seo.mjs";
 
 const ROUTES = {
   "/api/config": config,
@@ -42,8 +43,12 @@ export default {
       if (!job) return new Response("unknown job", { status: 404 });
       useEnv(env); return job(req);
     }
+    if (url.pathname === "/sitemap.xml") {
+      const hit = await caches.default.match(req); if (hit) return hit;
+      const res = await sitemap(env, ctx); ctx.waitUntil(caches.default.put(req, res.clone())); return res;
+    }
     const fn = ROUTES[url.pathname];
-    if (!fn) return env.ASSETS.fetch(req);
+    if (!fn) return withSeo(req, await env.ASSETS.fetch(req), env, ctx); // pages get their own title, description and preview
     useEnv(env);
     const cacheable = req.method === "GET" && !url.searchParams.has("debug");
     const cache = caches.default;

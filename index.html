@@ -203,6 +203,7 @@ body.wfs .player{position:fixed;inset:0;z-index:9000;width:100vw;height:100vh;he
 .switchbox{margin-top:14px;padding:14px;border-radius:12px;background:var(--card,#1c1a24)}
 .sdhot{align-self:flex-start;font-size:11px;font-weight:800;padding:2px 8px;border-radius:10px;background:#d6283c;color:#fff}.fyempty{padding:18px;border-radius:14px;background:var(--card,#1c1a24);margin:6px 0 16px}.fyempty h2{margin:0 0 6px}.fyempty p{margin:0;color:var(--muted)}
 .chip.foryou{font-weight:700}
+.ssr{max-width:900px;padding:20px 0;color:var(--muted)}.ssr h1{color:var(--ink,#fff)}.ssr a{color:var(--accent)}
 .linkbtn{all:unset;cursor:pointer;color:var(--accent);font-weight:700}
 .sdgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px;margin:14px 0}
 .sdcard{all:unset;cursor:pointer;display:flex;flex-direction:column;gap:8px;padding:16px;border-radius:14px;background:var(--card,#1c1a24);border:1px solid var(--line,#2a2735)}.sdcard:hover{border-color:var(--accent)}
@@ -2059,6 +2060,15 @@ const ttFrame=id=>`<iframe data-fid="tt-${id}" src="https://www.tiktok.com/playe
 const ytFrame=id=>`<iframe data-fid="yt-${id}" src="https://www.youtube.com/embed/${id}?rel=0&autoplay=1&playsinline=1&enablejsapi=1&origin=${encodeURIComponent(location.origin)}" title="YouTube video player" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen style="position:absolute;inset:0;width:100%;height:100%;border:0"></iframe>`;
 let ticker=null;
 let renderHard=false;
+/* The browser tab and Google's rendered copy get a title for each page */
+function pageTitle(){const T=t=>t+" | Fanreelz",f=findFilm(state.film);
+  if(state.view==="watch"&&f)return T(f.title);
+  if(state.view==="shorts"&&f)return T(f.title+" (Short)");
+  if(state.view==="showdown"){const m=state.sd&&sdList().find(x=>x.key===state.sd);return T(m?m.a+" vs "+m.b+": who would win?":"Character Showdown: who would win?")}
+  if(state.view==="home"&&state.q)return T("Search: "+state.q);
+  if(state.view==="home"&&state.cat)return T("Best "+(state.char?state.char+" ("+catName(state.cat)+")":catName(state.cat))+" AI fan films");
+  const names={battles:"Fan Battles",requests:"Requests",about:"About",browse:"Browse all worlds",live:"Live now",discord:"Discord bot",playlists:"Playlists",you:"You",history:"History",later:"Watch later",liked:"Liked videos",series:"Series",user:"Profile",creator:"Creator"};
+  return names[state.view]?T(names[state.view]):"Fanreelz – Where AI fan films find their fans"}
 let fsPending=false;
 const fsEl=()=>document.fullscreenElement||document.webkitFullscreenElement||null;
 function render(){
@@ -2079,6 +2089,7 @@ function render(){
   if(state.view==="premieres")ticker=setInterval(tickPremieres,1000);
   if(state.view==="tv")ticker=setInterval(tickTV,1000);
   if(state.view==="showdown")ticker=setInterval(loadSdVerdicts,60000);
+  document.title=pageTitle();
   if(state.view==="contest")ticker=setInterval(()=>{const el=$("#cEnd");if(el)el.textContent=until(contestNow().end-Date.now())},1000);
 }
 const NAVKEYS=["user","utab","view","feed","group","cat","char","q","film","format","dur","series","season","creator","shortList","shortI","bgroup","ctab","tv","lore"];
