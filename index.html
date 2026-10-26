@@ -201,6 +201,9 @@ body.wfs .player{position:fixed;inset:0;z-index:9000;width:100vw;height:100vh;he
 .bpbtn{position:absolute;inset:0;margin:auto;width:64px;height:64px;border-radius:50%;background:rgba(0,0,0,.6);display:grid;place-items:center}.bpbtn svg{width:24px;height:24px;fill:#fff;margin-left:3px}
 .sdsum{font-weight:700;font-size:16px}.sdwhy-h{font-size:15px;margin:14px 0 4px}.sdwhy p{margin:0 0 10px;line-height:1.55}.sddec{margin:6px 0 12px}.sddec ul{margin:4px 0;padding-left:18px}
 .switchbox{margin-top:14px;padding:14px;border-radius:12px;background:var(--card,#1c1a24)}
+.t10{display:flex;flex-direction:column;gap:8px}.t10row{all:unset;cursor:pointer;display:grid;grid-template-columns:40px 160px minmax(0,1fr);gap:14px;align-items:center;padding:8px;border-radius:12px}.t10row:hover{background:var(--card,#1c1a24)}
+.t10n{font-size:26px;font-weight:900;color:var(--accent);text-align:center}.t10row .thumb{aspect-ratio:16/9;border-radius:8px;overflow:hidden}.t10row .thumb img,.t10row .thumb canvas{width:100%;height:100%;object-fit:cover}.t10t b{display:block;font-size:15px;margin-bottom:3px}
+@media (max-width:600px){.t10row{grid-template-columns:28px 110px minmax(0,1fr);gap:10px}.t10n{font-size:20px}}
 .sdhot{align-self:flex-start;font-size:11px;font-weight:800;padding:2px 8px;border-radius:10px;background:#d6283c;color:#fff}.fyempty{padding:18px;border-radius:14px;background:var(--card,#1c1a24);margin:6px 0 16px}.fyempty h2{margin:0 0 6px}.fyempty p{margin:0;color:var(--muted)}
 .chip.foryou{font-weight:700}
 .ssr{max-width:900px;padding:20px 0;color:var(--muted)}.ssr h1{color:var(--ink,#fff)}.ssr a{color:var(--accent)}
@@ -784,7 +787,7 @@ function renderGuide(){renderTabbar();
       .map(([v,l,ic])=>`<button class="gi ${state.view===v||(v==="channel"&&state.view==="user"&&state.user===acct.uid)?"on":""}" data-you="${v}">${icon(ic)}<span>${l}</span></button>`).join("")+
     fi("mine","Your ratings","mine")+`<hr>`+
     `<button class="gi ${state.view==="live"?"on":""}" data-view="live">${icon("live")}<span>Live now</span>${LIVE.length?`<span class="livecount">${LIVE.length}</span>`:""}</button>`+[["premieres","Premieres","prem"],["tv","Fanreelz TV","tv"]].map(([v,l,ic])=>`<button class="gi ${state.view===v?"on":""}" data-view="${v}">${icon(ic)}<span>${l}</span></button>`).join("")+
-    `<hr><h4>Community</h4>`+[["battles","Fan Battles","battle"],["requests","Requests","req"],["showdown","Character Showdown","trophy"],["playlists","Playlists","list"],["discord","Discord bot","bot"]].map(([v,l,ic])=>`<button class="gi ${state.view===v?"on":""}" data-view="${v}">${icon(ic)}<span>${l}</span></button>`).join("")+
+    `<hr><h4>Community</h4>`+[["top10","Top 10 this month","top"],["battles","Fan Battles","battle"],["requests","Requests","req"],["showdown","Character Showdown","trophy"],["playlists","Playlists","list"],["discord","Discord bot","bot"]].map(([v,l,ic])=>`<button class="gi ${state.view===v?"on":""}" data-view="${v}">${icon(ic)}<span>${l}</span></button>`).join("")+
     `<button class="gi ${state.view==="about"?"on":""}" data-view="about">${icon("info")}<span>About us</span></button>`+
     (matchMedia("(display-mode: standalone)").matches||navigator.standalone?"":`<button class="gi" data-install="">${icon("save")}<span>Install app</span></button>`)+
     `<button class="gi" data-theme-next="">${icon("info")}<span>Appearance: ${({dark:"Dark",light:"Light",system:"Device theme"})[document.documentElement.dataset.theme]||"Dark"}</span></button>`+
@@ -1150,6 +1153,26 @@ const sdLabel=m=>m.from||sdCats(m).map(catName).join(" vs ")||"";
 function sdHot(key){let h=0;const now=Date.now();for(const d of Object.values(sdVotes)){const v=d?.a?.[key];if(!v||!v.t)continue;const age=(now-v.t)/864e5;if(age<3)h+=age<1?3:1}return h}
 const sdStatus=(v,r)=>r?.status==="canon"?"canon":!r?.research?"checking":v.total<SD_MIN?"gathering":"live";
 const first=n=>String(n).split(" ")[0];
+/* ---------- Top 10 this month: a page to share (Reddit, newsletters, Discord) ---------- */
+function renderTop10(){
+  const month=new Date().toLocaleString("en-GB",{month:"long",year:"numeric"});
+  const pool=allFilms().filter(f=>(f.yt||f.tt||f.ig||f.vm||f.dm)&&!f.age&&f.format!=="short");
+  const score=f=>(f.ytViews||0)+stats(f).n*500;
+  const fresh=pool.filter(f=>f.days!=null&&f.days<=31).sort((a,b)=>score(b)-score(a)).slice(0,10);
+  const top=fresh.length>=5?fresh:[...pool].sort((a,b)=>score(b)-score(a)).slice(0,10);
+  const row=(f,i)=>`<button class="t10row" data-open="${esc(f.id)}"><span class="t10n">${i+1}</span><span class="thumb"><canvas data-f="${esc(f.id)}"></canvas></span><span class="t10t"><b>${esc(f.title)}</b><small class="vmeta">${esc(byName(f)||"YouTube creator")} · ${esc(catName(f.cat))}${f.ytViews?` · ${fmtN(f.ytViews)} views`:""}${stats(f).n?` · ★ ${stats(f).avg.toFixed(1)}`:""}</small></span></button>`;
+  const groups=GROUPS.map(g=>{const ids=new Set(g.cats.map(c=>c.id));return {g,list:pool.filter(f=>ids.has(f.cat)).sort((a,b)=>score(b)-score(a)).slice(0,5)}}).filter(x=>x.list.length>=3);
+  $("#main").innerHTML=`<h1 class="sect-h" style="font-size:26px;margin-top:16px">${icon("top")} Top 10 AI fan films · ${esc(month)}</h1>
+   <p class="lede">${fresh.length>=5?"The most-watched AI fan films released in the last 30 days":"The most-watched AI fan films on Fanreelz"}, across YouTube, TikTok and Vimeo. Every film plays through the creator's own player, so the views are theirs.</p>
+   <div class="row" style="margin:6px 0 18px"><button class="btn ghost" data-share-page="top10">${icon("share")}Share this list</button></div>
+   <div class="t10">${top.map(row).join("")}</div>
+   ${groups.map(({g,list})=>`<h2 class="sect-h" style="margin-top:28px">Top 5 · ${esc(g.name)}<button class="seeall" data-t10group="${esc(g.name)}">See all</button></h2><div class="t10">${list.map(row).join("")}</div>`).join("")}
+   <p class="note">Ranked by views on the original platform plus Fanreelz ratings. Updated as new films come in.</p>`;
+}
+document.addEventListener("click",e=>{const g=e.target.closest("[data-t10group]");if(g){e.preventDefault();go({view:"home",feed:"home",group:g.dataset.t10group,cat:null,char:null,q:"",format:"all"});window.scrollTo(0,0)}});
+document.addEventListener("click",e=>{if(!e.target.closest("[data-share-page]"))return;e.preventDefault();
+  const url="https://fanreelz.com/top10",text="The top 10 AI fan films this month";
+  if(navigator.share)navigator.share({title:text,url}).catch(()=>{});else{navigator.clipboard?.writeText(url).then(()=>toast("Link copied"),()=>toast(url))}});
 function renderShowdown(){
   const keep=$("#sdText")?{v:$("#sdText").value,f:document.activeElement===$("#sdText")}:null;
   const list=sdList();const m=state.sd?list.find(x=>x.key===state.sd):null;
@@ -2098,7 +2121,7 @@ function pageTitle(){const T=t=>t+" | Fanreelz",f=findFilm(state.film);
   if(state.view==="showdown"){const m=state.sd&&sdList().find(x=>x.key===state.sd);return T(m?m.a+" vs "+m.b+": who would win?":"Character Showdown: who would win?")}
   if(state.view==="home"&&state.q)return T("Search: "+state.q);
   if(state.view==="home"&&state.cat)return T("Best "+(state.char?state.char+" ("+catName(state.cat)+")":catName(state.cat))+" AI fan films");
-  const names={battles:"Fan Battles",requests:"Requests",about:"About",browse:"Browse all worlds",live:"Live now",discord:"Discord bot",playlists:"Playlists",you:"You",history:"History",later:"Watch later",liked:"Liked videos",series:"Series",user:"Profile",creator:"Creator"};
+  const names={top10:"Top 10 AI fan films this month",battles:"Fan Battles",requests:"Requests",about:"About",browse:"Browse all worlds",live:"Live now",discord:"Discord bot",playlists:"Playlists",you:"You",history:"History",later:"Watch later",liked:"Liked videos",series:"Series",user:"Profile",creator:"Creator"};
   return names[state.view]?T(names[state.view]):"Fanreelz – Where AI fan films find their fans"}
 let fsPending=false;
 const fsEl=()=>document.fullscreenElement||document.webkitFullscreenElement||null;
@@ -2114,7 +2137,7 @@ function render(){
   lastFilm=state.view==="watch"?state.film:null;
   renderWho();renderGuide();
   clearInterval(ticker);ticker=null;tvNow=null;
-  ({watch:renderWatch,browse:renderBrowse,live:renderLive,liveplay:renderLivePlay,premieres:renderPremieres,tv:renderTV,battles:renderBattles,showdown:renderShowdown,requests:renderRequests,contest:renderContest,playlists:renderPlaylists,creator:renderCreator,discord:renderDiscord,about:renderAbout,user:renderUser,you:renderYou,history:renderYouList,later:renderYouList,liked:renderYouList,yourvideos:renderYouList,shorts:renderShorts,series:renderSeries}[state.view]||renderHomeF)();
+  ({watch:renderWatch,browse:renderBrowse,live:renderLive,liveplay:renderLivePlay,premieres:renderPremieres,tv:renderTV,battles:renderBattles,showdown:renderShowdown,top10:renderTop10,requests:renderRequests,contest:renderContest,playlists:renderPlaylists,creator:renderCreator,discord:renderDiscord,about:renderAbout,user:renderUser,you:renderYou,history:renderYouList,later:renderYouList,liked:renderYouList,yourvideos:renderYouList,shorts:renderShorts,series:renderSeries}[state.view]||renderHomeF)();
   paintAll();
   document.querySelectorAll(".cmform").forEach(fm=>{const k=fm.dataset.cparent;const ta=fm.querySelector("textarea");if(drafts[k])ta.value=drafts[k];if(focusKey===k){ta.focus();ta.setSelectionRange(ta.value.length,ta.value.length)}});
   if(state.view==="premieres")ticker=setInterval(tickPremieres,1000);
@@ -2126,7 +2149,7 @@ function render(){
 const NAVKEYS=["user","utab","view","feed","group","cat","char","q","film","format","dur","series","season","creator","shortList","shortI","bgroup","ctab","tv","lore"];
 const navSnap=()=>JSON.parse(JSON.stringify(Object.fromEntries(NAVKEYS.map(k=>[k,state[k]]))));
 /* Every page gets its own address (fanreelz.com/film/…, /shorts/…, /about …) so links can be shared and reloaded. */
-const PAGES=["showdown","you","history","later","liked","yourvideos","about","live","premieres","tv","battles","requests","contest","playlists","discord","browse"];
+const PAGES=["top10","showdown","you","history","later","liked","yourvideos","about","live","premieres","tv","battles","requests","contest","playlists","discord","browse"];
 function pathFor(st){
   const e=encodeURIComponent;
   switch(st.view){
