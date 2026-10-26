@@ -24,6 +24,11 @@ const TOPICS = [
 const PAGES_PER_CHANNEL = 4, MIN_AI_SHARE = 0.5;
 // Channels per run: 6 on Netlify (every 2 hours); 3 on Cloudflare (every hour, which allows at most 50 outside calls per run)
 
+// Channels Fanreelz always follows, even when their titles don't say "AI" (official channels of known AI series)
+const SEED_CHANNELS = [
+  "UC-3j3vvarvPtbs8ocwOK0Fg", // Fruit Love Island (AI Cinema), official YouTube channel for season 2
+];
+
 const yt = async (path, params) => {
   const u = new URL("https://www.googleapis.com/youtube/v3/" + path);
   u.search = new URLSearchParams({ ...params, key: Netlify.env.get("YOUTUBE_API_KEY") });
@@ -72,6 +77,16 @@ async function run() {
     })));
   }
   log.push(`topic "${topic}": ${fresh.length} new channels`);
+
+  // Followed channels count as AI channels from the start
+  const missing = SEED_CHANNELS.filter((id) => !known.has(id));
+  if (missing.length) {
+    const info = await yt("channels", { part: "contentDetails,snippet", id: missing.join(",") }).catch(() => ({ items: [] }));
+    await sb.upsert("catalog_channels", (info.items || []).map((c) => ({
+      channel_id: c.id, title: c.snippet.title, uploads: c.contentDetails.relatedPlaylists.uploads, status: "reading", next_page: null,
+    })));
+    log.push(`followed channels added: ${(info.items || []).map((c) => c.snippet.title).join(", ")}`);
+  }
 
   // 2. Work through channels: new ones first, then ones with more pages to read
   const queue = await sb.get(`catalog_channels?status=in.(new,reading)&order=status.asc,checked_at.asc.nullsfirst&limit=${PER_RUN_CHANNELS}`);
