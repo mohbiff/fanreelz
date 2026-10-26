@@ -133,6 +133,9 @@ main{min-width:0;padding-right:max(16px,env(safe-area-inset-right,0px));padding-
 .note{font-size:12px;color:var(--muted);margin-top:36px}
 
 /* watch view */
+@media (max-width:860px){[data-theater]{display:none}}
+.theater{background:#000;margin:0 -24px;padding:12px 24px 4px}.theater .player{width:min(100%,calc((100vh - 170px)*16/9));margin:0 auto;border-radius:0}
+.theater .pbar,.theater .ythelp{max-width:min(100%,calc((100vh - 170px)*16/9));margin-left:auto;margin-right:auto}
 .watch{display:grid;grid-template-columns:minmax(0,1fr) 402px;gap:24px;padding-top:16px;max-width:1700px}
 .player{position:relative;aspect-ratio:16/9;max-width:100%;border-radius:12px;overflow:hidden;background:#000}
 .shelfh{all:unset;cursor:pointer;font:inherit}.shelfh span{color:var(--accent)}.shelfh:hover{text-decoration:underline}
@@ -835,6 +838,10 @@ function renderHome(){
   html+=`<p class="note">Layout demo of Fanreelz. Films marked Real are actual viral AI content; all other films, creators and ratings are made-up examples.</p>`;
   $("#main").innerHTML=html;
 }
+/* Theater mode (like YouTube's): the player gets the full width, Up next moves below. Remembered in this browser. */
+let theater=(()=>{try{return localStorage.getItem("fr_theater")==="1"}catch(e){return false}})();
+document.addEventListener("click",e=>{if(!e.target.closest("[data-theater]"))return;e.preventDefault();theater=!theater;
+  try{localStorage.setItem("fr_theater",theater?"1":"0")}catch(x){}renderHard=true;render();if(theater)window.scrollTo({top:0,behavior:"smooth"})});
 function renderWatch(){
   addHistory(state.film);
   const f=findFilm(state.film);if(!f){state.view="home";return renderHome()}
@@ -843,8 +850,9 @@ function renderWatch(){
   let keepYt=null;{const old=document.querySelector(".player iframe");if(f.yt&&old&&old.dataset.fid==="yt-"+f.yt&&document.body.moveBefore){try{$("#frameHold").moveBefore(old,null);keepYt=old}catch(e){keepYt=null}}}
   const next=nextFor(f);
   const url=f.url||"https://www.youtube.com/results?search_query="+encodeURIComponent(f.title+" AI film");
-  $("#main").innerHTML=`<div class="watch"><div>
-    <div class="player"><canvas data-f="${esc(f.id)}"></canvas><a class="play" href="${esc(url)}" target="_blank" rel="noopener"><span><svg viewBox="0 0 12 12"><path d="M2 1l9 5-9 5z"/></svg>Watch on ${esc(f.src)}</span></a></div>
+  const playerHtml=`<div class="player"><canvas data-f="${esc(f.id)}"></canvas><a class="play" href="${esc(url)}" target="_blank" rel="noopener"><span><svg viewBox="0 0 12 12"><path d="M2 1l9 5-9 5z"/></svg>Watch on ${esc(f.src)}</span></a></div>`;
+  $("#main").innerHTML=`${theater?`<div class="theater">${playerHtml}</div>`:""}<div class="watch"><div>
+    ${theater?"":playerHtml}
     ${f.format==="episode"?`<button class="serieslink" data-series="${esc(f.seriesId)}">${esc(findSeries(f.seriesId)?.title||"Series")} · Season ${f.season}, Episode ${f.ep}</button>`:""}<h1 class="wtitle" ${f.format==="episode"?'style="margin-top:4px"':""}>${esc(f.title)}${f.real?'<span class="pill">Real</span>':""}${isVerified(f)?'<span class="pill">Verified original</span>':""}</h1>
     <div class="wbar">${(f.real||f.yt||f.tt||f.ig||f.vm||f.dm)?`<div class="owner">${cav(byName(f),40)}<div><b>${esc(byName(f)||"YouTube creator")}</b><small>${esc(catName(f.cat))} · ${esc(f.char)}</small></div></div>`:`<button class="owner link" data-creator="${esc(f.byId||f.by)}">${cav(byName(f),40)}<div><b>${esc(byName(f)||"YouTube creator")}</b><small>${fmtN(followerCount(f.byId||f.by))} followers · ${esc(catName(f.cat))}</small></div></button>`}
       <div class="ratebox" role="group" aria-label="Rate this film"><span>${mine?"Your rating":"Rate"}</span>${[1,2,3,4,5].map(k=>`<button data-rate="${k}" class="${k<=mine?"on":""}" aria-label="${k} stars">★</button>`).join("")}</div></div>
@@ -858,7 +866,7 @@ function renderWatch(){
   $(".watch>div").insertAdjacentHTML("beforeend",commentsHtml(f));
   if(f.yt){if(keepYt){const pl=$(".player");pl.innerHTML="";try{pl.moveBefore(keepYt,null)}catch(e){pl.appendChild(keepYt)}if(keepEnd)pl.appendChild(keepEnd)}else $(".player").innerHTML=ytFrame(f.yt);$(".player").insertAdjacentHTML("afterend",`<div class="ythelp">${f.age?'<b>18+</b>Age-restricted on YouTube. ':''}Does YouTube ask you to sign in? Allow cookies for youtube.com in this browser, or <a href="${esc(f.url||"https://www.youtube.com/watch?v="+f.yt)}" target="_blank" rel="noopener">watch on YouTube ↗</a></div>`)}
   if(f.tt)$(".player").innerHTML=ttFrame(f.tt);
-  if(f.ig||f.vm||f.dm||f.tt||f.yt)setTimeout(()=>{const pl=$(".player");if(pl&&pl.querySelector("iframe")&&!$(".pbar"))pl.insertAdjacentHTML("afterend",`<div class="pbar"><button class="btn ghost" data-wfs=""><svg class="i" viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>Full screen</button></div>`)},0);
+  if(f.ig||f.vm||f.dm||f.tt||f.yt)setTimeout(()=>{const pl=$(".player");if(pl&&pl.querySelector("iframe")&&!$(".pbar"))pl.insertAdjacentHTML("afterend",`<div class="pbar"><button class="btn ghost" data-theater="" aria-pressed="${theater}"><svg class="i" viewBox="0 0 24 24">${theater?'<rect x="5" y="7" width="14" height="10" rx="1.5"/>':'<rect x="2" y="6" width="20" height="12" rx="1.5"/>'}</svg>${theater?"Default view":"Theater mode"}</button></div>`)},0);
   if(f.ig||f.vm||f.dm)$(".player").innerHTML=extFrame(f);
 }
 function renderBrowse(){
