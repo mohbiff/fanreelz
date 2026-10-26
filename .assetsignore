@@ -1,0 +1,10 @@
+# Files that are not part of the public website on Cloudflare
+.git
+.github
+netlify
+netlify.toml
+supabase
+worker
+wrangler.jsonc
+node_modules
+*.md

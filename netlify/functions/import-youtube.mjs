@@ -20,7 +20,8 @@ const TOPICS = [
   "kling ai short film", "sora ai short film", "AI mythology film", "AI D&D movie", "AI age of empires cinematic",
   "AI pokemon live action", "AI fortnite movie", "AI warcraft 3 cinematic remake", "AI world of warcraft movie",
 ];
-const PER_RUN_CHANNELS = 6, PAGES_PER_CHANNEL = 4, MIN_AI_SHARE = 0.5;
+const PAGES_PER_CHANNEL = 4, MIN_AI_SHARE = 0.5;
+// Channels per run: 6 on Netlify (every 2 hours); 3 on Cloudflare (every hour, which allows at most 50 outside calls per run)
 
 const yt = async (path, params) => {
   const u = new URL("https://www.googleapis.com/youtube/v3/" + path);
@@ -49,6 +50,7 @@ const iso = (d) => { const m = /PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/.exec(d || "
 async function run() {
   if (!Netlify.env.get("YOUTUBE_API_KEY") || !Netlify.env.get("SUPABASE_SERVICE_ROLE_KEY") || !Netlify.env.get("SUPABASE_URL"))
     return { error: "Missing YOUTUBE_API_KEY, SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY" };
+  const PER_RUN_CHANNELS = +(Netlify.env.get("IMPORT_CHANNELS") || 6);
   const sb = db(), log = [];
   const state = ((await sb.get("import_state?key=eq.youtube&select=value"))[0] || {}).value || { topic: 0 };
 

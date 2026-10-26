@@ -1,7 +1,6 @@
 // Fanreelz bot for Discord. Discord sends each slash command here (Interactions Endpoint URL = https://fanreelz.com/api/discord),
 // so no always-on server is needed. Commands: /top, /random, /search, /showdown, /fanreelz.
 // Needs in Netlify: DISCORD_PUBLIC_KEY (from the Discord app's General Information page), SUPABASE_URL, SUPABASE_ANON_KEY.
-import crypto from "node:crypto";
 import CATS from "./lib/catmap.mjs";
 
 const SITE = "https://fanreelz.com";
@@ -11,11 +10,12 @@ const json = (o, status = 200) => new Response(JSON.stringify(o), { status, head
 const reply = (data) => json({ type: 4, data: { allowed_mentions: { parse: [] }, ...data } });
 const CHOOSABLE = CATS.filter((c) => !["aiseries"].includes(c.id));
 
-function verify(body, sig, ts) {
+// Discord signs every request; checked with Web Crypto (works on both Netlify and Cloudflare)
+const hex = (h) => new Uint8Array((String(h).match(/../g) || []).map((x) => parseInt(x, 16)));
+async function verify(body, sig, ts) {
   try {
-    const raw = Buffer.from(Netlify.env.get("DISCORD_PUBLIC_KEY") || "", "hex");
-    const key = crypto.createPublicKey({ key: Buffer.concat([Buffer.from("302a300506032b6570032100", "hex"), raw]), format: "der", type: "spki" });
-    return crypto.verify(null, Buffer.from(ts + body), key, Buffer.from(sig, "hex"));
+    const key = await crypto.subtle.importKey("raw", hex(Netlify.env.get("DISCORD_PUBLIC_KEY") || ""), { name: "Ed25519" }, false, ["verify"]);
+    return await crypto.subtle.verify("Ed25519", key, hex(sig), new TextEncoder().encode(ts + body));
   } catch { return false; }
 }
 
@@ -71,7 +71,7 @@ const help = () => reply({ embeds: [{ color: COLOR, title: "Fanreelz bot", url: 
 export default async (req) => {
   if (req.method !== "POST") return new Response("Fanreelz Discord bot. Add it from https://fanreelz.com/discord", { status: 200 });
   const body = await req.text();
-  if (!verify(body, req.headers.get("x-signature-ed25519") || "", req.headers.get("x-signature-timestamp") || "")) return new Response("bad signature", { status: 401 });
+  if (!(await verify(body, req.headers.get("x-signature-ed25519") || "", req.headers.get("x-signature-timestamp") || ""))) return new Response("bad signature", { status: 401 });
   const i = JSON.parse(body);
   if (i.type === 1) return json({ type: 1 }); // Discord checking the endpoint
   if (i.type === 4) { // autocomplete for the category option

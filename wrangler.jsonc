@@ -1,0 +1,16 @@
+// Fanreelz on Cloudflare Workers (static site + functions + schedules). Netlify keeps working from netlify.toml.
+{
+  "name": "fanreelz",
+  "main": "worker/index.mjs",
+  "compatibility_date": "2026-09-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "assets": {
+    "directory": ".",
+    "binding": "ASSETS",
+    "not_found_handling": "single-page-application",
+    "run_worker_first": ["/api/*"]
+  },
+  "triggers": { "crons": ["17 * * * *", "41 * * * *"] },
+  "vars": { "IMPORT_CHANNELS": "3" },
+  "observability": { "enabled": true }
+}
