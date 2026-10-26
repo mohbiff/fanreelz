@@ -327,7 +327,7 @@ body.wfs .player{position:fixed;inset:0;z-index:9000;width:100vw;height:100vh;he
 .eptext b{font-size:15px}
 .serieslink{background:none;border:0;padding:0;color:var(--accent);font-weight:700;margin-top:12px;display:block}
 .subnote{margin:0;color:var(--muted);font-size:12px}
-@media (max-width:860px){.shorts-view{grid-template-columns:minmax(0,1fr);justify-items:center}.shorts-view{--sph:calc(100svh - 56px - 54px - 24px - env(safe-area-inset-bottom,0px));padding-top:8px;gap:16px}.spcol{height:auto;overflow:visible;width:100%;justify-self:stretch}.spnext{display:none}.shorts-view .sp{width:100%;max-width:100%;aspect-ratio:auto;border-radius:12px}.spcatch{inset:72px 0 120px 0}.sside{width:100%}.sside .comments{max-height:none;overflow:visible}.ep{grid-template-columns:28px 120px minmax(0,1fr)}.ep .azscore{display:none}}
+@media (max-width:860px){.shorts-view{grid-template-columns:minmax(0,1fr);justify-items:center}.shorts-view{--sph:calc(100svh - 56px - 54px - 24px - env(safe-area-inset-bottom,0px));padding-top:8px;gap:16px}.spcol{height:auto;overflow:visible;width:100%;justify-self:stretch}.spnext{display:none}.shorts-view .sp{width:100%;max-width:100%;aspect-ratio:auto;border-radius:12px}.spcatch{inset:120px 0 120px 0}.sside{width:100%}.sside .comments{max-height:none;overflow:visible}.ep{grid-template-columns:28px 120px minmax(0,1fr)}.ep .azscore{display:none}}
 .tipamts{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 .tipamts .chip.on{background:var(--fg);color:var(--bg)}
 .tipother{display:flex;align-items:center;gap:6px;font-weight:600;font-size:13px}
@@ -400,7 +400,7 @@ body.spfs{overflow:hidden}
 body.spfs .shorts-view .sp{position:fixed;inset:0;width:100vw;max-width:none;height:100vh;height:100dvh;border-radius:0;z-index:60;aspect-ratio:auto}
 body.spfs .tabbar,body.spfs .toast{z-index:61}
 body.spfs .tabbar{display:none}
-.spcatch{position:absolute;inset:72px 0 110px 0;z-index:3;cursor:pointer;touch-action:none}
+.spcatch{position:absolute;inset:120px 0 110px 0;z-index:3;cursor:pointer;touch-action:none}
 .sp .ov{z-index:4}
 .spicon{position:absolute;inset:0;margin:auto;width:72px;height:72px;border-radius:50%;z-index:5;pointer-events:none;opacity:0;background:rgba(0,0,0,.55) center/30px no-repeat}
 .spicon.paused{background-image:url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 24 24%27%3E%3Cpath fill=%27white%27 d=%27M6 5h4v14H6zM14 5h4v14h-4z%27/%3E%3C/svg%3E")}
