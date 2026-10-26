@@ -812,7 +812,7 @@ function feedList(){
 function renderHome(){
   const c=CATS.find(c=>c.id===state.cat);
   const chips=c?[`<button class="chip ${!state.char?"on":""}" data-char="">All</button>`,...c.chars.map(ch=>`<button class="chip ${state.char===ch?"on":""}" data-char="${esc(ch)}">${esc(ch)}</button>`)]
-    :[FOR_YOU,"All",...GROUPS.map(g=>g.name)].map(g=>`<button class="chip ${state.group===g?"on":""} ${g===FOR_YOU?"foryou":""}" data-group="${esc(g)}">${g===FOR_YOU?"✨ ":""}${esc(g)}</button>`);
+    :["All",...GROUPS.map(g=>g.name)].map(g=>`<button class="chip ${state.group===g||(g==="All"&&state.group===FOR_YOU)?"on":""}" data-group="${esc(g)}">${esc(g)}</button>`);
   const list=feedList();
   let html=`<div class="chips">${chips.join("")}</div>`;
   if(state.family)html+=`<div class="familybar">${icon("shield")} Family-friendly mode is on. Only films suited for younger viewers are shown.<button data-family="">Turn off</button></div>`;
@@ -1724,7 +1724,7 @@ function fmtTabs(nAll,nFilm,nShort,nSeries){
 /* ---------- For you: films picked from what this viewer watches, rates, saves and votes on ---------- */
 const FOR_YOU="For you";let groupTouched=false;
 // a signed-in viewer's history arrives a moment after the page opens: switch to For you then, unless they already picked a tab
-function maybeForYou(){if(!groupTouched&&state.view==="home"&&state.group==="All"&&!state.cat&&!state.q&&state.feed==="home"&&(!state.format||state.format==="all")&&myHistory.length>=3){state.group=FOR_YOU;render()}}
+function maybeForYou(){if(state.view==="home"&&state.group==="All")render();return;if(!groupTouched&&state.view==="home"&&state.group==="All"&&!state.cat&&!state.q&&state.feed==="home"&&(!state.format||state.format==="all")&&myHistory.length>=3){state.group=FOR_YOU;render()}}
 function interests(){
   const cat={},ch={},now=Date.now(),add=(o,k,w)=>{if(k)o[k]=(o[k]||0)+w};
   myHistory.slice(0,150).forEach((h,i)=>{const f=findFilm(h.id);if(!f)return;const w=Math.exp(-(now-(+h.t||now))/(14*864e5))+(i<10?.5:0);add(cat,f.cat,w);add(ch,f.cat+"|"+f.char,w*1.5)});
@@ -1752,7 +1752,7 @@ function forYouHtml(){
   for(const h of myHistory){const f=findFilm(h.id);if(!f||rows.some(r=>r.f.cat===f.cat))continue;
     const like=films.filter(x=>x.cat===f.cat&&!used.has(x.id)).slice(0,8);if(like.length>=3){like.forEach(x=>used.add(x.id));rows.push({f,like})}if(rows.length>=2)break}
   const topCats=Object.entries(I.cat).filter(([,v])=>v>0).sort((a,b)=>b[1]-a[1]).slice(0,4).map(([k])=>k);
-  let html=`<h1 class="sect-h" style="font-size:24px;margin-top:4px">✨ For you</h1><p class="lede" style="margin:-4px 0 12px">Picked from what you watch, rate and save.${topCats.length?` You seem to like ${topCats.map(k=>`<button class="linkbtn" data-cat="${esc(k)}">${esc(catName(k))}</button>`).join(", ")}.`:""}</p>`;
+  let html=`<button class="chip" data-group="All" style="margin:4px 0 10px">← All</button><h1 class="sect-h" style="font-size:24px;margin-top:4px">✨ For you</h1><p class="lede" style="margin:-4px 0 12px">Picked from what you watch, rate and save.${topCats.length?` You seem to like ${topCats.map(k=>`<button class="linkbtn" data-cat="${esc(k)}">${esc(catName(k))}</button>`).join(", ")}.`:""}</p>`;
   html+=`<section class="shelf"><h2>${icon("trend")} Top picks for you</h2><div class="shelfrow">${films.slice(0,8).map(f=>card(f)).join("")}</div></section>`;
   if(shorts.length)html+=`<section class="shelf"><h2>${icon("short")} Shorts for you<button class="seeall" data-fmt="short">See all</button></h2><div class="shortrow">${shorts.slice(0,12).map(shortCard).join("")}</div></section>`;
   rows.forEach(r=>html+=`<section class="shelf"><h2>Because you watched <button class="linkbtn" data-open="${esc(r.f.id)}">${esc(r.f.title.length>50?r.f.title.slice(0,50)+"…":r.f.title)}</button></h2><div class="shelfrow">${r.like.map(f=>card(f)).join("")}</div></section>`);
@@ -1763,7 +1763,7 @@ function forYouHtml(){
 function renderHomeF(){
   const c=CATS.find(x=>x.id===state.cat);
   const chips=c?[`<button class="chip ${!state.char?"on":""}" data-char="">All</button>`,...c.chars.map(ch=>`<button class="chip ${state.char===ch?"on":""}" data-char="${esc(ch)}">${esc(ch)}</button>`)]
-    :[FOR_YOU,"All",...GROUPS.map(g=>g.name)].map(g=>`<button class="chip ${state.group===g?"on":""} ${g===FOR_YOU?"foryou":""}" data-group="${esc(g)}">${g===FOR_YOU?"✨ ":""}${esc(g)}</button>`);
+    :["All",...GROUPS.map(g=>g.name)].map(g=>`<button class="chip ${state.group===g||(g==="All"&&state.group===FOR_YOU)?"on":""}" data-group="${esc(g)}">${esc(g)}</button>`);
   const base=feedList(),films=base.filter(f=>f.format!=="short"),shorts=base.filter(f=>f.format==="short"),series=seriesList();
   let html=`<div class="chips">${chips.join("")}</div>`;
   if(state.family)html+=`<div class="familybar">${icon("shield")} Family-friendly mode is on. Only films suited for younger viewers are shown.<button data-family="">Turn off</button></div>`;
@@ -1790,6 +1790,8 @@ function renderHomeF(){
     html+=sub;
     const shelves=state.feed==="home"&&!state.q;
     let rest=films;
+    if(shelves&&!c&&state.group==="All"&&interests().n>=2){const fy=forYouList("film").slice(0,8);
+      if(fy.length>=3)html+=`<section class="shelf"><h2>✨ For you<button class="seeall" data-group="${FOR_YOU}">See all</button></h2><div class="shelfrow">${fy.map(f=>card(f)).join("")}</div></section>`}
     if(shelves&&films.length>=6){
       const top=[...films].sort((a,b)=>filmTrend(b)-filmTrend(a)).slice(0,5);const ids=new Set(top.map(f=>f.id));rest=films.filter(f=>!ids.has(f.id)).sort((a,b)=>a.days-b.days);
       html+=`<section class="shelf"><h2>${icon("trend")} Trending films ${c?"in "+esc(state.char||c.name):state.group==="All"?"":"in "+esc(state.group)}</h2><div class="shelfrow">${top.map((f,i)=>card(f,i+1)).join("")}</div></section>`;
@@ -2326,7 +2328,6 @@ $("#sform").onsubmit=e=>{e.preventDefault();go({view:"home",feed:"home",q:$("#q"
 $("#q").oninput=e=>{if(!e.target.value&&state.q)go({q:""})};
 let rt;addEventListener("resize",()=>{clearTimeout(rt);rt=setTimeout(()=>paintAll(),150)});
 Object.assign(state,parsePath());if(state.q)$("#q").value=state.q;
-if(state.view==="home"&&!state.cat&&!state.q&&state.feed==="home"&&location.pathname==="/"&&!location.search&&myHistory.length>=3)state.group=FOR_YOU;
 /* A link to a film the page hasn't loaded yet (catalogue and member films arrive a moment later): keep the address and open it once it exists */
 var pendingLink=(()=>{const m=location.pathname.match(/^\/(film|shorts)\/([^/]+)/);if(!m)return null;let id=m[2];try{id=decodeURIComponent(id)}catch(e){}return findFilm(id)?null:{kind:m[1],id}})();
 render();
