@@ -191,13 +191,15 @@ body.wfs .player{position:fixed;inset:0;z-index:9000;width:100vw;height:100vh;he
 .bplay{position:relative;width:100%;aspect-ratio:16/9;border-radius:12px;overflow:hidden;background:#000}.bplay .vid,.bplay .thumb{width:100%;height:100%;display:block}.bplay .thumb{aspect-ratio:auto}
 .bplay.vert{aspect-ratio:9/16;width:min(100%,calc(70vh * 9 / 16));margin:0 auto}.bplay .thumb img,.bplay .thumb canvas{width:100%;height:100%;object-fit:cover}
 .bpbtn{position:absolute;inset:0;margin:auto;width:64px;height:64px;border-radius:50%;background:rgba(0,0,0,.6);display:grid;place-items:center}.bpbtn svg{width:24px;height:24px;fill:#fff;margin-left:3px}
+.sdhot{align-self:flex-start;font-size:11px;font-weight:800;padding:2px 8px;border-radius:10px;background:#d6283c;color:#fff}.linkbtn{all:unset;cursor:pointer;color:var(--accent);font-weight:700}
 .sdgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px;margin:14px 0}
 .sdcard{all:unset;cursor:pointer;display:flex;flex-direction:column;gap:8px;padding:16px;border-radius:14px;background:var(--card,#1c1a24);border:1px solid var(--line,#2a2735)}.sdcard:hover{border-color:var(--accent)}
 .sdvs{display:flex;align-items:center;gap:10px;font-size:16px;flex-wrap:wrap}.sdvs span{color:var(--accent);font-weight:900;font-size:13px}
 .sdbar{display:flex;height:28px;border-radius:8px;overflow:hidden;font-size:12px;font-weight:700}.sdbar span{display:flex;align-items:center;gap:6px;padding:0 10px;white-space:nowrap;overflow:hidden;min-width:0;transition:width .6s}
 .sdbar span:first-child{background:var(--accent);color:var(--ink-on-accent,#1a1405)}.sdbar span:last-child{background:#8b5cf6;color:#fff;justify-content:flex-end}.sdbar.big{height:40px;font-size:15px}
 .sdresult{margin:20px 0;padding:16px;border-radius:14px;background:var(--card,#1c1a24)}.sdpoints{display:grid;grid-template-columns:1fr 1fr;gap:16px}.sdpoints ul{margin:6px 0;padding-left:18px}
-.sdname{display:grid;place-items:center;aspect-ratio:16/9;border-radius:12px;background:linear-gradient(135deg,#2a2140,#120d24);font-size:22px;font-weight:800;text-align:center;padding:10px}
+.sdside .bplay{width:min(100%,520px);margin:0 auto}.sdside .bplay.vert{width:min(100%,240px)}
+.sdname{display:grid;place-items:center;aspect-ratio:16/9;width:min(100%,520px);margin:0 auto;box-sizing:border-box;border-radius:12px;background:linear-gradient(135deg,#2a2140,#120d24);font-size:22px;font-weight:800;text-align:center;padding:10px}
 .sdargs{display:flex;flex-direction:column;gap:10px}.sdarg{padding:12px 14px;border-radius:12px;background:var(--card,#1c1a24);border-left:4px solid var(--accent)}.sdarg.b{border-left-color:#8b5cf6}.sdarg p{margin:6px 0 0}
 .sdform textarea{width:100%;box-sizing:border-box}.sdsrc{margin-top:10px;font-size:13px}
 @media (max-width:860px){.sdpoints{grid-template-columns:1fr}}
@@ -1090,7 +1092,7 @@ const sdPair=(m,n)=>(sdSame(m.a,n.a)&&sdSame(m.b,n.b))||(sdSame(m.a,n.b)&&sdSame
 function sdList(){
   const list=SD_SEEDS.map(s=>({...s,t:0,by:""}));const fan=[];
   for(const [uid,d] of Object.entries(sdMade))for(const s of (Array.isArray(d.items)?d.items:[]))
-    if(s&&s.key&&s.a&&s.b&&!badText(s.a,s.b))fan.push({key:String(s.key).slice(0,80),a:String(s.a).slice(0,40),b:String(s.b).slice(0,40),from:String(s.from||"").slice(0,80),t:+s.t||0,by:uid});
+    if(s&&s.key&&s.a&&s.b&&!badText(s.a,s.b))fan.push({key:String(s.key).slice(0,80),a:String(s.a).slice(0,40),b:String(s.b).slice(0,40),from:String(s.from||"").slice(0,80),cats:Array.isArray(s.cats)?s.cats.map(String).slice(0,4):[],t:+s.t||0,by:uid});
   for(const s of fan.sort((x,y)=>x.t-y.t))if(!list.some(m=>m.key===s.key||sdPair(m,s)))list.push(s);
   return list;
 }
@@ -1113,6 +1115,20 @@ async function loadSdVerdicts(){
 const sdFilm=name=>{const t=[...sdToks(name)].filter(w=>w.length>3);if(!t.length)return null;
   return rawFilms().filter(f=>!f.age&&(f.yt||f.tt||f.ig||f.vm||f.dm)&&t.some(w=>sdNorm(f.char+" "+f.title).split(" ").includes(w))).sort((x,y)=>filmTrend(y)-filmTrend(x))[0]||null};
 const sdBar=(pa,la,lb,cls="")=>`<div class="sdbar ${cls}"><span style="width:${pa}%"><b>${pa}%</b> ${esc(la)}</span><span style="width:${100-pa}%">${esc(lb)} <b>${100-pa}%</b></span></div>`;
+/* Which series/anime/film/game a showdown belongs to: its own tags, the category typed when it was started, and the characters' categories */
+function sdCats(m){const out=new Set((m.cats||[]).filter(id=>CATS.some(c=>c.id===id)));
+  const fc=findCat(m.cat||m.from);if(fc)out.add(fc.id);
+  for(const c of CATS)if(c.chars.some(ch=>ch.length>3&&(sdSame(ch,m.a)||sdSame(ch,m.b))))out.add(c.id);
+  ["whatif","original","aiseries"].forEach(id=>out.delete(id));
+  // characters that also appear in a spin-off (Hearthstone, the Witcher series) count only for the main category
+  if(out.has("hearthstone")&&[...out].some(id=>["wow","wc3"].includes(id)))out.delete("hearthstone");
+  if(out.has("witchertv")&&out.has("witcher"))out.delete("witchertv");
+  if(out.has("arcane")&&out.has("lol"))out.delete("arcane");
+  return [...out]}
+const sdCross=m=>{const cs=sdCats(m);return cs.length>1&&new Set(cs.map(id=>groupOf(id)?.name+"|"+id)).size>1&&!(m.from&&!/ vs | x |crossover/i.test(m.from)&&cs.length<2)};
+const sdLabel=m=>m.from||sdCats(m).map(catName).join(" vs ")||"";
+/* Hot = votes in the last 3 days, newest count more */
+function sdHot(key){let h=0;const now=Date.now();for(const d of Object.values(sdVotes)){const v=d?.a?.[key];if(!v||!v.t)continue;const age=(now-v.t)/864e5;if(age<3)h+=age<1?3:1}return h}
 const sdStatus=(v,r)=>r?.status==="canon"?"canon":!r?.research?"checking":v.total<SD_MIN?"gathering":"live";
 const first=n=>String(n).split(" ")[0];
 function renderShowdown(){
@@ -1120,12 +1136,21 @@ function renderShowdown(){
   const list=sdList();const m=state.sd?list.find(x=>x.key===state.sd):null;
   if(Date.now()-sdLoaded>60000)loadSdVerdicts();
   if(!m){
-    const rows=list.map(x=>({m:x,v:sdTally(x.key),r:sdVerdicts[x.key]})).filter(x=>x.r?.status!=="canon").sort((p,q)=>q.v.total-p.v.total);
+    const sc=state.sdcat||"all";
+    let rows=list.map(x=>({m:x,v:sdTally(x.key),r:sdVerdicts[x.key],h:sdHot(x.key),cs:sdCats(x)})).filter(x=>x.r?.status!=="canon");
+    const count={};rows.forEach(x=>x.cs.forEach(id=>count[id]=(count[id]||0)+1));
+    const crossN=rows.filter(x=>sdCross(x.m)).length;
+    const chips=[["all","All"],["hot","🔥 Hot right now"],...(crossN?[["crossover","Crossovers"]]:[]),...Object.keys(count).sort((a,b)=>count[b]-count[a]||catName(a).localeCompare(catName(b))).map(id=>[id,catName(id)])];
+    if(sc==="hot")rows=rows.filter(x=>x.h>0).sort((p,q)=>q.h-p.h||q.v.total-p.v.total);
+    else{if(sc==="crossover")rows=rows.filter(x=>sdCross(x.m));else if(sc!=="all")rows=rows.filter(x=>x.cs.includes(sc));rows.sort((p,q)=>q.h-p.h||q.v.total-p.v.total)}
     $("#main").innerHTML=`<div class="wbar"><h1 class="sect-h" style="font-size:24px;margin:0">${icon("battle")} Character Showdown</h1><button class="btn" data-sdnew="">+ Start a showdown</button></div>
      <p class="lede" style="margin-top:8px">Who would win? Only characters who have never fought in canon. Vote, write why, and Fanreelz weighs canon research from the web together with the <b>same number of fan arguments from each side</b>. Results go live after ${SD_MIN} votes and keep moving as more votes come in.</p>
      <div class="chips"><button class="chip" data-view="battles">Fan Battles</button><button class="chip on">Character Showdown</button></div>
-     <div class="sdgrid">${rows.map(({m:x,v,r})=>{const st=sdStatus(v,r);const fan=v.total?Math.round(v.na/v.total*100):50;
-       return `<button class="sdcard" data-sd="${esc(x.key)}"><div class="sdvs"><b>${esc(x.a)}</b><span>VS</span><b>${esc(x.b)}</b></div>${x.from?`<div class="vmeta">${esc(x.from)}</div>`:""}
+     <div class="chips sdchips">${chips.map(([k,l])=>`<button class="chip ${sc===k?"on":""}" data-sdcat="${esc(k)}">${esc(l)}${k!=="all"&&k!=="hot"&&k!=="crossover"?` <span class="vmeta">${count[k]}</span>`:""}</button>`).join("")}</div>
+     ${sc==="hot"&&!rows.length?`<div class="empty">Nothing is hot yet. Votes from the last 3 days show up here.</div>`:""}
+     ${sc!=="all"&&sc!=="hot"&&sc!=="crossover"?`<p class="vmeta">${rows.length} showdown${rows.length===1?"":"s"} in ${esc(catName(sc))}. <button class="linkbtn" data-sdnew="">Start one</button></p>`:""}
+     <div class="sdgrid">${rows.map(({m:x,v,r,h})=>{const st=sdStatus(v,r);const fan=v.total?Math.round(v.na/v.total*100):50;
+       return `<button class="sdcard" data-sd="${esc(x.key)}">${h>=3?`<span class="sdhot">🔥 Hot</span>`:""}<div class="sdvs"><b>${esc(x.a)}</b><span>VS</span><b>${esc(x.b)}</b></div>${sdLabel(x)?`<div class="vmeta">${esc(sdLabel(x))}</div>`:""}
          ${st==="live"?sdBar(r?.verdict?r.verdict.pa:fan,"",""):""}
          <div class="vmeta">${v.total} vote${v.total===1?"":"s"} · ${st==="checking"?"Fanreelz is checking canon…":st==="gathering"?`${SD_MIN-v.total} more until the result goes live`:r?.verdict?"Live verdict":"Live fan vote"}</div></button>`}).join("")}</div>
      <p class="note">Each showdown can only be started once. Try a new opponent for the same character instead, like Itachi vs Jiraiya.</p>`;
@@ -1140,7 +1165,8 @@ function renderShowdown(){
   const args=[];for(let i=0;i<Math.max(v.a.length,v.b.length)&&args.length<40;i++){if(v.a[i])args.push(["a",v.a[i]]);if(v.b[i])args.push(["b",v.b[i]])}
   const when=t=>new Date(t).toLocaleString("en-GB",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"});
   $("#main").innerHTML=`<button class="btn ghost" data-sdback="" style="margin-bottom:10px">← All showdowns</button>
-   <h1 class="sect-h" style="font-size:26px">${esc(m.a)} <span style="color:var(--accent)">vs</span> ${esc(m.b)}</h1>${m.from?`<p class="vmeta" style="margin-top:-6px">${esc(m.from)}</p>`:""}
+   <h1 class="sect-h" style="font-size:26px">${esc(m.a)} <span style="color:var(--accent)">vs</span> ${esc(m.b)}</h1>
+   <div class="tags" style="margin:-4px 0 12px">${sdCats(m).map(id=>`<button data-sdcat="${esc(id)}">${esc(catName(id))}</button>`).join("")}${sdCross(m)?`<button data-sdcat="crossover">Crossover</button>`:""}</div>
    ${st==="canon"?`<div class="familybar">These two have already fought in canon, so this showdown is closed. ${esc(r.research?.canon_result||"")}</div>`:""}
    <div class="arena">${side(m.a,"a")}<div class="vs">VS</div>${side(m.b,"b")}</div>
    <section class="sdresult">${st==="checking"?`<p class="vmeta">Fanreelz is checking canon on the web. Voting is already open.</p>`
@@ -1171,25 +1197,30 @@ function openSdNew(){
     <form class="form" id="sdNew"><label for="sdA">Character 1<input id="sdA" list="sdChars" required maxlength="40" autocomplete="off" placeholder="e.g. Itachi Uchiha"></label>
     <label for="sdB">Character 2<input id="sdB" list="sdChars" required maxlength="40" autocomplete="off" placeholder="e.g. Jiraiya"></label>
     <datalist id="sdChars">${chars.map(c=>`<option value="${esc(c)}">`).join("")}</datalist>
-    <label for="sdFrom">Where are they from? (optional)<input id="sdFrom" maxlength="80" placeholder="e.g. Naruto"></label>
+    <label for="sdFrom">Series, anime, film or game<input id="sdFrom" list="sdCatList" maxlength="80" autocomplete="off" placeholder="e.g. Naruto, or Warcraft vs Lord of the Rings"></label>
+    <datalist id="sdCatList">${CATS.filter(c=>!["whatif","original","aiseries"].includes(c.id)).map(c=>`<option value="${esc(c.name)}">`).join("")}</datalist>
     <p class="subnote" id="sdNewNote"></p>
     <div class="row"><button class="btn" type="submit" id="sdGo">Start showdown</button><button class="btn ghost" type="button" data-close>Cancel</button></div></form></div>`);
   const check=()=>{const a=$("#sdA").value.trim(),b=$("#sdB").value.trim();const dup=a&&b?sdList().find(m=>sdPair(m,{a,b})):null;
     const same=a&&b&&sdSame(a,b);
     $("#sdNewNote").textContent=same?"Pick two different characters.":dup?`${dup.a} vs ${dup.b} already exists. Try another opponent.`:"";
     return !same&&!dup};
-  $("#sdA").oninput=check;$("#sdB").oninput=check;
+  let fromTouched=false;$("#sdFrom").oninput=()=>{fromTouched=true};
+  const guess=()=>{if(fromTouched)return;const cs=sdCats({a:$("#sdA").value,b:$("#sdB").value});$("#sdFrom").value=cs.length===1?catName(cs[0]):cs.length===2?catName(cs[0])+" vs "+catName(cs[1]):""};
+  $("#sdA").oninput=()=>{check();guess()};$("#sdB").oninput=()=>{check();guess()};
   $("#sdNew").onsubmit=async e=>{e.preventDefault();const a=$("#sdA").value.trim(),b=$("#sdB").value.trim(),from=$("#sdFrom").value.trim();
     if(badText(a,b,from)){toast(BAD_MSG);return}
     if(!check()){toast($("#sdNewNote").textContent);return}
     const key=(sdNorm(a)+" vs "+sdNorm(b)).replace(/ /g,"-").slice(0,70)+"-"+Date.now().toString(36).slice(-4);
-    const mine=Array.isArray(sdMade[acct.uid]?.items)?sdMade[acct.uid].items:[];const items=[...mine,{key,a,b,from,t:Date.now()}].slice(-50);
+    const cats=[...new Set([...sdCats({a,b}),...from.split(/ vs | x |,/i).map(findCat).filter(Boolean).map(c=>c.id)])].slice(0,4);
+    const mine=Array.isArray(sdMade[acct.uid]?.items)?sdMade[acct.uid].items:[];const items=[...mine,{key,a,b,from,cats,t:Date.now()}].slice(-50);
     $("#sdGo").disabled=true;
     if(await writeOwn("showdowns",{items})){sdMade[acct.uid]={items};closeModal();toast("Showdown started");go({view:"showdown",sd:key})}else $("#sdGo").disabled=false};
 }
 document.addEventListener("click",e=>{let x;
   if(x=e.target.closest("[data-sd]")){e.preventDefault();sdPicked=null;go({view:"showdown",sd:x.dataset.sd});return}
   if(e.target.closest("[data-sdback]")){e.preventDefault();go({view:"showdown",sd:null});return}
+  if(x=e.target.closest("[data-sdcat]")){e.preventDefault();go({view:"showdown",sd:null,sdcat:x.dataset.sdcat});return}
   if(e.target.closest("[data-sdnew]")){e.preventDefault();openSdNew();return}
   if(x=e.target.closest("[data-sdpick]")){e.preventDefault();
     const m=sdList().find(s=>s.key===state.sd);if(!m)return;const mine=sdTally(m.key).mine;sdPicked=x.dataset.sdpick;
@@ -1964,7 +1995,7 @@ function pathFor(st){
     case "creator":return "/creator/"+e(st.creator||"");
     case "user":return "/u/"+e(st.user||"");
     case "liveplay":return "/live/"+e(st.liveId||"");
-    case "showdown":return "/showdown"+(st.sd?"/"+e(st.sd):"");
+    case "showdown":return "/showdown"+(st.sd?"/"+e(st.sd):st.sdcat&&st.sdcat!=="all"?"?c="+e(st.sdcat):"");
     case "browse":return "/browse"+(st.bgroup&&st.bgroup!=="All"?"?g="+e(st.bgroup):"");
     case "home":{
       if(st.q)return "/search?q="+e(st.q);
@@ -1981,7 +2012,7 @@ function parsePath(){
   if(a==="film"&&b&&findFilm(b))return {view:"watch",film:b};
   if(a==="shorts"&&b&&findFilm(b))return {view:"shorts",film:b,shortList:null,shortI:0};
   if(a==="shorts")return {view:"shorts",shortList:null,shortI:0};
-  if(a==="showdown")return {view:"showdown",sd:b||null};
+  if(a==="showdown")return {view:"showdown",sd:b||null,sdcat:q.get("c")||"all"};
   if(a==="series"&&b)return {view:"series",series:b,season:1};
   if(a==="creator"&&b)return {view:"creator",creator:b,ctab:"film"};
   if(a==="u"&&b)return {view:"user",user:b,utab:"liked"};

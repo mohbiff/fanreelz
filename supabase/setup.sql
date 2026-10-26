@@ -39,7 +39,7 @@ create table if not exists public.docs (
   updated_at timestamptz not null default now(),
   primary key (col, id),
   constraint docs_known_col check (
-    col in ('ratings','submissions','votes','tips','comments','commentlikes','requests','upvotes','claims','playlists','follows')
+    col in ('ratings','submissions','votes','tips','comments','commentlikes','requests','upvotes','claims','playlists','follows','showdown','showdowns')
     or col like 'data/users/%'),
   constraint docs_size check (pg_column_size(data) < 300000)
 );
@@ -163,3 +163,9 @@ alter table public.showdown_verdicts enable row level security;
 drop policy if exists "verdicts are public" on public.showdown_verdicts;
 create policy "verdicts are public" on public.showdown_verdicts for select using (true);
 grant select on public.showdown_verdicts to anon, authenticated;
+
+-- 9. Allow the Character Showdown collections in docs (for databases created before showdowns existed)
+alter table public.docs drop constraint if exists docs_known_col;
+alter table public.docs add constraint docs_known_col check (
+  col in ('ratings','submissions','votes','tips','comments','commentlikes','requests','upvotes','claims','playlists','follows','showdown','showdowns')
+  or col like 'data/users/%');
