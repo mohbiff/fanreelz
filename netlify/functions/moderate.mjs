@@ -1,7 +1,9 @@
-// Moderation: lets Fanreelz admins remove anyone's comment.
+// Admin tools: remove anyone's comment, find AI films on YouTube now, or start the importer / showdown judge by hand.
 // POST /api/moderate with the signed-in user's token. Body {action:"check"} answers whether this user is an admin;
 // {action:"remove", owner:"<user id>", id:"<comment id>"} removes that comment and its replies.
 // Needs: ADMIN_EMAILS (comma-separated sign-in emails of the admins), SUPABASE_URL, SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY (secret).
+import importYoutube, { searchNow } from "./import-youtube.mjs";
+import showdown from "./showdown.mjs";
 const json = (o, status = 200) => new Response(JSON.stringify(o), { status, headers: { "Content-Type": "application/json", "Cache-Control": "no-store" } });
 
 async function whoIs(req) {
@@ -22,10 +24,18 @@ export default async (req) => {
   const admin = isAdmin(u);
   if (body.action === "check") return json({ admin });
   if (!admin) return json({ error: "not allowed" }, 403);
+  if (body.action === "search") return json(await searchNow(body.q).catch((e) => ({ error: String(e.message || e) })));
+  if (body.action === "run") {
+    const job = { "import-youtube": importYoutube, showdown }[body.job];
+    if (!job) return json({ error: "unknown job" }, 400);
+    const r = await job(req);
+    return new Response(r.body, { status: r.status, headers: { "Content-Type": "application/json", "Cache-Control": "no-store" } });
+  }
   if (body.action !== "remove" || !body.owner || !body.id) return json({ error: "bad request" }, 400);
 
   const url = Netlify.env.get("SUPABASE_URL") + "/rest/v1/docs", key = Netlify.env.get("SUPABASE_SERVICE_ROLE_KEY");
-  const h = { apikey: key, Authorization: "Bearer " + key, "Content-Type": "application/json" };
+  const h = { apikey: key, "Content-Type": "application/json" };
+  if (!key.startsWith("sb_secret_")) h.Authorization = "Bearer " + key;
   const where = `?col=eq.comments&id=eq.${encodeURIComponent(body.owner)}`;
   const rows = await (await fetch(url + where + "&select=data", { headers: h })).json();
   const items = Array.isArray(rows?.[0]?.data?.items) ? rows[0].data.items : [];

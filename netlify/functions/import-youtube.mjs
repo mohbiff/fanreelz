@@ -151,3 +151,50 @@ export default async () => {
 };
 
 export const config = { schedule: "17 */2 * * *" };
+
+// Admin "Find AI films now": one YouTube search for any words, and the AI fan films it finds go straight into the catalogue.
+// Their channels are queued too, so the hourly importer reads the rest of their uploads later. Costs about 101 quota units.
+export async function searchNow(q) {
+  q = String(q || "").trim().slice(0, 80);
+  if (!q) return { error: "Type what to search for" };
+  const sb = db();
+  const found = await yt("search", { part: "snippet", type: "video", q, maxResults: "50", safeSearch: "moderate", videoEmbeddable: "true" });
+  const rows = [], chans = {};
+  for (const it of found.items || []) {
+    const sn = it.snippet, v = it.id?.videoId;
+    if (!v || !(AI_RE.test(sn.title) || AI_RE.test(sn.description || ""))) continue;
+    const c = classify(sn.title, sn.description || "", true);
+    if (!c) continue;
+    rows.push({ v, t: sn.title.replace(/&amp;/g, "&").replace(/&#39;/g, "'").replace(/&quot;/g, '"'), at: sn.publishedAt, ch: sn.channelTitle, chId: sn.channelId, ...c });
+    chans[sn.channelId] = true;
+  }
+  const keep = [];
+  if (rows.length) {
+    const det = await yt("videos", { part: "contentDetails,status,statistics", id: rows.map((r) => r.v).join(",") }).catch(() => ({ items: [] }));
+    const map = Object.fromEntries((det.items || []).map((d) => [d.id, d]));
+    for (const r of rows) {
+      const d = map[r.v];
+      if (!d || !d.status?.embeddable || d.status?.privacyStatus !== "public") continue;
+      const secs = iso(d.contentDetails.duration);
+      if (secs < 8) continue;
+      keep.push({
+        id: "yt-" + r.v, platform: "YouTube", video_id: r.v, title: r.t.slice(0, 200), channel: r.ch, channel_id: r.chId,
+        cat: r.cat, char: r.char, lore: r.lore, format: secs <= 75 ? "short" : "film", duration: secs,
+        views: +(d.statistics?.viewCount || 0), published_at: r.at, age_restricted: d.contentDetails?.contentRating?.ytRating === "ytAgeRestricted",
+      });
+    }
+    await sb.upsert("catalog", keep);
+  }
+  // queue the channels for the hourly importer (only ones it doesn't know yet)
+  const ids = Object.keys(chans);
+  if (ids.length) {
+    const known = new Set((await sb.get(`catalog_channels?select=channel_id&channel_id=in.(${ids.join(",")})`)).map((c) => c.channel_id));
+    const fresh = ids.filter((id) => !known.has(id));
+    if (fresh.length) {
+      const info = await yt("channels", { part: "contentDetails,snippet", id: fresh.join(",") }).catch(() => ({ items: [] }));
+      await sb.upsert("catalog_channels", (info.items || []).map((c) => ({ channel_id: c.id, title: c.snippet.title, uploads: c.contentDetails.relatedPlaylists.uploads, status: "new", next_page: null })));
+    }
+  }
+  return { q, added: keep.length, films: keep.map((k) => ({ id: k.id, title: k.title, cat: k.cat })) };
+}
+

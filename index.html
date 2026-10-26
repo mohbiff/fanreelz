@@ -130,6 +130,7 @@ main{min-width:0;padding-right:max(16px,env(safe-area-inset-right,0px));padding-
 .vmeta .st{color:var(--star)}
 .pill{display:inline-block;font-size:11px;font-weight:700;padding:1px 7px;border-radius:999px;background:var(--accent-soft);color:var(--accent);vertical-align:1px;margin-left:4px}
 .empty{padding:60px 20px;text-align:center;color:var(--muted)}
+.adminbox{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:4px 0 14px;padding:10px 12px;border:1px dashed var(--line);border-radius:12px}.adminbox input{flex:1 1 220px;min-width:0;padding:8px 10px;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--fg);font:inherit}.adminbox p{flex-basis:100%;margin:0;font-size:13px}.adminbox b{display:flex;gap:6px;align-items:center;font-size:13px}
 .note{font-size:12px;color:var(--muted);margin-top:36px}
 
 /* watch view */
@@ -1274,6 +1275,7 @@ document.addEventListener("click",e=>{let x;
     document.querySelectorAll("[data-sdpick]").forEach(b=>{const on=b.dataset.sdpick===sdPicked;b.classList.toggle("ghost",!on);b.textContent=on?"✓ Picked":"I think "+first(b.dataset.sdpick==="a"?m.a:m.b)+" wins"});
     const n=$("#sdPickNote");if(n)n.textContent="You pick "+(sdPicked==="a"?m.a:m.b)+". Add why, then press Vote.";$("#sdText")?.focus();return}
 });
+document.addEventListener("submit",e=>{if(e.target.id!=="adminForm")return;e.preventDefault();const q=e.target.q.value.trim();if(q)adminDo({action:"search",q},"Searching YouTube for “"+esc(q)+"”")});
 document.addEventListener("submit",e=>{if(e.target.id!=="sdForm")return;e.preventDefault();
   const m=sdList().find(s=>s.key===state.sd);if(!m)return;
   const side=sdPicked||sdTally(m.key).mine?.s;if(!side){toast("Pick a side first");return}
@@ -1832,6 +1834,7 @@ function renderHomeF(){
   if(state.family)html+=`<div class="familybar">${icon("shield")} Family-friendly mode is on. Only films suited for younger viewers are shown.<button data-family="">Turn off</button></div>`;
   if(!c&&!state.q&&state.group===FOR_YOU){$("#main").innerHTML=html+forYouHtml();return}
   if(c)html+=`<h1 class="sect-h" style="font-size:24px;margin-top:4px">${cav(c.name,48)} ${esc(c.name)}<span class="vmeta" style="font-size:14px;font-weight:500">${films.length} films · ${shorts.length} shorts · ${series.length} series</span></h1>`;
+  if(isMod&&(c||(state.group==="All"&&!state.q)))html+=adminBox(c?"AI "+c.name+" movie":"");
   if(state.q&&!c){const q=state.q.toLowerCase();const mc=CATS.filter(x=>x.name.toLowerCase().includes(q)||x.chars.some(ch=>ch.toLowerCase().includes(q)));
     html+=`<h1 class="sect-h" style="font-size:22px">Results for “${esc(state.q)}”</h1>`;
     if(mc.length)html+=`<section class="shelf"><h2 class="sect-h" style="font-size:16px">Categories</h2><div class="dirgrid">${mc.slice(0,6).map(x=>`<button class="dircard dirhead" data-cat="${x.id}">${cav(x.name,40)}<span><b>${esc(x.name)}</b><small>${esc(groupOf(x.id).name)} · ${allFilms().filter(f=>f.cat===x.id).length} films</small></span></button>`).join("")}</div></section>`;}
@@ -2004,7 +2007,19 @@ async function postComment(parent,text){
   if(await writeOwn("comments",{items:next})){commentDocs[acct.uid]={items:next};const fm=document.querySelector(`.cmform[data-cparent="${CSS.escape(parent||"")}"] textarea`);if(fm)fm.value="";replyTo=null;render();toast(parent?"Reply posted":"Comment posted");return true}
   return false;
 }
-var isMod=false;
+var isMod=false,adminMsg="",adminBusy=false,adminQ=null;
+document.addEventListener("input",e=>{if(e.target.closest&&e.target.closest("#adminForm"))adminQ=e.target.value});
+/* Admin bar (only for ADMIN_EMAILS): search YouTube now and add the AI films it finds, or start the hourly jobs by hand */
+function adminBox(q){if(adminQ!=null)q=adminQ;return `<form class="adminbox" id="adminForm"><b>${icon("shield")} Admin</b><input name="q" value="${esc(q)}" placeholder="Search YouTube, e.g. AI rocket league movie" aria-label="Search YouTube for AI films" maxlength="80">
+  <button class="btn" type="submit"${adminBusy?" disabled":""}>${adminBusy?"Working…":"Find AI films now"}</button><button class="btn ghost" type="button" data-adminrun="import-youtube"${adminBusy?" disabled":""}>Run importer</button><button class="btn ghost" type="button" data-adminrun="showdown"${adminBusy?" disabled":""}>Run showdown judge</button>${adminMsg?`<p class="vmeta">${adminMsg}</p>`:""}</form>`}
+async function adminDo(body,label){if(adminBusy)return;adminBusy=true;adminMsg=label+"…";render();
+  try{const r=await modCall(body);
+    if(r.error)adminMsg="Error: "+esc(r.error);
+    else if(body.action==="search")adminMsg=r.added?`Added ${r.added} film${r.added>1?"s":""}: ${r.films.slice(0,6).map(f=>esc(f.title)+" <small>("+esc(catName(f.cat))+")</small>").join(", ")}${r.added>6?"…":""}`:"No new AI fan films found for that search. Try other words.";
+    else adminMsg=r.log?`Done: ${r.added??0} added. `+esc((r.log||[]).join(" · ")).slice(0,400):"Done: "+esc(JSON.stringify(r)).slice(0,400);
+    await loadCatalog().catch(()=>{})}
+  catch(e){adminMsg="Error: "+esc(e.message||e)}
+  adminBusy=false;render()}
 async function modCall(body){const r=await fetch("/api/moderate",{method:"POST",headers:{"Content-Type":"application/json",Authorization:"Bearer "+(sbToken||"")},body:JSON.stringify(body)});return r.json().catch(()=>({}))}
 async function checkMod(){if(!sbToken)return;try{const r=await modCall({action:"check"});if(r.admin){isMod=true;render()}}catch{}}
 async function modRemove(v){const i=v.indexOf("|"),owner=v.slice(0,i),id=v.slice(i+1);
@@ -2350,6 +2365,7 @@ document.addEventListener("click",async e=>{
   if(x=A("[data-clike]")){likeComment(x.dataset.clike);return}
   if(x=A("[data-cdel]")){deleteComment(x.dataset.cdel);return}
   if(x=A("[data-cmod]")){modRemove(x.dataset.cmod);return}
+  if(x=A("[data-adminrun]")){adminDo({action:"run",job:x.dataset.adminrun},x.dataset.adminrun==="showdown"?"Running the showdown judge":"Running the importer");return}
   if(A("[data-creport]")){toast("Thanks. A moderator will review this comment.");return}
   if(x=A("[data-fmtnav]")){$("#shell").classList.remove("open");go({view:"home",feed:"home",cat:null,char:null,format:x.dataset.fmtnav});return}
   if(x=A("[data-fmt]")){state.format=x.dataset.fmt;go({});return}
