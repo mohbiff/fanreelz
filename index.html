@@ -1728,13 +1728,20 @@ function parseEpisode(title){
     if(!segs.length)return null;
     return {season,ep,name:segs[0],segs}}
   return null}
+const FOLLOWED_SERIES=[{re:/^fruit love island/i,title:"Fruit Love Island"}];
 let autoCache={k:"",list:[]};
 function autoSeries(){
   const films=rawFilms(),k=films.length+"|"+(films[films.length-1]?.id||"");if(autoCache.k===k)return autoCache.list;
-  const groups={};
-  for(const f of films){if(!(f.yt||f.tt||f.ig||f.vm||f.dm)||f.format==="episode")continue;const p=parseEpisode(f.title);if(!p)continue;
+  const groups={},list=[];
+  // Official AI series channels: every video on the channel is an episode, oldest first, even without "Episode 3" in the title
+  for(const fs of FOLLOWED_SERIES){
+    const eps=films.filter(f=>fs.re.test(f.by||"")&&(f.yt||f.tt)).sort((a,b)=>(b.days??0)-(a.days??0));if(!eps.length)continue;
+    const id="as-"+slugify(fs.title),cnt={};
+    eps.forEach((f,i)=>{const p=parseEpisode(f.title);f.seriesId=id;f.season=p?p.season:1;cnt[f.season]=(cnt[f.season]||0)+1;f.ep=p?p.ep:cnt[f.season];f.epTitle=f.title.replace(new RegExp(fs.title+"\\s*[|:–—-]?\\s*","i"),"").trim()||("Episode "+f.ep)});
+    eps.sort((a,b)=>a.season-b.season||a.ep-b.ep);
+    list.push({id,title:fs.title,cat:"aiseries",char:"",by:eps[0].by,hue:eps[0].hue||330,tool:eps[0].tool,episodes:eps,format:"series",auto:true,real:true})}
+  for(const f of films){if(!(f.yt||f.tt||f.ig||f.vm||f.dm)||f.format==="episode"||f.seriesId&&list.some(s=>s.id===f.seriesId))continue;const p=parseEpisode(f.title);if(!p)continue;
     const key=(f.by||"")+"|"+p.name.toLowerCase().replace(/[^a-z0-9]+/g," ").trim();(groups[key]||(groups[key]={name:p.name,by:f.by,items:[]})).items.push({f,p})}
-  const list=[];
   for(const [key,g] of Object.entries(groups)){
     const seen=new Set(),items=g.items.filter(({p})=>{const k2=p.season+"-"+p.ep;if(seen.has(k2))return false;seen.add(k2);return true}).sort((a,b)=>a.p.season-b.p.season||a.p.ep-b.p.ep);
     if(items.length<2)continue;
