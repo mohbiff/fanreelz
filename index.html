@@ -192,6 +192,7 @@ body.wfs .player{position:fixed;inset:0;z-index:9000;width:100vw;height:100vh;he
 .bplay.vert{aspect-ratio:9/16;width:min(100%,calc(70vh * 9 / 16));margin:0 auto}.bplay .thumb img,.bplay .thumb canvas{width:100%;height:100%;object-fit:cover}
 .bpbtn{position:absolute;inset:0;margin:auto;width:64px;height:64px;border-radius:50%;background:rgba(0,0,0,.6);display:grid;place-items:center}.bpbtn svg{width:24px;height:24px;fill:#fff;margin-left:3px}
 .sdsum{font-weight:700;font-size:16px}.sdwhy-h{font-size:15px;margin:14px 0 4px}.sdwhy p{margin:0 0 10px;line-height:1.55}.sddec{margin:6px 0 12px}.sddec ul{margin:4px 0;padding-left:18px}
+.switchbox{margin-top:14px;padding:14px;border-radius:12px;background:var(--card,#1c1a24)}
 .sdhot{align-self:flex-start;font-size:11px;font-weight:800;padding:2px 8px;border-radius:10px;background:#d6283c;color:#fff}.linkbtn{all:unset;cursor:pointer;color:var(--accent);font-weight:700}
 .sdgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px;margin:14px 0}
 .sdcard{all:unset;cursor:pointer;display:flex;flex-direction:column;gap:8px;padding:16px;border-radius:14px;background:var(--card,#1c1a24);border:1px solid var(--line,#2a2735)}.sdcard:hover{border-color:var(--accent)}
@@ -1462,15 +1463,16 @@ function openClaim(f){
 
 /* ---------- Discord bot (concept) ---------- */
 function renderDiscord(){
-  const top=allFilms().filter(f=>f.cat==="dota2").sort((a,b)=>stats(b).bayes-stats(a).bayes).slice(0,3);
+  const top=[...allFilms()].filter(f=>f.yt).sort((a,b)=>(b.ytViews||0)-(a.ytViews||0)).slice(0,3);
+  const add=discordAppId?`https://discord.com/oauth2/authorize?client_id=${encodeURIComponent(discordAppId)}&scope=applications.commands`:"";
   $("#main").innerHTML=`<h1 class="sect-h" style="font-size:24px;margin-top:16px">${icon("bot")} Fanreelz bot for Discord</h1>
-   <p class="lede">Bring the top lists to the servers where fans already hang out. The bot posts the week's best films for your game every Monday and answers commands in chat.</p>
+   <p class="lede">Bring AI fan films and Character Showdowns to the servers where fans already hang out. Type a command and the bot answers in the channel.</p>
    <div class="discord-grid"><div><h2 class="sect-h" style="font-size:16px">Commands</h2>
-    <div class="azlist">${[["/fanreel top dota2","This week's top 5 in a category"],["/fanreel lina","Best films about a character"],["/fanreel random","A random highly rated film"],["/fanreel battle","Start a Fan Battle vote in the channel"],["/fanreel subscribe minecraft","Weekly top list in this channel"]].map(([c,d])=>`<div class="azrow" style="cursor:default"><code class="cmd">${c}</code><span class="azcat">${d}</span><span></span></div>`).join("")}</div>
-    <div class="row" style="margin-top:18px"><button class="btn" data-soon="Discord bot">Add to your server</button><span class="vmeta">Concept only, not built yet</span></div></div>
-   <div><h2 class="sect-h" style="font-size:16px">What a weekly post looks like</h2>
-    <div class="chatmock"><div class="cm-head">${cav("Fanreelz",36)}<b>Fanreelz</b><span class="cm-bot">BOT</span><span class="vmeta">Today at 10:00</span></div>
-     <div class="cm-embed"><b>Top 3 Dota 2 AI films this week</b>${top.map((f,i)=>`<div class="cm-row"><span class="rk">${i+1}</span><span>${esc(f.title)}<br><small class="vmeta">by ${esc(byName(f)||"YouTube creator")} · ★ ${stats(f).avg.toFixed(1)}</small></span></div>`).join("")}<small class="vmeta">See all on Fanreelz · /fanreel top dota2</small></div></div></div></div>`;
+    <div class="azlist">${[["/top warcraft","The 5 most watched AI films in a category"],["/random naruto","A random AI fan film, playable right in Discord"],["/search arthas","Find films by name"],["/showdown","Who would win? The hottest Character Showdown"],["/fanreelz","Everything the bot can do"]].map(([c,d])=>`<div class="azrow" style="cursor:default"><code class="cmd">${c}</code><span class="azcat">${d}</span></div>`).join("")}</div>
+    <div class="row" style="margin-top:18px">${add?`<a class="btn" href="${esc(add)}" target="_blank" rel="noopener">Add to your Discord server</a><span class="vmeta">Works in servers, DMs and as your own app</span>`:`<span class="vmeta">The bot is being set up. The button appears here when it's ready.</span>`}</div></div>
+   <div><h2 class="sect-h" style="font-size:16px">What it looks like</h2>
+    <div class="chatmock"><div class="cm-head">${cav("Fanreelz",36)}<b>Fanreelz</b><span class="cm-bot">APP</span><span class="vmeta">Today</span></div>
+     <div class="cm-embed"><b>Top AI fan films</b>${top.map((f,i)=>`<div class="cm-row"><span class="rk">${i+1}</span><span>${esc(f.title)}<br><small class="vmeta">${f.ytViews?fmtN(f.ytViews)+" views":esc(byName(f)||"")}</small></span></div>`).join("")}<small class="vmeta">Fanreelz · the home of AI fan films</small></div></div></div></div>`;
 }
 
 /* ---------- A member's public profile: liked videos, playlists, following, followers ---------- */
@@ -2076,8 +2078,12 @@ function openProfile(){
   openModal(`<div class="dlg" role="dialog" aria-modal="true" aria-label="Your profile"><div class="row"><img class="avatar" id="pAv" alt="" style="width:48px;height:48px"><h2 id="pName"></h2></div>
     <div class="vmeta">${rated.length} films rated · ${mySubs.length} submitted · signed in with ${sb?(acct.me.provider==="discord"?"Discord":acct.me.provider==="google"?"Google":"your account"):"your Claude account"}</div>
     ${rated.length?`<ul class="plist">${rated.map(x=>`<li data-open="${esc(x.f.id)}"><span>${esc(x.f.title)}</span><span style="color:var(--star)">${"★".repeat(x.r)}</span></li>`).join("")}</ul>`:`<p class="vmeta">Nothing rated yet.</p>`}
-    <div class="row"><button class="btn ghost" data-close>Close</button><button class="btn ghost" data-user="${esc(acct.uid)}">Your profile</button>${sb?`<button class="btn ghost" data-signout>Sign out</button>`:""}</div></div>`,
-    e=>{if(e.target.closest("[data-signout]")){sbSignOut();return}const u=e.target.closest("[data-user]");if(u){closeModal();go({view:"user",user:u.dataset.user,utab:"liked"});return}const o=e.target.closest("[data-open]");if(o){closeModal();go({view:"watch",film:o.dataset.open})}});
+    <div class="row"><button class="btn ghost" data-close>Close</button><button class="btn ghost" data-user="${esc(acct.uid)}">Your profile</button>${sb?`<button class="btn ghost" data-switch>Switch account</button><button class="btn ghost" data-signout>Sign out</button>`:""}</div>
+    ${sb?`<div class="switchbox" id="switchBox" hidden><b>Switch to another account</b><p class="vmeta" style="margin:4px 0 10px">You're signed out of this one and can pick any Google or Discord account.</p>
+      <div class="row"><button class="btn" data-switchto="google">Google account</button><button class="btn" data-switchto="discord">Discord account</button></div></div>`:""}</div>`,
+    e=>{if(e.target.closest("[data-signout]")){sbSignOut();return}
+      if(e.target.closest("[data-switch]")){const b=$("#switchBox");if(b)b.hidden=!b.hidden;return}
+      const sw=e.target.closest("[data-switchto]");if(sw){sbSwitch(sw.dataset.switchto);return}const u=e.target.closest("[data-user]");if(u){closeModal();go({view:"user",user:u.dataset.user,utab:"liked"});return}const o=e.target.closest("[data-open]");if(o){closeModal();go({view:"watch",film:o.dataset.open})}});
   $("#pAv").src=acct.me.avatarUrl;$("#pName").textContent=acct.me.name||"Your profile";
 }
 /* ---------- Typeable category and character with suggestions (like a search box); anything not listed can still be typed ---------- */
@@ -2286,8 +2292,12 @@ function supabaseDb(uid){
     }}
   };
 }
+let discordAppId="";
+/* A link that arrived for a film the page hadn't loaded yet (catalogue or member films load a moment later) opens once it exists */
+function openLinkedFilm(){if(state.view!=="home")return;const p=parsePath();if((p.view==="watch"||p.view==="shorts")&&p.film)Object.assign(state,p)}
 async function startSupabase(){
   let cfg={};try{cfg=await (await fetch("/api/config")).json()}catch(e){return null}
+  discordAppId=String(cfg.discordAppId||"");if(state.view==="discord")render();
   if(!cfg.supabaseUrl||!cfg.supabaseAnonKey)return null;
   try{await loadScript("https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js")}catch(e){return null}
   // Our own storage for the sign-in: kept in memory too, and every removal is logged, so a lost sign-in can be traced.
@@ -2341,13 +2351,16 @@ async function loadCatalog(){
       len:d?`${Math.floor(d/60)}:${String(d%60).padStart(2,"0")}`:"",days:r.published_at?daysSince(Date.parse(r.published_at)):null,
       counts:[0,0,0,0,0],hue:(k*47)%360,format:r.format==="short"?"short":"film",lore:r.lore||"whatif",boost:Math.max(0,20-k/50),
       url:"https://www.youtube.com/watch?v="+r.video_id,age:!!r.age_restricted,ytViews:+r.views||0});n++});
-  if(n){console.log("Fanreelz catalogue:",n,"films");render()}
+  if(n){console.log("Fanreelz catalogue:",n,"films");openLinkedFilm();render()}
 }
-async function sbSignIn(provider){
+async function sbSignIn(provider,pick){
   if(!sb)return;try{localStorage.setItem("fr_back",JSON.stringify(history.state?.fr||null))}catch(e){}
-  const {error}=await sb.auth.signInWithOAuth({provider,options:{redirectTo:location.origin+urlNow()}});
+  // pick=true: ask Google/Discord which account to use instead of signing straight back into the same one
+  const queryParams=pick?(provider==="google"?{prompt:"select_account"}:{prompt:"consent"}):undefined;
+  const {error}=await sb.auth.signInWithOAuth({provider,options:{redirectTo:location.origin+urlNow(),...(queryParams?{queryParams}:{})}});
   if(error)toast("Couldn't open "+(provider==="google"?"Google":"Discord")+" sign-in. Try again.");
 }
+async function sbSwitch(provider){if(!sb)return;try{await sb.auth.signOut({scope:"local"})}catch(e){}sbSignIn(provider,true)}
 async function sbSignOut(){if(sb){await sb.auth.signOut();location.reload()}}
 
 (async()=>{
@@ -2371,7 +2384,7 @@ async function sbSignOut(){if(sb){await sb.auth.signOut();location.reload()}}
       for(const f of films){if(!f||!CATS.some(c=>c.id===f.cat)||typeof f.title!=="string")continue;
         all.push({id:String(f.id),title:f.title.slice(0,120),cat:f.cat,char:String(f.char||""),src:String(f.src||"YouTube"),tool:String(f.tool||"Unknown"),len:"",days:daysSince(+f.t||Date.now()),counts:[0,0,0,0,0],hue:(+f.hue||0)%360,url:/^https:\/\//.test(f.url)?f.url:"",byId:d.id,topic:String(f.topic||"").slice(0,60),...(/^https:\/\//.test(f.url)?parseVid(f.url):{}),format:["short","film","episode"].includes(f.format)?f.format:"film",seriesTitle:String(f.seriesTitle||"").slice(0,80),season:Math.max(1,+f.season||1),ep:Math.max(1,+f.ep||1)});
         if(d.id===acct.uid)mine.push(f);}}
-    sharedSubs=all;mySubs=mine;render();resolveNames();},()=>{});
+    sharedSubs=all;mySubs=mine;openLinkedFilm();render();resolveNames();},()=>{});
 })();
 </script>
 

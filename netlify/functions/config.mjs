@@ -5,6 +5,7 @@ export default async () =>
   new Response(JSON.stringify({
     supabaseUrl: Netlify.env.get("SUPABASE_URL") || "",
     supabaseAnonKey: Netlify.env.get("SUPABASE_ANON_KEY") || "",
+    discordAppId: Netlify.env.get("DISCORD_APP_ID") || "", // public: the bot's install link uses it
   }), {
     headers: {
       "Content-Type": "application/json; charset=utf-8",
