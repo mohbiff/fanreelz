@@ -12,5 +12,7 @@
   },
   "triggers": { "crons": ["17 * * * *", "41 * * * *"] },
   "vars": { "IMPORT_CHANNELS": "3" },
+  // keep the settings added in the Cloudflare dashboard when the site is published again
+  "keep_vars": true,
   "observability": { "enabled": true }
 }
