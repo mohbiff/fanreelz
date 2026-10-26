@@ -48,7 +48,12 @@ export default {
       const res = await sitemap(env, ctx); ctx.waitUntil(caches.default.put(req, res.clone())); return res;
     }
     const fn = ROUTES[url.pathname];
-    if (!fn) return withSeo(req, await env.ASSETS.fetch(req), env, ctx); // pages get their own title, description and preview
+    if (!fn) {
+      // pages get their own title, description and preview; browsers must always check for a newer version of a page
+      const page = await withSeo(req, await env.ASSETS.fetch(req), env, ctx);
+      if (!(page.headers.get("Content-Type") || "").includes("text/html")) return page;
+      const out = new Response(page.body, page); out.headers.set("Cache-Control", "no-cache"); return out;
+    }
     useEnv(env);
     const cacheable = req.method === "GET" && !url.searchParams.has("debug");
     const cache = caches.default;
