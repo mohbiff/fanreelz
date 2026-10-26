@@ -1177,11 +1177,12 @@ function renderShowdown(){
        ${r.verdict.why?`<h3 class="sdwhy-h">Why this result</h3><div class="sdwhy">${r.verdict.why.split(/\n\s*\n/).map(t=>`<p>${esc(t.trim())}</p>`).join("")}</div>`:""}
        ${r.verdict.deciding?.length?`<div class="sddec"><b>Deciding factors</b><ul>${r.verdict.deciding.map(p=>`<li>${esc(p)}</li>`).join("")}</ul></div>`:""}
        <div class="sdpoints"><div><b>${esc(m.a)}</b><ul>${r.verdict.a_points.map(p=>`<li>${esc(p)}</li>`).join("")}</ul></div><div><b>${esc(m.b)}</b><ul>${r.verdict.b_points.map(p=>`<li>${esc(p)}</li>`).join("")}</ul></div></div>
-       <p class="vmeta">Canon research plus ${r.verdict.per_side} written argument${r.verdict.per_side===1?"":"s"} from each side · updated ${when(r.verdict.at)}. Weighed again as new votes come in.</p>`
-       :`<p class="vmeta">The Fanreelz verdict comes when both sides have at least 2 written reasons.</p>`}
-     <h2 class="sect-h" style="font-size:16px">Fan vote, live</h2>${sdBar(fan,m.a,m.b)}<p class="vmeta">${v.total} votes</p>`:""}
+       <p class="vmeta">${r.verdict.per_side?`Canon research plus ${r.verdict.per_side} written argument${r.verdict.per_side===1?"":"s"} from each side`:"Canon research only so far (no comparable fan reasons yet)"} · updated ${when(r.verdict.at)}. Weighed again as new votes come in.</p>`
+       :`<p class="vmeta">Fanreelz is weighing this showdown now. The verdict shows up here within about 20 minutes.</p>`}
+     <h2 class="sect-h" style="font-size:16px">Fan vote, live</h2>${sdBar(fan,m.a,m.b)}<p class="vmeta">${v.total} votes</p>
+     <p class="vmeta">Reasons that count in the verdict (at least 15 characters): ${esc(first(m.a))} ${v.a.filter(x=>x.x.length>=15).length}, ${esc(first(m.b))} ${v.b.filter(x=>x.x.length>=15).length}. Fanreelz uses the same number from each side, so a well-argued side needs reasons on the other side too.</p>`:""}
      ${r?.research?.sources?.length?`<details class="sdsrc"><summary>Research sources</summary><ul>${r.research.sources.map(s=>`<li><a href="${esc(s.url)}" target="_blank" rel="noopener">${esc(s.title)}</a></li>`).join("")}</ul></details>`:""}</section>
-   ${st!=="canon"?`<form class="form sdform" id="sdForm"><label for="sdText">Why does your pick win? <span class="vmeta">Optional, but only written reasons count in the Fanreelz verdict.</span><textarea id="sdText" maxlength="500" rows="3" placeholder="Canon feats, abilities, how the fight would go…">${esc(v.mine?.x||"")}</textarea></label>
+   ${st!=="canon"?`<form class="form sdform" id="sdForm"><label for="sdText">Why does your pick win? <span class="vmeta">Optional, but only written reasons count in the Fanreelz verdict.</span><textarea id="sdText" maxlength="500" rows="3" placeholder="Canon feats, abilities, how the fight would go… (at least 15 characters to count)">${esc(v.mine?.x||"")}</textarea></label>
      <div class="row"><button class="btn" type="submit">${v.mine?"Update my vote":"Vote"}</button><span class="vmeta" id="sdPickNote">${pick?`You pick ${esc(pick==="a"?m.a:m.b)}`:"Pick a side above first"}</span></div></form>`:""}
    <h2 class="sect-h" style="font-size:18px">Why fans think so</h2>
    <div class="sdargs">${args.length?args.map(([k,x])=>`<div class="sdarg ${k}"><div class="vmeta">${uav(x.uid,22)} <b>${esc(x.uid===acct.uid?"You":(names[x.uid]||"Fanreelz member"))}</b> picks ${esc(k==="a"?m.a:m.b)}</div><p>${esc(x.x)}</p></div>`).join(""):`<div class="empty">No arguments yet. Be the first.</div>`}</div>`;
@@ -2210,7 +2211,7 @@ document.addEventListener("click",async e=>{
   if(x=A("[data-plopen]")){openList=x.dataset.plopen||null;render();window.scrollTo({top:0});return}
   if(x=A("[data-plremove]")){const [lid,fid]=x.dataset.plremove.split("|");await saveLists(myLists().map(l=>l.id===lid?{...l,films:l.films.filter(i=>i!==fid)}:l));render();return}
   if(x=A("[data-pldelete]")){const lid=x.dataset.pldelete;if(await saveLists(myLists().filter(l=>l.id!==lid))){openList=null;render();toast("Playlist deleted")}return}
-  const vw=e.target.closest("[data-view]");if(vw){$("#shell").classList.remove("open");go({view:vw.dataset.view,cat:null,char:null});return}
+  const vw=e.target.closest("[data-view]");if(vw){$("#shell").classList.remove("open");go({view:vw.dataset.view,cat:null,char:null,sd:null,sdcat:"all",user:vw.dataset.view==="user"?state.user:null});return}
   const lo=e.target.closest("[data-liveopen]");if(lo){go({view:"liveplay",liveId:lo.dataset.liveopen});return}
   const lp=e.target.closest("[data-liveplat]");if(lp){state.livePlat=lp.dataset.liveplat;render();return}
   const tvb=e.target.closest("[data-tv]");if(tvb){state.tv=tvb.dataset.tv;render();return}
