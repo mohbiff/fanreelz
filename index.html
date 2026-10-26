@@ -1655,6 +1655,14 @@ function creatorContent(key,films){
    :tab==="series"?(se.length?`<div class="grid">${se.map(seriesCard).join("")}</div>`:`<div class="empty">No series yet.</div>`)
    :(fl.length?`<div class="grid">${fl.sort((a,b)=>a.days-b.days).map(f=>card(f)).join("")}</div>`:`<div class="empty">No films yet.</div>`));
 }
+/* Reads a video link and returns what the player needs: {yt|tt|ig|vm|dm: id, src} */
+function parseVid(u){u=String(u||"");let m;
+  if(m=u.match(/(?:youtube\.com\/(?:watch\?(?:.*&)?v=|shorts\/|embed\/|live\/)|youtu\.be\/)([\w-]{11})/i))return {yt:m[1],src:"YouTube"};
+  if(m=u.match(/tiktok\.com\/.*\/video\/(\d{8,})/i))return {tt:m[1],src:"TikTok"};
+  if(m=u.match(/instagram\.com\/(?:reel|reels|p)\/([\w-]+)/i))return {ig:m[1],src:"Instagram"};
+  if(m=u.match(/vimeo\.com\/(?:video\/)?(\d{5,})/i))return {vm:m[1],src:"Vimeo"};
+  if(m=u.match(/(?:dailymotion\.com\/video\/|dai\.ly\/)([a-z0-9]+)/i))return {dm:m[1],src:"Dailymotion"};
+  return {}}
 const detectFormat=u=>/\/shorts\/|tiktok\.com|instagram\.com\/reel/i.test(u)?"short":/[?&]list=/i.test(u)?"episode":"film";
 
 /* ---------- Comments ---------- */
@@ -1911,7 +1919,7 @@ function openSubmit(){
   $("#sf").onsubmit=async e=>{e.preventDefault();const u=$("#sUrl").value.trim();
     const fmt=fmtNow();if(fmt==="episode"&&!$("#sSer").value.trim()){toast("Add the series name");return}
     if(!/^https:\/\//.test(u)){toast("Use a link that starts with https://");return}
-    const src=/tiktok/.test(u)?"TikTok":/(x\.com|twitter)/.test(u)?"X":/reddit/.test(u)?"Reddit":/vimeo/.test(u)?"Vimeo":"YouTube";
+    const src=parseVid(u).src||(/(x\.com|twitter)/.test(u)?"X":/reddit/.test(u)?"Reddit":"YouTube");
     const f={id:"u"+Date.now().toString(36)+Math.random().toString(36).slice(2,6),title:$("#sTitle").value.trim(),cat:$("#sCat").value,char:$("#sChar").value,src,tool:$("#sTool").value,t:Date.now(),hue:Math.floor(Math.random()*360),url:u,format:fmt,...(fmt==="episode"?{seriesTitle:$("#sSer").value.trim(),season:Math.max(1,+$("#sSea").value||1),ep:Math.max(1,+$("#sEp").value||1)}:{})};
     $("#sGo").disabled=true;
     try{await acct.db.doc("submissions/"+acct.uid).set({films:[f,...mySubs].slice(0,200)});closeModal();toast((fmt==="short"?"Short":fmt==="episode"?"Episode":"Film")+" added to "+catName(f.cat));go({view:"home",cat:f.cat,char:null,format:fmt==="episode"?"series":fmt})}
@@ -2158,7 +2166,7 @@ async function sbSignOut(){if(sb){await sb.auth.signOut();location.reload()}}
   db.collection("submissions").onSnapshot(snap=>{const all=[],mine=[];
     for(const d of snap.docs){const films=Array.isArray(d.data()?.films)?d.data().films:[];
       for(const f of films){if(!f||!CATS.some(c=>c.id===f.cat)||typeof f.title!=="string")continue;
-        all.push({id:String(f.id),title:f.title.slice(0,120),cat:f.cat,char:String(f.char||""),src:String(f.src||"YouTube"),tool:String(f.tool||"Unknown"),len:"–",days:daysSince(+f.t||Date.now()),counts:[0,0,0,0,0],hue:(+f.hue||0)%360,url:/^https:\/\//.test(f.url)?f.url:"",byId:d.id,format:["short","film","episode"].includes(f.format)?f.format:"film",seriesTitle:String(f.seriesTitle||"").slice(0,80),season:Math.max(1,+f.season||1),ep:Math.max(1,+f.ep||1)});
+        all.push({id:String(f.id),title:f.title.slice(0,120),cat:f.cat,char:String(f.char||""),src:String(f.src||"YouTube"),tool:String(f.tool||"Unknown"),len:"",days:daysSince(+f.t||Date.now()),counts:[0,0,0,0,0],hue:(+f.hue||0)%360,url:/^https:\/\//.test(f.url)?f.url:"",byId:d.id,...(/^https:\/\//.test(f.url)?parseVid(f.url):{}),format:["short","film","episode"].includes(f.format)?f.format:"film",seriesTitle:String(f.seriesTitle||"").slice(0,80),season:Math.max(1,+f.season||1),ep:Math.max(1,+f.ep||1)});
         if(d.id===acct.uid)mine.push(f);}}
     sharedSubs=all;mySubs=mine;render();resolveNames();},()=>{});
 })();
