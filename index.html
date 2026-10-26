@@ -1473,7 +1473,7 @@ function openClaim(f){
 /* ---------- Discord bot (concept) ---------- */
 function renderDiscord(){
   const top=[...allFilms()].filter(f=>f.yt).sort((a,b)=>(b.ytViews||0)-(a.ytViews||0)).slice(0,3);
-  const add=discordAppId?`https://discord.com/oauth2/authorize?client_id=${encodeURIComponent(discordAppId)}&scope=applications.commands`:"";
+  const add=discordAppId?`https://discord.com/oauth2/authorize?client_id=${encodeURIComponent(discordAppId)}&scope=bot+applications.commands&permissions=18432`:"";
   $("#main").innerHTML=`<h1 class="sect-h" style="font-size:24px;margin-top:16px">${icon("bot")} Fanreelz bot for Discord</h1>
    <p class="lede">Bring AI fan films and Character Showdowns to the servers where fans already hang out. Type a command and the bot answers in the channel.</p>
    <div class="discord-grid"><div><h2 class="sect-h" style="font-size:16px">Commands</h2>
