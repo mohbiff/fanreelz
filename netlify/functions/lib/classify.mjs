@@ -26,10 +26,11 @@ const ALIASES = {
   dragonball: ["dragon ball", "dbz", "goku", "vegeta", "frieza", "super saiyan"], dnd: ["dungeons & dragons", "dungeons and dragons", "d&d", "baldur's gate"],
   pathfinder: ["pathfinder"], got: ["game of thrones", "house of the dragon", "westeros", "targaryen", "daenerys", "jon snow"],
   mtg: ["magic the gathering", "magic: the gathering", "planeswalker"], hearthstone: ["hearthstone"],
+  pokemon: ["pokemon", "pokémon", "pikachu", "charizard", "mewtwo"], fortnite: ["fortnite", "jonesy", "peely"],
   myth: ["mythology", "zeus", "odin", "thor ", "anubis", "olympus", "valhalla", "greek gods", "norse gods"],
-  whatif: ["harry potter", "hogwarts", "pokemon", "pokémon", "pikachu", "rick and morty", "simpsons", "star wars", "jedi", "darth", "marvel", "avengers", "batman", "spider-man", "spiderman", "lego", "barbie", "shrek", "toy story", "disney", "pixar"],
+  whatif: ["harry potter", "hogwarts", "rick and morty", "simpsons", "star wars", "jedi", "darth", "marvel", "avengers", "batman", "spider-man", "spiderman", "lego", "barbie", "shrek", "toy story", "disney", "pixar"],
 };
-const WHATIF_CHAR = [["harry potter", "Harry Potter"], ["hogwarts", "Harry Potter"], ["pokemon", "Pokémon"], ["pokémon", "Pokémon"], ["pikachu", "Pokémon"], ["rick and morty", "Rick and Morty"]];
+const WHATIF_CHAR = [["harry potter", "Harry Potter"], ["hogwarts", "Harry Potter"], ["rick and morty", "Rick and Morty"]];
 // Categories that must not swallow a more specific one (gta vs gta6, wc3 vs wow).
 const ORDER = ["gta6", "wow", "arcane", "whfantasy", "witchertv"];
 
