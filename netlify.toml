@@ -6,6 +6,14 @@
 # Every page has its own address (fanreelz.com/film/…, /about …). They are all served by index.html,
 # which reads the address and opens the right page. Real files (privacy.html, terms.html) and /api/* are untouched.
 [[redirects]]
+  from = "/showdown"
+  to = "/index.html"
+  status = 200
+[[redirects]]
+  from = "/showdown/*"
+  to = "/index.html"
+  status = 200
+[[redirects]]
   from = "/film/*"
   to = "/index.html"
   status = 200

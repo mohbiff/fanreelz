@@ -156,3 +156,10 @@ language sql security definer set search_path = public as $$
 $$;
 revoke all on function public.add_view(text) from public;
 grant execute on function public.add_view(text) to anon, authenticated;
+
+-- 8. Character Showdown verdicts, written by the Netlify function "showdown" (service role). Everyone can read.
+create table if not exists public.showdown_verdicts (key text primary key, data jsonb not null default '{}'::jsonb, updated_at timestamptz not null default now());
+alter table public.showdown_verdicts enable row level security;
+drop policy if exists "verdicts are public" on public.showdown_verdicts;
+create policy "verdicts are public" on public.showdown_verdicts for select using (true);
+grant select on public.showdown_verdicts to anon, authenticated;

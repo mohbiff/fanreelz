@@ -191,6 +191,16 @@ body.wfs .player{position:fixed;inset:0;z-index:9000;width:100vw;height:100vh;he
 .bplay{position:relative;width:100%;aspect-ratio:16/9;border-radius:12px;overflow:hidden;background:#000}.bplay .vid,.bplay .thumb{width:100%;height:100%;display:block}.bplay .thumb{aspect-ratio:auto}
 .bplay.vert{aspect-ratio:9/16;width:min(100%,calc(70vh * 9 / 16));margin:0 auto}.bplay .thumb img,.bplay .thumb canvas{width:100%;height:100%;object-fit:cover}
 .bpbtn{position:absolute;inset:0;margin:auto;width:64px;height:64px;border-radius:50%;background:rgba(0,0,0,.6);display:grid;place-items:center}.bpbtn svg{width:24px;height:24px;fill:#fff;margin-left:3px}
+.sdgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px;margin:14px 0}
+.sdcard{all:unset;cursor:pointer;display:flex;flex-direction:column;gap:8px;padding:16px;border-radius:14px;background:var(--card,#1c1a24);border:1px solid var(--line,#2a2735)}.sdcard:hover{border-color:var(--accent)}
+.sdvs{display:flex;align-items:center;gap:10px;font-size:16px;flex-wrap:wrap}.sdvs span{color:var(--accent);font-weight:900;font-size:13px}
+.sdbar{display:flex;height:28px;border-radius:8px;overflow:hidden;font-size:12px;font-weight:700}.sdbar span{display:flex;align-items:center;gap:6px;padding:0 10px;white-space:nowrap;overflow:hidden;min-width:0;transition:width .6s}
+.sdbar span:first-child{background:var(--accent);color:var(--ink-on-accent,#1a1405)}.sdbar span:last-child{background:#8b5cf6;color:#fff;justify-content:flex-end}.sdbar.big{height:40px;font-size:15px}
+.sdresult{margin:20px 0;padding:16px;border-radius:14px;background:var(--card,#1c1a24)}.sdpoints{display:grid;grid-template-columns:1fr 1fr;gap:16px}.sdpoints ul{margin:6px 0;padding-left:18px}
+.sdname{display:grid;place-items:center;aspect-ratio:16/9;border-radius:12px;background:linear-gradient(135deg,#2a2140,#120d24);font-size:22px;font-weight:800;text-align:center;padding:10px}
+.sdargs{display:flex;flex-direction:column;gap:10px}.sdarg{padding:12px 14px;border-radius:12px;background:var(--card,#1c1a24);border-left:4px solid var(--accent)}.sdarg.b{border-left-color:#8b5cf6}.sdarg p{margin:6px 0 0}
+.sdform textarea{width:100%;box-sizing:border-box}.sdsrc{margin-top:10px;font-size:13px}
+@media (max-width:860px){.sdpoints{grid-template-columns:1fr}}
 .arena{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);gap:20px;align-items:start}
 .bside{display:flex;flex-direction:column;gap:8px;min-width:0}
 .vs{align-self:center;font-family:var(--display);font-weight:800;font-size:28px;color:var(--accent)}
@@ -759,7 +769,7 @@ function renderGuide(){renderTabbar();
       .map(([v,l,ic])=>`<button class="gi ${state.view===v||(v==="channel"&&state.view==="user"&&state.user===acct.uid)?"on":""}" data-you="${v}">${icon(ic)}<span>${l}</span></button>`).join("")+
     fi("mine","Your ratings","mine")+`<hr>`+
     `<button class="gi ${state.view==="live"?"on":""}" data-view="live">${icon("live")}<span>Live now</span>${LIVE.length?`<span class="livecount">${LIVE.length}</span>`:""}</button>`+[["premieres","Premieres","prem"],["tv","Fanreelz TV","tv"]].map(([v,l,ic])=>`<button class="gi ${state.view===v?"on":""}" data-view="${v}">${icon(ic)}<span>${l}</span></button>`).join("")+
-    `<hr><h4>Community</h4>`+[["battles","Fan Battles","battle"],["requests","Requests","req"],["contest","Weekly contest","trophy"],["playlists","Playlists","list"],["discord","Discord bot","bot"]].map(([v,l,ic])=>`<button class="gi ${state.view===v?"on":""}" data-view="${v}">${icon(ic)}<span>${l}</span></button>`).join("")+
+    `<hr><h4>Community</h4>`+[["battles","Fan Battles","battle"],["requests","Requests","req"],["showdown","Character Showdown","trophy"],["playlists","Playlists","list"],["discord","Discord bot","bot"]].map(([v,l,ic])=>`<button class="gi ${state.view===v?"on":""}" data-view="${v}">${icon(ic)}<span>${l}</span></button>`).join("")+
     `<button class="gi ${state.view==="about"?"on":""}" data-view="about">${icon("info")}<span>About us</span></button>`+
     (matchMedia("(display-mode: standalone)").matches||navigator.standalone?"":`<button class="gi" data-install="">${icon("save")}<span>Install app</span></button>`)+
     `<button class="gi" data-theme-next="">${icon("info")}<span>Appearance: ${({dark:"Dark",light:"Light",system:"Device theme"})[document.documentElement.dataset.theme]||"Dark"}</span></button>`+
@@ -1041,14 +1051,15 @@ function renderBattles(){
   const board=[...pool].sort((x,y)=>R[y.id]-R[x.id]).slice(0,10);
   const side=id=>{const f=findFilm(id);const can=f.yt||f.tt||f.ig||f.vm||f.dm,vert=f.format==="short"||f.tt||f.ig;return `<div class="bside"><div class="bplay ${vert?"vert":""}" data-bfilm="${esc(f.id)}">${f.age?"":`<button class="vid" ${can?`data-bplay="${esc(f.id)}"`:`data-open="${esc(f.id)}"`} aria-label="Play ${esc(f.title)}"><div class="thumb"><canvas data-f="${esc(f.id)}"></canvas>${f.len?`<span class="len">${esc(f.len)}</span>`:""}${can?'<span class="bpbtn" aria-hidden="true"><svg viewBox="0 0 12 12"><path d="M2 1l9 5-9 5z"/></svg></span>':""}</div></button>`}</div>
     <h3 class="vtitle" style="font-size:18px">${esc(f.title)}</h3><div class="vmeta">${esc(byName(f)||"YouTube creator")} · ${esc(catName(f.cat))} · ${esc(f.char)}</div>
-    <button class="btn pick" data-vote="${esc(f.id)}">Pick this one</button></div>`};
+    <div class="vmeta">${W[f.id]||0} vote${(W[f.id]||0)===1?"":"s"} so far</div><button class="btn pick" data-vote="${esc(f.id)}">Pick this one</button></div>`};
   $("#main").innerHTML=`<div class="chips">${pools.map(p=>`<button class="chip ${battle.pool===p.id?"on":""}" data-bpool="${p.id}">${esc(p.name)}</button>`).join("")}</div>
    <h1 class="sect-h" style="font-size:24px">${icon("battle")} Fan Battles</h1>
+   <div class="chips"><button class="chip on">Fan Battles</button><button class="chip" data-view="showdown">Character Showdown</button></div>
    <p class="lede">Two films, one vote. Pick the better one and the ranking updates like a chess rating: beating a highly rated film counts for more.</p>
    ${battle.pair?`<div class="arena">${side(battle.pair[0])}<div class="vs">VS</div>${side(battle.pair[1])}</div>
    <div class="row" style="justify-content:center;margin:14px 0 30px"><button class="btn ghost" data-vote="skip">Skip this pair</button><span class="vmeta">${myVotes.length?`You've voted ${myVotes.length} times`:acct.online?"":"Sign in to vote"}</span></div>`:`<div class="empty">Not enough films in this pool yet.</div>`}
    <h2 class="sect-h">Battle ranking <span class="vmeta" style="font-size:14px;font-weight:500">${esc(pools.find(p=>p.id===battle.pool)?.name||"")}</span></h2>
-   <div class="azlist">${board.map((f,i)=>`<button class="azrow" data-open="${esc(f.id)}"><span class="aztitle"><span class="rk">${i+1}</span>${esc(f.title)}</span><span class="azcat">${esc(catName(f.cat))} · ${W[f.id]||0} wins, ${L[f.id]||0} losses</span><span class="azscore">${Math.round(R[f.id])}</span></button>`).join("")}</div>
+   <div class="azlist">${board.map((f,i)=>`<button class="azrow" data-open="${esc(f.id)}"><span class="aztitle"><span class="rk">${i+1}</span>${esc(f.title)}</span><span class="azcat">${esc(catName(f.cat))} · ${W[f.id]||0} vote${(W[f.id]||0)===1?"":"s"}</span><span class="azscore">${Math.round(R[f.id])}</span></button>`).join("")}</div>
    <p class="note">Ranking starts from each film's star rating and moves with every vote cast on this page.</p>`;
 }
 /* Fan Battles: the video plays right here; starting one stops the other */
@@ -1064,6 +1075,132 @@ async function castVote(winner){
   const next=[...myVotes,[winner,loser]].slice(-500);
   if(await writeOwn("votes",{v:next})){myVotes=next;toast("Vote counted");newPair();render()}
 }
+
+/* ---------- Character Showdown ----------
+   Fans start a matchup (two characters who never fought in canon), vote for a side and write why.
+   The Netlify function "showdown" researches canon on the web and weighs the SAME number of written arguments from each side;
+   its verdict is read from the table showdown_verdicts. The fan vote shows live from SD_MIN votes. */
+const SD_SEEDS=[{"key":"itachi-minato","a":"Itachi Uchiha","b":"Minato Namikaze","from":"Naruto","cats":["naruto"]},{"key":"gandalf-dumbledore","a":"Gandalf","b":"Albus Dumbledore","from":"Lord of the Rings vs Harry Potter","cats":["lotr","whatif"]},{"key":"geralt-guts","a":"Geralt of Rivia","b":"Guts","from":"The Witcher vs Berserk","cats":["witcher","witchertv","berserk"]},{"key":"lichking-sauron","a":"The Lich King (Arthas)","b":"Sauron","from":"Warcraft vs Lord of the Rings","cats":["wc3","wow","lotr"]},{"key":"illidan-malenia","a":"Illidan Stormrage","b":"Malenia","from":"Warcraft vs Elden Ring","cats":["wow","wc3","eldenring"]},{"key":"luffy-naruto","a":"Monkey D. Luffy","b":"Naruto Uzumaki","from":"One Piece vs Naruto","cats":["onepiece","naruto"]},{"key":"goku-luffy","a":"Goku","b":"Monkey D. Luffy","from":"Dragon Ball vs One Piece","cats":["dragonball","onepiece"]},{"key":"sylvanas-daenerys","a":"Sylvanas Windrunner","b":"Daenerys Targaryen","from":"Warcraft vs Game of Thrones","cats":["wow","got"]},{"key":"spacemarine-witcher","a":"A Space Marine","b":"Geralt of Rivia","from":"Warhammer 40K vs The Witcher","cats":["wh40k","witcher"]},{"key":"steve-noob","a":"Minecraft Steve","b":"Roblox Noob","from":"Minecraft vs Roblox","cats":["minecraft","roblox"]}];
+const SD_MIN=10;
+let sdVotes={},sdMade={},sdVerdicts={},sdLoaded=0,sdPicked=null;
+const sdNorm=t=>String(t||"").toLowerCase().normalize("NFKD").replace(/[^a-z0-9 ]/g," ").replace(/\s+/g," ").trim();
+const sdToks=t=>new Set(sdNorm(t).split(" ").filter(w=>w.length>1&&!["the","of","a"].includes(w)));
+const sdSame=(x,y)=>{const a=sdToks(x),b=sdToks(y);if(!a.size||!b.size)return false;const [s,l]=a.size<=b.size?[a,b]:[b,a];return [...s].every(w=>l.has(w))};
+const sdPair=(m,n)=>(sdSame(m.a,n.a)&&sdSame(m.b,n.b))||(sdSame(m.a,n.b)&&sdSame(m.b,n.a));
+function sdList(){
+  const list=SD_SEEDS.map(s=>({...s,t:0,by:""}));const fan=[];
+  for(const [uid,d] of Object.entries(sdMade))for(const s of (Array.isArray(d.items)?d.items:[]))
+    if(s&&s.key&&s.a&&s.b&&!badText(s.a,s.b))fan.push({key:String(s.key).slice(0,80),a:String(s.a).slice(0,40),b:String(s.b).slice(0,40),from:String(s.from||"").slice(0,80),t:+s.t||0,by:uid});
+  for(const s of fan.sort((x,y)=>x.t-y.t))if(!list.some(m=>m.key===s.key||sdPair(m,s)))list.push(s);
+  return list;
+}
+function sdTally(key){
+  const r={a:[],b:[],na:0,nb:0,total:0,mine:null};
+  for(const [uid,d] of Object.entries(sdVotes)){const v=d?.a?.[key];if(!v||(v.s!=="a"&&v.s!=="b"))continue;
+    r.total++;if(v.s==="a")r.na++;else r.nb++;
+    const x=String(v.x||"").trim().slice(0,500);if(x)r[v.s].push({uid,x,t:+v.t||0});
+    if(uid===acct.uid)r.mine={s:v.s,x};}
+  r.a.sort((p,q)=>q.t-p.t);r.b.sort((p,q)=>q.t-p.t);
+  return r;
+}
+async function loadSdVerdicts(){
+  if(!sb)return;sdLoaded=Date.now();
+  const {data,error}=await sb.from("showdown_verdicts").select("key,data,updated_at");if(error||!data)return;
+  const next=Object.fromEntries(data.map(r=>[r.key,{...r.data,updated:r.updated_at}]));
+  const changed=JSON.stringify(next)!==JSON.stringify(sdVerdicts);sdVerdicts=next;
+  if(changed&&state.view==="showdown")render();
+}
+const sdFilm=name=>{const t=[...sdToks(name)].filter(w=>w.length>3);if(!t.length)return null;
+  return rawFilms().filter(f=>!f.age&&(f.yt||f.tt||f.ig||f.vm||f.dm)&&t.some(w=>sdNorm(f.char+" "+f.title).split(" ").includes(w))).sort((x,y)=>filmTrend(y)-filmTrend(x))[0]||null};
+const sdBar=(pa,la,lb,cls="")=>`<div class="sdbar ${cls}"><span style="width:${pa}%"><b>${pa}%</b> ${esc(la)}</span><span style="width:${100-pa}%">${esc(lb)} <b>${100-pa}%</b></span></div>`;
+const sdStatus=(v,r)=>r?.status==="canon"?"canon":!r?.research?"checking":v.total<SD_MIN?"gathering":"live";
+const first=n=>String(n).split(" ")[0];
+function renderShowdown(){
+  const keep=$("#sdText")?{v:$("#sdText").value,f:document.activeElement===$("#sdText")}:null;
+  const list=sdList();const m=state.sd?list.find(x=>x.key===state.sd):null;
+  if(Date.now()-sdLoaded>60000)loadSdVerdicts();
+  if(!m){
+    const rows=list.map(x=>({m:x,v:sdTally(x.key),r:sdVerdicts[x.key]})).filter(x=>x.r?.status!=="canon").sort((p,q)=>q.v.total-p.v.total);
+    $("#main").innerHTML=`<div class="wbar"><h1 class="sect-h" style="font-size:24px;margin:0">${icon("battle")} Character Showdown</h1><button class="btn" data-sdnew="">+ Start a showdown</button></div>
+     <p class="lede" style="margin-top:8px">Who would win? Only characters who have never fought in canon. Vote, write why, and Fanreelz weighs canon research from the web together with the <b>same number of fan arguments from each side</b>. Results go live after ${SD_MIN} votes and keep moving as more votes come in.</p>
+     <div class="chips"><button class="chip" data-view="battles">Fan Battles</button><button class="chip on">Character Showdown</button></div>
+     <div class="sdgrid">${rows.map(({m:x,v,r})=>{const st=sdStatus(v,r);const fan=v.total?Math.round(v.na/v.total*100):50;
+       return `<button class="sdcard" data-sd="${esc(x.key)}"><div class="sdvs"><b>${esc(x.a)}</b><span>VS</span><b>${esc(x.b)}</b></div>${x.from?`<div class="vmeta">${esc(x.from)}</div>`:""}
+         ${st==="live"?sdBar(r?.verdict?r.verdict.pa:fan,"",""):""}
+         <div class="vmeta">${v.total} vote${v.total===1?"":"s"} · ${st==="checking"?"Fanreelz is checking canon…":st==="gathering"?`${SD_MIN-v.total} more until the result goes live`:r?.verdict?"Live verdict":"Live fan vote"}</div></button>`}).join("")}</div>
+     <p class="note">Each showdown can only be started once. Try a new opponent for the same character instead, like Itachi vs Jiraiya.</p>`;
+    return;
+  }
+  const v=sdTally(m.key),r=sdVerdicts[m.key],st=sdStatus(v,r),fan=v.total?Math.round(v.na/v.total*100):50;
+  const pick=sdPicked||v.mine?.s||null;
+  const side=(name,k)=>{const f=sdFilm(name),n=k==="a"?v.na:v.nb;
+    return `<div class="bside sdside">${f?`<div class="bplay" data-bfilm="${esc(f.id)}"><button class="vid" data-bplay="${esc(f.id)}" aria-label="Play ${esc(f.title)}"><div class="thumb"><canvas data-f="${esc(f.id)}"></canvas><span class="bpbtn" aria-hidden="true"><svg viewBox="0 0 12 12"><path d="M2 1l9 5-9 5z"/></svg></span></div></button></div>`:`<div class="sdname">${esc(name)}</div>`}
+    <h3 class="vtitle" style="font-size:20px">${esc(name)}</h3><div class="vmeta">${n} vote${n===1?"":"s"}${f?" · "+esc(f.title):""}</div>
+    ${st!=="canon"?`<button class="btn ${pick===k?"":"ghost"} pick" data-sdpick="${k}">${v.mine?.s===k?"✓ Your pick":pick===k?"✓ Picked":"I think "+esc(first(name))+" wins"}</button>`:""}</div>`};
+  const args=[];for(let i=0;i<Math.max(v.a.length,v.b.length)&&args.length<40;i++){if(v.a[i])args.push(["a",v.a[i]]);if(v.b[i])args.push(["b",v.b[i]])}
+  const when=t=>new Date(t).toLocaleString("en-GB",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"});
+  $("#main").innerHTML=`<button class="btn ghost" data-sdback="" style="margin-bottom:10px">← All showdowns</button>
+   <h1 class="sect-h" style="font-size:26px">${esc(m.a)} <span style="color:var(--accent)">vs</span> ${esc(m.b)}</h1>${m.from?`<p class="vmeta" style="margin-top:-6px">${esc(m.from)}</p>`:""}
+   ${st==="canon"?`<div class="familybar">These two have already fought in canon, so this showdown is closed. ${esc(r.research?.canon_result||"")}</div>`:""}
+   <div class="arena">${side(m.a,"a")}<div class="vs">VS</div>${side(m.b,"b")}</div>
+   <section class="sdresult">${st==="checking"?`<p class="vmeta">Fanreelz is checking canon on the web. Voting is already open.</p>`
+     :st==="gathering"?`<p><b>${v.total} of ${SD_MIN} votes.</b> The result goes live at ${SD_MIN} votes.</p>`
+     :st==="live"?`${r?.verdict?`<h2 class="sect-h" style="font-size:18px">Fanreelz verdict</h2>${sdBar(r.verdict.pa,m.a,m.b,"big")}<p>${esc(r.verdict.summary)}</p>
+       <div class="sdpoints"><div><b>${esc(m.a)}</b><ul>${r.verdict.a_points.map(p=>`<li>${esc(p)}</li>`).join("")}</ul></div><div><b>${esc(m.b)}</b><ul>${r.verdict.b_points.map(p=>`<li>${esc(p)}</li>`).join("")}</ul></div></div>
+       <p class="vmeta">Canon research plus ${r.verdict.per_side} written argument${r.verdict.per_side===1?"":"s"} from each side · updated ${when(r.verdict.at)}. Weighed again as new votes come in.</p>`
+       :`<p class="vmeta">The Fanreelz verdict comes when both sides have at least 2 written reasons.</p>`}
+     <h2 class="sect-h" style="font-size:16px">Fan vote, live</h2>${sdBar(fan,m.a,m.b)}<p class="vmeta">${v.total} votes</p>`:""}
+     ${r?.research?.sources?.length?`<details class="sdsrc"><summary>Research sources</summary><ul>${r.research.sources.map(s=>`<li><a href="${esc(s.url)}" target="_blank" rel="noopener">${esc(s.title)}</a></li>`).join("")}</ul></details>`:""}</section>
+   ${st!=="canon"?`<form class="form sdform" id="sdForm"><label for="sdText">Why does your pick win? <span class="vmeta">Optional, but only written reasons count in the Fanreelz verdict.</span><textarea id="sdText" maxlength="500" rows="3" placeholder="Canon feats, abilities, how the fight would go…">${esc(v.mine?.x||"")}</textarea></label>
+     <div class="row"><button class="btn" type="submit">${v.mine?"Update my vote":"Vote"}</button><span class="vmeta" id="sdPickNote">${pick?`You pick ${esc(pick==="a"?m.a:m.b)}`:"Pick a side above first"}</span></div></form>`:""}
+   <h2 class="sect-h" style="font-size:18px">Why fans think so</h2>
+   <div class="sdargs">${args.length?args.map(([k,x])=>`<div class="sdarg ${k}"><div class="vmeta">${uav(x.uid,22)} <b>${esc(x.uid===acct.uid?"You":(names[x.uid]||"Fanreelz member"))}</b> picks ${esc(k==="a"?m.a:m.b)}</div><p>${esc(x.x)}</p></div>`).join(""):`<div class="empty">No arguments yet. Be the first.</div>`}</div>`;
+  if(keep&&$("#sdText")){$("#sdText").value=keep.v;if(keep.f)$("#sdText").focus()}
+}
+async function sdVote(key,side,text){
+  if(!needAccount("Sign in to vote in Character Showdown."))return;
+  if(badText(text)){toast(BAD_MSG);return}
+  const mine={...(sdVotes[acct.uid]?.a||{})};mine[key]={s:side,x:String(text||"").trim().slice(0,500),t:Date.now()};
+  if(await writeOwn("showdown",{a:mine})){sdVotes[acct.uid]={a:mine};sdPicked=null;toast("Vote counted");renderHard=true;render()}
+}
+function openSdNew(){
+  if(!needAccount("Sign in to start a showdown."))return;
+  const chars=[...new Set(CATS.flatMap(c=>c.chars.filter(ch=>!/^(all|the |campaigns|reality|drama|comedy|history|pets|everyday|crossovers|film remakes|sci-fi|fantasy|horror)/i.test(ch))))];
+  openModal(`<div class="dlg" role="dialog" aria-modal="true" aria-label="Start a showdown"><h2>Start a Character Showdown</h2>
+    <p class="vmeta" style="margin:0">Pick two characters who have <b>never fought in canon</b>. Fanreelz checks this on the web and closes showdowns where the answer is already known.</p>
+    <form class="form" id="sdNew"><label for="sdA">Character 1<input id="sdA" list="sdChars" required maxlength="40" autocomplete="off" placeholder="e.g. Itachi Uchiha"></label>
+    <label for="sdB">Character 2<input id="sdB" list="sdChars" required maxlength="40" autocomplete="off" placeholder="e.g. Jiraiya"></label>
+    <datalist id="sdChars">${chars.map(c=>`<option value="${esc(c)}">`).join("")}</datalist>
+    <label for="sdFrom">Where are they from? (optional)<input id="sdFrom" maxlength="80" placeholder="e.g. Naruto"></label>
+    <p class="subnote" id="sdNewNote"></p>
+    <div class="row"><button class="btn" type="submit" id="sdGo">Start showdown</button><button class="btn ghost" type="button" data-close>Cancel</button></div></form></div>`);
+  const check=()=>{const a=$("#sdA").value.trim(),b=$("#sdB").value.trim();const dup=a&&b?sdList().find(m=>sdPair(m,{a,b})):null;
+    const same=a&&b&&sdSame(a,b);
+    $("#sdNewNote").textContent=same?"Pick two different characters.":dup?`${dup.a} vs ${dup.b} already exists. Try another opponent.`:"";
+    return !same&&!dup};
+  $("#sdA").oninput=check;$("#sdB").oninput=check;
+  $("#sdNew").onsubmit=async e=>{e.preventDefault();const a=$("#sdA").value.trim(),b=$("#sdB").value.trim(),from=$("#sdFrom").value.trim();
+    if(badText(a,b,from)){toast(BAD_MSG);return}
+    if(!check()){toast($("#sdNewNote").textContent);return}
+    const key=(sdNorm(a)+" vs "+sdNorm(b)).replace(/ /g,"-").slice(0,70)+"-"+Date.now().toString(36).slice(-4);
+    const mine=Array.isArray(sdMade[acct.uid]?.items)?sdMade[acct.uid].items:[];const items=[...mine,{key,a,b,from,t:Date.now()}].slice(-50);
+    $("#sdGo").disabled=true;
+    if(await writeOwn("showdowns",{items})){sdMade[acct.uid]={items};closeModal();toast("Showdown started");go({view:"showdown",sd:key})}else $("#sdGo").disabled=false};
+}
+document.addEventListener("click",e=>{let x;
+  if(x=e.target.closest("[data-sd]")){e.preventDefault();sdPicked=null;go({view:"showdown",sd:x.dataset.sd});return}
+  if(e.target.closest("[data-sdback]")){e.preventDefault();go({view:"showdown",sd:null});return}
+  if(e.target.closest("[data-sdnew]")){e.preventDefault();openSdNew();return}
+  if(x=e.target.closest("[data-sdpick]")){e.preventDefault();
+    const m=sdList().find(s=>s.key===state.sd);if(!m)return;const mine=sdTally(m.key).mine;sdPicked=x.dataset.sdpick;
+    if(mine){sdVote(m.key,sdPicked,$("#sdText")?.value??mine.x);return}
+    document.querySelectorAll("[data-sdpick]").forEach(b=>{const on=b.dataset.sdpick===sdPicked;b.classList.toggle("ghost",!on);b.textContent=on?"✓ Picked":"I think "+first(b.dataset.sdpick==="a"?m.a:m.b)+" wins"});
+    const n=$("#sdPickNote");if(n)n.textContent="You pick "+(sdPicked==="a"?m.a:m.b)+". Add why, then press Vote.";$("#sdText")?.focus();return}
+});
+document.addEventListener("submit",e=>{if(e.target.id!=="sdForm")return;e.preventDefault();
+  const m=sdList().find(s=>s.key===state.sd);if(!m)return;
+  const side=sdPicked||sdTally(m.key).mine?.s;if(!side){toast("Pick a side first");return}
+  sdVote(m.key,side,$("#sdText").value)});
 
 /* ---------- Requests & commissions ---------- */
 const T1=Date.now();
@@ -1456,7 +1593,7 @@ async function toggleNewsletter(){
 function startCommunity(db){
   const mapCol=(col,target,after)=>db.collection(col).onSnapshot(snap=>{for(const k of Object.keys(target))delete target[k];for(const d of snap.docs){const v=d.data();if(v&&typeof v==="object")target[d.id]=v}after&&after();render();},()=>{});
   db.collection("votes").onSnapshot(snap=>{const all=[];let mine=[];for(const d of snap.docs){const v=Array.isArray(d.data()?.v)?d.data().v:[];const ok=v.filter(p=>Array.isArray(p)&&p.length===2).map(p=>[String(p[0]),String(p[1])]);all.push(...ok);if(d.id===acct.uid)mine=ok}allVotes=all;myVotes=mine;render()},()=>{});
-  mapCol("tips",tipDocs,resolveExtraNames);mapCol("comments",commentDocs,resolveExtraNames);mapCol("commentlikes",likeDocs);mapCol("requests",reqDocs,resolveExtraNames);mapCol("upvotes",upDocs);mapCol("claims",claimDocs,resolveExtraNames);mapCol("playlists",plDocs,resolveExtraNames);
+  mapCol("tips",tipDocs,resolveExtraNames);mapCol("comments",commentDocs,resolveExtraNames);mapCol("commentlikes",likeDocs);mapCol("requests",reqDocs,resolveExtraNames);mapCol("upvotes",upDocs);mapCol("claims",claimDocs,resolveExtraNames);mapCol("playlists",plDocs,resolveExtraNames);mapCol("showdown",sdVotes,resolveExtraNames);mapCol("showdowns",sdMade);
   db.collection("follows").onSnapshot(snap=>{const all={};for(const d of snap.docs){const c=d.data()?.c;if(c&&typeof c==="object")all[d.id]=c}followDocs=all;myFollows=acct.uid&&all[acct.uid]?{...all[acct.uid]}:{};render();resolveExtraNames()},()=>{});
   db.doc("data/users/"+acct.uid+"/settings").onSnapshot(d=>{settings=d.exists?{...d.data()}:{};render()},()=>{});
 }
@@ -1798,7 +1935,7 @@ const fsEl=()=>document.fullscreenElement||document.webkitFullscreenElement||nul
 function render(){
   if(state.view!=="watch"&&document.body.classList.contains("wfs")){document.body.classList.remove("wfs");$("#wfsClose")?.remove();wfsPushed=false}
   if(!renderHard&&fsEl()&&!document.body.classList.contains("spfs")){fsPending=true;return}
-  if(!renderHard&&state.view==="battles"&&document.querySelector(".bplay iframe")){renderGuide();return}
+  if(!renderHard&&(state.view==="battles"||state.view==="showdown")&&document.querySelector(".bplay iframe")){renderGuide();return}
   if(state.view==="liveplay"&&!renderHard&&$("#lchat")&&$("#lchat").dataset.live===state.liveId){renderGuide();updateLiveChat();return}
   renderHard=false;stopPreview();
   const drafts={};let focusKey=null;
@@ -1806,17 +1943,18 @@ function render(){
   lastFilm=state.view==="watch"?state.film:null;
   renderWho();renderGuide();
   clearInterval(ticker);ticker=null;tvNow=null;
-  ({watch:renderWatch,browse:renderBrowse,live:renderLive,liveplay:renderLivePlay,premieres:renderPremieres,tv:renderTV,battles:renderBattles,requests:renderRequests,contest:renderContest,playlists:renderPlaylists,creator:renderCreator,discord:renderDiscord,about:renderAbout,user:renderUser,you:renderYou,history:renderYouList,later:renderYouList,liked:renderYouList,yourvideos:renderYouList,shorts:renderShorts,series:renderSeries}[state.view]||renderHomeF)();
+  ({watch:renderWatch,browse:renderBrowse,live:renderLive,liveplay:renderLivePlay,premieres:renderPremieres,tv:renderTV,battles:renderBattles,showdown:renderShowdown,requests:renderRequests,contest:renderContest,playlists:renderPlaylists,creator:renderCreator,discord:renderDiscord,about:renderAbout,user:renderUser,you:renderYou,history:renderYouList,later:renderYouList,liked:renderYouList,yourvideos:renderYouList,shorts:renderShorts,series:renderSeries}[state.view]||renderHomeF)();
   paintAll();
   document.querySelectorAll(".cmform").forEach(fm=>{const k=fm.dataset.cparent;const ta=fm.querySelector("textarea");if(drafts[k])ta.value=drafts[k];if(focusKey===k){ta.focus();ta.setSelectionRange(ta.value.length,ta.value.length)}});
   if(state.view==="premieres")ticker=setInterval(tickPremieres,1000);
   if(state.view==="tv")ticker=setInterval(tickTV,1000);
+  if(state.view==="showdown")ticker=setInterval(loadSdVerdicts,60000);
   if(state.view==="contest")ticker=setInterval(()=>{const el=$("#cEnd");if(el)el.textContent=until(contestNow().end-Date.now())},1000);
 }
 const NAVKEYS=["user","utab","view","feed","group","cat","char","q","film","format","dur","series","season","creator","shortList","shortI","bgroup","ctab","tv","lore"];
 const navSnap=()=>JSON.parse(JSON.stringify(Object.fromEntries(NAVKEYS.map(k=>[k,state[k]]))));
 /* Every page gets its own address (fanreelz.com/film/…, /shorts/…, /about …) so links can be shared and reloaded. */
-const PAGES=["you","history","later","liked","yourvideos","about","live","premieres","tv","battles","requests","contest","playlists","discord","browse"];
+const PAGES=["showdown","you","history","later","liked","yourvideos","about","live","premieres","tv","battles","requests","contest","playlists","discord","browse"];
 function pathFor(st){
   const e=encodeURIComponent;
   switch(st.view){
@@ -1826,6 +1964,7 @@ function pathFor(st){
     case "creator":return "/creator/"+e(st.creator||"");
     case "user":return "/u/"+e(st.user||"");
     case "liveplay":return "/live/"+e(st.liveId||"");
+    case "showdown":return "/showdown"+(st.sd?"/"+e(st.sd):"");
     case "browse":return "/browse"+(st.bgroup&&st.bgroup!=="All"?"?g="+e(st.bgroup):"");
     case "home":{
       if(st.q)return "/search?q="+e(st.q);
@@ -1842,6 +1981,7 @@ function parsePath(){
   if(a==="film"&&b&&findFilm(b))return {view:"watch",film:b};
   if(a==="shorts"&&b&&findFilm(b))return {view:"shorts",film:b,shortList:null,shortI:0};
   if(a==="shorts")return {view:"shorts",shortList:null,shortI:0};
+  if(a==="showdown")return {view:"showdown",sd:b||null};
   if(a==="series"&&b)return {view:"series",series:b,season:1};
   if(a==="creator"&&b)return {view:"creator",creator:b,ctab:"film"};
   if(a==="u"&&b)return {view:"user",user:b,utab:"liked"};
