@@ -130,6 +130,14 @@ main{min-width:0;padding-right:max(16px,env(safe-area-inset-right,0px));padding-
 .vmeta .st{color:var(--star)}
 .pill{display:inline-block;font-size:11px;font-weight:700;padding:1px 7px;border-radius:999px;background:var(--accent-soft);color:var(--accent);vertical-align:1px;margin-left:4px}
 .empty{padding:60px 20px;text-align:center;color:var(--muted)}
+.adm-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px;margin-bottom:16px}
+.adm-card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:2px}
+.adm-card b{font-size:26px;line-height:1.1}.adm-card span{color:var(--muted);font-size:13px}
+.adm-list{display:flex;flex-direction:column;gap:6px}
+.adm-row{display:flex;align-items:center;gap:12px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 12px;flex-wrap:wrap}
+.adm-row img{width:36px;height:36px;border-radius:50%;object-fit:cover}
+.adm-who{display:flex;flex-direction:column;min-width:0;flex:1 1 200px}.adm-who span{color:var(--muted);font-size:13px;overflow-wrap:anywhere}
+.adm-meta{display:flex;gap:10px;align-items:center;flex-wrap:wrap;color:var(--muted);font-size:12.5px}
 .adminbox{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:4px 0 14px;padding:10px 12px;border:1px dashed var(--line);border-radius:12px}.adminbox input{flex:1 1 220px;min-width:0;padding:8px 10px;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--fg);font:inherit}.adminbox p{flex-basis:100%;margin:0;font-size:13px}.adminbox b{display:flex;gap:6px;align-items:center;font-size:13px}
 .note{font-size:12px;color:var(--muted);margin-top:36px}
 
@@ -868,7 +876,7 @@ function renderGuide(){renderTabbar();
     `<button class="gi youhead ${state.view==="you"?"on":""}" data-view="you"><span>You</span><svg class="i" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></button>`+
     [["channel","Creator page","user"],["history","History","clock"],["playlists","Playlists","list"],["later","Watch later","clock"],["liked","Liked videos","like"],["yourvideos","Your videos","film"]]
       .map(([v,l,ic])=>`<button class="gi ${state.view===v||(v==="channel"&&state.view==="user"&&state.user===acct.uid)?"on":""}" data-you="${v}">${icon(ic)}<span>${l}</span></button>`).join("")+
-    fi("mine","Your ratings","mine")+`<hr>`+
+    fi("mine","Your ratings","mine")+(isMod?`<button class="gi ${state.view==="admin"?"on":""}" data-view="admin">${icon("shield")}<span>Accounts (admin)</span></button>`:"")+`<hr>`+
     `<button class="gi ${state.view==="live"?"on":""}" data-view="live">${icon("live")}<span>Live now</span>${LIVE.length?`<span class="livecount">${LIVE.length}</span>`:""}</button>`+[["premieres","Premieres","prem"],["tv","Fanreelz TV","tv"]].map(([v,l,ic])=>`<button class="gi ${state.view===v?"on":""}" data-view="${v}">${icon(ic)}<span>${l}</span></button>`).join("")+
     `<hr><h4>Community</h4>`+[["top10","Top 10 this month","top"],["battles","Fan Battles","battle"],["requests","Requests","req"],["showdown","Character Showdown","trophy"],["playlists","Playlists","list"],["discord","Discord bot","bot"]].map(([v,l,ic])=>`<button class="gi ${state.view===v?"on":""}" data-view="${v}">${icon(ic)}<span>${l}</span></button>`).join("")+
     `<button class="gi ${state.view==="about"?"on":""}" data-view="about">${icon("info")}<span>About us</span></button>`+
@@ -1239,6 +1247,25 @@ function sdHot(key){let h=0;const now=Date.now();for(const d of Object.values(sd
 const sdStatus=(v,r)=>r?.status==="canon"?"canon":!r?.research?"checking":v.total<SD_MIN?"gathering":"live";
 const first=n=>String(n).split(" ")[0];
 /* ---------- Top 10 this month: a page to share (Reddit, newsletters, Discord) ---------- */
+/* ---------- Admin: who has signed up (only for ADMIN_EMAILS; the server checks it too) ---------- */
+let adminUsers=null,adminUsersAt=0,adminUsersErr="",adminTimer=null;
+async function loadAdminUsers(){try{const r=await modCall({action:"users"});if(r.error)adminUsersErr=r.error;else{adminUsers=r.users;adminUsersErr=""}}catch(e){adminUsersErr=String(e.message||e)}
+  adminUsersAt=Date.now();if(state.view==="admin")render()}
+function renderAdmin(){
+  clearInterval(adminTimer);adminTimer=setInterval(()=>{if(state.view!=="admin"){clearInterval(adminTimer);return}loadAdminUsers()},30000); // live: refreshes every 30 s
+  if(!isMod){$("#main").innerHTML=`<div class="empty">This page is only for Fanreelz admins.</div>`;return}
+  if(!adminUsers&&!adminUsersErr){$("#main").innerHTML=`<div class="empty">Loading accounts…</div>`;if(Date.now()-adminUsersAt>3000)loadAdminUsers();return}
+  const U=adminUsers||[],day=864e5,now=Date.now(),since=d=>U.filter(u=>now-Date.parse(u.created)<d*day).length,by=p=>U.filter(u=>u.provider===p).length;
+  const d=x=>x?new Date(x).toLocaleString("sv-SE",{dateStyle:"short",timeStyle:"short"}):"–";
+  const card=(n,l)=>`<div class="adm-card"><b>${n}</b><span>${l}</span></div>`;
+  $("#main").innerHTML=`<h1 class="sect-h" style="font-size:22px">${icon("shield")} Accounts</h1>
+  <p class="vmeta" style="margin:0 0 14px">Live: updates every 30 seconds · last update ${new Date(adminUsersAt).toLocaleTimeString("sv-SE")}${adminUsersErr?` · <b style="color:#ff6b6b">${esc(adminUsersErr)}</b>`:""} · <button class="chip" data-adminreload="">Refresh now</button></p>
+  <div class="adm-cards">${card(U.length,"accounts")}${card(since(1),"new today")}${card(since(7),"new 7 days")}${card(since(30),"new 30 days")}${card(by("google"),"Google")}${card(by("discord"),"Discord")}</div>
+  <div class="adm-list">${U.map(u=>`<div class="adm-row">${u.avatar?`<img src="${esc(u.avatar)}" alt="" referrerpolicy="no-referrer" loading="lazy">`:cav(u.name||u.email||"?",36)}
+    <div class="adm-who"><b>${esc(u.name||"(no name)")}</b><span>${esc(u.email)}</span></div>
+    <div class="adm-meta"><span class="chip">${esc(u.provider||"–")}</span><span>Joined ${d(u.created)}</span><span>Last sign-in ${d(u.last)}</span></div></div>`).join("")||`<div class="empty">No accounts yet.</div>`}</div>
+  <p class="vmeta" style="margin-top:14px;font-size:12px">Only you see this page. Use the details only to run Fanreelz (GDPR).</p>`}
+document.addEventListener("click",e=>{if(e.target.closest("[data-adminreload]")){e.preventDefault();loadAdminUsers()}});
 function renderTop10(){
   const month=new Date().toLocaleString("en-GB",{month:"long",year:"numeric"});
   const pool=allFilms().filter(f=>(f.yt||f.tt||f.ig||f.vm||f.dm)&&!f.age&&f.format!=="short");
@@ -2108,7 +2135,7 @@ async function adminDo(body,label){if(adminBusy)return;adminBusy=true;adminMsg=l
   catch(e){adminMsg="Error: "+esc(e.message||e)}
   adminBusy=false;render()}
 async function modCall(body){const r=await fetch("/api/moderate",{method:"POST",headers:{"Content-Type":"application/json",Authorization:"Bearer "+(sbToken||"")},body:JSON.stringify(body)});return r.json().catch(()=>({}))}
-async function checkMod(){if(!sbToken)return;try{const r=await modCall({action:"check"});if(r.admin){isMod=true;render()}}catch{}}
+async function checkMod(){if(!sbToken)return;try{const r=await modCall({action:"check"});if(r.admin){isMod=true;try{renderGuide()}catch(e){}render()}}catch{}}
 async function modRemove(v){const i=v.indexOf("|"),owner=v.slice(0,i),id=v.slice(i+1);
   if(!confirm("Remove this comment for everyone?"))return;
   const r=await modCall({action:"remove",owner,id});
@@ -2318,7 +2345,7 @@ function pageTitle(){const T=t=>t+" | Fanreelz",f=findFilm(state.film);
   if(state.view==="showdown"){const m=state.sd&&sdList().find(x=>x.key===state.sd);return T(m?m.a+" vs "+m.b+": who would win?":"Character Showdown: who would win?")}
   if(state.view==="home"&&state.q)return T("Search: "+state.q);
   if(state.view==="home"&&state.cat)return T("Best "+(state.char?state.char+" ("+catName(state.cat)+")":catName(state.cat))+" AI fan films");
-  const names={top10:"Top 10 AI fan films this month",battles:"Fan Battles",requests:"Requests",about:"About",browse:"Browse all worlds",live:"Live now",discord:"Discord bot",playlists:"Playlists",you:"You",history:"History",later:"Watch later",liked:"Liked videos",series:"Series",user:"Profile",creator:"Creator"};
+  const names={admin:"Accounts",top10:"Top 10 AI fan films this month",battles:"Fan Battles",requests:"Requests",about:"About",browse:"Browse all worlds",live:"Live now",discord:"Discord bot",playlists:"Playlists",you:"You",history:"History",later:"Watch later",liked:"Liked videos",series:"Series",user:"Profile",creator:"Creator"};
   return names[state.view]?T(names[state.view]):"Fanreelz – Where AI fan films find their fans"}
 let fsPending=false;
 const fsEl=()=>document.fullscreenElement||document.webkitFullscreenElement||null;
@@ -2334,7 +2361,7 @@ function render(){
   lastFilm=state.view==="watch"?state.film:null;
   renderWho();renderGuide();
   clearInterval(ticker);ticker=null;tvNow=null;
-  ({watch:renderWatch,browse:renderBrowse,live:renderLive,liveplay:renderLivePlay,premieres:renderPremieres,tv:renderTV,battles:renderBattles,showdown:renderShowdown,top10:renderTop10,requests:renderRequests,contest:renderContest,playlists:renderPlaylists,creator:renderCreator,discord:renderDiscord,about:renderAbout,user:renderUser,you:renderYou,history:renderYouList,later:renderYouList,liked:renderYouList,yourvideos:renderYouList,shorts:renderShorts,series:renderSeries}[state.view]||renderHomeF)();
+  ({watch:renderWatch,browse:renderBrowse,live:renderLive,liveplay:renderLivePlay,premieres:renderPremieres,tv:renderTV,battles:renderBattles,showdown:renderShowdown,top10:renderTop10,admin:renderAdmin,requests:renderRequests,contest:renderContest,playlists:renderPlaylists,creator:renderCreator,discord:renderDiscord,about:renderAbout,user:renderUser,you:renderYou,history:renderYouList,later:renderYouList,liked:renderYouList,yourvideos:renderYouList,shorts:renderShorts,series:renderSeries}[state.view]||renderHomeF)();
   paintAll();
   document.querySelectorAll(".cmform").forEach(fm=>{const k=fm.dataset.cparent;const ta=fm.querySelector("textarea");if(drafts[k])ta.value=drafts[k];if(focusKey===k){ta.focus();ta.setSelectionRange(ta.value.length,ta.value.length)}});
   if(state.view==="premieres")ticker=setInterval(tickPremieres,1000);
@@ -2346,7 +2373,7 @@ function render(){
 const NAVKEYS=["user","utab","view","feed","group","cat","char","q","film","format","dur","series","season","creator","shortList","shortI","bgroup","ctab","tv","lore"];
 const navSnap=()=>JSON.parse(JSON.stringify(Object.fromEntries(NAVKEYS.map(k=>[k,state[k]]))));
 /* Every page gets its own address (fanreelz.com/film/…, /shorts/…, /about …) so links can be shared and reloaded. */
-const PAGES=["top10","showdown","you","history","later","liked","yourvideos","about","live","premieres","tv","battles","requests","contest","playlists","discord","browse"];
+const PAGES=["admin","top10","showdown","you","history","later","liked","yourvideos","about","live","premieres","tv","battles","requests","contest","playlists","discord","browse"];
 function pathFor(st){
   const e=encodeURIComponent;
   switch(st.view){

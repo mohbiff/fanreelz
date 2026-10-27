@@ -26,6 +26,25 @@ export default async (req) => {
   if (!admin) return json({ error: "not allowed" }, 403);
   if (body.action === "search") return json(await searchNow(body.q).catch((e) => ({ error: String(e.message || e) })));
   if (body.action === "addurl") return json(await addByLinks(body.q).catch((e) => ({ error: String(e.message || e) })));
+  if (body.action === "users") {
+    // every sign-up, newest first, read with the secret key on the server (never sent to the page for anyone but admins)
+    const key = Netlify.env.get("SUPABASE_SERVICE_ROLE_KEY"), base = Netlify.env.get("SUPABASE_URL") + "/auth/v1/admin/users?per_page=1000&page=";
+    const get = async (page, withAuth) => fetch(base + page, { headers: { apikey: key, ...(withAuth ? { Authorization: "Bearer " + key } : {}) } });
+    const users = [];
+    for (let page = 1; page <= 10; page++) {
+      let r = await get(page, !key.startsWith("sb_secret_"));
+      if (r.status === 401 || r.status === 403) r = await get(page, key.startsWith("sb_secret_"));
+      if (!r.ok) return json({ error: "Supabase " + r.status }, 500);
+      const d = await r.json(), list = d.users || [];
+      for (const x of list) users.push({
+        email: x.email || "", name: x.user_metadata?.full_name || x.user_metadata?.name || x.user_metadata?.user_name || "",
+        avatar: x.user_metadata?.avatar_url || "", provider: x.app_metadata?.provider || "", created: x.created_at, last: x.last_sign_in_at || null,
+      });
+      if (list.length < 1000) break;
+    }
+    users.sort((a, b) => String(b.created).localeCompare(String(a.created)));
+    return json({ users });
+  }
   if (body.action === "run") {
     const job = { "import-youtube": importYoutube, showdown }[body.job];
     if (!job) return json({ error: "unknown job" }, 400);
