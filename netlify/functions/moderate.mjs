@@ -51,6 +51,18 @@ export default async (req) => {
     const r = await job(req);
     return new Response(r.body, { status: r.status, headers: { "Content-Type": "application/json", "Cache-Control": "no-store" } });
   }
+  if (body.action === "sdremove") {
+    // removes the written reason of one Character Showdown vote (the vote itself stays)
+    const key = Netlify.env.get("SUPABASE_SERVICE_ROLE_KEY"), h = { apikey: key, "Content-Type": "application/json" };
+    if (!key.startsWith("sb_secret_")) h.Authorization = "Bearer " + key;
+    const url = Netlify.env.get("SUPABASE_URL") + `/rest/v1/docs?col=eq.showdown&id=eq.${encodeURIComponent(body.owner || "")}`;
+    const rows = await (await fetch(url + "&select=data", { headers: h })).json();
+    const data = rows?.[0]?.data;const v = data?.a?.[body.key];
+    if (!v) return json({ ok: true, removed: 0 });
+    v.x = "";
+    const r = await fetch(url, { method: "PATCH", headers: h, body: JSON.stringify({ data, updated_at: new Date().toISOString() }) });
+    return r.ok ? json({ ok: true, removed: 1 }) : json({ error: "save failed " + r.status }, 500);
+  }
   if (body.action === "hide") {
     if (!/^yt-[\w-]{6,20}$/.test(String(body.id || ""))) return json({ error: "bad film id" }, 400);
     const key = Netlify.env.get("SUPABASE_SERVICE_ROLE_KEY"), h = { apikey: key, "Content-Type": "application/json", Prefer: "return=minimal" };
