@@ -2318,7 +2318,10 @@ function fpFull(){const pl=$(".player");if(!pl)return;
   const de=document.documentElement,req=de.requestFullscreen||de.webkitRequestFullscreen;
   if(req){Promise.resolve(req.call(de,{navigationUI:"hide"})).then(()=>{if(!matchMedia("(pointer:fine)").matches)screen.orientation?.lock?.("landscape").catch(()=>{})}).catch(()=>{openWfs();fpPaint();fpShow()})}
   else{openWfs();fpPaint();fpShow()}}
-function fpFsChange(){const on=!!(document.fullscreenElement||document.webkitFullscreenElement)&&state.view==="watch";document.body.classList.toggle("fsmode",on);document.documentElement.classList.toggle("fsmode",on);
+// in full screen the page must not zoom on a double tap (YouTube's own double-tap ±10 s works on the picture)
+function fpNoZoom(on){const m=document.querySelector('meta[name="viewport"]');if(!m)return;
+  m.setAttribute("content",on?"width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover":"width=device-width,initial-scale=1,viewport-fit=cover")}
+function fpFsChange(){const on=!!(document.fullscreenElement||document.webkitFullscreenElement)&&state.view==="watch";document.body.classList.toggle("fsmode",on);document.documentElement.classList.toggle("fsmode",on);fpNoZoom(on||document.body.classList.contains("wfs"));
   if(on)window.scrollTo({top:0});else{try{screen.orientation?.unlock?.()}catch(e){}document.querySelector(".fpbar")?.classList.remove("fshide")}fpPaint();if(on)fpShow()}
 document.addEventListener("fullscreenchange",fpFsChange);document.addEventListener("webkitfullscreenchange",fpFsChange);
 function fpPaint(){const o=document.querySelector(".fpbar");if(!o)return;const playing=fp.st===1||fp.st===3;
@@ -2547,9 +2550,9 @@ function go(patch){
 }
 /* Our own full screen for the film player: fills the screen inside the page, so the phone shows no full-screen notice */
 let wfsPushed=false;
-function openWfs(){if(document.body.classList.contains("wfs"))return;document.body.classList.add("wfs");
+function openWfs(){if(document.body.classList.contains("wfs"))return;document.body.classList.add("wfs");fpNoZoom(true);
   try{history.pushState({...(history.state||{}),overlay:"wfs"},"",location.href);wfsPushed=true}catch(e){}}
-function closeWfs(fromBack){if(!document.body.classList.contains("wfs"))return;document.body.classList.remove("wfs");$("#wfsClose")?.remove();$("#wfsShare")?.remove();
+function closeWfs(fromBack){if(!document.body.classList.contains("wfs"))return;document.body.classList.remove("wfs");fpNoZoom(document.body.classList.contains("fsmode"));$("#wfsClose")?.remove();$("#wfsShare")?.remove();
   if(wfsPushed&&!fromBack){wfsPushed=false;ignorePop=true;history.back()}wfsPushed=false}
 document.addEventListener("click",e=>{if(e.target.closest("[data-ytfs]")){e.preventDefault();fpFull();return}if(e.target.closest("[data-wfs]")){e.preventDefault();openWfs()}else if(e.target.closest("#wfsClose")){e.preventDefault();closeWfs()}});
 document.addEventListener("keydown",e=>{if(e.key==="Escape"&&document.body.classList.contains("wfs"))closeWfs()});
