@@ -2324,6 +2324,13 @@ function fpPaint(){const o=document.querySelector(".fpbar");if(!o)return;const p
 /* In full screen the bar hides like YouTube's controls: 3 s after play, back on a tap on the film or a pause.
    It sits under the film (never on top of it), and keeps its space so the film doesn't jump. */
 let fpT=null;
+/* Phone: swipe up on the control bar for full screen, swipe down to leave it (like YouTube).
+   The picture itself belongs to YouTube's player and doesn't pass touches to the page, so the swipe starts on the bar. */
+let fpSw=null;
+document.addEventListener("touchstart",e=>{const b=e.target.closest?.(".fpbar");if(!b||e.target.closest(".fpseek,.fpvol"))return;const t=e.touches[0];fpSw={x:t.clientX,y:t.clientY,at:Date.now()}},{passive:true});
+document.addEventListener("touchend",e=>{if(!fpSw)return;const t=e.changedTouches[0],dy=t.clientY-fpSw.y,dx=t.clientX-fpSw.x,fast=Date.now()-fpSw.at<700;fpSw=null;
+  if(!fast||Math.abs(dy)<40||Math.abs(dx)>Math.abs(dy))return;
+  if(dy<0&&!fpIsFs())fpFull();else if(dy>0&&fpIsFs()&&window.scrollY<20)fpFull()},{passive:true});
 // computer: YouTube's player doesn't tell the page about mouse moves over the film, but moves over the bar area and the black edges do
 document.addEventListener("mousemove",e=>{if(e.target.closest?.(".player.hasbar")&&fpIsFs()&&matchMedia("(pointer:fine)").matches)fpShow()},{passive:true});
 function fpShow(){const b=document.querySelector(".fpbar");if(!b)return;b.classList.remove("fshide");clearTimeout(fpT);
