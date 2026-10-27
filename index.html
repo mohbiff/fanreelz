@@ -160,6 +160,13 @@ main{min-width:0;padding-right:max(16px,env(safe-area-inset-right,0px));padding-
 .player.hasbar:fullscreen iframe,body.wfs .player.hasbar iframe{flex:none;aspect-ratio:16/9;width:min(100vw,calc((100dvh - 82px)*16/9))!important;height:auto!important;margin:auto}
 .player.ended iframe{visibility:hidden}
 .fpbar.fshide{visibility:hidden}
+/* full screen: the black edges beside the 16:9 picture are Fanreelz's own space (not on top of the video):
+   double tap there for -10 s / +10 s like YouTube, single tap shows or hides the bar */
+.fpzone{display:none;position:absolute;top:0;bottom:82px;width:calc((100vw - min(100vw,(100dvh - 82px)*16/9))/2);align-items:center;justify-content:center;z-index:2;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+.fpzone.l{left:0}.fpzone.r{right:0}
+body.wfs .fpzone,.player.hasbar:fullscreen .fpzone,body.fsmode .fpzone{display:flex}
+.fpzone b{opacity:0;color:#fff;font:700 18px/1 inherit;background:rgba(255,255,255,.14);padding:10px 12px;border-radius:999px;transition:opacity .2s}
+.fpzone.flash b{opacity:1}
 /* no double-tap zoom on the player and its buttons (fast taps on ±10 s should each count) */
 .player,.player *,.fpbar,.fpbar *,body.fsmode,body.wfs{touch-action:manipulation}
 .fpb.fpscroll{display:none}body.fsmode .fpb.fpscroll,body.wfs .fpb.fpscroll{display:flex}
@@ -2306,7 +2313,7 @@ function fpMount(f){const pl=$(".player");if(!pl||pl.querySelector(".fpbar"))ret
     <button class="fpb${fp.cc?" on":""}" data-fpcc="" aria-label="Subtitles">${FPI.cc}</button>
     <button class="fpb" data-share="${esc(f.id)}" aria-label="Share this film">${FPI.share}<span class="lbl">Share</span></button>
     <button class="fpb${later?" on":""}" data-later="${esc(f.id)}" aria-label="Watch later">${FPI.later}<span class="lbl">${later?"Saved":"Watch later"}</span></button>
-    <button class="fpb" data-ytfs="" aria-label="Full screen"></button></div></div>`);
+    <button class="fpb" data-ytfs="" aria-label="Full screen"></button></div></div><div class="fpzone l" data-fpzone="-10"><b></b></div><div class="fpzone r" data-fpzone="10"><b></b></div>`);
   fpPaint()}
 const fpIsFs=()=>document.body.classList.contains("fsmode")||document.body.classList.contains("wfs");
 // computer: the browser's real full screen (whole monitor); phone: fills the page, so Android shows no "swipe to exit" notice each time
@@ -2335,6 +2342,13 @@ function fpPaint(){const o=document.querySelector(".fpbar");if(!o)return;const p
 /* In full screen the bar hides like YouTube's controls: 3 s after play, back on a tap on the film or a pause.
    It sits under the film (never on top of it), and keeps its space so the film doesn't jump. */
 let fpT=null;
+let fpZoneTap={t:0,z:null,timer:null,sum:0};
+document.addEventListener("click",e=>{const z=e.target.closest?.("[data-fpzone]");if(!z)return;e.preventDefault();
+  const now=Date.now(),d=+z.dataset.fpzone;
+  if(fpZoneTap.z===z&&now-fpZoneTap.t<350){clearTimeout(fpZoneTap.timer);fpZoneTap.sum+=d;fpSeek(fp.t+d);
+    const b=z.querySelector("b");b.textContent=(fpZoneTap.sum>0?"+":"")+fpZoneTap.sum+" s";z.classList.add("flash");clearTimeout(z._ft);z._ft=setTimeout(()=>{z.classList.remove("flash");fpZoneTap.sum=0},700);
+    fpZoneTap.t=now;return}
+  fpZoneTap={t:now,z,sum:0,timer:setTimeout(()=>{const b=document.querySelector(".fpbar");if(b?.classList.contains("fshide"))fpShow();else fpHide()},360)}},true);
 /* Phone: swipe up on the control bar for full screen, swipe down to leave it (like YouTube).
    The picture itself belongs to YouTube's player and doesn't pass touches to the page, so the swipe starts on the bar. */
 let fpSw=null;
