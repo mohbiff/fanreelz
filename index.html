@@ -2339,9 +2339,6 @@ let fpSw=null;
 let fpTouchAt=0,fpLastY=0,fpAuto="";
 document.addEventListener("touchstart",()=>{fpTouchAt=Date.now()},{capture:true,passive:true});
 const fpPhone=()=>matchMedia("(pointer:coarse)").matches;
-addEventListener("scroll",()=>{const y=window.scrollY,was=fpLastY;fpLastY=y;
-  if(state.view!=="watch"||!fpPhone()||fpIsFs()||!document.querySelector(".fpbar"))return;
-  if(was<10&&y>=10&&Date.now()-fpTouchAt>900){window.scrollTo(0,0);openWfs();fpAuto="swipe";fpPaint();fpShow()}},{passive:true});
 matchMedia("(orientation: landscape)").addEventListener?.("change",e=>{if(state.view!=="watch"||!fpPhone()||!document.querySelector(".fpbar"))return;
   if(e.matches&&!fpIsFs()){openWfs();fpAuto="rotate";fpPaint();fpShow()}
   else if(!e.matches&&fpAuto==="rotate"&&document.body.classList.contains("wfs")){closeWfs();fpAuto="";fpPaint()}});
