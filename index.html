@@ -1802,7 +1802,7 @@ function seriesList(){
   const k=state.feed==="new"?s=>seriesDays(s):s=>-seriesStats(s).bayes;
   return l.sort((a,b)=>k(a)-k(b));
 }
-const DUR=[["any","Any length"],["u5","Under 5 min"],["5to20","5–20 min"],["o20","Over 20 min"]];
+const DUR=[["any","Any length"],["u5","Under 5 min"],["5to20","5–20 min"],["o20","Full-length (20+ min)"]];
 const durOk=f=>{const s=secs(f.len);return state.dur==="any"||(state.dur==="u5"&&s<300)||(state.dur==="5to20"&&s>=300&&s<=1200)||(state.dur==="o20"&&s>1200)};
 
 function shortCard(f){const s=stats(f);
@@ -1891,6 +1891,9 @@ function renderHomeF(){
       const top=[...films].sort((a,b)=>filmTrend(b)-filmTrend(a)).slice(0,5);const ids=new Set(top.map(f=>f.id));rest=films.filter(f=>!ids.has(f.id)).sort((a,b)=>a.days-b.days);
       html+=`<section class="shelf"><h2>${icon("trend")} Trending films ${c?"in "+esc(state.char||c.name):state.group==="All"?"":"in "+esc(state.group)}</h2><div class="shelfrow">${top.map((f,i)=>card(f,i+1)).join("")}</div></section>`;
     }
+    // Full-length films (20 min or more): something to sit down and watch like a real movie
+    if(shelves){const lf=films.filter(f=>secs(f.len)>=1200).sort((a,b)=>filmTrend(b)-filmTrend(a));
+      if(lf.length>=3)html+=`<section class="shelf"><h2>${icon("film")} Full-length films ${c?"":"<small class=\"vmeta\" style=\"font-weight:500;font-size:13px\">20+ min</small>"}<button class="seeall" data-longfilms="">See all ${lf.length}</button></h2><div class="shelfrow">${lf.slice(0,8).map(f=>card(f)).join("")}</div></section>`}
     if(shelves&&!c&&state.group==="All")GROUPS.forEach(g=>{const ids=new Set(g.cats.map(x=>x.id));const all=films.filter(f=>ids.has(f.cat));
       const row=[...all].sort((a,b)=>filmTrend(b)-filmTrend(a)).slice(0,8);if(row.length<3)return;
       html+=`<section class="shelf"><h2><button class="shelfh" data-group="${esc(g.name)}">${esc(g.name)} <span aria-hidden="true">›</span></button><button class="seeall" data-group="${esc(g.name)}">See all ${all.length}</button></h2><div class="shelfrow">${row.map(f=>card(f)).join("")}</div></section>`});
@@ -2400,6 +2403,7 @@ document.addEventListener("click",async e=>{
   if(x=A("[data-fmtnav]")){$("#shell").classList.remove("open");go({view:"home",feed:"home",cat:null,char:null,format:x.dataset.fmtnav});return}
   if(x=A("[data-fmt]")){state.format=x.dataset.fmt;go({});return}
   if(x=A("[data-dur]")){state.dur=x.dataset.dur;render();return}
+  if(x=A("[data-longfilms]")){state.format="film";state.dur="o20";go({});return}
   if(x=A("[data-short]")){openShorts(x.dataset.short);return}
   if(x=A("[data-series]")){go({view:"series",series:x.dataset.series,season:1});return}
   if(x=A("[data-season]")){state.season=+x.dataset.season;render();return}
