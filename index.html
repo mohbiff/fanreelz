@@ -2422,7 +2422,7 @@ document.addEventListener("click",async e=>{
   if(x=A("[data-livetab]")){liveTab=x.dataset.livetab;renderHard=true;render();return}
   if(x=A("[data-spsheet]")){const v=x.dataset.spsheet;spSheet=spSheet===v?"":v;render();return}
   if(A("[data-spfull]")){toggleShortsFull();return}
-  if(A("[data-tabshorts]")){go({view:"shorts",shortList:null,shortI:0,film:null});return}
+  if(A("[data-tabshorts]")){resetSections();go({view:"shorts",shortList:null,shortI:0,film:null,cat:null,char:null,group:"All",q:"",dur:"any",lore:"all"});return}
   if(x=A("[data-user]")){closeModal&&!$("#scrim").hidden&&closeModal();go({view:"user",user:x.dataset.user,utab:"liked"});return}
   if(x=A("[data-utab]")){state.utab=x.dataset.utab;render();try{history.replaceState({fr:navSnap(),y:scrollY},"",pathFor(state))}catch(e){}return}
   if((x=A("[data-copylink]"))&&!A("#scrim")){try{navigator.clipboard.writeText(x.dataset.copylink);toast("Profile link copied")}catch(e){}return}
@@ -2441,7 +2441,7 @@ document.addEventListener("click",async e=>{
   if(x=A("[data-adminrun]")){adminDo({action:"run",job:x.dataset.adminrun},x.dataset.adminrun==="showdown"?"Running the showdown judge":"Running the importer");return}
   if(A("[data-creport]")){toast("Thanks. A moderator will review this comment.");return}
   if(x=A("[data-longnav]")){$("#shell").classList.remove("open");go({view:"home",feed:"home",cat:null,char:null,q:"",group:"All",format:"film",dur:"o20"});return}
-  if(x=A("[data-fmtnav]")){$("#shell").classList.remove("open");go({view:"home",feed:"home",cat:null,char:null,format:x.dataset.fmtnav});return}
+  if(x=A("[data-fmtnav]")){$("#shell").classList.remove("open");resetSections();go({view:"home",feed:"home",cat:null,char:null,group:"All",q:"",dur:"any",lore:"all",format:x.dataset.fmtnav});return}
   if(x=A("[data-fmt]")){state.format=x.dataset.fmt;go({});return}
   if(x=A("[data-dur]")){state.dur=x.dataset.dur;render();return}
   if(x=A("[data-longfilms]")){state.format="film";state.dur="o20";go({});return}
