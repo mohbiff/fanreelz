@@ -149,9 +149,7 @@ main{min-width:0;padding-right:max(16px,env(safe-area-inset-right,0px));padding-
 .fprow{display:flex;align-items:center;gap:6px;color:rgba(255,255,255,.92);min-width:0}
 .fprow .fpsp{flex:1}
 .fptip{position:absolute;bottom:100%;margin-bottom:-18px;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:4px;pointer-events:none;z-index:2}
-.fptip img{width:160px;aspect-ratio:16/9;object-fit:cover;border-radius:8px;border:2px solid rgba(255,255,255,.85);background:#000;box-shadow:0 4px 14px rgba(0,0,0,.5)}
-.fptip b{font:700 13px/1 inherit;color:#fff;background:rgba(18,14,26,.8);padding:4px 8px;border-radius:6px;font-variant-numeric:tabular-nums}
-@media (max-width:600px){.fptip img{width:120px}}
+.fptip b{font:700 14px/1 inherit;color:#fff;background:rgba(18,14,26,.8);padding:4px 8px;border-radius:6px;font-variant-numeric:tabular-nums}
 .tslink{background:none;border:0;padding:0;font:inherit;color:var(--accent);font-weight:700;cursor:pointer;text-decoration:underline;text-underline-offset:2px}
 .fpb{height:38px;min-width:38px;padding:0 10px;border:0;border-radius:19px;background:transparent;color:rgba(255,255,255,.92);font:600 13px/1 inherit;display:flex;align-items:center;gap:6px;cursor:pointer;white-space:nowrap}
 .fpb:hover{background:rgba(255,255,255,.12)}.fpb.on{color:#f2c94c;background:rgba(255,255,255,.08)}
@@ -2200,7 +2198,7 @@ function fpMount(f){const pl=$(".player");if(!pl||pl.querySelector(".fp"))return
   if(fp.film!==f.id){Object.assign(fp,{film:f.id,st:-1,t:0,dur:/^\d+:\d\d$/.test(f.len||"")?secs(f.len):0,drag:false,cc:false})}
   const later=myLater.some(x=>x.id===f.id),wfs=document.body.classList.contains("wfs");
   pl.insertAdjacentHTML("beforeend",`<div class="fp"><div class="fptap" data-fptap=""></div><button class="fpbig" data-fpplay="" aria-label="Play or pause"></button>
-    <div class="fpbar"><div class="fptip" hidden><img alt="" referrerpolicy="no-referrer"><b></b></div><input class="fpseek" type="range" min="0" max="1000" value="0" aria-label="Seek">
+    <div class="fpbar"><div class="fptip" hidden><b></b></div><input class="fpseek" type="range" min="0" max="1000" value="0" aria-label="Seek">
     <div class="fprow"><button class="fpb" data-fpplay="" aria-label="Play or pause"></button><button class="fpb" data-fpmute="" aria-label="Mute"></button><span class="fptime"></span><span class="fpsp"></span>
     <button class="fpb${fp.cc?" on":""}" data-fpcc="" aria-label="Subtitles">${FPI.cc}</button>
     <button class="fpb" data-share="${esc(f.id)}" aria-label="Share this film">${FPI.share}<span class="lbl">Share</span></button>
@@ -2235,13 +2233,11 @@ document.addEventListener("click",e=>{const o=e.target.closest(".fp");if(!o)retu
   fpShow()},true);
 let fpPtr=matchMedia("(pointer:fine)").matches?"mouse":"touch";document.addEventListener("pointerdown",e=>{if(e.target.closest?.(".fp"))fpPtr=e.pointerType||"mouse"},true);
 document.addEventListener("mousemove",e=>{if(e.target.closest?.(".fp")&&fpPtr==="mouse")fpShow()},{passive:true});
-/* Seek preview: the time under the finger/mouse, with the nearest of YouTube's three preview stills (at 1/4, 1/2 and 3/4 of the film) */
+/* Seek preview: the time under the finger or mouse (YouTube gives other sites no exact preview frames, so no picture) */
 function fpTip(sk,ratio){const tip=sk.parentElement.querySelector(".fptip");if(!tip||!fp.dur)return;ratio=Math.max(0,Math.min(1,ratio));
-  const f=findFilm(fp.film),n=ratio<.375?1:ratio<.625?2:3,img=tip.querySelector("img"),src=f?.yt?`https://i.ytimg.com/vi/${f.yt}/hq${n}.jpg`:"";
-  if(src&&img.dataset.src!==src){img.dataset.src=src;img.src=src}img.hidden=!src;
   tip.querySelector("b").textContent=fpTime(ratio*fp.dur);tip.hidden=false;
-  const bar=sk.parentElement.getBoundingClientRect(),r=sk.getBoundingClientRect(),half=(img.hidden?30:(img.offsetWidth||160)/2+4);
-  tip.style.left=Math.max(half,Math.min(bar.width-half,r.left-bar.left+ratio*r.width))+"px";fpShow()}
+  const bar=sk.parentElement.getBoundingClientRect(),r=sk.getBoundingClientRect();
+  tip.style.left=Math.max(30,Math.min(bar.width-30,r.left-bar.left+ratio*r.width))+"px";fpShow()}
 const fpTipOff=()=>document.querySelectorAll(".fptip").forEach(t=>t.hidden=true);
 document.addEventListener("pointermove",e=>{const sk=e.target.closest?.(".fpseek");if(!sk){return}const r=sk.getBoundingClientRect();fpTip(sk,(e.clientX-r.left)/r.width)},{passive:true});
 document.addEventListener("pointerout",e=>{if(e.target.matches?.(".fpseek")&&!fp.drag)fpTipOff()});
