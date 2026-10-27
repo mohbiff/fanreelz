@@ -111,6 +111,11 @@ export function classify(title, description = "", channelIsAi = false) {
       return { cat: c.id, char, lore };
     }
   }
+  // Arabic-language AI films and cartoons that name no franchise get their own shelf
+  if (/[\u0600-\u06FF]/.test(title)) {
+    const char = /مصري|مصرية|egypt/i.test(all) ? "Egyptian" : /عراقي|بلعراقي|iraq/i.test(all) ? "Iraqi" : /خليجي|سعودي|اماراتي|إماراتي|كويتي|gulf|saudi|emirat/i.test(all) ? "Gulf" : /سوري|لبناني|شامي|فلسطيني|اردني|أردني/i.test(all) ? "Levant" : /خيال علمي|sci-?fi|robot|روبوت/i.test(all) ? "Sci-fi" : "Gulf";
+    return { cat: "arabic", char, lore: "lore" };
+  }
   // An AI series episode that names no franchise (a dating show, a sitcom, an original drama): AI series.
   if (/\b(episode|ep\.? ?\d|s\d{1,2} ?e\d{1,3}|season \d|part \d|chapter \d|web series|mini.?series)\b/i.test(title)) {
     const char = /love island|dating|reality|bachelor|island/i.test(all) ? "Reality" : /comedy|sitcom|funny|brainrot/i.test(all) ? "Comedy" : "Drama";
