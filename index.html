@@ -135,6 +135,7 @@ main{min-width:0;padding-right:max(16px,env(safe-area-inset-right,0px));padding-
 .adm-card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:2px}
 .adm-card b{font-size:26px;line-height:1.1}.adm-card span{color:var(--muted);font-size:13px}
 .adm-list{display:flex;flex-direction:column;gap:6px}
+.adm-link{font-size:12.5px;color:var(--accent);text-decoration:none;overflow-wrap:anywhere;margin-top:2px}.adm-link:hover{text-decoration:underline}
 .adm-row[data-adminuser]{cursor:pointer}.adm-row[data-adminuser]:hover{border-color:var(--accent)}
 .adm-row{display:flex;align-items:center;gap:12px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 12px;flex-wrap:wrap}
 .adm-row img{width:36px;height:36px;border-radius:50%;object-fit:cover}
@@ -1292,19 +1293,21 @@ function renderAdminUser(u){const uid=u.id,d=x=>x?new Date(+x||x).toLocaleString
   const ratings=Object.entries(ratingsBy[uid]||{}).map(([fid,r])=>({f:findFilm(fid),fid,r})).sort((a,b)=>b.r-a.r);
   const made=Array.isArray(sdMade[uid]?.items)?sdMade[uid].items:[];
   const filmName=id=>{const f=findFilm(id);return f?f.title:String(id).startsWith("live-")?"Live chat":id};
+  const filmLink=id=>{id=String(id||"");const f=findFilm(id);const path=id.startsWith("live-")?"/live/"+encodeURIComponent(id.slice(5)):(f?.format==="short"?"/shorts/":"/film/")+encodeURIComponent(id);
+    return `<a class="adm-link" href="${path}" target="_blank" rel="noopener">fanreelz.com${esc(path)}</a>`};
   $("#main").innerHTML=`<button class="btn ghost" data-adminback="">← All accounts</button>
   <div class="adm-row" style="margin:12px 0 16px">${u.avatar?`<img src="${esc(u.avatar)}" alt="" referrerpolicy="no-referrer">`:cav(u.name||names[uid]||"?",36)}
     <div class="adm-who"><b>${esc(u.name||names[uid]||"(no name)")} ${earlyBadge(uid)}</b><span>${esc(u.email||"")}</span></div>
     <div class="adm-meta"><span class="chip">${esc(u.provider||"–")}</span><span>Joined ${d(u.created)}</span><span>Last sign-in ${d(u.last)}</span><button class="chip" data-user="${esc(uid)}">Public profile</button></div></div>
   <div class="adm-cards">${[[comments.length,"comments"],[votes.length,"showdown votes"],[votes.filter(v=>String(v.x||"").trim()).length,"showdown reasons"],[ratings.length,"ratings"],[made.length,"showdowns started"]].map(([n,l])=>`<div class="adm-card"><b>${n}</b><span>${l}</span></div>`).join("")}</div>
   <h2 class="sect-h" style="font-size:17px">Comments</h2>
-  <div class="adm-list">${comments.map(c=>`<div class="adm-row"><div class="adm-who"><b>${esc(filmName(c.film))}</b><span>${esc(c.text)}</span></div>
+  <div class="adm-list">${comments.map(c=>`<div class="adm-row"><div class="adm-who"><b>${esc(filmName(c.film))}</b><span>${esc(c.text)}</span>${filmLink(c.film)}</div>
     <div class="adm-meta"><span>${d(c.t)}</span>${findFilm(c.film)?`<button class="chip" data-open="${esc(c.film)}">Open film</button>`:""}<button class="chip" data-cmod="${esc(uid)}|${esc(c.id)}">Remove</button></div></div>`).join("")||`<p class="vmeta">No comments.</p>`}</div>
   <h2 class="sect-h" style="font-size:17px;margin-top:18px">Character Showdown votes</h2>
-  <div class="adm-list">${votes.map(v=>`<div class="adm-row"><div class="adm-who"><b>${esc(v.m?`${v.m.a} vs ${v.m.b}`:v.key)} · picks ${esc(v.m?(v.s==="a"?v.m.a:v.m.b):v.s)}</b><span>${v.x?esc(v.x):"<i>no reason written</i>"}</span></div>
+  <div class="adm-list">${votes.map(v=>`<div class="adm-row"><div class="adm-who"><b>${esc(v.m?`${v.m.a} vs ${v.m.b}`:v.key)} · picks ${esc(v.m?(v.s==="a"?v.m.a:v.m.b):v.s)}</b><span>${v.x?esc(v.x):"<i>no reason written</i>"}</span><a class="adm-link" href="/showdown/${encodeURIComponent(v.key)}" target="_blank" rel="noopener">fanreelz.com/showdown/${esc(v.key)}</a></div>
     <div class="adm-meta"><span>${d(v.t)}</span>${v.x?`<button class="chip" data-sdmod="${esc(uid)}|${esc(v.key)}">Remove reason</button>`:""}</div></div>`).join("")||`<p class="vmeta">No votes.</p>`}</div>
   <h2 class="sect-h" style="font-size:17px;margin-top:18px">Ratings</h2>
-  <div class="adm-list">${ratings.map(x=>`<div class="adm-row"><div class="adm-who"><b>${esc(x.f?x.f.title:x.fid)}</b></div><div class="adm-meta"><span>${"★".repeat(Math.round(x.r))}</span></div></div>`).join("")||`<p class="vmeta">No ratings.</p>`}</div>`}
+  <div class="adm-list">${ratings.map(x=>`<div class="adm-row"><div class="adm-who"><b>${esc(x.f?x.f.title:x.fid)}</b>${filmLink(x.fid)}</div><div class="adm-meta"><span>${"★".repeat(Math.round(x.r))}</span></div></div>`).join("")||`<p class="vmeta">No ratings.</p>`}</div>`}
 function renderTop10(){
   const month=new Date().toLocaleString("en-GB",{month:"long",year:"numeric"});
   const pool=allFilms().filter(f=>(f.yt||f.tt||f.ig||f.vm||f.dm)&&!f.age&&f.format!=="short");
