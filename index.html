@@ -1808,7 +1808,7 @@ function startCommunity(db){
   db.doc("data/users/"+acct.uid+"/settings").onSnapshot(d=>{settings=d.exists?{...d.data()}:{};render()},()=>{});
 }
 async function resolveExtraNames(){
-  if(!acct.user)return;const ids=[...new Set([...Object.keys(reqDocs),...Object.keys(claimDocs),...Object.keys(plDocs),...Object.keys(tipDocs),...Object.keys(commentDocs),...Object.keys(followDocs),...Object.keys(ratingsBy),...(state.view==="user"&&state.user?[state.user]:[])])];if(!ids.length)return;
+  if(!acct.user)return;const ids=[...new Set([...Object.keys(reqDocs),...Object.keys(claimDocs),...Object.keys(plDocs),...Object.keys(tipDocs),...Object.keys(commentDocs),...Object.keys(followDocs),...Object.keys(ratingsBy),...Object.keys(sdVotes),...Object.keys(sdMade),...(state.view==="user"&&state.user?[state.user]:[])])];if(!ids.length)return;
   const ps=await acct.user.profiles(ids);let ch=false;for(const id of ids){const n=ps[id]?.name||"",a=ps[id]?.avatar||"";if(names[id]!==n){names[id]=n;ch=true}if(a&&avatars[id]!==a){avatars[id]=a;ch=true}}if(ch)render();
 }
 
