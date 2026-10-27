@@ -1,6 +1,7 @@
 <!doctype html>
 <html lang="en">
 <head>
+<script>document.documentElement.classList.add("js")</script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="description" content="The home of AI fan films. Discover, rate and support the best AI-made films about the games, books, anime and series you love – and get your own films seen.">
@@ -264,6 +265,10 @@ body.wfs .player{position:fixed;inset:0;z-index:9000;width:100vw;height:100vh;he
 @media (max-width:600px){.t10row{grid-template-columns:28px 110px minmax(0,1fr);gap:10px}.t10n{font-size:20px}}
 .sdhot{align-self:flex-start;font-size:11px;font-weight:800;padding:2px 8px;border-radius:10px;background:#d6283c;color:#fff}.fyempty{padding:18px;border-radius:14px;background:var(--card,#1c1a24);margin:6px 0 16px}.fyempty h2{margin:0 0 6px}.fyempty p{margin:0;color:var(--muted)}
 .chip.foryou{font-weight:700}
+/* the server-written page text is for search engines and no-JS visitors; people with JS see the app straight away */
+html.js .ssr{position:absolute;left:-10000px;width:1px;height:1px;overflow:hidden}
+/* on a film page, a swipe down on the video must not reload the page (Chrome's pull-to-refresh) */
+html:has(.player.hasbar),html:has(.player.hasbar) body{overscroll-behavior-y:none}
 .ssr{max-width:900px;padding:20px 0;color:var(--muted)}.ssr h1{color:var(--ink,#fff)}.ssr a{color:var(--accent)}
 .linkbtn{all:unset;cursor:pointer;color:var(--accent);font-weight:700}
 .sdgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px;margin:14px 0}
