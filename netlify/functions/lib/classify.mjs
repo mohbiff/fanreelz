@@ -85,6 +85,7 @@ const ALIASES = {
   monsterhunter: ["monster hunter", "rathalos"],
   wukong: ["black myth", "wukong"],
   tomsawyer: ["tom sawyer", "huckleberry finn", "huck finn", "توم سوير", "توم سوير", "トム・ソーヤー", "トムソーヤ", "톰 소여"],
+  patmat: ["pat and mat", "pat & mat", "pat a mat", "pat und mat", "بات ومات", "بات و مات", "pat i mat"],
   myth: ["mythology", "zeus", "odin", "thor ", "anubis", "olympus", "valhalla", "greek gods", "norse gods"],
   whatif: ["harry potter", "hogwarts", "rick and morty", "simpsons", "star wars", "jedi", "darth", "marvel", "avengers", "batman", "spider-man", "spiderman", "lego", "barbie", "shrek", "toy story", "disney", "pixar"],
 };

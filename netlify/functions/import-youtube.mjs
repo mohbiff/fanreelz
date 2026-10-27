@@ -23,6 +23,7 @@ const TOPICS = [
 ];
 // Topics added later are searched first, once each, before the normal rotation continues
 const NEW_TOPICS = [
+  "Pat and Mat AI", "Pat a Mat AI", "Pat & Mat AI live action", "بات ومات ذكاء اصطناعي",
   "وتين وكنان ذكاء اصطناعي", "قصص اطفال كرتون بالذكاء الاصطناعي", "مسلسل كرتون عربي ai", "حكايات كرتون ذكاء اصطناعي", "كرتون اسلامي بالذكاء الاصطناعي", "كرتون خليجي بالذكاء الاصطناعي",
   "Tom Sawyer AI live action", "Tom Sawyer AI film", "توم سوير بالذكاء الاصطناعي", "مغامرات توم سوير ذكاء اصطناعي", "トム・ソーヤー AI実写",
   "AI full movie", "AI feature film full length", "full AI animated movie", "AI fan film full movie", "فيلم كامل بالذكاء الاصطناعي", "AI movie 30 minutes",
