@@ -939,7 +939,8 @@ function renderWatch(){
   if(f.tt)$(".player").innerHTML=ttFrame(f.tt);
   // Fanreelz share button on top of YouTube's own share icon (top right of the player), so sharing gives a fanreelz.com link
   if(f.yt)setTimeout(()=>{const pl=$(".player");if(!pl||pl.querySelector(".ytbtns"))return;const later=myLater.some(x=>x.id===f.id);
-    pl.insertAdjacentHTML("beforeend",`<div class="ytbtns${ysState===1?" hide":""}"><button class="ytb" data-share="${esc(f.id)}" aria-label="Share this film"><svg class="i" viewBox="0 0 24 24"><circle cx="18" cy="5" r="2.5"/><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="19" r="2.5"/><path d="M8.2 10.8l7.6-4.4M8.2 13.2l7.6 4.4"/></svg>Share</button><button class="ytb${later?" on":""}" data-later="${esc(f.id)}" aria-label="Watch later">${icon("clock")}${later?"Saved":"Watch later"}</button><button class="ytb ytfs" data-ytfs="" aria-label="Full screen"><svg class="i fsin" viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg><svg class="i fsout" viewBox="0 0 24 24"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5"/></svg><span class="fsin">Full screen</span><span class="fsout">Exit</span></button></div>`)},0);
+    if(ysFilm!==f.id){ysFilm=f.id;ysState=-1}
+    pl.insertAdjacentHTML("beforeend",`<div class="ytbtns"><button class="ytb" data-share="${esc(f.id)}" aria-label="Share this film"><svg class="i" viewBox="0 0 24 24"><circle cx="18" cy="5" r="2.5"/><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="19" r="2.5"/><path d="M8.2 10.8l7.6-4.4M8.2 13.2l7.6 4.4"/></svg>Share</button><button class="ytb${later?" on":""}" data-later="${esc(f.id)}" aria-label="Watch later">${icon("clock")}${later?"Saved":"Watch later"}</button><button class="ytb ytfs" data-ytfs="" aria-label="Full screen"><svg class="i fsin" viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg><svg class="i fsout" viewBox="0 0 24 24"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5"/></svg><span class="fsin">Full screen</span><span class="fsout">Exit</span></button></div>`);ytShareShow()},0);
   if(f.ig||f.vm||f.dm||f.tt||f.yt)setTimeout(()=>{const pl=$(".player");if(pl&&pl.querySelector("iframe")&&!$(".pbar"))pl.insertAdjacentHTML("afterend",`<div class="pbar"><button class="btn ghost" data-theater="" aria-pressed="${theater}"><svg class="i" viewBox="0 0 24 24">${theater?'<rect x="5" y="7" width="14" height="10" rx="1.5"/>':'<rect x="2" y="6" width="20" height="12" rx="1.5"/>'}</svg>${theater?"Default view":"Theater mode"}</button></div>`)},0);
   if(f.ig||f.vm||f.dm)$(".player").innerHTML=extFrame(f);
 }
@@ -2166,11 +2167,13 @@ const ytListen=fr=>{if(!fr?.contentWindow||!/^yt-/.test(fr.dataset.fid||""))retu
 document.addEventListener("load",e=>{if(e.target.matches?.(".player iframe, .sp iframe"))ytListen(e.target)},true);
 let endTimer=null;
 /* The Fanreelz Share button on the player hides like YouTube's controls: shown on a tap or a pause, gone 4 s after the film plays on */
-let ysState=-1,ysT=null;
+let ysState=-1,ysT=null,ysFilm=null;
 function ytShareShow(){const b=document.querySelector(".ytbtns");if(!b)return;b.classList.remove("hide");clearTimeout(ysT);
   ysT=setTimeout(()=>{if(ysState===1)document.querySelector(".ytbtns")?.classList.add("hide")},4000)}
 // a tap on the YouTube player moves focus into it: the page notices through "blur", shows the button, and takes focus back so the next tap is noticed too
-addEventListener("blur",()=>setTimeout(()=>{const a=document.activeElement;if(a&&a.matches&&a.matches(".player iframe")){ytShareShow();setTimeout(()=>{try{a.blur();window.focus()}catch(e){}},80)}},0));
+// like YouTube: a tap shows the buttons, a tap while they show hides them again (while the film plays)
+function ytTap(){const b=document.querySelector(".ytbtns");if(!b)return;if(!b.classList.contains("hide")&&ysState===1){clearTimeout(ysT);b.classList.add("hide")}else ytShareShow()}
+addEventListener("blur",()=>setTimeout(()=>{const a=document.activeElement;if(a&&a.matches&&a.matches(".player iframe")){ytTap();setTimeout(()=>{try{a.blur();window.focus()}catch(e){}},80)}},0));
 function hideEnd(){clearInterval(endTimer);endTimer=null;document.querySelector(".endnext")?.remove()}
 const endSeen={}; // films where the viewer chose "Watch the ending": no early Up next again
 function showEnd(pl,early){
@@ -2190,7 +2193,7 @@ addEventListener("message",e=>{
   const fr=[...document.querySelectorAll(".player iframe, .sp iframe")].find(i=>i.contentWindow===e.source);if(!fr)return;
   if(playing&&fr.closest(".player")&&!document.querySelector(".endnext.early"))hideEnd();
   if(fr.closest(".player")){const st=d.event==="onStateChange"?d.info:(d.event==="infoDelivery"&&d.info?d.info.playerState:undefined);
-    if(st!=null&&st!==ysState){ysState=st;ytShareShow()}}
+    if(st!=null&&st!==ysState){ysState=st;if(st===1){clearTimeout(ysT);ysT=setTimeout(()=>{if(ysState===1)document.querySelector(".ytbtns")?.classList.add("hide")},4000)}else if(st===2||st===0)ytShareShow()}}
   // YouTube shows its own end-screen suggestions in the last seconds; Fanreelz shows its Up next there instead
   const inf=d.event==="infoDelivery"&&d.info,pl=fr.closest(".player");
   if(inf&&pl&&state.view==="watch"){if(inf.duration)fr._dur=+inf.duration;
