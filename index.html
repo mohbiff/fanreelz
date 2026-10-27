@@ -158,6 +158,10 @@ main{min-width:0;padding-right:max(16px,env(safe-area-inset-right,0px));padding-
 .player.hasbar:fullscreen iframe,body.wfs .player.hasbar iframe{flex:1;aspect-ratio:auto;min-height:0;height:auto!important}
 .player.ended iframe{visibility:hidden}
 .fpbar.fshide{visibility:hidden}
+.fpscroll{display:none}body.fsmode .fpscroll{display:flex}
+body.fsmode .fpscroll svg{animation:fpbounce 1.4s ease-in-out infinite}
+@keyframes fpbounce{0%,100%{transform:translateY(-2px)}50%{transform:translateY(3px)}}
+@media (prefers-reduced-motion:reduce){body.fsmode .fpscroll svg{animation:none}}
 /* full screen: when the bar hides it folds away, so the film fills the whole screen without black edges; no page scrollbar */
 body.fsmode .fpbar,body.wfs .fpbar{transition:opacity .25s,max-height .25s,padding .25s;max-height:120px;overflow:hidden}
 body.fsmode .fpbar.fshide,body.wfs .fpbar.fshide{max-height:0;padding-top:0;padding-bottom:0;opacity:0}
@@ -2287,7 +2291,7 @@ function fpMount(f){const pl=$(".player");if(!pl||pl.querySelector(".fpbar"))ret
   if(fp.film!==f.id){Object.assign(fp,{film:f.id,st:-1,t:0,dur:/^\d+:\d\d$/.test(f.len||"")?secs(f.len):0,drag:false,cc:false})}
   const later=myLater.some(x=>x.id===f.id);pl.classList.add("hasbar");
   pl.insertAdjacentHTML("beforeend",`<div class="fpbar"><div class="fptip" hidden><b></b></div><input class="fpseek" type="range" min="0" max="1000" value="0" aria-label="Seek">
-    <div class="fprow"><button class="fpb" data-fpplay="" aria-label="Play or pause"></button><span class="fpvolwrap"><button class="fpb" data-fpmute="" aria-label="Mute"></button><input class="fpvol" type="range" min="0" max="100" step="1" value="100" aria-label="Volume"></span><span class="fptime"></span><span class="fpsp"></span>
+    <div class="fprow"><button class="fpb" data-fpplay="" aria-label="Play or pause"></button><span class="fpvolwrap"><button class="fpb" data-fpmute="" aria-label="Mute"></button><input class="fpvol" type="range" min="0" max="100" step="1" value="100" aria-label="Volume"></span><span class="fptime"></span><span class="fpsp"></span><button class="fpb fpscroll" data-fpscroll="" aria-label="Scroll down for details and comments"><svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg><span class="lbl">Comments &amp; more</span></button><span class="fpsp"></span>
     <button class="fpb${fp.cc?" on":""}" data-fpcc="" aria-label="Subtitles">${FPI.cc}</button>
     <button class="fpb" data-share="${esc(f.id)}" aria-label="Share this film">${FPI.share}<span class="lbl">Share</span></button>
     <button class="fpb${later?" on":""}" data-later="${esc(f.id)}" aria-label="Watch later">${FPI.later}<span class="lbl">${later?"Saved":"Watch later"}</span></button>
@@ -2333,6 +2337,7 @@ function fpInfo(d){const i=d.event==="infoDelivery"?d.info:null;
   if(d.event==="onStateChange"||(i&&i.playerState!=null)){if(fp.st!==fp.lastSt){fp.lastSt=fp.st;if(fp.st===2||fp.st===0||fp.st===1)fpShow()}}
   fpPaint()}
 document.addEventListener("click",e=>{const o=e.target.closest(".fpbar");if(!o)return;
+  if(e.target.closest("[data-fpscroll]")){e.preventDefault();const pl=document.querySelector(".player");window.scrollTo({top:pl?pl.getBoundingClientRect().bottom+window.scrollY-8:window.innerHeight,behavior:"smooth"});return}
   if(e.target.closest("[data-fpplay]")){e.preventDefault();fpToggle();return}
   if(e.target.closest("[data-fpmute]")){e.preventDefault();fp.muted=!fp.muted;fpCmd(fp.muted?"mute":"unMute");fpPaint();fpShow();return}
   if(e.target.closest("[data-fpcc]")){e.preventDefault();fp.cc=!fp.cc;fpCmd(fp.cc?"loadModule":"unloadModule",["captions"]);if(fp.cc)fpCmd("setOption",["captions","track",{languageCode:YT_LANG}]);
