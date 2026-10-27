@@ -66,11 +66,14 @@ async function run() {
   const sb = db(), log = [];
   const state = ((await sb.get("import_state?key=eq.youtube&select=value"))[0] || {}).value || { topic: 0 };
 
-  // 1. Discover channels with one search
+  // 1. Discover channels with one search. The importer runs every 10 minutes, but searching costs 100 quota units,
+  //    so it only searches about once an hour; the other runs just read more of the queued channels (1 unit per 50 videos).
+  const doSearch = !state.lastSearch || Date.now() - Date.parse(state.lastSearch) > 55 * 60e3;
   const seen = new Set(state.seen || []);
-  const fresh1 = NEW_TOPICS.find((t) => !seen.has(t));
+  const fresh1 = doSearch ? NEW_TOPICS.find((t) => !seen.has(t)) : null;
   const topic = fresh1 || TOPICS[state.topic % TOPICS.length];
   if (fresh1) seen.add(fresh1);
+  if (doSearch) {
   const found = await yt("search", { part: "snippet", type: "video", q: topic, maxResults: "50", safeSearch: "moderate", videoEmbeddable: "true" });
   const newChannels = {};
   for (const it of found.items || []) {
@@ -86,6 +89,7 @@ async function run() {
     })));
   }
   log.push(`topic "${topic}": ${fresh.length} new channels`);
+  }
 
   // Followed channels count as AI channels from the start
   const missing = SEED_CHANNELS.filter((id) => !known.has(id));
@@ -150,7 +154,7 @@ async function run() {
   }
   // Finished channels are re-checked for new uploads about once a week
   await sb.post("rpc/requeue_done_channels", {}).catch(() => null);
-  await sb.upsert("import_state", [{ key: "youtube", value: { topic: fresh1 ? state.topic : state.topic + 1, seen: [...seen].slice(-300), last: new Date().toISOString(), added } }]);
+  await sb.upsert("import_state", [{ key: "youtube", value: { topic: !doSearch || fresh1 ? state.topic : state.topic + 1, seen: [...seen].slice(-300), lastSearch: doSearch ? new Date().toISOString() : state.lastSearch, last: new Date().toISOString(), added } }]);
   return { added, log };
 }
 

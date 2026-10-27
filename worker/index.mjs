@@ -22,8 +22,8 @@ const ROUTES = {
   "/api/thumb": thumb,
   "/api/tiktok-thumb": thumb,
 };
-// Schedules (see wrangler.jsonc): the importer every hour at :17, the showdown judge every hour at :41
-const CRONS = { "17 * * * *": importYoutube, "41 * * * *": showdown };
+// Schedules (see wrangler.jsonc): the importer every 10 minutes (it searches YouTube about once an hour), the showdown judge every hour at :41
+const CRONS = { "*/10 * * * *": importYoutube, "41 * * * *": showdown };
 
 const useEnv = (env) => { globalThis.Netlify = { env: { get: (k) => (env[k] == null ? undefined : String(env[k])) } }; };
 
