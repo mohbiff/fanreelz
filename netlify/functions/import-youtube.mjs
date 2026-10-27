@@ -213,3 +213,36 @@ export async function searchNow(q) {
   return { q, added: keep.length, films: keep.map((k) => ({ id: k.id, title: k.title, cat: k.cat })) };
 }
 
+
+// Admin "add by link": paste YouTube links and they go straight into the catalogue (no AI-in-the-title check: the admin chose them).
+// The channel is followed too, so its other episodes and films come in with the hourly importer. About 2 quota units.
+export async function addByLinks(text) {
+  const ids = [...new Set([...String(text || "").matchAll(/(?:youtu\.be\/|v=|shorts\/|embed\/|live\/)([\w-]{11})/g)].map((m) => m[1]))].slice(0, 50);
+  if (!ids.length) return { error: "No YouTube links found" };
+  const sb = db();
+  const det = await yt("videos", { part: "snippet,contentDetails,status,statistics", id: ids.join(",") });
+  const keep = [], chans = {};
+  for (const d of det.items || []) {
+    if (!d.status?.embeddable || d.status?.privacyStatus !== "public") continue;
+    const sn = d.snippet, secs = iso(d.contentDetails.duration);
+    const c = classify(sn.title, sn.description || "", true) || { cat: "original", char: "Drama", lore: "lore" };
+    keep.push({
+      id: "yt-" + d.id, platform: "YouTube", video_id: d.id, title: sn.title.slice(0, 200), channel: sn.channelTitle, channel_id: sn.channelId,
+      cat: c.cat, char: c.char, lore: c.lore, format: secs <= 75 ? "short" : "film", duration: secs,
+      views: +(d.statistics?.viewCount || 0), published_at: sn.publishedAt, age_restricted: d.contentDetails?.contentRating?.ytRating === "ytAgeRestricted",
+    });
+    chans[sn.channelId] = true;
+  }
+  if (keep.length) await sb.upsert("catalog", keep.map((k) => ({ ...k, hidden: false })));
+  const cids = Object.keys(chans);
+  if (cids.length) {
+    const known = new Set((await sb.get(`catalog_channels?select=channel_id&channel_id=in.(${cids.join(",")})`)).map((c) => c.channel_id));
+    const fresh = cids.filter((id) => !known.has(id));
+    if (fresh.length) {
+      const info = await yt("channels", { part: "contentDetails,snippet", id: fresh.join(",") }).catch(() => ({ items: [] }));
+      await sb.upsert("catalog_channels", (info.items || []).map((c) => ({ channel_id: c.id, title: c.snippet.title, uploads: c.contentDetails.relatedPlaylists.uploads, status: "reading", next_page: null })));
+    }
+  }
+  const skipped = ids.length - keep.length;
+  return { added: keep.length, skipped, films: keep.map((k) => ({ id: k.id, title: k.title, cat: k.cat })) };
+}

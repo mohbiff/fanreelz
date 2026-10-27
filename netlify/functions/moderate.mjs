@@ -2,7 +2,7 @@
 // POST /api/moderate with the signed-in user's token. Body {action:"check"} answers whether this user is an admin;
 // {action:"remove", owner:"<user id>", id:"<comment id>"} removes that comment and its replies; {action:"hide", id:"yt-…"} hides a film.
 // Needs: ADMIN_EMAILS (comma-separated sign-in emails of the admins), SUPABASE_URL, SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY (secret).
-import importYoutube, { searchNow } from "./import-youtube.mjs";
+import importYoutube, { searchNow, addByLinks } from "./import-youtube.mjs";
 import showdown from "./showdown.mjs";
 const json = (o, status = 200) => new Response(JSON.stringify(o), { status, headers: { "Content-Type": "application/json", "Cache-Control": "no-store" } });
 
@@ -25,6 +25,7 @@ export default async (req) => {
   if (body.action === "check") return json({ admin });
   if (!admin) return json({ error: "not allowed" }, 403);
   if (body.action === "search") return json(await searchNow(body.q).catch((e) => ({ error: String(e.message || e) })));
+  if (body.action === "addurl") return json(await addByLinks(body.q).catch((e) => ({ error: String(e.message || e) })));
   if (body.action === "run") {
     const job = { "import-youtube": importYoutube, showdown }[body.job];
     if (!job) return json({ error: "unknown job" }, 400);

@@ -1333,7 +1333,7 @@ document.addEventListener("click",e=>{let x;
     document.querySelectorAll("[data-sdpick]").forEach(b=>{const on=b.dataset.sdpick===sdPicked;b.classList.toggle("ghost",!on);b.textContent=on?"✓ Picked":"I think "+first(b.dataset.sdpick==="a"?m.a:m.b)+" wins"});
     const n=$("#sdPickNote");if(n)n.textContent="You pick "+(sdPicked==="a"?m.a:m.b)+". Add why, then press Vote.";$("#sdText")?.focus();return}
 });
-document.addEventListener("submit",e=>{if(e.target.id!=="adminForm")return;e.preventDefault();const q=e.target.q.value.trim();if(q)adminDo({action:"search",q},"Searching YouTube for “"+esc(q)+"”")});
+document.addEventListener("submit",e=>{if(e.target.id!=="adminForm")return;e.preventDefault();const q=e.target.q.value.trim();if(!q)return;if(/youtu\.?be/i.test(q))adminDo({action:"addurl",q},"Adding the linked videos");else adminDo({action:"search",q},"Searching YouTube for “"+esc(q)+"”")});
 document.addEventListener("submit",e=>{if(e.target.id!=="sdForm")return;e.preventDefault();
   const m=sdList().find(s=>s.key===state.sd);if(!m)return;
   const side=sdPicked||sdTally(m.key).mine?.s;if(!side){toast("Pick a side first");return}
@@ -2071,11 +2071,12 @@ async function postComment(parent,text){
 var isMod=false,adminMsg="",adminBusy=false,adminQ=null;
 document.addEventListener("input",e=>{if(e.target.closest&&e.target.closest("#adminForm"))adminQ=e.target.value});
 /* Admin bar (only for ADMIN_EMAILS): search YouTube now and add the AI films it finds, or start the hourly jobs by hand */
-function adminBox(q){if(adminQ!=null)q=adminQ;return `<form class="adminbox" id="adminForm"><b>${icon("shield")} Admin</b><input name="q" value="${esc(q)}" placeholder="Search YouTube, e.g. AI rocket league movie" aria-label="Search YouTube for AI films" maxlength="80">
-  <button class="btn" type="submit"${adminBusy?" disabled":""}>${adminBusy?"Working…":"Find AI films now"}</button><button class="btn ghost" type="button" data-adminrun="import-youtube"${adminBusy?" disabled":""}>Run importer</button><button class="btn ghost" type="button" data-adminrun="showdown"${adminBusy?" disabled":""}>Run showdown judge</button>${adminMsg?`<p class="vmeta">${adminMsg}</p>`:""}</form>`}
+function adminBox(q){if(adminQ!=null)q=adminQ;return `<form class="adminbox" id="adminForm"><b>${icon("shield")} Admin</b><input name="q" value="${esc(q)}" placeholder="Search YouTube, or paste YouTube links to add them" aria-label="Search YouTube for AI films" maxlength="80">
+  <button class="btn" type="submit"${adminBusy?" disabled":""}>${adminBusy?"Working…":"Find / add"}</button><button class="btn ghost" type="button" data-adminrun="import-youtube"${adminBusy?" disabled":""}>Run importer</button><button class="btn ghost" type="button" data-adminrun="showdown"${adminBusy?" disabled":""}>Run showdown judge</button>${adminMsg?`<p class="vmeta">${adminMsg}</p>`:""}</form>`}
 async function adminDo(body,label){if(adminBusy)return;adminBusy=true;adminMsg=label+"…";render();
   try{const r=await modCall(body);
     if(r.error)adminMsg="Error: "+esc(r.error);
+    else if(body.action==="addurl")adminMsg=r.added?`Added ${r.added}: ${r.films.map(f=>esc(f.title)+" <small>("+esc(catName(f.cat))+")</small>").join(", ")}${r.skipped?` · ${r.skipped} couldn't be added (private or not embeddable)`:""}`:"None could be added: the videos are private or don't allow playing on other sites.";
     else if(body.action==="search")adminMsg=r.added?`Added ${r.added} film${r.added>1?"s":""}: ${r.films.slice(0,6).map(f=>esc(f.title)+" <small>("+esc(catName(f.cat))+")</small>").join(", ")}${r.added>6?"…":""}`:"No new AI fan films found for that search. Try other words.";
     else adminMsg=r.log?`Done: ${r.added??0} added. `+esc((r.log||[]).join(" · ")).slice(0,400):"Done: "+esc(JSON.stringify(r)).slice(0,400);
     await loadCatalog().catch(()=>{})}
