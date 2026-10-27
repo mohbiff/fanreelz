@@ -23,6 +23,7 @@ const TOPICS = [
 ];
 // Topics added later are searched first, once each, before the normal rotation continues
 const NEW_TOPICS = [
+  "عدنان ولينا بالذكاء الاصطناعي", "عدنان ولينا واقعي", "future boy conan AI live action", "mirai shonen conan AI",
   "AI red dead redemption movie", "red dead redemption 1980s film AI", "AI the last of us movie", "AI god of war movie", "god of war live action AI", "AI metal gear solid movie", "AI mass effect movie", "AI uncharted movie", "AI final fantasy movie", "final fantasy 1980s film AI", "AI half-life movie", "AI portal movie glados", "AI silent hill film", "AI resident evil movie", "AI ghost of tsushima movie", "AI persona 5 live action", "AI super mario live action", "super mario 1980s film AI", "AI monkey island movie", "AI castlevania movie", "AI detroit become human film", "AI bioshock movie", "AI assassin's creed movie", "AI dragon age movie", "AI max payne movie", "AI kingdom hearts movie", "AI deus ex movie", "AI horizon zero dawn movie", "AI call of duty movie", "AI metroid movie samus", "AI yakuza kiryu movie", "AI shadow of the colossus film", "AI diablo 2 movie", "AI starcraft cinematic remake", "AI skyrim 1980s film", "AI bloodborne movie", "AI baldur's gate movie", "AI star wars knights of the old republic movie", "AI batman arkham movie", "AI zelda ocarina of time live action",
 ];
 TOPICS.push(...NEW_TOPICS);

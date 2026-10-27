@@ -605,7 +605,8 @@ const GROUPS=[
   {id:"naruto",name:"Naruto",chars:["Naruto","Itachi","Kakashi","Madara"]},
   {id:"dragonball",name:"Dragon Ball",chars:["Goku","Vegeta"]},
   {id:"berserk",name:"Berserk",chars:["Guts","Griffith"]},
-  {id:"frieren",name:"Frieren",chars:["Frieren","Fern","Himmel"]}]},
+  {id:"frieren",name:"Frieren",chars:["Frieren","Fern","Himmel"]},
+  {id:"conan",name:"Future Boy Conan (Adnan & Lina)",chars:["Lana","Jimsy","Industria","Conan"]}]},
  {name:"Kids & teens",cats:[
   {id:"minecraft",name:"Minecraft",chars:["Steve","Alex","Herobrine","Creeper","Ender Dragon"]},
   {id:"roblox",name:"Roblox",chars:["Noob","Bacon Hair","Obby","Doors"]},
@@ -1064,7 +1065,7 @@ function tickTV(){if(!tvNow)return;const el=Date.now()-tvNow.startedAt;if(el>=tv
   const b=$("#tvbar"),t=$("#tvtime");if(b)b.style.width=(el/tvNow.dur/10).toFixed(2)+"%";if(t)t.textContent=hms(el)+" / "+hms(tvNow.dur*1000)}
 /* ================= Community features ================= */
 const hnum=s=>{let h=7;for(const c of String(s))h=(h*31+c.charCodeAt(0))>>>0;return h};
-const KIDS_CATS=new Set(["roblox","minecraft","pokemon","fortnite","rocketleague","mario","kingdomhearts","metroid","aiseries","whatif","brainrot","onepiece","frieren","hearthstone","myth"]);
+const KIDS_CATS=new Set(["roblox","minecraft","pokemon","fortnite","rocketleague","mario","kingdomhearts","metroid","aiseries","whatif","brainrot","onepiece","frieren","conan","hearthstone","myth"]);
 const isKids=f=>KIDS_CATS.has(f.cat)&&!/horror|herobrine|seed 40|night|scarlet|eclipse|butcher|anubis/i.test(f.title+" "+f.char);
 const loreOf=f=>f.lore?f.lore:(f.cat==="whatif"||/what if|reimagined|1950s|live action|anime|ballad|music|vs /i.test(f.title))?"whatif":(hnum(f.id)%3?"lore":"whatif");
 const isVerified=f=>!f.real&&!f.yt&&!f.tt&&!f.ig&&!f.vm&&!f.dm&&!f.byId&&hnum(f.title)%3===0;

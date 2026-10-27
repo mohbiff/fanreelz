@@ -3,9 +3,9 @@
 import CATS from "./catmap.mjs";
 
 // Words that show a video is AI-made.
-export const AI_RE = /(\bai\b|\ba\.i\.|artificial intelligence|\bsora\b|\bveo ?[23]?\b|\bkling\b|\brunway\b|midjourney|hailuo|minimax|\bpika\b|seedance|\bluma\b|\bwan ?2|higgsfield|super panavision|panavision 70|80'?s dark fantasy|1980'?s dark fantasy|1950'?s|ai[- ]generated|aigenerated)/i;
+export const AI_RE = /(\bai\b|\ba\.i\.|artificial intelligence|\bsora\b|\bveo ?[23]?\b|\bkling\b|\brunway\b|midjourney|hailuo|minimax|\bpika\b|seedance|\bluma\b|\bwan ?2|higgsfield|super panavision|panavision 70|80'?s dark fantasy|1980'?s dark fantasy|1950'?s|ai[- ]generated|aigenerated|ذكاء اصطناعي|الذكاء الاصطناعي|بالذكاء)/i;
 // Words that show it is a film, trailer, story or series rather than a tutorial or news.
-export const FILM_RE = /(film|movie|cinema|cinematic|trailer|teaser|short|story|episode|\bep\.? ?\d|series|live[- ]action|in real life|reimagined|re-imagined|as an? \d0'?s|panavision|dark fantasy|parody|saga|chapter|part \d|music video)/i;
+export const FILM_RE = /(فيلم|مسلسل|حلقة|واقعي|كرتون|film|movie|cinema|cinematic|trailer|teaser|short|story|episode|\bep\.? ?\d|series|live[- ]action|in real life|reimagined|re-imagined|as an? \d0'?s|panavision|dark fantasy|parody|saga|chapter|part \d|music video)/i;
 // Things that are not fan films.
 export const BLOCK_RE = /(tutorial|how to|how i made|prompt(s)? (guide|tips)|course|explained|react(s|ing|ion|ions)?\b|review|news|podcast|livestream|\blive stream\b|stream highlights|top \d+|ranking|tier list|unboxing|speedrun|gameplay|walkthrough|\b[1-4]v[1-4]\b|ranked|outplayed|road to (gc|ssl|grand champ)|patch notes|nsfw|18\+|onlyfans|hentai|gore|sexy|bikini|\bhot\b|deepfake|starring [A-Z][a-z]+ [A-Z])/i;
 
@@ -55,6 +55,7 @@ const ALIASES = {
   metroid: ["metroid", "samus"],
   yakuza: ["kazuma kiryu", "yakuza 0", "yakuza: like a dragon", "majima"],
   colossus: ["shadow of the colossus"],
+  conan: ["future boy conan", "mirai shonen conan", "mirai shōnen conan", "未来少年コナン", "عدنان ولينا", "عدنان و لينا", "adnan and lina", "adnan & lina"],
   myth: ["mythology", "zeus", "odin", "thor ", "anubis", "olympus", "valhalla", "greek gods", "norse gods"],
   whatif: ["harry potter", "hogwarts", "rick and morty", "simpsons", "star wars", "jedi", "darth", "marvel", "avengers", "batman", "spider-man", "spiderman", "lego", "barbie", "shrek", "toy story", "disney", "pixar"],
 };
