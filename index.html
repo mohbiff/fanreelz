@@ -136,9 +136,10 @@ main{min-width:0;padding-right:max(16px,env(safe-area-inset-right,0px));padding-
 /* watch view */
 @media (max-width:860px){[data-theater]{display:none!important}}
 @media (min-width:861px){.wfsbtn{display:none!important}}
-.ytshare{position:absolute;top:0;right:0;z-index:4;margin:8px;height:44px;min-width:118px;padding:0 14px;box-sizing:border-box;border-radius:22px;border:0;background:rgba(15,12,22,.94);color:#fff;font:700 14px/1 inherit;display:flex;align-items:center;justify-content:center;gap:6px;cursor:pointer;box-shadow:0 2px 10px rgba(0,0,0,.35)}.ytshare .i{width:18px;height:18px}.ytshare:hover{background:var(--accent);color:var(--ink-on-accent,#000)}
+.ytshare{position:absolute;bottom:0;left:0;z-index:4;margin:8px;transition:opacity .3s;height:44px;min-width:118px;padding:0 14px;box-sizing:border-box;border-radius:22px;border:0;background:rgba(15,12,22,.94);color:#fff;font:700 14px/1 inherit;display:flex;align-items:center;justify-content:center;gap:6px;cursor:pointer;box-shadow:0 2px 10px rgba(0,0,0,.35)}.ytshare .i{width:18px;height:18px}.ytshare:hover{background:var(--accent);color:var(--ink-on-accent,#000)}
 @media (max-width:860px){.ytshare{min-width:0;height:40px;margin:6px;padding:0 12px;font-size:13px}}
-body.wfs .ytshare{position:fixed;top:env(safe-area-inset-top);right:env(safe-area-inset-right);z-index:9001;background:var(--accent);color:var(--ink-on-accent,#000)}
+.ytshare.hide{opacity:0;pointer-events:none}
+body.wfs .ytshare{position:fixed;bottom:env(safe-area-inset-bottom);left:env(safe-area-inset-left);z-index:9001;background:var(--accent);color:var(--ink-on-accent,#000)}
 .theater{background:#000;margin:0 -24px;padding:12px 24px 4px}.theater .player{width:min(100%,calc((100vh - 170px)*16/9));margin:0 auto;border-radius:0}
 .theater .pbar,.theater .ythelp{max-width:min(100%,calc((100vh - 170px)*16/9));margin-left:auto;margin-right:auto}
 .watch{display:grid;grid-template-columns:minmax(0,1fr) 402px;gap:24px;padding-top:16px;max-width:1700px}
@@ -2163,6 +2164,12 @@ document.addEventListener("load",e=>{if(e.target.matches?.(".sp iframe")){spWake
 const ytListen=fr=>{if(!fr?.contentWindow||!/^yt-/.test(fr.dataset.fid||""))return;[0,600,1500,3500].forEach(t=>setTimeout(()=>{try{fr.contentWindow.postMessage(JSON.stringify({event:"listening",id:fr.dataset.fid,channel:"widget"}),"*")}catch(e){}},t))};
 document.addEventListener("load",e=>{if(e.target.matches?.(".player iframe, .sp iframe"))ytListen(e.target)},true);
 let endTimer=null;
+/* The Fanreelz Share button on the player hides like YouTube's controls: shown on a tap or a pause, gone 3 s after the film plays on */
+let ysState=-1,ysT=null;
+function ytShareShow(){const b=document.querySelector(".ytshare");if(!b)return;b.classList.remove("hide");clearTimeout(ysT);
+  ysT=setTimeout(()=>{if(ysState===1)document.querySelector(".ytshare")?.classList.add("hide")},3000)}
+// a tap on the YouTube player moves focus into it: the page notices through "blur", shows the button, and takes focus back so the next tap is noticed too
+addEventListener("blur",()=>setTimeout(()=>{const a=document.activeElement;if(a&&a.matches&&a.matches(".player iframe")){ytShareShow();setTimeout(()=>{try{a.blur();window.focus()}catch(e){}},80)}},0));
 function hideEnd(){clearInterval(endTimer);endTimer=null;document.querySelector(".endnext")?.remove()}
 const endSeen={}; // films where the viewer chose "Watch the ending": no early Up next again
 function showEnd(pl,early){
@@ -2181,6 +2188,8 @@ addEventListener("message",e=>{
   const playing=(d.event==="onStateChange"&&d.info===1)||(d.event==="infoDelivery"&&d.info&&d.info.playerState===1);
   const fr=[...document.querySelectorAll(".player iframe, .sp iframe")].find(i=>i.contentWindow===e.source);if(!fr)return;
   if(playing&&fr.closest(".player")&&!document.querySelector(".endnext.early"))hideEnd();
+  if(fr.closest(".player")){const st=d.event==="onStateChange"?d.info:(d.event==="infoDelivery"&&d.info?d.info.playerState:undefined);
+    if(st!=null&&st!==ysState){ysState=st;ytShareShow()}}
   // YouTube shows its own end-screen suggestions in the last seconds; Fanreelz shows its Up next there instead
   const inf=d.event==="infoDelivery"&&d.info,pl=fr.closest(".player");
   if(inf&&pl&&state.view==="watch"){if(inf.duration)fr._dur=+inf.duration;
