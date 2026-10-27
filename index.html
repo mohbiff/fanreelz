@@ -139,17 +139,17 @@ main{min-width:0;padding-right:max(16px,env(safe-area-inset-right,0px));padding-
 /* Fanreelz's own controls on YouTube films: YouTube's controls are switched off, so its share, watch-later and logo can't show through */
 .fp{position:absolute;inset:0;z-index:4;user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent}
 .fptap{position:absolute;inset:0;cursor:pointer}
-.fpbig{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:68px;height:68px;border-radius:50%;border:0;background:rgba(0,0,0,.55);color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:opacity .25s}
+.fpbig{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:68px;height:68px;border-radius:50%;border:0;background:rgba(18,14,26,.45);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:opacity .25s}
 .fpbig svg{width:30px;height:30px;fill:#fff}
-.fpbar{position:absolute;left:0;right:0;bottom:0;padding:8px 10px;background:#ffd23f;transition:opacity .25s}
+.fpbar{position:absolute;left:0;right:0;bottom:0;padding:8px 10px;background:rgba(18,14,26,.45);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);transition:opacity .25s}
 .fp.hide .fpbar,.fp.hide .fpbig{opacity:0;pointer-events:none}
 .fp.hide .fptap{cursor:none}
 .fp.idle .fptap,.fp.idle .fpbig{display:none}
-.fpseek{width:100%;margin:0 0 6px;height:20px;accent-color:#1a1405;cursor:pointer;display:block}
-.fprow{display:flex;align-items:center;gap:6px;color:#1a1405;min-width:0}
+.fpseek{width:100%;margin:0 0 6px;height:20px;accent-color:#f2c94c;cursor:pointer;display:block;opacity:.9}
+.fprow{display:flex;align-items:center;gap:6px;color:rgba(255,255,255,.92);min-width:0}
 .fprow .fpsp{flex:1}
-.fpb{height:38px;min-width:38px;padding:0 10px;border:0;border-radius:19px;background:transparent;color:#1a1405;font:700 13px/1 inherit;display:flex;align-items:center;gap:6px;cursor:pointer;white-space:nowrap}
-.fpb:hover{background:rgba(0,0,0,.12)}.fpb.on{color:#1a1405;background:rgba(0,0,0,.16)}
+.fpb{height:38px;min-width:38px;padding:0 10px;border:0;border-radius:19px;background:transparent;color:rgba(255,255,255,.92);font:600 13px/1 inherit;display:flex;align-items:center;gap:6px;cursor:pointer;white-space:nowrap}
+.fpb:hover{background:rgba(255,255,255,.12)}.fpb.on{color:#f2c94c;background:rgba(255,255,255,.08)}
 .fpb svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}.fpb svg.fill{fill:currentColor;stroke:none}
 .fptime{font:600 13px/1 inherit;font-variant-numeric:tabular-nums;opacity:.9;padding:0 4px}
 .fpb .lbl{display:inline}
