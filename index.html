@@ -2128,12 +2128,13 @@ const ytListen=fr=>{if(!fr?.contentWindow||!/^yt-/.test(fr.dataset.fid||""))retu
 document.addEventListener("load",e=>{if(e.target.matches?.(".player iframe, .sp iframe"))ytListen(e.target)},true);
 let endTimer=null;
 function hideEnd(){clearInterval(endTimer);endTimer=null;document.querySelector(".endnext")?.remove()}
-function showEnd(pl){
+const endSeen={}; // films where the viewer chose "Watch the ending": no early Up next again
+function showEnd(pl,early){
   const f=findFilm(state.film);if(!f||!pl||pl.querySelector(".endnext"))return;
   const next=nextFor(f).filter(x=>x.yt||x.tt||x.ig||x.vm||x.dm).slice(0,4);if(!next.length)return;
   pl.insertAdjacentHTML("beforeend",`<div class="endnext"><div class="endtop"><b>Up next on Fanreelz</b><span id="endCount"></span></div>
     <div class="endgrid">${next.map((x,i)=>`<button class="endcard" data-open="${esc(x.id)}"><div class="thumb"><canvas data-f="${esc(x.id)}"></canvas></div><span>${i===0?"<em>Next</em> ":""}${esc(x.title)}</span></button>`).join("")}</div>
-    <div class="row"><button class="btn ghost" data-endreplay="">↻ Watch again</button><button class="btn ghost" data-endstay="">Stay here</button></div></div>`);
+    <div class="row">${early?`<button class="btn" data-endfinish="">▶ Watch the ending</button>`:""}<button class="btn ghost" data-endreplay="">↻ Watch again</button><button class="btn ghost" data-endstay="">Stay here</button></div></div>`);
   paintAll(pl);let n=8;const tick=()=>{const c=$("#endCount");if(!c){clearInterval(endTimer);return}c.textContent=`Playing next in ${n}s`;if(n--<=0){hideEnd();go({view:"watch",film:next[0].id})}};
   tick();endTimer=setInterval(tick,1000);
 }
@@ -2143,14 +2144,22 @@ addEventListener("message",e=>{
   const ended=(d.event==="onStateChange"&&d.info===0)||(d.event==="infoDelivery"&&d.info&&d.info.playerState===0);
   const playing=(d.event==="onStateChange"&&d.info===1)||(d.event==="infoDelivery"&&d.info&&d.info.playerState===1);
   const fr=[...document.querySelectorAll(".player iframe, .sp iframe")].find(i=>i.contentWindow===e.source);if(!fr)return;
-  if(playing&&fr.closest(".player"))hideEnd();
+  if(playing&&fr.closest(".player")&&!document.querySelector(".endnext.early"))hideEnd();
+  // YouTube shows its own end-screen suggestions in the last seconds; Fanreelz shows its Up next there instead
+  const inf=d.event==="infoDelivery"&&d.info,pl=fr.closest(".player");
+  if(inf&&pl&&state.view==="watch"){if(inf.duration)fr._dur=+inf.duration;
+    if(inf.currentTime!=null&&fr._dur>40&&fr._dur-inf.currentTime<=20&&!endSeen[state.film]&&!pl.querySelector(".endnext")){
+      try{fr.contentWindow.postMessage(JSON.stringify({event:"command",func:"pauseVideo",args:[]}),"*")}catch(x){}
+      showEnd(pl,true);pl.querySelector(".endnext")?.classList.add("early")}}
   if(!ended)return;
   if(fr.closest(".sp")){if(state.view==="shorts"&&!spPaused)stepShort(1);return}
   if(state.view==="watch")showEnd(fr.closest(".player"));
 });
 document.addEventListener("click",e=>{
   if(e.target.closest("[data-endstay]")){e.preventDefault();clearInterval(endTimer);const c=$("#endCount");if(c)c.textContent="";return}
-  if(e.target.closest("[data-endreplay]")){e.preventDefault();hideEnd();const fr=document.querySelector(".player iframe");
+  if(e.target.closest("[data-endfinish]")){e.preventDefault();endSeen[state.film]=true;hideEnd();const fr=document.querySelector(".player iframe");
+    try{fr.contentWindow.postMessage(JSON.stringify({event:"command",func:"playVideo",args:[]}),"*")}catch(x){}return}
+  if(e.target.closest("[data-endreplay]")){e.preventDefault();delete endSeen[state.film];hideEnd();const fr=document.querySelector(".player iframe");
     try{fr.contentWindow.postMessage(JSON.stringify({event:"command",func:"seekTo",args:[0,true]}),"*");fr.contentWindow.postMessage(JSON.stringify({event:"command",func:"playVideo",args:[]}),"*")}catch(x){}return}
   if(e.target.closest(".endnext [data-open]"))hideEnd();
 },true);
@@ -2173,7 +2182,7 @@ const vFrame=(src,title)=>`<iframe src="${src}" title="${title}" allow="autoplay
 const wFrame=(src,title)=>`<iframe src="${src}" title="${title}" allow="autoplay; fullscreen; encrypted-media; picture-in-picture" allowfullscreen style="position:absolute;inset:0;width:100%;height:100%;border:0"></iframe>`;
 const extFrame=f=>f.ig?vFrame(`https://www.instagram.com/reel/${f.ig}/embed/`,"Instagram video player"):f.vm?wFrame(`https://player.vimeo.com/video/${f.vm}?dnt=1&autoplay=1`,"Vimeo video player"):f.dm?wFrame(`https://geo.dailymotion.com/player.html?video=${f.dm}&autoplay=1`,"Dailymotion video player"):"";
 const ttFrame=id=>`<iframe data-fid="tt-${id}" src="https://www.tiktok.com/player/v1/${id}?music_info=1&description=1&rel=0&autoplay=1" title="TikTok video player" allow="autoplay; fullscreen; encrypted-media; picture-in-picture" allowfullscreen style="position:absolute;top:0;bottom:0;left:50%;transform:translateX(-50%);height:100%;aspect-ratio:9/16;max-width:100%;border:0;background:#000"></iframe>`;
-const ytFrame=id=>`<iframe data-fid="yt-${id}" src="https://www.youtube.com/embed/${id}?rel=0&autoplay=1&playsinline=1&enablejsapi=1&origin=${encodeURIComponent(location.origin)}" title="YouTube video player" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen style="position:absolute;inset:0;width:100%;height:100%;border:0"></iframe>`;
+const ytFrame=id=>`<iframe data-fid="yt-${id}" src="https://www.youtube.com/embed/${id}?rel=0&iv_load_policy=3&autoplay=1&playsinline=1&enablejsapi=1&origin=${encodeURIComponent(location.origin)}" title="YouTube video player" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen style="position:absolute;inset:0;width:100%;height:100%;border:0"></iframe>`;
 let ticker=null;
 let renderHard=false;
 /* The browser tab and Google's rendered copy get a title for each page */
