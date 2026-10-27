@@ -158,6 +158,10 @@ main{min-width:0;padding-right:max(16px,env(safe-area-inset-right,0px));padding-
 .player.hasbar:fullscreen iframe,body.wfs .player.hasbar iframe{flex:1;aspect-ratio:auto;min-height:0;height:auto!important}
 .player.ended iframe{visibility:hidden}
 .fpbar.fshide{visibility:hidden}
+/* full screen: when the bar hides it folds away, so the film fills the whole screen without black edges; no page scrollbar */
+body.fsmode .fpbar,body.wfs .fpbar{transition:opacity .25s,max-height .25s,padding .25s;max-height:120px;overflow:hidden}
+body.fsmode .fpbar.fshide,body.wfs .fpbar.fshide{max-height:0;padding-top:0;padding-bottom:0;opacity:0}
+html.fsmode{scrollbar-width:none}html.fsmode::-webkit-scrollbar,body.fsmode::-webkit-scrollbar{display:none}
 body.fsmode #betabar,body.fsmode header.top,body.fsmode #guide,body.fsmode .tabbar,body.fsmode .pbar{display:none!important}
 body.fsmode .shell{display:block}body.fsmode main{padding:0 0 40px}
 body.fsmode .theater{margin:0;padding:0}body.fsmode .watch{display:block;padding-top:0;max-width:none}
@@ -169,7 +173,7 @@ body.fsmode .watch>div>:not(.player):nth-child(2){margin-top:18px}
 .fpvol{width:0;opacity:0;margin:0;transition:width .2s,opacity .2s;accent-color:#f2c94c;cursor:pointer;height:18px}
 .fpvolwrap:hover .fpvol,.fpvol:focus-visible{width:84px;opacity:1;margin:0 6px 0 2px}
 @media (pointer:coarse){.fpvol{display:none}}
-.fpbar{transition:opacity .25s}@media (pointer:fine){.fpbar.fshide{visibility:visible;opacity:0;cursor:none}}
+@media (pointer:fine){.fpbar.fshide{visibility:visible;opacity:0;cursor:none}body.fsmode .fpbar.fshide{max-height:10px;background:#000;backdrop-filter:none}}
 .player.hasbar:-webkit-full-screen{display:flex;flex-direction:column;justify-content:center;background:#000;width:100vw;height:100vh}
 .fpseek{width:100%;margin:0 0 6px;height:20px;accent-color:#f2c94c;cursor:pointer;display:block;opacity:.9}
 .fprow{display:flex;align-items:center;gap:6px;color:rgba(255,255,255,.92);min-width:0}
@@ -2300,7 +2304,7 @@ function fpFull(){const pl=$(".player");if(!pl)return;
   const de=document.documentElement,req=de.requestFullscreen||de.webkitRequestFullscreen;
   if(req){Promise.resolve(req.call(de,{navigationUI:"hide"})).then(()=>{if(!matchMedia("(pointer:fine)").matches)screen.orientation?.lock?.("landscape").catch(()=>{})}).catch(()=>{openWfs();fpPaint();fpShow()})}
   else{openWfs();fpPaint();fpShow()}}
-function fpFsChange(){const on=!!(document.fullscreenElement||document.webkitFullscreenElement)&&state.view==="watch";document.body.classList.toggle("fsmode",on);
+function fpFsChange(){const on=!!(document.fullscreenElement||document.webkitFullscreenElement)&&state.view==="watch";document.body.classList.toggle("fsmode",on);document.documentElement.classList.toggle("fsmode",on);
   if(on)window.scrollTo({top:0});else{try{screen.orientation?.unlock?.()}catch(e){}document.querySelector(".fpbar")?.classList.remove("fshide")}fpPaint();if(on)fpShow()}
 document.addEventListener("fullscreenchange",fpFsChange);document.addEventListener("webkitfullscreenchange",fpFsChange);
 function fpPaint(){const o=document.querySelector(".fpbar");if(!o)return;const playing=fp.st===1||fp.st===3;
