@@ -23,17 +23,44 @@ const ALIASES = {
   lotr: ["lord of the rings", "middle-earth", "middle earth", "hobbit", "gandalf", "frodo", "sauron", "mordor", "fellowship of the ring", "rings of power"],
   dune: ["dune", "arrakis", "atreides", "harkonnen"], witcher: ["witcher", "geralt", "rivia"], onepiece: ["one piece", "luffy", "straw hat"],
   naruto: ["naruto", "sasuke", "madara", "itachi", "konoha", "boruto"], berserk: ["berserk", "guts", "griffith"], frieren: ["frieren"],
-  dragonball: ["dragon ball", "dbz", "goku", "vegeta", "frieza", "super saiyan"], dnd: ["dungeons & dragons", "dungeons and dragons", "d&d", "baldur's gate"],
+  dragonball: ["dragon ball", "dbz", "goku", "vegeta", "frieza", "super saiyan"], dnd: ["dungeons & dragons", "dungeons and dragons", "d&d", "baldur's gate", "planescape"],
   pathfinder: ["pathfinder"], got: ["game of thrones", "house of the dragon", "westeros", "targaryen", "daenerys", "jon snow"],
   mtg: ["magic the gathering", "magic: the gathering", "planeswalker"], hearthstone: ["hearthstone"],
   pokemon: ["pokemon", "pokémon", "pikachu", "charizard", "mewtwo"], fortnite: ["fortnite", "jonesy", "peely", "battle bus", "tilted towers"],
   rocketleague: ["rocket league", "rocketleague"],
+  rdr: ["red dead", "arthur morgan", "john marston", "dutch van der linde"],
+  tlou: ["the last of us", "last of us", "joel and ellie"],
+  gow: ["god of war", "kratos", "atreus"],
+  mgs: ["metal gear", "solid snake", "big boss"],
+  masseffect: ["mass effect", "commander shepard", "garrus"],
+  uncharted: ["uncharted", "nathan drake"],
+  finalfantasy: ["final fantasy", "sephiroth", "cloud strife", "tidus", "midgar"],
+  halflife: ["half-life", "half life", "gordon freeman", "city 17", "glados", "aperture science", "portal 2"],
+  silenthill: ["silent hill", "pyramid head"],
+  residentevil: ["resident evil", "raccoon city", "leon kennedy", "leon s. kennedy"],
+  tsushima: ["ghost of tsushima", "ghost of yotei", "jin sakai"],
+  persona: ["persona 5", "persona 4", "persona 3", "phantom thieves"],
+  mario: ["super mario", "mario bros", "mario", "bowser", "princess peach", "luigi"],
+  monkeyisland: ["monkey island", "guybrush", "lechuck"],
+  castlevania: ["castlevania", "alucard", "belmont"],
+  detroit: ["detroit become human", "detroit: become human"],
+  bioshock: ["bioshock", "big daddy", "andrew ryan"],
+  assassins: ["assassin's creed", "assassins creed", "ezio auditore", "altair"],
+  dragonage: ["dragon age", "ferelden", "grey warden"],
+  maxpayne: ["max payne"],
+  kingdomhearts: ["kingdom hearts"],
+  deusex: ["deus ex", "adam jensen"],
+  horizon: ["horizon zero dawn", "horizon forbidden west", "aloy"],
+  cod: ["call of duty", "modern warfare", "captain price"],
+  metroid: ["metroid", "samus"],
+  yakuza: ["kazuma kiryu", "yakuza 0", "yakuza: like a dragon", "majima"],
+  colossus: ["shadow of the colossus"],
   myth: ["mythology", "zeus", "odin", "thor ", "anubis", "olympus", "valhalla", "greek gods", "norse gods"],
   whatif: ["harry potter", "hogwarts", "rick and morty", "simpsons", "star wars", "jedi", "darth", "marvel", "avengers", "batman", "spider-man", "spiderman", "lego", "barbie", "shrek", "toy story", "disney", "pixar"],
 };
 const WHATIF_CHAR = [["harry potter", "Harry Potter"], ["hogwarts", "Harry Potter"], ["rick and morty", "Rick and Morty"]];
 // Categories that must not swallow a more specific one (gta vs gta6, wc3 vs wow).
-const ORDER = ["gta6", "wow", "arcane", "whfantasy", "witchertv"];
+const ORDER = ["gta6", "wow", "arcane", "whfantasy", "witchertv", "gow", "assassins", "kingdomhearts", "halflife", "residentevil"];
 
 const norm = (t) => " " + String(t || "").toLowerCase().replace(/[’']/g, "'") + " ";
 const RULES = CATS.filter((c) => !["top", "trending", "all", "aiseries", "original"].includes(c.id) && !/^fx\d/.test(c.id))

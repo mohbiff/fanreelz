@@ -21,6 +21,11 @@ const TOPICS = [
   "Fruit Love Island episode", "AI series episode 1", "AI web series episode", "AI animated series episode", "AI anime series episode 1", "AI cinematic series part 1", "AI sitcom episode", "AI fan series season 1",
   "AI pokemon live action", "AI fortnite movie", "fortnite live action AI", "fortnite AI short film", "rocket league AI movie", "rocket league live action AI", "rocket league AI cinematic", "AI warcraft 3 cinematic remake", "AI world of warcraft movie",
 ];
+// Topics added later are searched first, once each, before the normal rotation continues
+const NEW_TOPICS = [
+  "AI red dead redemption movie", "red dead redemption 1980s film AI", "AI the last of us movie", "AI god of war movie", "god of war live action AI", "AI metal gear solid movie", "AI mass effect movie", "AI uncharted movie", "AI final fantasy movie", "final fantasy 1980s film AI", "AI half-life movie", "AI portal movie glados", "AI silent hill film", "AI resident evil movie", "AI ghost of tsushima movie", "AI persona 5 live action", "AI super mario live action", "super mario 1980s film AI", "AI monkey island movie", "AI castlevania movie", "AI detroit become human film", "AI bioshock movie", "AI assassin's creed movie", "AI dragon age movie", "AI max payne movie", "AI kingdom hearts movie", "AI deus ex movie", "AI horizon zero dawn movie", "AI call of duty movie", "AI metroid movie samus", "AI yakuza kiryu movie", "AI shadow of the colossus film", "AI diablo 2 movie", "AI starcraft cinematic remake", "AI skyrim 1980s film", "AI bloodborne movie", "AI baldur's gate movie", "AI star wars knights of the old republic movie", "AI batman arkham movie", "AI zelda ocarina of time live action",
+];
+TOPICS.push(...NEW_TOPICS);
 const PAGES_PER_CHANNEL = 4, MIN_AI_SHARE = 0.5;
 // Channels per run: 6 on Netlify (every 2 hours); 3 on Cloudflare (every hour, which allows at most 50 outside calls per run)
 
@@ -61,7 +66,10 @@ async function run() {
   const state = ((await sb.get("import_state?key=eq.youtube&select=value"))[0] || {}).value || { topic: 0 };
 
   // 1. Discover channels with one search
-  const topic = TOPICS[state.topic % TOPICS.length];
+  const seen = new Set(state.seen || []);
+  const fresh1 = NEW_TOPICS.find((t) => !seen.has(t));
+  const topic = fresh1 || TOPICS[state.topic % TOPICS.length];
+  if (fresh1) seen.add(fresh1);
   const found = await yt("search", { part: "snippet", type: "video", q: topic, maxResults: "50", safeSearch: "moderate", videoEmbeddable: "true" });
   const newChannels = {};
   for (const it of found.items || []) {
@@ -141,7 +149,7 @@ async function run() {
   }
   // Finished channels are re-checked for new uploads about once a week
   await sb.post("rpc/requeue_done_channels", {}).catch(() => null);
-  await sb.upsert("import_state", [{ key: "youtube", value: { topic: state.topic + 1, last: new Date().toISOString(), added } }]);
+  await sb.upsert("import_state", [{ key: "youtube", value: { topic: fresh1 ? state.topic : state.topic + 1, seen: [...seen].slice(-300), last: new Date().toISOString(), added } }]);
   return { added, log };
 }
 

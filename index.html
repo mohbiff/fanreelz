@@ -618,6 +618,34 @@ const GROUPS=[
   {id:"starcraft",name:"StarCraft",chars:["Terran","Zerg"]},
   {id:"fallout",name:"Fallout",chars:["New Vegas","The Wasteland"]},
   {id:"stalker",name:"S.T.A.L.K.E.R.",chars:["Pripyat"]}]},
+ {name:"Classic games",cats:[
+  {id:"rdr",name:"Red Dead Redemption",chars:["Arthur Morgan", "John Marston", "Dutch"]},
+  {id:"tlou",name:"The Last of Us",chars:["Joel", "Ellie", "Clickers"]},
+  {id:"gow",name:"God of War",chars:["Kratos", "Atreus", "Olympus"]},
+  {id:"mgs",name:"Metal Gear Solid",chars:["Solid Snake", "Big Boss", "Raiden"]},
+  {id:"masseffect",name:"Mass Effect",chars:["Shepard", "Garrus", "Reapers"]},
+  {id:"uncharted",name:"Uncharted",chars:["Nathan Drake"]},
+  {id:"finalfantasy",name:"Final Fantasy",chars:["Cloud", "Sephiroth", "Tidus"]},
+  {id:"halflife",name:"Half-Life & Portal",chars:["Gordon Freeman", "GLaDOS", "City 17"]},
+  {id:"silenthill",name:"Silent Hill",chars:["Pyramid Head", "James Sunderland"]},
+  {id:"residentevil",name:"Resident Evil",chars:["Leon Kennedy", "Raccoon City"]},
+  {id:"tsushima",name:"Ghost of Tsushima",chars:["Jin Sakai"]},
+  {id:"persona",name:"Persona",chars:["Joker", "Phantom Thieves"]},
+  {id:"mario",name:"Super Mario",chars:["Mario", "Bowser", "Peach"]},
+  {id:"monkeyisland",name:"Monkey Island",chars:["Guybrush", "LeChuck"]},
+  {id:"castlevania",name:"Castlevania",chars:["Alucard", "Belmont"]},
+  {id:"detroit",name:"Detroit: Become Human",chars:["Connor", "Kara", "Markus"]},
+  {id:"bioshock",name:"BioShock",chars:["Rapture", "Columbia", "Big Daddy"]},
+  {id:"assassins",name:"Assassin's Creed",chars:["Ezio", "Altaïr"]},
+  {id:"dragonage",name:"Dragon Age",chars:["Grey Wardens", "Ferelden"]},
+  {id:"maxpayne",name:"Max Payne",chars:["Max Payne"]},
+  {id:"kingdomhearts",name:"Kingdom Hearts",chars:["Sora", "Riku"]},
+  {id:"deusex",name:"Deus Ex",chars:["Adam Jensen", "J.C. Denton"]},
+  {id:"horizon",name:"Horizon",chars:["Aloy"]},
+  {id:"cod",name:"Call of Duty",chars:["Captain Price", "Soap", "Ghost"]},
+  {id:"metroid",name:"Metroid",chars:["Samus"]},
+  {id:"yakuza",name:"Yakuza / Like a Dragon",chars:["Kiryu", "Majima"]},
+  {id:"colossus",name:"Shadow of the Colossus",chars:["Wander"]}]},
  {name:"What if & nostalgia",cats:[
   {id:"whatif",name:"What if…",chars:["History","Pets","Everyday","Harry Potter","Pokémon","Rick and Morty","Crossovers","Film remakes"]},
   {id:"aiseries",name:"AI series",chars:["Reality","Drama","Comedy"]}]},
@@ -1036,7 +1064,7 @@ function tickTV(){if(!tvNow)return;const el=Date.now()-tvNow.startedAt;if(el>=tv
   const b=$("#tvbar"),t=$("#tvtime");if(b)b.style.width=(el/tvNow.dur/10).toFixed(2)+"%";if(t)t.textContent=hms(el)+" / "+hms(tvNow.dur*1000)}
 /* ================= Community features ================= */
 const hnum=s=>{let h=7;for(const c of String(s))h=(h*31+c.charCodeAt(0))>>>0;return h};
-const KIDS_CATS=new Set(["roblox","minecraft","pokemon","fortnite","rocketleague","aiseries","whatif","brainrot","onepiece","frieren","hearthstone","myth"]);
+const KIDS_CATS=new Set(["roblox","minecraft","pokemon","fortnite","rocketleague","mario","kingdomhearts","metroid","aiseries","whatif","brainrot","onepiece","frieren","hearthstone","myth"]);
 const isKids=f=>KIDS_CATS.has(f.cat)&&!/horror|herobrine|seed 40|night|scarlet|eclipse|butcher|anubis/i.test(f.title+" "+f.char);
 const loreOf=f=>f.lore?f.lore:(f.cat==="whatif"||/what if|reimagined|1950s|live action|anime|ballad|music|vs /i.test(f.title))?"whatif":(hnum(f.id)%3?"lore":"whatif");
 const isVerified=f=>!f.real&&!f.yt&&!f.tt&&!f.ig&&!f.vm&&!f.dm&&!f.byId&&hnum(f.title)%3===0;
