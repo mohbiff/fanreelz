@@ -73,6 +73,7 @@ async function run() {
   const fresh1 = doSearch ? NEW_TOPICS.find((t) => !seen.has(t)) : null;
   const topic = fresh1 || TOPICS[state.topic % TOPICS.length];
   if (fresh1) seen.add(fresh1);
+  const known = new Set((await sb.get("catalog_channels?select=channel_id")).map((c) => c.channel_id));
   if (doSearch) {
   const found = await yt("search", { part: "snippet", type: "video", q: topic, maxResults: "50", safeSearch: "moderate", videoEmbeddable: "true" });
   const newChannels = {};
@@ -80,7 +81,6 @@ async function run() {
     const s = it.snippet;
     if (AI_RE.test(s.title) || AI_RE.test(s.description)) newChannels[s.channelId] = s.channelTitle;
   }
-  const known = new Set((await sb.get("catalog_channels?select=channel_id")).map((c) => c.channel_id));
   const fresh = Object.entries(newChannels).filter(([id]) => !known.has(id));
   if (fresh.length) {
     const info = await yt("channels", { part: "contentDetails,snippet", id: fresh.map(([id]) => id).slice(0, 50).join(",") });
