@@ -37,7 +37,7 @@ export default async (req) => {
       if (!r.ok) return json({ error: "Supabase " + r.status }, 500);
       const d = await r.json(), list = d.users || [];
       for (const x of list) users.push({
-        email: x.email || "", name: x.user_metadata?.full_name || x.user_metadata?.name || x.user_metadata?.user_name || "",
+        id: x.id, email: x.email || "", name: x.user_metadata?.full_name || x.user_metadata?.name || x.user_metadata?.user_name || "",
         avatar: x.user_metadata?.avatar_url || "", provider: x.app_metadata?.provider || "", created: x.created_at, last: x.last_sign_in_at || null,
       });
       if (list.length < 1000) break;
