@@ -60,6 +60,9 @@ setTimeout(function(){el.classList.add("out");setTimeout(function(){el.remove();
   --live:#f05252; --accent:#ffd23f; --accent-soft:#3a3110; --star:#fbbf24; --ink-on-accent:#1a1405; color-scheme:dark}
 
 body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:14px;line-height:1.45}
+/* nothing may make the page wider than the screen (long titles, wide embeds): no sideways scrollbar */
+html,body{overflow-x:clip}
+.vtitle,.vmeta,.cmbody p,.adm-who span{overflow-wrap:anywhere}
 body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
 button,input,select{font:inherit;color:inherit}
 button{cursor:pointer}
