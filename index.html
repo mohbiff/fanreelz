@@ -966,10 +966,10 @@ function renderHome(){
   const list=feedList();
   let html=(!c&&!state.q&&state.feed==="home"&&state.format==="all"&&state.group==="All"?`<p class="hometag">All the best AI fan films in one place, sorted by game, anime, book and series. <button class="hometag-l" data-view="about">Learn more →</button></p>`:"")+`<div class="chips">${chips.join("")}</div>`;
   if(state.family)html+=`<div class="familybar">${icon("shield")} Family-friendly mode is on. Only films suited for younger viewers are shown.<button data-family="">Turn off</button></div>`;
-  if(c)html+=`<h1 class="sect-h" style="font-size:24px;margin-top:4px">${cav(c.name,48)} ${esc(c.name)}<span class="vmeta" style="font-size:14px;font-weight:500">${list.length} films</span></h1><div class="lorebar">${[["all","All films"],["lore","Lore-accurate"],["whatif","What if"]].map(([k,l])=>`<button class="${state.lore===k?"on":""}" data-lore="${k}">${l}</button>`).join("")}</div>`;
+  if(c)html+=`<h1 class="sect-h" style="font-size:24px;margin-top:4px">${cav(c.name,48)} ${esc(c.name)}${isMod?`<span class="vmeta" style="font-size:14px;font-weight:500">${list.length} films</span>`:""}</h1><div class="lorebar">${[["all","All films"],["lore","Lore-accurate"],["whatif","What if"]].map(([k,l])=>`<button class="${state.lore===k?"on":""}" data-lore="${k}">${l}</button>`).join("")}</div>`;
   if(state.q&&!c){const q=state.q.toLowerCase();const mc=CATS.filter(x=>x.name.toLowerCase().includes(q)||x.chars.some(ch=>ch.toLowerCase().includes(q)));
     html+=`<h1 class="sect-h" style="font-size:22px">Results for “${esc(state.q)}”</h1>`;
-    if(mc.length)html+=`<section class="shelf"><h2 class="sect-h" style="font-size:16px">Categories</h2><div class="dirgrid">${mc.slice(0,6).map(x=>`<button class="dircard dirhead" data-cat="${x.id}">${cav(x.name,40)}<span><b>${esc(x.name)}</b><small>${esc(groupOf(x.id).name)} · ${allFilms().filter(f=>f.cat===x.id).length} films</small></span></button>`).join("")}</div></section>`;
+    if(mc.length)html+=`<section class="shelf"><h2 class="sect-h" style="font-size:16px">Categories</h2><div class="dirgrid">${mc.slice(0,6).map(x=>`<button class="dircard dirhead" data-cat="${x.id}">${cav(x.name,40)}<span><b>${esc(x.name)}</b><small>${esc(groupOf(x.id).name)}${isMod?" · "+allFilms().filter(f=>f.cat===x.id).length+" films":""}</small></span></button>`).join("")}</div></section>`;
     if(list.length)html+=`<h2 class="sect-h" style="font-size:16px">Films</h2>`;}
   const showShelf=state.feed==="home"&&!state.q&&list.length>=6;
   let rest=list;
@@ -1030,10 +1030,10 @@ function renderBrowse(){
   let html=`<div class="chips">${chips}</div><h1 class="sect-h" style="font-size:24px;margin-top:4px">${icon("list")} Browse all</h1><p class="vmeta" style="margin:-6px 0 22px">Every game, book, show and trend on Fanreelz. Pick a category or a character to see its films.</p>`;
   html+=groups.map(g=>{const ranked=T[g.name];const cats=[...g.cats].sort((a,b)=>a.name.localeCompare(b.name));
     return `<section class="dir"><h2 class="sect-h">${esc(g.name)} <span class="vmeta" style="font-size:14px;font-weight:500">${g.cats.length} categories</span></h2><div class="dirgrid">${cats.map(c=>{const n=allFilms().filter(f=>f.cat===c.id).length,r=ranked.findIndex(x=>x.c.id===c.id);
-      return `<div class="dircard"><button class="dirhead" data-cat="${c.id}">${cav(c.name,40)}<span><b>${esc(c.name)}</b><small>${n} films${r<3?` · <span class="hot">Trending #${r+1}</span>`:""}</small></span></button><div class="dirchars">${c.chars.map(ch=>`<button data-cat="${c.id}" data-char-go="${esc(ch)}">${esc(ch)}</button>`).join("")}</div></div>`;}).join("")}</div></section>`;}).join("");
+      return `<div class="dircard"><button class="dirhead" data-cat="${c.id}">${cav(c.name,40)}<span><b>${esc(c.name)}</b><small>${isMod?n+" films":esc(groupOf(c.id)?.name||"")}${r<3?` · <span class="hot">Trending #${r+1}</span>`:""}</small></span></button><div class="dirchars">${c.chars.map(ch=>`<button data-cat="${c.id}" data-char-go="${esc(ch)}">${esc(ch)}</button>`).join("")}</div></div>`;}).join("")}</div></section>`;}).join("");
   const films=allFilms().filter(f=>gsel==="All"||groupOf(f.cat)?.name===gsel).sort((a,b)=>a.title.localeCompare(b.title));
   const shown=films.slice(0,state.azLimit);let last="";
-  html+=`<section class="dir"><h2 class="sect-h">All films A–Z <span class="vmeta" style="font-size:14px;font-weight:500">${films.length} films</span></h2><div class="azlist">`+shown.map(f=>{
+  html+=`<section class="dir"><h2 class="sect-h">All films A–Z ${isMod?`<span class="vmeta" style="font-size:14px;font-weight:500">${films.length} films</span>`:""}</h2><div class="azlist">`+shown.map(f=>{
     const L=((f.title.match(/[A-Za-z0-9]/)||["#"])[0]).toUpperCase();const head=L!==last?`<div class="azletter">${esc(L)}</div>`:"";last=L;const s=stats(f);
     return head+`<button class="azrow" data-open="${esc(f.id)}"><span class="aztitle">${esc(f.title)}</span><span class="azcat">${esc(catName(f.cat))} · ${esc(f.char)}</span><span class="azscore">${s.n?"★ "+s.avg.toFixed(1):"–"}</span></button>`;}).join("")+
     `</div>${films.length>shown.length?`<button class="btn ghost morebtn" data-more="1">Show more (${films.length-shown.length} left)</button>`:""}</section>`;
@@ -1810,7 +1810,7 @@ function renderAbout(){
    <p class="ab-kicker">About Fanreelz</p>
    <h1 class="ab-h">Where AI fan films find their fans</h1>
    <p class="ab-lede">AI tools have made it possible for one person to make a film that would have needed a whole studio a few years ago. Thousands of these films are made every week, about every world fans care about, but they are scattered across YouTube, TikTok and the rest of the internet, buried between everything else. Fanreelz brings them together in one place, sorted by the worlds and characters you love, and lets fans decide which ones are best.</p>
-   <div class="ab-stats"><div><b>${films.length}</b><span>AI fan films</span></div><div><b>${nCats}</b><span>worlds and categories</span></div><div><b>${nSrc}</b><span>platforms</span></div></div>
+   <div class="ab-stats">${isMod?`<div><b>${films.length}</b><span>AI fan films</span></div>`:""}<div><b>${nCats}</b><span>worlds and categories</span></div><div><b>${nSrc}</b><span>platforms</span></div></div>
 
    <h2 class="ab-h2">Every world you love, in one place</h2>
    <p class="ab-p">Fanreelz is for every kind of fan, whatever your world is:</p>
@@ -1978,7 +1978,7 @@ function seriesCard(s){const st=seriesStats(s),ss=seasonsOf(s);
    <div class="vinfo">${cav(seriesBy(s))}<div class="vtext"><h3 class="vtitle">${esc(s.title)}</h3><div class="vmeta">${esc(seriesBy(s))} · ${esc(catName(s.cat))}</div>
    <div class="vmeta">${ss.length?`${ss.length} season${ss.length>1?"s":""} · `:""}${st.n?`<span class="st">★</span> ${st.avg.toFixed(1)}`:"Episodes on "+esc(s.src||"YouTube")} · updated ${ago(seriesDays(s))}</div></div></div></button>`}
 function fmtTabs(nAll,nFilm,nShort,nSeries){
-  return `<div class="fmtbar" role="tablist">${[["all","All",nAll],["film","Films",nFilm],["short","Shorts",nShort],["series","Series",nSeries]].map(([k,l,n])=>`<button role="tab" aria-selected="${state.format===k}" class="${state.format===k?"on":""}" data-fmt="${k}">${l}<small>${n}</small></button>`).join("")}</div>`}
+  return `<div class="fmtbar" role="tablist">${[["all","All",nAll],["film","Films",nFilm],["short","Shorts",nShort],["series","Series",nSeries]].map(([k,l,n])=>`<button role="tab" aria-selected="${state.format===k}" class="${state.format===k?"on":""}" data-fmt="${k}">${l}${isMod?`<small>${n}</small>`:""}</button>`).join("")}</div>`}
 
 /* ---------- For you: films picked from what this viewer watches, rates, saves and votes on ---------- */
 const FOR_YOU="For you";let groupTouched=false;
@@ -2027,11 +2027,11 @@ function renderHomeF(){
   let html=(!c&&!state.q&&state.feed==="home"&&state.format==="all"&&state.group==="All"?`<p class="hometag">All the best AI fan films in one place, sorted by game, anime, book and series. <button class="hometag-l" data-view="about">Learn more →</button></p>`:"")+`<div class="chips">${chips.join("")}</div>`;
   if(state.family)html+=`<div class="familybar">${icon("shield")} Family-friendly mode is on. Only films suited for younger viewers are shown.<button data-family="">Turn off</button></div>`;
   if(!c&&!state.q&&state.group===FOR_YOU){$("#main").innerHTML=html+forYouHtml();return}
-  if(c)html+=`<h1 class="sect-h" style="font-size:24px;margin-top:4px">${cav(c.name,48)} ${esc(c.name)}<span class="vmeta" style="font-size:14px;font-weight:500">${films.length} films · ${shorts.length} shorts · ${series.length} series</span></h1>`;
+  if(c)html+=`<h1 class="sect-h" style="font-size:24px;margin-top:4px">${cav(c.name,48)} ${esc(c.name)}${isMod?`<span class="vmeta" style="font-size:14px;font-weight:500">${films.length} films · ${shorts.length} shorts · ${series.length} series</span>`:""}</h1>`;
   if(isMod&&(c||(state.group==="All"&&!state.q)))html+=adminBox(c?"AI "+c.name+" movie":"");
   if(state.q&&!c){const q=state.q.toLowerCase();const mc=CATS.filter(x=>x.name.toLowerCase().includes(q)||x.chars.some(ch=>ch.toLowerCase().includes(q)));
     html+=`<h1 class="sect-h" style="font-size:22px">Results for “${esc(state.q)}”</h1>`;
-    if(mc.length)html+=`<section class="shelf"><h2 class="sect-h" style="font-size:16px">Categories</h2><div class="dirgrid">${mc.slice(0,6).map(x=>`<button class="dircard dirhead" data-cat="${x.id}">${cav(x.name,40)}<span><b>${esc(x.name)}</b><small>${esc(groupOf(x.id).name)} · ${allFilms().filter(f=>f.cat===x.id).length} films</small></span></button>`).join("")}</div></section>`;}
+    if(mc.length)html+=`<section class="shelf"><h2 class="sect-h" style="font-size:16px">Categories</h2><div class="dirgrid">${mc.slice(0,6).map(x=>`<button class="dircard dirhead" data-cat="${x.id}">${cav(x.name,40)}<span><b>${esc(x.name)}</b><small>${esc(groupOf(x.id).name)}${isMod?" · "+allFilms().filter(f=>f.cat===x.id).length+" films":""}</small></span></button>`).join("")}</div></section>`;}
   if(state.feed==="top"&&!c)html+=`<h2 class="sect-h">${icon("top")} Top rated</h2>`;
   if(state.feed==="new"&&!c)html+=`<h2 class="sect-h">${icon("fresh")} Newest</h2>`;
   if(state.feed==="mine"&&!c)html+=`<h2 class="sect-h">${icon("mine")} Your ratings</h2>`;
@@ -2058,13 +2058,13 @@ function renderHomeF(){
     }
     // Full-length films (20 min or more): something to sit down and watch like a real movie
     if(shelves){const lf=films.filter(f=>secs(f.len)>=1200).sort((a,b)=>filmTrend(b)-filmTrend(a));
-      if(lf.length>=3)html+=`<section class="shelf"><h2>${icon("film")} Full-length films ${c?"":"<small class=\"vmeta\" style=\"font-weight:500;font-size:13px\">20+ min</small>"}<button class="seeall" data-longfilms="">See all ${lf.length}</button></h2><div class="shelfrow">${lf.slice(0,8).map(f=>card(f)).join("")}</div></section>`}
+      if(lf.length>=3)html+=`<section class="shelf"><h2>${icon("film")} Full-length films ${c?"":"<small class=\"vmeta\" style=\"font-weight:500;font-size:13px\">20+ min</small>"}<button class="seeall" data-longfilms="">See all${isMod?" "+lf.length:""}</button></h2><div class="shelfrow">${lf.slice(0,8).map(f=>card(f)).join("")}</div></section>`}
     if(shelves&&!c&&state.group==="All")GROUPS.forEach(g=>{const ids=new Set(g.cats.map(x=>x.id));const all=films.filter(f=>ids.has(f.cat));
       const row=[...all].sort((a,b)=>filmTrend(b)-filmTrend(a)).slice(0,8);if(row.length<3)return;
-      html+=`<section class="shelf"><h2><button class="shelfh" data-group="${esc(g.name)}">${esc(g.name)} <span aria-hidden="true">›</span></button><button class="seeall" data-group="${esc(g.name)}">See all ${all.length}</button></h2><div class="shelfrow">${row.map(f=>card(f)).join("")}</div></section>`});
+      html+=`<section class="shelf"><h2><button class="shelfh" data-group="${esc(g.name)}">${esc(g.name)} <span aria-hidden="true">›</span></button><button class="seeall" data-group="${esc(g.name)}">See all${isMod?" "+all.length:""}</button></h2><div class="shelfrow">${row.map(f=>card(f)).join("")}</div></section>`});
     if(shorts.length){const sl=shelves?[...shorts].sort((a,b)=>filmTrend(b)-filmTrend(a)):shorts;
-      html+=`<section class="shelf"><h2>${icon("short")} Shorts<button class="seeall" data-fmt="short">See all ${shorts.length}</button></h2><div class="shortrow">${sl.slice(0,12).map(shortCard).join("")}</div></section>`;}
-    if(series.length)html+=`<section class="shelf"><h2>${icon("series")} Series<button class="seeall" data-fmt="series">See all ${series.length}</button></h2><div class="shelfrow">${series.slice(0,8).map(seriesCard).join("")}</div></section>`;
+      html+=`<section class="shelf"><h2>${icon("short")} Shorts<button class="seeall" data-fmt="short">See all${isMod?" "+shorts.length:""}</button></h2><div class="shortrow">${sl.slice(0,12).map(shortCard).join("")}</div></section>`;}
+    if(series.length)html+=`<section class="shelf"><h2>${icon("series")} Series<button class="seeall" data-fmt="series">See all${isMod?" "+series.length:""}</button></h2><div class="shelfrow">${series.slice(0,8).map(seriesCard).join("")}</div></section>`;
     if(rest.length)html+=`<h2 class="sect-h">${icon("film")} ${shelves?"Latest films":"Films"}</h2><div class="grid">${rest.map(f=>card(f)).join("")}</div>`;
     if(!films.length&&!shorts.length&&!series.length)html+=empty;
   }
