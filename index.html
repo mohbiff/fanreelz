@@ -148,6 +148,11 @@ main{min-width:0;padding-right:max(16px,env(safe-area-inset-right,0px));padding-
 .fpseek{width:100%;margin:0 0 6px;height:20px;accent-color:#f2c94c;cursor:pointer;display:block;opacity:.9}
 .fprow{display:flex;align-items:center;gap:6px;color:rgba(255,255,255,.92);min-width:0}
 .fprow .fpsp{flex:1}
+.fptip{position:absolute;bottom:100%;margin-bottom:-18px;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:4px;pointer-events:none;z-index:2}
+.fptip img{width:160px;aspect-ratio:16/9;object-fit:cover;border-radius:8px;border:2px solid rgba(255,255,255,.85);background:#000;box-shadow:0 4px 14px rgba(0,0,0,.5)}
+.fptip b{font:700 13px/1 inherit;color:#fff;background:rgba(18,14,26,.8);padding:4px 8px;border-radius:6px;font-variant-numeric:tabular-nums}
+@media (max-width:600px){.fptip img{width:120px}}
+.tslink{background:none;border:0;padding:0;font:inherit;color:var(--accent);font-weight:700;cursor:pointer;text-decoration:underline;text-underline-offset:2px}
 .fpb{height:38px;min-width:38px;padding:0 10px;border:0;border-radius:19px;background:transparent;color:rgba(255,255,255,.92);font:600 13px/1 inherit;display:flex;align-items:center;gap:6px;cursor:pointer;white-space:nowrap}
 .fpb:hover{background:rgba(255,255,255,.12)}.fpb.on{color:#f2c94c;background:rgba(255,255,255,.08)}
 .fpb svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}.fpb svg.fill{fill:currentColor;stroke:none}
@@ -2070,12 +2075,12 @@ function filmComments(fid){
   const likes={};for(const d of Object.values(likeDocs))for(const id of Object.keys(d.ids||{}))if(d.ids[id])likes[id]=(likes[id]||0)+1;
   all.forEach(c=>c.likes=likes[c.id]||0);return all;
 }
-const composer=parent=>`<form class="cmform" data-cparent="${esc(parent)}">${acct.me?`<img class="avatar" alt="" src="${esc(acct.me.avatarUrl)}">`:cav("You",36)}<div class="cmfield"><textarea maxlength="1000" rows="2" placeholder="${parent?"Write a reply…":"Add a comment…"}" aria-label="${parent?"Reply":"Comment"}"></textarea><div class="row"><button class="btn" type="submit">${parent?"Reply":"Comment"}</button>${parent?`<button class="btn ghost" type="button" data-ccancel="">Cancel</button>`:""}</div></div></form>`;
+const composer=parent=>`<form class="cmform" data-cparent="${esc(parent)}">${acct.me?`<img class="avatar" alt="" src="${esc(acct.me.avatarUrl)}">`:cav("You",36)}<div class="cmfield"><textarea maxlength="1000" rows="2" placeholder="${parent?"Write a reply…":"Add a comment… (type a time like 0:20 to link that moment)"}" aria-label="${parent?"Reply":"Comment"}"></textarea><div class="row"><button class="btn" type="submit">${parent?"Reply":"Comment"}</button>${parent?`<button class="btn ghost" type="button" data-ccancel="">Cancel</button>`:""}</div></div></form>`;
 function commentsHtml(f){
   const all=filmComments(f.id),top=all.filter(c=>!c.parent),kids=id=>all.filter(c=>c.parent===id).sort((a,b)=>a.t-b.t);
   top.sort(cSort==="new"?(a,b)=>b.t-a.t:(a,b)=>(b.likes-a.likes)||(b.t-a.t));
   const mine=likeDocs[acct.uid]?.ids||{};
-  const one=(c,r)=>`<div class="cm ${r?"reply":""}"><button class="cmav" data-user="${esc(c.uid)}" aria-label="Open ${esc(cname(c.uid))}'s profile">${uav(c.uid)}</button><div class="cmbody"><div class="cmhead"><button class="cmname" data-user="${esc(c.uid)}">${esc(cname(c.uid))}</button><span class="vmeta" style="font-size:12px">${agoT(c.t)}</span></div><p>${esc(c.text)}</p>
+  const one=(c,r)=>`<div class="cm ${r?"reply":""}"><button class="cmav" data-user="${esc(c.uid)}" aria-label="Open ${esc(cname(c.uid))}'s profile">${uav(c.uid)}</button><div class="cmbody"><div class="cmhead"><button class="cmname" data-user="${esc(c.uid)}">${esc(cname(c.uid))}</button><span class="vmeta" style="font-size:12px">${agoT(c.t)}</span></div><p>${linkTimes(esc(c.text))}</p>
     <div class="cmact"><button class="${mine[c.id]?"on":""}" data-clike="${esc(c.id)}" aria-label="Like">${icon("heart")} ${c.likes||""}</button>${r?"":`<button data-creply="${esc(c.id)}">Reply</button>`}${c.uid===acct.uid?`<button data-cdel="${esc(c.id)}">Delete</button>`:isMod?`<button data-cmod="${esc(c.uid)}|${esc(c.id)}">Remove</button>`:`<button data-creport="">Report</button>`}</div>${replyTo===c.id?composer(c.id):""}</div></div>`;
   return `<section class="comments" aria-label="Comments"><div class="row" style="justify-content:space-between"><h2 class="sect-h" style="margin:0">${all.length} comment${all.length===1?"":"s"}</h2><div class="row" style="gap:6px">${[["top","Top"],["new","Newest"]].map(([k,l])=>`<button class="chip ${cSort===k?"on":""}" data-csort="${k}">${l}</button>`).join("")}</div></div>
     ${composer("")}
@@ -2195,7 +2200,7 @@ function fpMount(f){const pl=$(".player");if(!pl||pl.querySelector(".fp"))return
   if(fp.film!==f.id){Object.assign(fp,{film:f.id,st:-1,t:0,dur:/^\d+:\d\d$/.test(f.len||"")?secs(f.len):0,drag:false,cc:false})}
   const later=myLater.some(x=>x.id===f.id),wfs=document.body.classList.contains("wfs");
   pl.insertAdjacentHTML("beforeend",`<div class="fp"><div class="fptap" data-fptap=""></div><button class="fpbig" data-fpplay="" aria-label="Play or pause"></button>
-    <div class="fpbar"><input class="fpseek" type="range" min="0" max="1000" value="0" aria-label="Seek">
+    <div class="fpbar"><div class="fptip" hidden><img alt="" referrerpolicy="no-referrer"><b></b></div><input class="fpseek" type="range" min="0" max="1000" value="0" aria-label="Seek">
     <div class="fprow"><button class="fpb" data-fpplay="" aria-label="Play or pause"></button><button class="fpb" data-fpmute="" aria-label="Mute"></button><span class="fptime"></span><span class="fpsp"></span>
     <button class="fpb${fp.cc?" on":""}" data-fpcc="" aria-label="Subtitles">${FPI.cc}</button>
     <button class="fpb" data-share="${esc(f.id)}" aria-label="Share this film">${FPI.share}<span class="lbl">Share</span></button>
@@ -2230,6 +2235,24 @@ document.addEventListener("click",e=>{const o=e.target.closest(".fp");if(!o)retu
   fpShow()},true);
 let fpPtr=matchMedia("(pointer:fine)").matches?"mouse":"touch";document.addEventListener("pointerdown",e=>{if(e.target.closest?.(".fp"))fpPtr=e.pointerType||"mouse"},true);
 document.addEventListener("mousemove",e=>{if(e.target.closest?.(".fp")&&fpPtr==="mouse")fpShow()},{passive:true});
+/* Seek preview: the time under the finger/mouse, with the nearest of YouTube's three preview stills (at 1/4, 1/2 and 3/4 of the film) */
+function fpTip(sk,ratio){const tip=sk.parentElement.querySelector(".fptip");if(!tip||!fp.dur)return;ratio=Math.max(0,Math.min(1,ratio));
+  const f=findFilm(fp.film),n=ratio<.375?1:ratio<.625?2:3,img=tip.querySelector("img"),src=f?.yt?`https://i.ytimg.com/vi/${f.yt}/hq${n}.jpg`:"";
+  if(src&&img.dataset.src!==src){img.dataset.src=src;img.src=src}img.hidden=!src;
+  tip.querySelector("b").textContent=fpTime(ratio*fp.dur);tip.hidden=false;
+  const bar=sk.parentElement.getBoundingClientRect(),r=sk.getBoundingClientRect(),half=(img.hidden?30:(img.offsetWidth||160)/2+4);
+  tip.style.left=Math.max(half,Math.min(bar.width-half,r.left-bar.left+ratio*r.width))+"px";fpShow()}
+const fpTipOff=()=>document.querySelectorAll(".fptip").forEach(t=>t.hidden=true);
+document.addEventListener("pointermove",e=>{const sk=e.target.closest?.(".fpseek");if(!sk){return}const r=sk.getBoundingClientRect();fpTip(sk,(e.clientX-r.left)/r.width)},{passive:true});
+document.addEventListener("pointerout",e=>{if(e.target.matches?.(".fpseek")&&!fp.drag)fpTipOff()});
+document.addEventListener("input",e=>{if(e.target.matches?.(".fpseek"))fpTip(e.target,e.target.value/1000)});
+document.addEventListener("change",e=>{if(e.target.matches?.(".fpseek"))setTimeout(fpTipOff,400)});
+/* Time stamps in comments (0:20, 1:02:03) are links: they jump the film to that moment */
+const tsSecs=t=>t.split(":").reduce((a,x)=>a*60+(+x),0);
+const linkTimes=html=>html.replace(/(^|[^\d:])((?:\d{1,2}:)?\d{1,2}:[0-5]\d)(?![\d:])/g,(m,pre,t)=>`${pre}<button class="tslink" data-ts="${tsSecs(t)}">${t}</button>`);
+document.addEventListener("click",e=>{const b=e.target.closest?.("[data-ts]");if(!b)return;e.preventDefault();
+  if(state.view!=="watch"||!document.querySelector(".fp")){toast("Open the film to jump to "+b.textContent);return}
+  fpSeek(+b.dataset.ts);fpCmd("playVideo");document.querySelector(".player")?.scrollIntoView({behavior:"smooth",block:"center"})});
 document.addEventListener("input",e=>{if(!e.target.matches?.(".fpseek"))return;fp.drag=true;fp.t=e.target.value/1000*(fp.dur||0);
   const tm=document.querySelector(".fptime");if(tm)tm.textContent=fpTime(fp.t)+(fp.dur?" / "+fpTime(fp.dur):"");fpShow()});
 document.addEventListener("change",e=>{if(!e.target.matches?.(".fpseek"))return;fp.drag=false;fpSeek(e.target.value/1000*(fp.dur||0))});
