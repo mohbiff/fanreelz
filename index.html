@@ -159,6 +159,8 @@ main{min-width:0;padding-right:max(16px,env(safe-area-inset-right,0px));padding-
 .player.hasbar:fullscreen iframe,body.wfs .player.hasbar iframe{flex:1;aspect-ratio:auto;min-height:0;height:auto!important}
 .player.ended iframe{visibility:hidden}
 .fpbar.fshide{visibility:hidden}
+/* no double-tap zoom on the player and its buttons (fast taps on ±10 s should each count) */
+.player,.player *,.fpbar,.fpbar *,body.fsmode,body.wfs{touch-action:manipulation}
 .fpb.fpscroll{display:none}body.fsmode .fpb.fpscroll,body.wfs .fpb.fpscroll{display:flex}
 body.fsmode .fpscroll svg{animation:fpbounce 1.4s ease-in-out infinite}
 @keyframes fpbounce{0%,100%{transform:translateY(-2px)}50%{transform:translateY(3px)}}
