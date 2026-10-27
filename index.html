@@ -130,6 +130,7 @@ main{min-width:0;padding-right:max(16px,env(safe-area-inset-right,0px));padding-
 .vmeta .st{color:var(--star)}
 .pill{display:inline-block;font-size:11px;font-weight:700;padding:1px 7px;border-radius:999px;background:var(--accent-soft);color:var(--accent);vertical-align:1px;margin-left:4px}
 .empty{padding:60px 20px;text-align:center;color:var(--muted)}
+.earlyfan{display:inline-flex;align-items:center;gap:3px;font-size:11.5px;font-weight:700;line-height:1;padding:3px 7px;border-radius:999px;background:rgba(255,210,63,.16);color:var(--accent);vertical-align:middle;white-space:nowrap}h1 .earlyfan{font-size:13px}
 .adm-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px;margin-bottom:16px}
 .adm-card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:2px}
 .adm-card b{font-size:26px;line-height:1.1}.adm-card span{color:var(--muted);font-size:13px}
@@ -587,7 +588,7 @@ body.spfs .tabbar{display:none}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 
-<div style="background:var(--accent);color:var(--ink-on-accent);text-align:center;font-weight:700;font-size:13px;padding:7px 16px">Beta: Fanreelz is new. Sign in with Google or Discord to rate, comment and vote on AI fan films.</div>
+<div style="background:var(--accent);color:var(--ink-on-accent);text-align:center;font-weight:700;font-size:13px;padding:7px 16px">Beta: rate, vote and save AI fan films right away. Sign in during the beta to keep it all and get the ⭐ Early fan badge.</div>
 <header class="top">
   <button class="iconbtn" id="menuBtn" aria-label="Menu"><svg class="i" viewBox="0 0 24 24"><path d="M3 6h18M3 12h18M3 18h18"/></svg></button>
   <button class="logo" id="homeLogo" aria-label="Fanreelz home"><span class="mark"><svg viewBox="0 0 62 58" aria-hidden="true"><path d="M8 6.5c0-3 3.3-4.9 5.9-3.3l38.4 22.8c2.5 1.5 2.5 5.1 0 6.6L13.9 55.4C11.3 57 8 55.1 8 52.1z" fill="#8b5cf6"/><path class="spark" d="M51 2l2.6 6.4L60 11l-6.4 2.6L51 20l-2.6-6.4L42 11l6.4-2.6z" fill="#ffd23f"/></svg></span><span class="word">Fanreel<span class="zz">z</span></span><span class="word-tag">The home of AI fan films</span></button>
@@ -772,7 +773,18 @@ for(const r of REAL)FILMS.unshift({...r,real:true,counts:[0,0,0,0,0],days:Math.m
 
 const store={get(k,d){try{return JSON.parse(localStorage.getItem(k))??d}catch{return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch{}}};
 const acct={db:null,user:null,uid:null,me:null,online:false,readonly:false};
-let myRatings={},community={},mySubs=[],sharedSubs=[],names={},avatars={},ratingsBy={},followDocs={};
+let myRatings={},community={},mySubs=[],sharedSubs=[],names={},avatars={},ratingsBy={},followDocs={},joined={};
+/* Guests can rate, vote and save before they have an account: kept in this browser, moved to the account when they sign in */
+const GUEST=Object.assign({r:{},sd:{}},store.get("fr_guest",{}));const guestSave=()=>store.set("fr_guest",GUEST);Object.assign(myRatings,GUEST.r);
+const guestMig={r:false,sd:false};
+const guestCount=()=>Object.keys(GUEST.r).length+Object.keys(GUEST.sd).length+(acct.online?0:myLater.length);
+// after 2, 5 and 10 things (at most once a day) invite the guest to keep them
+function guestNudge(){if(acct.online)return;const n=guestCount(),today=new Date().toDateString();if(n<2||store.get("fr_nudge","")===today)return;if(![2,5,10].includes(n)&&n<10)return;store.set("fr_nudge",today);
+  const nr=Object.keys(GUEST.r).length,ns=Object.keys(GUEST.sd).length,nl=myLater.length,bits=[nr?`rated ${nr} film${nr>1?"s":""}`:"",ns?`voted in ${ns} showdown${ns>1?"s":""}`:"",nl?`saved ${nl} to Watch later`:""].filter(Boolean);
+  setTimeout(()=>openSignin(`You've ${bits.join(", ").replace(/, ([^,]*)$/," and $1")}. Sign in with Google or Discord (2 seconds) to keep it all and make it count on Fanreelz. Everyone who joins during the beta gets the ⭐ Early fan badge.`),700)}
+const EARLY_UNTIL=Date.parse("2027-01-01T00:00:00Z");
+const earlyFan=uid=>{const t=uid===acct.uid?Date.parse(acct.me?.joined||joined[uid]||""):Date.parse(joined[uid]||"");return t&&t<EARLY_UNTIL};
+const earlyBadge=uid=>earlyFan(uid)?`<span class="earlyfan" title="Joined Fanreelz during the beta">⭐ Early fan</span>`:"";
 const state={format:"all",dur:"any",shortList:null,shortI:0,series:null,season:1,ctab:"film",family:store.get("fr_family",false),lore:"all",creator:null,tv:"top",view:"home",feed:"home",group:"All",cat:null,char:null,q:"",film:null,bgroup:"All",azLimit:60};
 const $=s=>document.querySelector(s);
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
@@ -1217,6 +1229,7 @@ function sdTally(key){
     r.total++;if(v.s==="a")r.na++;else r.nb++;
     const x=String(v.x||"").trim().slice(0,500);if(x)r[v.s].push({uid,x,t:+v.t||0});
     if(uid===acct.uid)r.mine={s:v.s,x};}
+  if(!acct.online&&GUEST.sd[key]){const v=GUEST.sd[key];r.total++;if(v.s==="a")r.na++;else r.nb++;r.mine={s:v.s,x:v.x||""}}
   r.a.sort((p,q)=>q.t-p.t);r.b.sort((p,q)=>q.t-p.t);
   return r;
 }
@@ -1341,8 +1354,9 @@ function renderShowdown(){
   if(keep&&$("#sdText")){$("#sdText").value=keep.v;if(keep.f)$("#sdText").focus()}
 }
 async function sdVote(key,side,text){
-  if(!needAccount("Sign in to vote in Character Showdown."))return;
   if(badText(text)){toast(BAD_MSG);return}
+  if(!acct.online&&sb){GUEST.sd[key]={s:side,x:String(text||"").trim().slice(0,500),t:Date.now()};guestSave();sdPicked=null;toast("Vote saved. Sign in to make it count");renderHard=true;render();guestNudge();return}
+  if(!needAccount("Sign in to vote in Character Showdown."))return;
   const mine={...(sdVotes[acct.uid]?.a||{})};mine[key]={s:side,x:String(text||"").trim().slice(0,500),t:Date.now()};
   if(await writeOwn("showdown",{a:mine})){sdVotes[acct.uid]={a:mine};sdPicked=null;toast("Vote counted");renderHard=true;render()}
 }
@@ -1650,7 +1664,7 @@ function renderUser(){
   if(tab==="playlists")body=lists.length?`<div class="plgrid">${lists.map(l=>listCard(l,me)).join("")}</div>`:`<div class="empty">No playlists yet.</div>`;
   if(tab==="following")body=following.length?`<div class="ulist">${following.map(personRow).join("")}</div>`:`<div class="empty">Not following anyone yet.</div>`;
   if(tab==="followers")body=followers.length?`<div class="ulist">${followers.map(personRow).join("")}</div>`:`<div class="empty">No followers yet.</div>`;
-  $("#main").innerHTML=`<div class="uhero">${uav(uid,96)}<div><h1>${esc(name)}</h1>
+  $("#main").innerHTML=`<div class="uhero">${uav(uid,96)}<div><h1>${esc(name)} ${earlyBadge(uid)}</h1>
      <div class="ustats"><span><b>${fmtN(followers.length)}</b> followers</span><span><b>${fmtN(following.length)}</b> following</span><span><b>${liked.length}</b> liked</span><span><b>${nComments}</b> comments</span></div>
      <div class="row" style="margin-top:12px">${me?`<button class="btn ghost" data-you="you">Your library</button>`:`<button class="btn ${iFollow?"ghost":""}" data-follow="${esc(uid)}">${iFollow?"✓ Following":"Follow"}</button>`}
      <button class="btn ghost" data-copylink="https://fanreelz.com/u/${esc(uid)}">${icon("share")} Share profile</button></div></div></div>
@@ -1666,13 +1680,15 @@ function saveYou(name,items){
   clearTimeout(youTimers[name]);youTimers[name]=setTimeout(()=>privDoc(name).set({items}).catch(e=>console.warn("save "+name,e)),name==="history"?1500:0);
 }
 function addHistory(id){if(!id||!findFilm(id))return;if(myHistory[0]?.id===id)return;saveYou("history",[{id,t:Date.now()},...myHistory.filter(x=>x.id!==id)].slice(0,300))}
-function toggleLater(id){if(!needAccount("Sign in to save films to Watch later."))return;const on=myLater.some(x=>x.id===id);
-  saveYou("later",on?myLater.filter(x=>x.id!==id):[{id,t:Date.now()},...myLater].slice(0,500));toast(on?"Removed from Watch later":"Saved to Watch later");render()}
+function toggleLater(id){if(!sb&&!needAccount("Sign in to save films to Watch later."))return;const on=myLater.some(x=>x.id===id);
+  saveYou("later",on?myLater.filter(x=>x.id!==id):[{id,t:Date.now()},...myLater].slice(0,500));toast(on?"Removed from Watch later":acct.online?"Saved to Watch later":"Saved to Watch later. Sign in to keep it");render();if(!on)guestNudge()}
 function startYou(db){
   if(!acct.uid)return;const local=store.get("fr_history",[]);
   db.doc("data/users/"+acct.uid+"/history").onSnapshot(d=>{const items=d.exists&&Array.isArray(d.data()?.items)?d.data().items:[];
     if(local.length){const merged=[...local,...items].filter((x,i,a)=>a.findIndex(y=>y.id===x.id)===i).sort((a,b)=>b.t-a.t).slice(0,300);local.length=0;store.set("fr_history",[]);saveYou("history",merged)}else myHistory=items;if(["you","history"].includes(state.view))render();maybeForYou()},()=>{});
-  db.doc("data/users/"+acct.uid+"/later").onSnapshot(d=>{myLater=d.exists&&Array.isArray(d.data()?.items)?d.data().items:[];if(["you","later"].includes(state.view))render()},()=>{});
+  const localLater=store.get("fr_later",[]);
+  db.doc("data/users/"+acct.uid+"/later").onSnapshot(d=>{myLater=d.exists&&Array.isArray(d.data()?.items)?d.data().items:[];
+    if(localLater.length){const merged=[...localLater,...myLater].filter((x,i,a)=>a.findIndex(y=>y.id===x.id)===i).slice(0,500);localLater.length=0;store.set("fr_later",[]);saveYou("later",merged)}if(["you","later"].includes(state.view))render()},()=>{});
 }
 const likedFilms=()=>Object.entries(myRatings).filter(([,r])=>r>=4).map(([id])=>findFilm(id)).filter(Boolean);
 const yourVideos=()=>(mySubs||[]).map(f=>findFilm(String(f.id))).filter(Boolean);
@@ -1785,7 +1801,7 @@ async function toggleNewsletter(){
 function startCommunity(db){
   const mapCol=(col,target,after)=>db.collection(col).onSnapshot(snap=>{for(const k of Object.keys(target))delete target[k];for(const d of snap.docs){const v=d.data();if(v&&typeof v==="object")target[d.id]=v}after&&after();render();},()=>{});
   db.collection("votes").onSnapshot(snap=>{const all=[];let mine=[];for(const d of snap.docs){const v=Array.isArray(d.data()?.v)?d.data().v:[];const ok=v.filter(p=>Array.isArray(p)&&p.length===2).map(p=>[String(p[0]),String(p[1])]);all.push(...ok);if(d.id===acct.uid)mine=ok}allVotes=all;myVotes=mine;render()},()=>{});
-  mapCol("tips",tipDocs,resolveExtraNames);mapCol("comments",commentDocs,resolveExtraNames);mapCol("commentlikes",likeDocs);mapCol("requests",reqDocs,resolveExtraNames);mapCol("upvotes",upDocs);mapCol("claims",claimDocs,resolveExtraNames);mapCol("playlists",plDocs,resolveExtraNames);mapCol("showdown",sdVotes,resolveExtraNames);mapCol("showdowns",sdMade);
+  mapCol("tips",tipDocs,resolveExtraNames);mapCol("comments",commentDocs,resolveExtraNames);mapCol("commentlikes",likeDocs);mapCol("requests",reqDocs,resolveExtraNames);mapCol("upvotes",upDocs);mapCol("claims",claimDocs,resolveExtraNames);mapCol("playlists",plDocs,resolveExtraNames);mapCol("showdown",sdVotes,()=>{resolveExtraNames();guestMigrateSd()});mapCol("showdowns",sdMade);
   db.collection("follows").onSnapshot(snap=>{const all={};for(const d of snap.docs){const c=d.data()?.c;if(c&&typeof c==="object")all[d.id]=c}followDocs=all;myFollows=acct.uid&&all[acct.uid]?{...all[acct.uid]}:{};render();resolveExtraNames()},()=>{});
   db.doc("data/users/"+acct.uid+"/settings").onSnapshot(d=>{settings=d.exists?{...d.data()}:{};render()},()=>{});
 }
@@ -2105,7 +2121,7 @@ function commentsHtml(f){
   const all=filmComments(f.id),top=all.filter(c=>!c.parent),kids=id=>all.filter(c=>c.parent===id).sort((a,b)=>a.t-b.t);
   top.sort(cSort==="new"?(a,b)=>b.t-a.t:(a,b)=>(b.likes-a.likes)||(b.t-a.t));
   const mine=likeDocs[acct.uid]?.ids||{};
-  const one=(c,r)=>`<div class="cm ${r?"reply":""}"><button class="cmav" data-user="${esc(c.uid)}" aria-label="Open ${esc(cname(c.uid))}'s profile">${uav(c.uid)}</button><div class="cmbody"><div class="cmhead"><button class="cmname" data-user="${esc(c.uid)}">${esc(cname(c.uid))}</button><span class="vmeta" style="font-size:12px">${agoT(c.t)}</span></div><p>${linkTimes(esc(c.text))}</p>
+  const one=(c,r)=>`<div class="cm ${r?"reply":""}"><button class="cmav" data-user="${esc(c.uid)}" aria-label="Open ${esc(cname(c.uid))}'s profile">${uav(c.uid)}</button><div class="cmbody"><div class="cmhead"><button class="cmname" data-user="${esc(c.uid)}">${esc(cname(c.uid))}</button>${earlyBadge(c.uid)}<span class="vmeta" style="font-size:12px">${agoT(c.t)}</span></div><p>${linkTimes(esc(c.text))}</p>
     <div class="cmact"><button class="${mine[c.id]?"on":""}" data-clike="${esc(c.id)}" aria-label="Like">${icon("heart")} ${c.likes||""}</button>${r?"":`<button data-creply="${esc(c.id)}">Reply</button>`}${c.uid===acct.uid?`<button data-cdel="${esc(c.id)}">Delete</button>`:isMod?`<button data-cmod="${esc(c.uid)}|${esc(c.id)}">Remove</button>`:`<button data-creport="">Report</button>`}</div>${replyTo===c.id?composer(c.id):""}</div></div>`;
   return `<section class="comments" aria-label="Comments"><div class="row" style="justify-content:space-between"><h2 class="sect-h" style="margin:0">${all.length} comment${all.length===1?"":"s"}</h2><div class="row" style="gap:6px">${[["top","Top"],["new","Newest"]].map(([k,l])=>`<button class="chip ${cSort===k?"on":""}" data-csort="${k}">${l}</button>`).join("")}</div></div>
     ${composer("")}
@@ -2450,6 +2466,9 @@ function openSignin(reason){
       <div class="row"><button class="btn ghost" data-close>Not now</button></div></div>`:`<p class="vmeta" style="margin:0;font-size:13px">Sign-in with Google and Discord opens at launch. This is a preview of Fanreelz.</p>
     <div class="row"><button class="btn" data-close>Got it</button></div></div>`}`,e=>{const a=e.target.closest("[data-auth]");if(a)sbSignIn(a.dataset.auth)});
 }
+function guestMigrateSd(){if(!acct.online||guestMig.sd)return;guestMig.sd=true;const keys=Object.keys(GUEST.sd);if(!keys.length)return;
+  const mine={...(sdVotes[acct.uid]?.a||{})};for(const k of keys)if(!mine[k])mine[k]=GUEST.sd[k];
+  writeOwn("showdown",{a:mine}).then(ok=>{if(ok){sdVotes[acct.uid]={a:mine};GUEST.sd={};guestSave();toast("Your showdown votes are saved to your account");render()}})}
 function needAccount(reason){
   if(acct.online&&!acct.readonly)return true;
   if(acct.online){toast("This page is shared with you as view-only");return false}
@@ -2610,8 +2629,9 @@ document.addEventListener("click",async e=>{
   const g=e.target.closest("[data-group]");if(g){groupTouched=true;go({group:g.dataset.group});return}
   const ch=e.target.closest("[data-char]");if(ch){go({char:ch.dataset.char||null});return}
   const r=e.target.closest("[data-rate]");if(r){
-    if(!needAccount("Sign in to rate films. Your ratings count toward the top lists everyone sees."))return;
-    const k=+r.dataset.rate;if(await saveRating(state.film,k)){render();toast(`You rated it ${k} out of 5`)}return}
+    const k=+r.dataset.rate;
+    if(!acct.online&&sb){myRatings={...myRatings,[state.film]:k};GUEST.r[state.film]=k;guestSave();render();toast(`You rated it ${k} out of 5. Sign in to make it count`);guestNudge();return}
+    if(!needAccount("Sign in to rate films. Your ratings count toward the top lists everyone sees."))return;if(await saveRating(state.film,k)){render();toast(`You rated it ${k} out of 5`)}return}
   const o=e.target.closest("[data-open]");if(o){const f=findFilm(o.dataset.open);if(!f)return;if(f.format==="short"){openShorts(f.id);return}if(f.format==="episode"){watched[f.id]=true;store.set("fr_watched",watched)}go({view:"watch",film:f.id})}
 });
 document.addEventListener("keydown",e=>{if(e.key==="Escape")closeModal()});
@@ -2709,11 +2729,11 @@ async function startSupabase(){
   let signedIn=!!session;sbToken=session?.access_token||null;
   sb.auth.onAuthStateChange((ev,sess)=>{if(sess?.access_token)sbToken=sess.access_token;sbTokenNote=ev;if(!!sess!==signedIn&&ev!=="TOKEN_REFRESHED")location.reload()});
   const u=session?.user;let me=null;
-  if(u){const meta=u.user_metadata||{};const {data:prof}=await sb.from("profiles").select("name,avatar_url").eq("id",u.id).maybeSingle();
+  if(u){const meta=u.user_metadata||{};const {data:prof}=await sb.from("profiles").select("name,avatar_url,created_at").eq("id",u.id).maybeSingle();
     const name=prof?.name||meta.full_name||meta.name||meta.user_name||"Fan";
-    me={id:u.id,name,avatarUrl:prof?.avatar_url||meta.avatar_url||initialAvatar(name),provider:u.app_metadata?.provider||""}}
+    me={id:u.id,joined:prof?.created_at||u.created_at||"",name,avatarUrl:prof?.avatar_url||meta.avatar_url||initialAvatar(name),provider:u.app_metadata?.provider||""}}
   const user={me:async()=>me||{},profiles:async ids=>{const out={};if(!ids.length)return out;
-    const {data}=await sb.from("profiles").select("id,name,avatar_url").in("id",ids.slice(0,300));for(const r of data||[])out[r.id]={name:r.name||"Fan",avatar:r.avatar_url||""};return out}};
+    const {data}=await sb.from("profiles").select("id,name,avatar_url,created_at").in("id",ids.slice(0,300));for(const r of data||[]){out[r.id]={name:r.name||"Fan",avatar:r.avatar_url||""};if(r.created_at)joined[r.id]=r.created_at}return out}};
   loadCatalog().catch(e=>console.warn("catalogue",e));
   loadViews().catch(e=>console.warn("views",e));
   if(u)setTimeout(checkMod,0);
@@ -2774,6 +2794,9 @@ async function sbSignOut(){if(sb){await sb.auth.signOut();location.reload()}}
     for(const d of snap.docs){const r=d.data()?.r;if(!r||typeof r!=="object")continue;
       for(const [fid,v] of Object.entries(r)){const k=Math.round(+v);if(k<1||k>5)continue;(agg[fid]||(agg[fid]=[0,0,0,0,0]))[k-1]++}
       ratingsBy[d.id]=r;if(d.id===acct.uid)myRatings={...r};}
+    if(acct.online&&!guestMig.r){guestMig.r=true;const add=Object.fromEntries(Object.entries(GUEST.r).filter(([k])=>!myRatings[k]));
+      if(Object.keys(add).length){myRatings={...myRatings,...add};acct.db.doc("ratings/"+acct.uid).set({r:myRatings,t:Date.now()}).then(()=>{GUEST.r={};guestSave();toast("Your ratings from before you signed in are saved")}).catch(e=>console.warn("guest ratings",e))}
+      else{GUEST.r={};guestSave()}}
     community=agg;render();},()=>{});
   startCommunity(db);startYou(db);
   db.collection("submissions").onSnapshot(snap=>{const all=[],mine=[];
