@@ -613,12 +613,41 @@ const GROUPS=[
   {id:"pokemon",name:"Pokémon",chars:["Ash","Charizard","Mewtwo","Pikachu"]},
   {id:"fortnite",name:"Fortnite",chars:["Jonesy","Peely","Battle Royale"]},
   {id:"rocketleague",name:"Rocket League",chars:["Octane","Dominus","Esports"]},
+  {id:"amongus",name:"Among Us",chars:["Impostor", "Crewmates"]},
+  {id:"clash",name:"Clash of Clans & Royale",chars:["Barbarian King", "P.E.K.K.A", "Hog Rider"]},
+  {id:"brawlstars",name:"Brawl Stars",chars:["Shelly", "Spike", "Leon"]},
+  {id:"subway",name:"Subway Surfers",chars:["Jake", "Inspector"]},
+  {id:"fallguys",name:"Fall Guys & Stumble Guys",chars:["Beans"]},
   {id:"brainrot",name:"Italian brainrot",chars:["Tralalero Tralala","Bombardiro Crocodilo","Tung Tung Tung Sahur"]}]},
  {name:"Sci-fi",cats:[
   {id:"dune",name:"Dune",chars:["Paul Atreides","Chani","Fremen"]},
   {id:"starcraft",name:"StarCraft",chars:["Terran","Zerg"]},
   {id:"fallout",name:"Fallout",chars:["New Vegas","The Wasteland"]},
   {id:"stalker",name:"S.T.A.L.K.E.R.",chars:["Pripyat"]}]},
+ {name:"Popular games",cats:[
+  {id:"pubg",name:"PUBG",chars:["Erangel", "Chicken Dinner"]},
+  {id:"freefire",name:"Free Fire",chars:["Alok", "Kelly"]},
+  {id:"honorofkings",name:"Honor of Kings",chars:["Heroes"]},
+  {id:"mlbb",name:"Mobile Legends",chars:["Heroes", "Land of Dawn"]},
+  {id:"cs",name:"Counter-Strike",chars:["Terrorists", "Counter-Terrorists", "Dust 2"]},
+  {id:"valorant",name:"Valorant",chars:["Jett", "Phoenix", "Sage"]},
+  {id:"apex",name:"Apex Legends",chars:["Wraith", "Bloodhound", "Pathfinder"]},
+  {id:"overwatch",name:"Overwatch",chars:["Tracer", "Genji", "D.Va"]},
+  {id:"rainbow6",name:"Rainbow Six Siege",chars:["Operators"]},
+  {id:"marvelrivals",name:"Marvel Rivals",chars:["Heroes"]},
+  {id:"genshin",name:"Genshin Impact",chars:["Paimon", "Traveler", "Raiden Shogun"]},
+  {id:"starrail",name:"Honkai: Star Rail",chars:["Trailblazer", "Kafka"]},
+  {id:"eafc",name:"EA Sports FC",chars:["Ultimate Team"]},
+  {id:"destiny",name:"Destiny 2",chars:["Guardians", "The Witness"]},
+  {id:"dbd",name:"Dead by Daylight",chars:["The Entity", "Killers"]},
+  {id:"sims",name:"The Sims",chars:["Simlish", "Plumbob"]},
+  {id:"poe",name:"Path of Exile",chars:["Wraeclast"]},
+  {id:"helldivers",name:"Helldivers 2",chars:["Super Earth", "Bugs"]},
+  {id:"ark",name:"ARK: Survival",chars:["Dinosaurs"]},
+  {id:"terraria",name:"Terraria",chars:["Guide", "Moon Lord"]},
+  {id:"stardew",name:"Stardew Valley",chars:["Pelican Town"]},
+  {id:"monsterhunter",name:"Monster Hunter",chars:["Rathalos", "Hunters"]},
+  {id:"wukong",name:"Black Myth: Wukong",chars:["Sun Wukong", "Destined One"]}]},
  {name:"Classic games",cats:[
   {id:"rdr",name:"Red Dead Redemption",chars:["Arthur Morgan", "John Marston", "Dutch"]},
   {id:"tlou",name:"The Last of Us",chars:["Joel", "Ellie", "Clickers"]},
@@ -1065,7 +1094,7 @@ function tickTV(){if(!tvNow)return;const el=Date.now()-tvNow.startedAt;if(el>=tv
   const b=$("#tvbar"),t=$("#tvtime");if(b)b.style.width=(el/tvNow.dur/10).toFixed(2)+"%";if(t)t.textContent=hms(el)+" / "+hms(tvNow.dur*1000)}
 /* ================= Community features ================= */
 const hnum=s=>{let h=7;for(const c of String(s))h=(h*31+c.charCodeAt(0))>>>0;return h};
-const KIDS_CATS=new Set(["roblox","minecraft","pokemon","fortnite","rocketleague","mario","kingdomhearts","metroid","aiseries","whatif","brainrot","onepiece","frieren","conan","hearthstone","myth"]);
+const KIDS_CATS=new Set(["roblox","minecraft","pokemon","fortnite","rocketleague","amongus","clash","brawlstars","subway","fallguys","stardew","terraria","mario","kingdomhearts","metroid","aiseries","whatif","brainrot","onepiece","frieren","conan","hearthstone","myth"]);
 const isKids=f=>KIDS_CATS.has(f.cat)&&!/horror|herobrine|seed 40|night|scarlet|eclipse|butcher|anubis/i.test(f.title+" "+f.char);
 const loreOf=f=>f.lore?f.lore:(f.cat==="whatif"||/what if|reimagined|1950s|live action|anime|ballad|music|vs /i.test(f.title))?"whatif":(hnum(f.id)%3?"lore":"whatif");
 const isVerified=f=>!f.real&&!f.yt&&!f.tt&&!f.ig&&!f.vm&&!f.dm&&!f.byId&&hnum(f.title)%3===0;

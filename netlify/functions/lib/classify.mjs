@@ -56,12 +56,40 @@ const ALIASES = {
   yakuza: ["kazuma kiryu", "yakuza 0", "yakuza: like a dragon", "majima"],
   colossus: ["shadow of the colossus"],
   conan: ["future boy conan", "mirai shonen conan", "mirai shōnen conan", "未来少年コナン", "عدنان ولينا", "عدنان و لينا", "adnan and lina", "adnan & lina"],
+  amongus: ["among us"],
+  clash: ["clash of clans", "clash royale", "hog rider"],
+  brawlstars: ["brawl stars"],
+  subway: ["subway surfers"],
+  fallguys: ["fall guys", "stumble guys"],
+  pubg: ["pubg", "battlegrounds"],
+  freefire: ["free fire", "freefire"],
+  honorofkings: ["honor of kings", "arena of valor"],
+  mlbb: ["mobile legends", "mlbb", "land of dawn"],
+  cs: ["counter-strike", "counter strike", "cs2", "cs:go", "csgo", "dust 2", "dust2"],
+  valorant: ["valorant"],
+  apex: ["apex legends"],
+  overwatch: ["overwatch", "widowmaker", "d.va"],
+  rainbow6: ["rainbow six", "rainbow 6", "r6 siege"],
+  marvelrivals: ["marvel rivals"],
+  genshin: ["genshin", "teyvat", "paimon"],
+  starrail: ["honkai", "star rail"],
+  eafc: ["ea fc", "ea sports fc", "fc 26", "fc 25"],
+  destiny: ["destiny 2", "destiny the game"],
+  dbd: ["dead by daylight"],
+  sims: ["the sims", "sims 4", "sims 2", "simlish", "plumbob"],
+  poe: ["path of exile", "wraeclast"],
+  helldivers: ["helldivers", "super earth"],
+  ark: ["ark survival", "ark: survival"],
+  terraria: ["terraria"],
+  stardew: ["stardew valley", "stardew"],
+  monsterhunter: ["monster hunter", "rathalos"],
+  wukong: ["black myth", "wukong"],
   myth: ["mythology", "zeus", "odin", "thor ", "anubis", "olympus", "valhalla", "greek gods", "norse gods"],
   whatif: ["harry potter", "hogwarts", "rick and morty", "simpsons", "star wars", "jedi", "darth", "marvel", "avengers", "batman", "spider-man", "spiderman", "lego", "barbie", "shrek", "toy story", "disney", "pixar"],
 };
 const WHATIF_CHAR = [["harry potter", "Harry Potter"], ["hogwarts", "Harry Potter"], ["rick and morty", "Rick and Morty"]];
 // Categories that must not swallow a more specific one (gta vs gta6, wc3 vs wow).
-const ORDER = ["gta6", "wow", "arcane", "whfantasy", "witchertv", "gow", "assassins", "kingdomhearts", "halflife", "residentevil"];
+const ORDER = ["gta6", "wow", "arcane", "whfantasy", "witchertv", "gow", "assassins", "kingdomhearts", "halflife", "residentevil", "marvelrivals", "wukong"];
 
 const norm = (t) => " " + String(t || "").toLowerCase().replace(/[’']/g, "'") + " ";
 const RULES = CATS.filter((c) => !["top", "trending", "all", "aiseries", "original"].includes(c.id) && !/^fx\d/.test(c.id))
