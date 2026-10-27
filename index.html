@@ -1352,7 +1352,7 @@ function renderShowdown(){
    ${st!=="canon"?`<form class="form sdform" id="sdForm"><label for="sdText">Why does your pick win? <span class="vmeta">Optional, but only written reasons count in the Fanreelz verdict.</span><textarea id="sdText" maxlength="500" rows="3" placeholder="Canon feats, abilities, how the fight would go… (at least 15 characters to count)">${esc(v.mine?.x||"")}</textarea></label>
      <div class="row"><button class="btn" type="submit">${v.mine?"Update my vote":"Vote"}</button><span class="vmeta" id="sdPickNote">${pick?`You pick ${esc(pick==="a"?m.a:m.b)}`:"Pick a side above first"}</span></div></form>`:""}
    <h2 class="sect-h" style="font-size:18px">Why fans think so</h2>
-   <div class="sdargs">${args.length?args.map(([k,x])=>`<div class="sdarg ${k}"><div class="vmeta">${uav(x.uid,22)} <b>${esc(x.uid===acct.uid?"You":(names[x.uid]||"Fanreelz member"))}</b> picks ${esc(k==="a"?m.a:m.b)}${isMod&&x.uid!==acct.uid?` <button class="chip" data-sdmod="${esc(x.uid)}|${esc(m.key)}" style="margin-left:auto">Remove</button>`:""}</div><p>${esc(x.x)}</p></div>`).join(""):`<div class="empty">No arguments yet. Be the first.</div>`}</div>`;
+   <div class="sdargs">${args.length?args.map(([k,x])=>`<div class="sdarg ${k}"><div class="vmeta">${uav(x.uid,22)} <b>${esc(x.uid===acct.uid?"You":(names[x.uid]||"Fanreelz member"))}</b> picks ${esc(k==="a"?m.a:m.b)}${isMod?` <button class="chip" data-sdmod="${esc(x.uid)}|${esc(m.key)}" style="margin-left:auto">Remove</button>`:""}</div><p>${esc(x.x)}</p></div>`).join(""):`<div class="empty">No arguments yet. Be the first.</div>`}</div>`;
   if(keep&&$("#sdText")){$("#sdText").value=keep.v;if(keep.f)$("#sdText").focus()}
 }
 async function sdVote(key,side,text){
@@ -2153,7 +2153,7 @@ async function adminDo(body,label){if(adminBusy)return;adminBusy=true;adminMsg=l
   catch(e){adminMsg="Error: "+esc(e.message||e)}
   adminBusy=false;render()}
 async function modCall(body){const r=await fetch("/api/moderate",{method:"POST",headers:{"Content-Type":"application/json",Authorization:"Bearer "+(sbToken||"")},body:JSON.stringify(body)});return r.json().catch(()=>({}))}
-async function checkMod(){if(!sbToken)return;try{const r=await modCall({action:"check"});if(r.admin){isMod=true;try{renderGuide()}catch(e){}render()}}catch{}}
+async function checkMod(){if(!sbToken)return;try{const r=await modCall({action:"check"});if(r.admin){isMod=true;try{renderGuide()}catch(e){}renderHard=true;render()}}catch{}}
 async function modRemove(v){const i=v.indexOf("|"),owner=v.slice(0,i),id=v.slice(i+1);
   if(!confirm("Remove this comment for everyone?"))return;
   const r=await modCall({action:"remove",owner,id});
