@@ -158,6 +158,17 @@ main{min-width:0;padding-right:max(16px,env(safe-area-inset-right,0px));padding-
 .player.hasbar:fullscreen iframe,body.wfs .player.hasbar iframe{flex:1;aspect-ratio:auto;min-height:0;height:auto!important}
 .player.ended iframe{visibility:hidden}
 .fpbar.fshide{visibility:hidden}
+body.fsmode #betabar,body.fsmode header.top,body.fsmode #guide,body.fsmode .tabbar,body.fsmode .pbar{display:none!important}
+body.fsmode .shell{display:block}body.fsmode main{padding:0 0 40px}
+body.fsmode .theater{margin:0;padding:0}body.fsmode .watch{display:block;padding-top:0;max-width:none}
+body.fsmode .player.hasbar{width:100vw;height:100vh;height:100dvh;max-width:none;border-radius:0;display:flex;flex-direction:column;justify-content:center;background:#000;margin:0}
+body.fsmode .player.hasbar iframe{flex:1;aspect-ratio:auto;min-height:0;height:auto!important}
+body.fsmode .watch>div>:not(.player),body.fsmode .watch>aside,body.fsmode .watch>div+*{margin-left:max(16px,4vw);margin-right:max(16px,4vw)}
+body.fsmode .watch>div>:not(.player):nth-child(2){margin-top:18px}
+.fpvolwrap{display:flex;align-items:center}
+.fpvol{width:0;opacity:0;margin:0;transition:width .2s,opacity .2s;accent-color:#f2c94c;cursor:pointer;height:18px}
+.fpvolwrap:hover .fpvol,.fpvol:focus-visible{width:84px;opacity:1;margin:0 6px 0 2px}
+@media (pointer:coarse){.fpvol{display:none}}
 .fpbar{transition:opacity .25s}@media (pointer:fine){.fpbar.fshide{visibility:visible;opacity:0;cursor:none}}
 .player.hasbar:-webkit-full-screen{display:flex;flex-direction:column;justify-content:center;background:#000;width:100vw;height:100vh}
 .fpseek{width:100%;margin:0 0 6px;height:20px;accent-color:#f2c94c;cursor:pointer;display:block;opacity:.9}
@@ -169,7 +180,7 @@ main{min-width:0;padding-right:max(16px,env(safe-area-inset-right,0px));padding-
 .fpb{height:38px;min-width:38px;padding:0 10px;border:0;border-radius:19px;background:transparent;color:rgba(255,255,255,.92);font:600 13px/1 inherit;display:flex;align-items:center;gap:6px;cursor:pointer;white-space:nowrap}
 .fpb:hover{background:rgba(255,255,255,.12)}.fpb.on{color:#f2c94c;background:rgba(255,255,255,.08)}
 .fpb svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}.fpb svg.fill{fill:currentColor;stroke:none}
-.fptime{font:600 13px/1 inherit;font-variant-numeric:tabular-nums;opacity:.9;padding:0 4px}
+.fptime{white-space:nowrap;font:600 13px/1 inherit;font-variant-numeric:tabular-nums;opacity:.9;padding:0 4px}
 .fpb .lbl{display:inline}
 @media (max-width:600px){.fpb .lbl{display:none}.fpb{padding:0 6px;min-width:34px;height:36px}.fprow{gap:2px}.fpbar{padding:6px}.fptime{font-size:12px;padding:0 2px}}
 body.wfs .fpbar{padding-bottom:calc(8px + env(safe-area-inset-bottom))}
@@ -594,7 +605,7 @@ body.spfs .tabbar{display:none}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 
-<div style="background:var(--accent);color:var(--ink-on-accent);text-align:center;font-weight:700;font-size:13px;padding:7px 16px">Beta: rate, vote and save AI fan films right away. Sign in during the beta to keep it all and get the ⭐ Early fan badge.</div>
+<div id="betabar" style="background:var(--accent);color:var(--ink-on-accent);text-align:center;font-weight:700;font-size:13px;padding:7px 16px">Beta: rate, vote and save AI fan films right away. Sign in during the beta to keep it all and get the ⭐ Early fan badge.</div>
 <header class="top">
   <button class="iconbtn" id="menuBtn" aria-label="Menu"><svg class="i" viewBox="0 0 24 24"><path d="M3 6h18M3 12h18M3 18h18"/></svg></button>
   <button class="logo" id="homeLogo" aria-label="Fanreelz home"><span class="mark"><svg viewBox="0 0 62 58" aria-hidden="true"><path d="M8 6.5c0-3 3.3-4.9 5.9-3.3l38.4 22.8c2.5 1.5 2.5 5.1 0 6.6L13.9 55.4C11.3 57 8 55.1 8 52.1z" fill="#8b5cf6"/><path class="spark" d="M51 2l2.6 6.4L60 11l-6.4 2.6L51 20l-2.6-6.4L42 11l6.4-2.6z" fill="#ffd23f"/></svg></span><span class="word">Fanreel<span class="zz">z</span></span><span class="word-tag">The home of AI fan films</span></button>
@@ -2258,7 +2269,7 @@ document.addEventListener("load",e=>{if(e.target.matches?.(".player iframe, .sp 
 let endTimer=null;
 /* Fanreelz player controls for YouTube films (YouTube's own controls are off: controls=0).
    Everything runs through YouTube's iframe messages: play, pause, seek, mute, captions; the player reports time and state back. */
-const fp={film:null,st:-1,t:0,dur:0,muted:false,cc:false,drag:false,timer:null};
+const fp={film:null,st:-1,t:0,dur:0,muted:false,vol:100,cc:false,drag:false,timer:null};
 const FPI={play:'<svg class="fill" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>',pause:'<svg class="fill" viewBox="0 0 24 24"><path d="M7 5h4v14H7zM13 5h4v14h-4z"/></svg>',
   vol:'<svg viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9z"/><path d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12"/></svg>',mute:'<svg viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9z"/><path d="M17 9l5 6M22 9l-5 6"/></svg>',
   cc:'<svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M10 10.5a2 2 0 1 0 0 3M16 10.5a2 2 0 1 0 0 3"/></svg>',
@@ -2272,25 +2283,30 @@ function fpMount(f){const pl=$(".player");if(!pl||pl.querySelector(".fpbar"))ret
   if(fp.film!==f.id){Object.assign(fp,{film:f.id,st:-1,t:0,dur:/^\d+:\d\d$/.test(f.len||"")?secs(f.len):0,drag:false,cc:false})}
   const later=myLater.some(x=>x.id===f.id);pl.classList.add("hasbar");
   pl.insertAdjacentHTML("beforeend",`<div class="fpbar"><div class="fptip" hidden><b></b></div><input class="fpseek" type="range" min="0" max="1000" value="0" aria-label="Seek">
-    <div class="fprow"><button class="fpb" data-fpplay="" aria-label="Play or pause"></button><button class="fpb" data-fpmute="" aria-label="Mute"></button><span class="fptime"></span><span class="fpsp"></span>
+    <div class="fprow"><button class="fpb" data-fpplay="" aria-label="Play or pause"></button><span class="fpvolwrap"><button class="fpb" data-fpmute="" aria-label="Mute"></button><input class="fpvol" type="range" min="0" max="100" step="1" value="100" aria-label="Volume"></span><span class="fptime"></span><span class="fpsp"></span>
     <button class="fpb${fp.cc?" on":""}" data-fpcc="" aria-label="Subtitles">${FPI.cc}</button>
     <button class="fpb" data-share="${esc(f.id)}" aria-label="Share this film">${FPI.share}<span class="lbl">Share</span></button>
     <button class="fpb${later?" on":""}" data-later="${esc(f.id)}" aria-label="Watch later">${FPI.later}<span class="lbl">${later?"Saved":"Watch later"}</span></button>
     <button class="fpb" data-ytfs="" aria-label="Full screen"></button></div></div>`);
   fpPaint()}
-const fpIsFs=()=>!!document.fullscreenElement||document.body.classList.contains("wfs");
+const fpIsFs=()=>document.body.classList.contains("fsmode")||document.body.classList.contains("wfs");
 // computer: the browser's real full screen (whole monitor); phone: fills the page, so Android shows no "swipe to exit" notice each time
 // real full screen on phones and computers (status and navigation bars hidden); phones also turn to landscape, like YouTube
+// full screen = the whole page in the browser's real full screen, with the film filling the screen;
+// scroll down for the title, ratings and comments, like YouTube. Phones also turn to landscape.
 function fpFull(){const pl=$(".player");if(!pl)return;
-  if(document.fullscreenElement){try{screen.orientation?.unlock?.()}catch(e){}document.exitFullscreen().catch(()=>{});return}
+  if(document.fullscreenElement||document.webkitFullscreenElement){try{screen.orientation?.unlock?.()}catch(e){}(document.exitFullscreen||document.webkitExitFullscreen).call(document)?.catch?.(()=>{});return}
   if(document.body.classList.contains("wfs")){closeWfs();fpPaint();return}
-  const req=pl.requestFullscreen||pl.webkitRequestFullscreen;
-  if(req){Promise.resolve(req.call(pl,{navigationUI:"hide"})).then(()=>{if(!matchMedia("(pointer:fine)").matches)screen.orientation?.lock?.("landscape").catch(()=>{});fpShow()}).catch(()=>{openWfs();fpPaint();fpShow()})}
+  const de=document.documentElement,req=de.requestFullscreen||de.webkitRequestFullscreen;
+  if(req){Promise.resolve(req.call(de,{navigationUI:"hide"})).then(()=>{if(!matchMedia("(pointer:fine)").matches)screen.orientation?.lock?.("landscape").catch(()=>{})}).catch(()=>{openWfs();fpPaint();fpShow()})}
   else{openWfs();fpPaint();fpShow()}}
-document.addEventListener("fullscreenchange",()=>{if(!document.fullscreenElement){try{screen.orientation?.unlock?.()}catch(e){}document.querySelector(".fpbar")?.classList.remove("fshide")}fpPaint()});
+function fpFsChange(){const on=!!(document.fullscreenElement||document.webkitFullscreenElement)&&state.view==="watch";document.body.classList.toggle("fsmode",on);
+  if(on)window.scrollTo({top:0});else{try{screen.orientation?.unlock?.()}catch(e){}document.querySelector(".fpbar")?.classList.remove("fshide")}fpPaint();if(on)fpShow()}
+document.addEventListener("fullscreenchange",fpFsChange);document.addEventListener("webkitfullscreenchange",fpFsChange);
 function fpPaint(){const o=document.querySelector(".fpbar");if(!o)return;const playing=fp.st===1||fp.st===3;
   o.querySelectorAll("[data-fpplay]").forEach(b=>b.innerHTML=playing?FPI.pause:FPI.play);
-  const m=o.querySelector("[data-fpmute]");if(m)m.innerHTML=fp.muted?FPI.mute:FPI.vol;
+  const m=o.querySelector("[data-fpmute]");if(m)m.innerHTML=fp.muted||!fp.vol?FPI.mute:FPI.vol;
+  const vs=o.querySelector(".fpvol");if(vs&&!fp.volDrag){vs.value=fp.muted?0:fp.vol;vs.style.setProperty("--v",(fp.muted?0:fp.vol)+"%")}
   const tm=o.querySelector(".fptime");if(tm)tm.textContent=fpTime(fp.t)+(fp.dur?" / "+fpTime(fp.dur):"");
   const sk=o.querySelector(".fpseek");if(sk&&!fp.drag&&fp.dur)sk.value=Math.round(fp.t/fp.dur*1000);
   const fs=o.querySelector("[data-ytfs]");if(fs)fs.innerHTML=fpIsFs()?FPI.fsout:FPI.fsin}
@@ -2309,7 +2325,7 @@ function fpToggle(){fpCmd(fp.st===1||fp.st===3?"pauseVideo":"playVideo");fpShow(
 function fpSeek(t){fp.t=Math.max(0,Math.min(fp.dur||t,t));fpCmd("seekTo",[fp.t,true]);fpPaint();fpShow()}
 function fpInfo(d){const i=d.event==="infoDelivery"?d.info:null;
   if(d.event==="onStateChange")fp.st=d.info;
-  if(i){if(i.playerState!=null)fp.st=i.playerState;if(i.currentTime!=null&&!fp.drag)fp.t=+i.currentTime;if(i.duration)fp.dur=+i.duration;if(i.muted!=null)fp.muted=!!i.muted}
+  if(i){if(i.playerState!=null)fp.st=i.playerState;if(i.currentTime!=null&&!fp.drag)fp.t=+i.currentTime;if(i.duration)fp.dur=+i.duration;if(i.muted!=null)fp.muted=!!i.muted;if(i.volume!=null&&!fp.volDrag)fp.vol=+i.volume}
   if(d.event==="onStateChange"||(i&&i.playerState!=null)){if(fp.st!==fp.lastSt){fp.lastSt=fp.st;if(fp.st===2||fp.st===0||fp.st===1)fpShow()}}
   fpPaint()}
 document.addEventListener("click",e=>{const o=e.target.closest(".fpbar");if(!o)return;
@@ -2328,6 +2344,11 @@ document.addEventListener("pointermove",e=>{const sk=e.target.closest?.(".fpseek
 document.addEventListener("pointerout",e=>{if(e.target.matches?.(".fpseek")&&!fp.drag)fpTipOff()});
 document.addEventListener("input",e=>{if(e.target.matches?.(".fpseek"))fpTip(e.target,e.target.value/1000)});
 document.addEventListener("change",e=>{if(e.target.matches?.(".fpseek"))setTimeout(fpTipOff,400)});
+/* Volume: slider next to the speaker, mouse wheel over it, or the up/down arrow keys */
+function fpSetVol(v){v=Math.max(0,Math.min(100,Math.round(v)));fp.vol=v;fpCmd("setVolume",[v]);if(v>0&&fp.muted){fp.muted=false;fpCmd("unMute")}if(v===0&&!fp.muted){fp.muted=true;fpCmd("mute")}fpPaint();fpShow()}
+document.addEventListener("input",e=>{if(e.target.matches?.(".fpvol")){fp.volDrag=true;fpSetVol(+e.target.value);e.target.style.setProperty("--v",e.target.value+"%")}});
+document.addEventListener("change",e=>{if(e.target.matches?.(".fpvol"))fp.volDrag=false});
+document.addEventListener("wheel",e=>{if(!e.target.closest?.(".fpvolwrap"))return;e.preventDefault();fpSetVol((fp.muted?0:fp.vol)+(e.deltaY<0?5:-5))},{passive:false});
 /* Time stamps in comments (0:20, 1:02:03) are links: they jump the film to that moment */
 const tsSecs=t=>t.split(":").reduce((a,x)=>a*60+(+x),0);
 const linkTimes=html=>html.replace(/(^|[^\d:])((?:\d{1,2}:)?\d{1,2}:[0-5]\d)(?![\d:])/g,(m,pre,t)=>`${pre}<button class="tslink" data-ts="${tsSecs(t)}">${t}</button>`);
@@ -2341,7 +2362,7 @@ document.addEventListener("change",e=>{if(!e.target.matches?.(".fpseek"))return;
 document.addEventListener("keydown",e=>{if(state.view!=="watch"||!document.querySelector(".fpbar")||e.ctrlKey||e.metaKey||e.altKey)return;
   if(/^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName)&&!e.target.matches(".fpseek")||e.target.isContentEditable)return;
   const k=e.key.toLowerCase();
-  if(k===" "||k==="k"){e.preventDefault();fpToggle()}else if(k==="arrowleft")fpSeek(fp.t-5);else if(k==="arrowright")fpSeek(fp.t+5);
+  if(k===" "||k==="k"){e.preventDefault();fpToggle()}else if(k==="arrowup"&&fpIsFs()&&window.scrollY<20){e.preventDefault();fpSetVol((fp.muted?0:fp.vol)+5)}else if(k==="arrowdown"&&fpIsFs()&&window.scrollY<20){e.preventDefault();fpSetVol((fp.muted?0:fp.vol)-5)}else if(k==="arrowleft")fpSeek(fp.t-5);else if(k==="arrowright")fpSeek(fp.t+5);
   else if(k==="j")fpSeek(fp.t-10);else if(k==="l")fpSeek(fp.t+10);else if(k==="m"){fp.muted=!fp.muted;fpCmd(fp.muted?"mute":"unMute");fpPaint();fpShow()}
   else if(k==="f")fpFull()});
 function hideEnd(){clearInterval(endTimer);endTimer=null;document.querySelector(".endnext")?.remove();document.querySelector(".player")?.classList.remove("ended")}
@@ -2478,6 +2499,7 @@ function parsePath(){
 }
 const urlNow=()=>location.pathname+location.search;
 function go(patch){
+  if(patch.view&&patch.view!=="watch"&&document.body.classList.contains("fsmode")){try{(document.exitFullscreen||document.webkitExitFullscreen).call(document)}catch(e){}}
   renderHard=true;
   if(patch.view&&patch.view!=="shorts"&&document.body.classList.contains("spfs"))toggleShortsFull(false);
   spSheet="";
