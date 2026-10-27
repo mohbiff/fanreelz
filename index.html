@@ -134,12 +134,12 @@ main{min-width:0;padding-right:max(16px,env(safe-area-inset-right,0px));padding-
 .note{font-size:12px;color:var(--muted);margin-top:36px}
 
 /* watch view */
-@media (max-width:860px){[data-theater]{display:none!important}}
+@media (max-width:860px){[data-theater]{display:none!important}.pbar{display:none}}
 @media (min-width:861px){.wfsbtn{display:none!important}}
-.ytbtns{position:absolute;bottom:0;left:0;z-index:4;margin:8px;display:flex;gap:8px;transition:opacity .3s}.ytbtns.hide{opacity:0;pointer-events:none}
+.ytbtns{position:absolute;bottom:0;left:0;right:0;z-index:4;margin:8px;display:flex;gap:8px;transition:opacity .3s;pointer-events:none}.ytbtns>*{pointer-events:auto}.ytfs{margin-left:auto}.ytfs .fsout,body.wfs .ytfs .fsin{display:none}body.wfs .ytfs .fsout{display:inline}.ytbtns.hide{opacity:0;pointer-events:none}
 .ytb{height:44px;padding:0 14px;box-sizing:border-box;border-radius:22px;border:0;background:rgba(15,12,22,.94);color:#fff;font:700 14px/1 inherit;display:flex;align-items:center;gap:6px;cursor:pointer;box-shadow:0 2px 10px rgba(0,0,0,.35);white-space:nowrap}.ytb .i{width:18px;height:18px}.ytb:hover,.ytb.on{background:var(--accent);color:var(--ink-on-accent,#000)}
 @media (max-width:860px){.ytbtns{margin:6px;gap:6px}.ytb{height:40px;padding:0 12px;font-size:13px}}
-body.wfs .ytbtns{position:fixed;bottom:env(safe-area-inset-bottom);left:env(safe-area-inset-left);z-index:9001}body.wfs .ytb{background:var(--accent);color:var(--ink-on-accent,#000)}
+body.wfs .ytbtns{position:fixed;bottom:env(safe-area-inset-bottom);left:env(safe-area-inset-left);right:env(safe-area-inset-right);z-index:9001}body.wfs .ytb{background:var(--accent);color:var(--ink-on-accent,#000)}
 .theater{background:#000;margin:0 -24px;padding:12px 24px 4px}.theater .player{width:min(100%,calc((100vh - 170px)*16/9));margin:0 auto;border-radius:0}
 .theater .pbar,.theater .ythelp{max-width:min(100%,calc((100vh - 170px)*16/9));margin-left:auto;margin-right:auto}
 .watch{display:grid;grid-template-columns:minmax(0,1fr) 402px;gap:24px;padding-top:16px;max-width:1700px}
@@ -939,8 +939,8 @@ function renderWatch(){
   if(f.tt)$(".player").innerHTML=ttFrame(f.tt);
   // Fanreelz share button on top of YouTube's own share icon (top right of the player), so sharing gives a fanreelz.com link
   if(f.yt)setTimeout(()=>{const pl=$(".player");if(!pl||pl.querySelector(".ytbtns"))return;const later=myLater.some(x=>x.id===f.id);
-    pl.insertAdjacentHTML("beforeend",`<div class="ytbtns${ysState===1?" hide":""}"><button class="ytb" data-share="${esc(f.id)}" aria-label="Share this film"><svg class="i" viewBox="0 0 24 24"><circle cx="18" cy="5" r="2.5"/><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="19" r="2.5"/><path d="M8.2 10.8l7.6-4.4M8.2 13.2l7.6 4.4"/></svg>Share</button><button class="ytb${later?" on":""}" data-later="${esc(f.id)}" aria-label="Watch later">${icon("clock")}${later?"Saved":"Watch later"}</button></div>`)},0);
-  if(f.ig||f.vm||f.dm||f.tt||f.yt)setTimeout(()=>{const pl=$(".player");if(pl&&pl.querySelector("iframe")&&!$(".pbar"))pl.insertAdjacentHTML("afterend",`<div class="pbar"><button class="btn ghost" data-theater="" aria-pressed="${theater}"><svg class="i" viewBox="0 0 24 24">${theater?'<rect x="5" y="7" width="14" height="10" rx="1.5"/>':'<rect x="2" y="6" width="20" height="12" rx="1.5"/>'}</svg>${theater?"Default view":"Theater mode"}</button><button class="btn ghost wfsbtn" data-wfs=""><svg class="i" viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>Full screen</button></div>`)},0);
+    pl.insertAdjacentHTML("beforeend",`<div class="ytbtns${ysState===1?" hide":""}"><button class="ytb" data-share="${esc(f.id)}" aria-label="Share this film"><svg class="i" viewBox="0 0 24 24"><circle cx="18" cy="5" r="2.5"/><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="19" r="2.5"/><path d="M8.2 10.8l7.6-4.4M8.2 13.2l7.6 4.4"/></svg>Share</button><button class="ytb${later?" on":""}" data-later="${esc(f.id)}" aria-label="Watch later">${icon("clock")}${later?"Saved":"Watch later"}</button><button class="ytb ytfs" data-ytfs="" aria-label="Full screen"><svg class="i fsin" viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg><svg class="i fsout" viewBox="0 0 24 24"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5"/></svg><span class="fsin">Full screen</span><span class="fsout">Exit</span></button></div>`)},0);
+  if(f.ig||f.vm||f.dm||f.tt||f.yt)setTimeout(()=>{const pl=$(".player");if(pl&&pl.querySelector("iframe")&&!$(".pbar"))pl.insertAdjacentHTML("afterend",`<div class="pbar"><button class="btn ghost" data-theater="" aria-pressed="${theater}"><svg class="i" viewBox="0 0 24 24">${theater?'<rect x="5" y="7" width="14" height="10" rx="1.5"/>':'<rect x="2" y="6" width="20" height="12" rx="1.5"/>'}</svg>${theater?"Default view":"Theater mode"}</button></div>`)},0);
   if(f.ig||f.vm||f.dm)$(".player").innerHTML=extFrame(f);
 }
 function renderBrowse(){
@@ -2325,7 +2325,7 @@ function openWfs(){if(document.body.classList.contains("wfs"))return;document.bo
   try{history.pushState({...(history.state||{}),overlay:"wfs"},"",location.href);wfsPushed=true}catch(e){}}
 function closeWfs(fromBack){if(!document.body.classList.contains("wfs"))return;document.body.classList.remove("wfs");$("#wfsClose")?.remove();$("#wfsShare")?.remove();
   if(wfsPushed&&!fromBack){wfsPushed=false;ignorePop=true;history.back()}wfsPushed=false}
-document.addEventListener("click",e=>{if(e.target.closest("[data-wfs]")){e.preventDefault();openWfs()}else if(e.target.closest("#wfsClose")){e.preventDefault();closeWfs()}});
+document.addEventListener("click",e=>{if(e.target.closest("[data-ytfs]")){e.preventDefault();if(document.body.classList.contains("wfs"))closeWfs();else openWfs();ytShareShow();return}if(e.target.closest("[data-wfs]")){e.preventDefault();openWfs()}else if(e.target.closest("#wfsClose")){e.preventDefault();closeWfs()}});
 document.addEventListener("keydown",e=>{if(e.key==="Escape"&&document.body.classList.contains("wfs"))closeWfs()});
 window.addEventListener("popstate",e=>{
   if(ignorePop){ignorePop=false;return}
