@@ -2304,7 +2304,7 @@ function fpMount(f){const pl=$(".player");if(!pl||pl.querySelector(".fpbar"))ret
     <button class="fpb" data-share="${esc(f.id)}" aria-label="Share this film">${FPI.share}<span class="lbl">Share</span></button>
     <button class="fpb${later?" on":""}" data-later="${esc(f.id)}" aria-label="Watch later">${FPI.later}<span class="lbl">${later?"Saved":"Watch later"}</span></button>
     <button class="fpb" data-ytfs="" aria-label="Full screen"></button></div></div>`);
-  fpPaint();setTimeout(fpArm,300)}
+  fpPaint()}
 const fpIsFs=()=>document.body.classList.contains("fsmode")||document.body.classList.contains("wfs");
 // computer: the browser's real full screen (whole monitor); phone: fills the page, so Android shows no "swipe to exit" notice each time
 // real full screen on phones and computers (status and navigation bars hidden); phones also turn to landscape, like YouTube
@@ -2339,17 +2339,9 @@ let fpSw=null;
 let fpTouchAt=0,fpLastY=0,fpAuto="";
 document.addEventListener("touchstart",()=>{fpTouchAt=Date.now()},{capture:true,passive:true});
 const fpPhone=()=>matchMedia("(pointer:coarse)").matches;
-/* Experiment: on phones the film page starts scrolled down by a small hidden strip. A swipe on the film (which only YouTube's
-   player sees) then moves the page a little; a page move without any touch on the page itself = a swipe on the film -> full screen. */
-const FP_PAD=56;
-function fpArm(){if(!fpPhone()||state.view!=="watch"||fpIsFs())return;
-  if(!document.querySelector(".fpspacer"))document.body.insertAdjacentHTML("afterbegin",`<div class="fpspacer" aria-hidden="true" style="height:${FP_PAD}px;background:var(--bg)"></div>`);
-  if(window.scrollY<FP_PAD){fpArming=true;window.scrollTo(0,FP_PAD);setTimeout(()=>{fpArming=false;fpLastY=window.scrollY},150)}}
-let fpArming=false;
 addEventListener("scroll",()=>{const y=window.scrollY,was=fpLastY;fpLastY=y;
-  if(fpArming||state.view!=="watch"||!fpPhone()||fpIsFs()||!document.querySelector(".fpspacer"))return;
-  if(Date.now()-fpTouchAt<900)return; // the page itself was touched: an ordinary scroll
-  if(Math.abs(was-FP_PAD)<=6&&Math.abs(y-was)>=8){openWfs();fpAuto="swipe";fpPaint();fpShow()}},{passive:true});
+  if(state.view!=="watch"||!fpPhone()||fpIsFs()||!document.querySelector(".fpbar"))return;
+  if(was<10&&y>=10&&Date.now()-fpTouchAt>900){window.scrollTo(0,0);openWfs();fpAuto="swipe";fpPaint();fpShow()}},{passive:true});
 matchMedia("(orientation: landscape)").addEventListener?.("change",e=>{if(state.view!=="watch"||!fpPhone()||!document.querySelector(".fpbar"))return;
   if(e.matches&&!fpIsFs()){openWfs();fpAuto="rotate";fpPaint();fpShow()}
   else if(!e.matches&&fpAuto==="rotate"&&document.body.classList.contains("wfs")){closeWfs();fpAuto="";fpPaint()}});
@@ -2544,7 +2536,6 @@ function parsePath(){
 }
 const urlNow=()=>location.pathname+location.search;
 function go(patch){
-  if(patch.view&&patch.view!=="watch")document.querySelector(".fpspacer")?.remove();
   if(patch.view&&patch.view!=="watch"&&document.body.classList.contains("fsmode")){try{(document.exitFullscreen||document.webkitExitFullscreen).call(document)}catch(e){}}
   renderHard=true;
   if(patch.view&&patch.view!=="shorts"&&document.body.classList.contains("spfs"))toggleShortsFull(false);
@@ -2558,7 +2549,7 @@ function go(patch){
 let wfsPushed=false;
 function openWfs(){if(document.body.classList.contains("wfs"))return;document.body.classList.add("wfs");
   try{history.pushState({...(history.state||{}),overlay:"wfs"},"",location.href);wfsPushed=true}catch(e){}}
-function closeWfs(fromBack){setTimeout(()=>{try{fpArm()}catch(e){}},200);if(!document.body.classList.contains("wfs"))return;document.body.classList.remove("wfs");$("#wfsClose")?.remove();$("#wfsShare")?.remove();
+function closeWfs(fromBack){if(!document.body.classList.contains("wfs"))return;document.body.classList.remove("wfs");$("#wfsClose")?.remove();$("#wfsShare")?.remove();
   if(wfsPushed&&!fromBack){wfsPushed=false;ignorePop=true;history.back()}wfsPushed=false}
 document.addEventListener("click",e=>{if(e.target.closest("[data-ytfs]")){e.preventDefault();fpFull();return}if(e.target.closest("[data-wfs]")){e.preventDefault();openWfs()}else if(e.target.closest("#wfsClose")){e.preventDefault();closeWfs()}});
 document.addEventListener("keydown",e=>{if(e.key==="Escape"&&document.body.classList.contains("wfs"))closeWfs()});
