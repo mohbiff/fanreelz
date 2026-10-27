@@ -55,7 +55,7 @@ const ALIASES = {
   metroid: ["metroid", "samus"],
   yakuza: ["kazuma kiryu", "yakuza 0", "yakuza: like a dragon", "majima"],
   colossus: ["shadow of the colossus"],
-  conan: ["future boy conan", "mirai shonen conan", "mirai shōnen conan", "未来少年コナン", "عدنان ولينا", "عدنان و لينا", "adnan and lina", "adnan & lina"],
+  conan: ["future boy conan", "mirai shonen conan", "mirai shōnen conan", "未来少年コナン", "미래소년 코난", "futureboyconan", "عدنان ولينا", "عدنان و لينا", "adnan and lina", "adnan & lina"],
   amongus: ["among us"],
   clash: ["clash of clans", "clash royale", "hog rider"],
   brawlstars: ["brawl stars"],

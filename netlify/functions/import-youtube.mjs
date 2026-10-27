@@ -23,6 +23,7 @@ const TOPICS = [
 ];
 // Topics added later are searched first, once each, before the normal rotation continues
 const NEW_TOPICS = [
+  "未来少年コナン AI実写", "미래소년 코난 AI", "عدنان ولينا واقعي بالذكاء الاصطناعي", "Future Boy Conan AI real life",
   "كرتون بالذكاء الاصطناعي الحلقة 1", "مسلسل كرتون بالذكاء الاصطناعي", "كرتون مصري بالذكاء الاصطناعي", "قصص ذكاء اصطناعي كرتون", "انيميشن عربي بالذكاء الاصطناعي", "مسلسل بالذكاء الاصطناعي الحلقة",
   "AI among us movie", "AI clash of clans movie", "AI brawl stars movie", "AI subway surfers live action", "AI fall guys movie", "AI pubg movie", "AI free fire movie", "AI honor of kings cinematic", "AI mobile legends movie", "AI counter strike movie", "AI valorant movie", "AI apex legends movie", "AI overwatch movie", "AI rainbow six siege movie", "AI marvel rivals movie", "AI genshin impact live action", "AI honkai star rail live action", "AI ea sports fc movie", "AI destiny 2 movie", "AI dead by daylight movie", "AI the sims live action", "AI path of exile movie", "AI helldivers 2 movie", "AI ark survival movie", "AI terraria movie", "AI stardew valley live action", "AI monster hunter movie", "AI black myth wukong movie",
   "عدنان ولينا بالذكاء الاصطناعي", "عدنان ولينا واقعي", "future boy conan AI live action", "mirai shonen conan AI",
