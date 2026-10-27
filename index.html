@@ -136,10 +136,25 @@ main{min-width:0;padding-right:max(16px,env(safe-area-inset-right,0px));padding-
 /* watch view */
 @media (max-width:860px){[data-theater]{display:none!important}.pbar{display:none}}
 @media (min-width:861px){.wfsbtn{display:none!important}}
-.ytbtns{position:absolute;bottom:0;left:0;right:0;z-index:4;margin:8px;display:flex;gap:8px;transition:opacity .3s;pointer-events:none}.ytbtns>*{pointer-events:auto}.ytfs{margin-left:auto}.ytfs .fsout,body.wfs .ytfs .fsin{display:none}body.wfs .ytfs .fsout{display:inline}.ytbtns.hide{opacity:0;pointer-events:none}
-.ytb{height:44px;padding:0 14px;box-sizing:border-box;border-radius:22px;border:0;background:rgba(15,12,22,.94);color:#fff;font:700 14px/1 inherit;display:flex;align-items:center;gap:6px;cursor:pointer;box-shadow:0 2px 10px rgba(0,0,0,.35);white-space:nowrap}.ytb .i{width:18px;height:18px}.ytb:hover,.ytb.on{background:var(--accent);color:var(--ink-on-accent,#000)}
-@media (max-width:860px){.ytbtns{margin:6px;gap:6px}.ytb{height:40px;padding:0 12px;font-size:13px}}
-body.wfs .ytbtns{position:fixed;bottom:env(safe-area-inset-bottom);left:env(safe-area-inset-left);right:env(safe-area-inset-right);z-index:9001}body.wfs .ytb{background:var(--accent);color:var(--ink-on-accent,#000)}
+/* Fanreelz's own controls on YouTube films: YouTube's controls are switched off, so its share, watch-later and logo can't show through */
+.fp{position:absolute;inset:0;z-index:4;user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent}
+.fptap{position:absolute;inset:0;cursor:pointer}
+.fpbig{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:68px;height:68px;border-radius:50%;border:0;background:rgba(0,0,0,.55);color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:opacity .25s}
+.fpbig svg{width:30px;height:30px;fill:#fff}
+.fpbar{position:absolute;left:0;right:0;bottom:0;padding:28px 10px 8px;background:linear-gradient(transparent,rgba(0,0,0,.85));transition:opacity .25s}
+.fp.hide .fpbar,.fp.hide .fpbig{opacity:0;pointer-events:none}
+.fp.hide .fptap{cursor:none}
+.fp.idle .fptap,.fp.idle .fpbig{display:none}
+.fpseek{width:100%;margin:0 0 6px;height:20px;accent-color:#e5303a;cursor:pointer;display:block}
+.fprow{display:flex;align-items:center;gap:6px;color:#fff;min-width:0}
+.fprow .fpsp{flex:1}
+.fpb{height:38px;min-width:38px;padding:0 10px;border:0;border-radius:19px;background:transparent;color:#fff;font:700 13px/1 inherit;display:flex;align-items:center;gap:6px;cursor:pointer;white-space:nowrap}
+.fpb:hover{background:rgba(255,255,255,.14)}.fpb.on{color:var(--accent)}
+.fpb svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}.fpb svg.fill{fill:currentColor;stroke:none}
+.fptime{font:600 13px/1 inherit;font-variant-numeric:tabular-nums;opacity:.9;padding:0 4px}
+.fpb .lbl{display:inline}
+@media (max-width:600px){.fpb .lbl{display:none}.fpb{padding:0 6px;min-width:34px;height:36px}.fprow{gap:2px}.fpbar{padding:24px 6px 6px}.fptime{font-size:12px;padding:0 2px}}
+body.wfs .fpbar{padding-bottom:calc(10px + env(safe-area-inset-bottom))}
 .theater{background:#000;margin:0 -24px;padding:12px 24px 4px}.theater .player{width:min(100%,calc((100vh - 170px)*16/9));margin:0 auto;border-radius:0}
 .theater .pbar,.theater .ythelp{max-width:min(100%,calc((100vh - 170px)*16/9));margin-left:auto;margin-right:auto}
 .watch{display:grid;grid-template-columns:minmax(0,1fr) 402px;gap:24px;padding-top:16px;max-width:1700px}
@@ -935,12 +950,10 @@ function renderWatch(){
     <div class="wactions">${f.real||f.yt||f.tt||f.ig||f.vm||f.dm?"":`<button data-tip="${esc(f.byId||f.by)}" data-tipfilm="${esc(f.id)}">${icon("heart")}Tip</button>`}<button data-save="${esc(f.id)}">${icon("save")}Save</button><button data-share="${esc(f.id)}">${icon("share")}Share</button><button data-later="${esc(f.id)}" class="${myLater.some(x=>x.id===f.id)?"on":""}">${icon("clock")}${myLater.some(x=>x.id===f.id)?"Saved":"Watch later"}</button>${isVerified(f)?"":`<button data-claimorig="${esc(f.id)}">${icon("shield")}Is this yours?</button>`}<button data-report="${esc(f.id)}">${icon("flag")}Report re-upload</button>${isMod&&f.yt?`<button data-adminhide="${esc(f.id)}">${icon("shield")}Hide from Fanreelz</button>`:""}</div>
   </div><aside class="upnext"><h3>${f.seriesId&&findSeries(f.seriesId)?"Next episodes":"Up next"}</h3>${next.map(x=>`<button class="mini-v" data-open="${esc(x.id)}"><div class="thumb"><canvas data-f="${esc(x.id)}"></canvas><span class="len">${esc(x.len)}</span></div><div class="vtext"><h4 class="vtitle">${esc(x.title)}</h4><div class="vmeta">${esc(byName(x)||"YouTube creator")}</div><div class="vmeta">${metaLine(x)}</div></div></button>`).join("")}</aside></div>`;
   $(".watch>div").insertAdjacentHTML("beforeend",commentsHtml(f));
-  if(f.yt){if(keepYt){const pl=$(".player");pl.innerHTML="";try{pl.moveBefore(keepYt,null)}catch(e){pl.appendChild(keepYt)}if(keepEnd)pl.appendChild(keepEnd)}else $(".player").innerHTML=matchMedia("(max-width:860px)").matches?ytFrame(f.yt).replace("&enablejsapi=1","&enablejsapi=1&fs=0"):ytFrame(f.yt);if(f.age)$(".player").insertAdjacentHTML("afterend",`<div class="ythelp"><b>18+</b>Age-restricted on YouTube, so it may only play there: <a href="${esc(f.url||"https://www.youtube.com/watch?v="+f.yt)}" target="_blank" rel="noopener">watch on YouTube ↗</a></div>`)}
+  if(f.yt){if(keepYt){const pl=$(".player");pl.innerHTML="";try{pl.moveBefore(keepYt,null)}catch(e){pl.appendChild(keepYt)}if(keepEnd)pl.appendChild(keepEnd)}else $(".player").innerHTML=ytFrame(f.yt).replace("&enablejsapi=1","&enablejsapi=1&controls=0&fs=0&disablekb=1");if(f.age)$(".player").insertAdjacentHTML("afterend",`<div class="ythelp"><b>18+</b>Age-restricted on YouTube, so it may only play there: <a href="${esc(f.url||"https://www.youtube.com/watch?v="+f.yt)}" target="_blank" rel="noopener">watch on YouTube ↗</a></div>`)}
   if(f.tt)$(".player").innerHTML=ttFrame(f.tt);
   // Fanreelz share button on top of YouTube's own share icon (top right of the player), so sharing gives a fanreelz.com link
-  if(f.yt)setTimeout(()=>{const pl=$(".player");if(!pl||pl.querySelector(".ytbtns"))return;const later=myLater.some(x=>x.id===f.id);
-    if(ysFilm!==f.id){ysFilm=f.id;ysState=-1}
-    pl.insertAdjacentHTML("beforeend",`<div class="ytbtns"><button class="ytb" data-share="${esc(f.id)}" aria-label="Share this film"><svg class="i" viewBox="0 0 24 24"><circle cx="18" cy="5" r="2.5"/><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="19" r="2.5"/><path d="M8.2 10.8l7.6-4.4M8.2 13.2l7.6 4.4"/></svg>Share</button><button class="ytb${later?" on":""}" data-later="${esc(f.id)}" aria-label="Watch later">${icon("clock")}${later?"Saved":"Watch later"}</button><button class="ytb ytfs" data-ytfs="" aria-label="Full screen"><svg class="i fsin" viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg><svg class="i fsout" viewBox="0 0 24 24"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5"/></svg><span class="fsin">Full screen</span><span class="fsout">Exit</span></button></div>`);ytShareShow()},0);
+  if(f.yt)setTimeout(()=>fpMount(f),0);
   if(f.ig||f.vm||f.dm||f.tt||f.yt)setTimeout(()=>{const pl=$(".player");if(pl&&pl.querySelector("iframe")&&!$(".pbar"))pl.insertAdjacentHTML("afterend",`<div class="pbar"><button class="btn ghost" data-theater="" aria-pressed="${theater}"><svg class="i" viewBox="0 0 24 24">${theater?'<rect x="5" y="7" width="14" height="10" rx="1.5"/>':'<rect x="2" y="6" width="20" height="12" rx="1.5"/>'}</svg>${theater?"Default view":"Theater mode"}</button></div>`)},0);
   if(f.ig||f.vm||f.dm)$(".player").innerHTML=extFrame(f);
 }
@@ -2166,14 +2179,67 @@ document.addEventListener("load",e=>{if(e.target.matches?.(".sp iframe")){spWake
 const ytListen=fr=>{if(!fr?.contentWindow||!/^yt-/.test(fr.dataset.fid||""))return;[0,600,1500,3500].forEach(t=>setTimeout(()=>{try{fr.contentWindow.postMessage(JSON.stringify({event:"listening",id:fr.dataset.fid,channel:"widget"}),"*")}catch(e){}},t))};
 document.addEventListener("load",e=>{if(e.target.matches?.(".player iframe, .sp iframe"))ytListen(e.target)},true);
 let endTimer=null;
-/* The Fanreelz Share button on the player hides like YouTube's controls: shown on a tap or a pause, gone 4 s after the film plays on */
-let ysState=-1,ysT=null,ysFilm=null;
-function ytShareShow(){const b=document.querySelector(".ytbtns");if(!b)return;b.classList.remove("hide");clearTimeout(ysT);
-  ysT=setTimeout(()=>{if(ysState===1)document.querySelector(".ytbtns")?.classList.add("hide")},4000)}
-// a tap on the YouTube player moves focus into it: the page notices through "blur", shows the button, and takes focus back so the next tap is noticed too
-// like YouTube: a tap shows the buttons, a tap while they show hides them again (while the film plays)
-function ytTap(){const b=document.querySelector(".ytbtns");if(!b)return;if(!b.classList.contains("hide")&&ysState===1){clearTimeout(ysT);b.classList.add("hide")}else ytShareShow()}
-addEventListener("blur",()=>setTimeout(()=>{const a=document.activeElement;if(a&&a.matches&&a.matches(".player iframe")){ytTap();setTimeout(()=>{try{a.blur();window.focus()}catch(e){}},80)}},0));
+/* Fanreelz player controls for YouTube films (YouTube's own controls are off: controls=0).
+   Everything runs through YouTube's iframe messages: play, pause, seek, mute, captions; the player reports time and state back. */
+const fp={film:null,st:-1,t:0,dur:0,muted:false,cc:false,drag:false,timer:null};
+const FPI={play:'<svg class="fill" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>',pause:'<svg class="fill" viewBox="0 0 24 24"><path d="M7 5h4v14H7zM13 5h4v14h-4z"/></svg>',
+  vol:'<svg viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9z"/><path d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12"/></svg>',mute:'<svg viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9z"/><path d="M17 9l5 6M22 9l-5 6"/></svg>',
+  cc:'<svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M10 10.5a2 2 0 1 0 0 3M16 10.5a2 2 0 1 0 0 3"/></svg>',
+  share:'<svg viewBox="0 0 24 24"><circle cx="18" cy="5" r="2.5"/><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="19" r="2.5"/><path d="M8.2 10.8l7.6-4.4M8.2 13.2l7.6 4.4"/></svg>',
+  later:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>',
+  fsin:'<svg viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>',fsout:'<svg viewBox="0 0 24 24"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5"/></svg>'};
+const fpTime=x=>{x=Math.max(0,Math.floor(x||0));const h=Math.floor(x/3600),m=Math.floor(x%3600/60),sec=String(x%60).padStart(2,"0");return h?`${h}:${String(m).padStart(2,"0")}:${sec}`:`${m}:${sec}`};
+const fpFrame=()=>document.querySelector(".player iframe");
+function fpCmd(func,args=[]){try{fpFrame().contentWindow.postMessage(JSON.stringify({event:"command",func,args}),"*")}catch(e){}}
+function fpMount(f){const pl=$(".player");if(!pl||pl.querySelector(".fp"))return;
+  if(fp.film!==f.id){Object.assign(fp,{film:f.id,st:-1,t:0,dur:/^\d+:\d\d$/.test(f.len||"")?secs(f.len):0,drag:false,cc:false})}
+  const later=myLater.some(x=>x.id===f.id),wfs=document.body.classList.contains("wfs");
+  pl.insertAdjacentHTML("beforeend",`<div class="fp"><div class="fptap" data-fptap=""></div><button class="fpbig" data-fpplay="" aria-label="Play or pause"></button>
+    <div class="fpbar"><input class="fpseek" type="range" min="0" max="1000" value="0" aria-label="Seek">
+    <div class="fprow"><button class="fpb" data-fpplay="" aria-label="Play or pause"></button><button class="fpb" data-fpmute="" aria-label="Mute"></button><span class="fptime"></span><span class="fpsp"></span>
+    <button class="fpb${fp.cc?" on":""}" data-fpcc="" aria-label="Subtitles">${FPI.cc}</button>
+    <button class="fpb" data-share="${esc(f.id)}" aria-label="Share this film">${FPI.share}<span class="lbl">Share</span></button>
+    <button class="fpb${later?" on":""}" data-later="${esc(f.id)}" aria-label="Watch later">${FPI.later}<span class="lbl">${later?"Saved":"Watch later"}</span></button>
+    <button class="fpb" data-ytfs="" aria-label="Full screen">${wfs?FPI.fsout:FPI.fsin}</button></div></div></div>`);
+  fpPaint();fpShow()}
+function fpPaint(){const o=document.querySelector(".fp");if(!o)return;const playing=fp.st===1||fp.st===3;
+  o.classList.toggle("idle",fp.st===-1||fp.st===5); // not started yet: taps go to YouTube's player, so phones that block autoplay can start it there
+  o.querySelectorAll("[data-fpplay]").forEach(b=>b.innerHTML=playing?FPI.pause:FPI.play);
+  const m=o.querySelector("[data-fpmute]");if(m)m.innerHTML=fp.muted?FPI.mute:FPI.vol;
+  const tm=o.querySelector(".fptime");if(tm)tm.textContent=fpTime(fp.t)+(fp.dur?" / "+fpTime(fp.dur):"");
+  const sk=o.querySelector(".fpseek");if(sk&&!fp.drag&&fp.dur)sk.value=Math.round(fp.t/fp.dur*1000);
+  const fs=o.querySelector("[data-ytfs]");if(fs)fs.innerHTML=document.body.classList.contains("wfs")?FPI.fsout:FPI.fsin}
+// controls show on a tap and hide 3 s later while the film plays, like YouTube's; paused or ended, they stay
+function fpShow(){const o=document.querySelector(".fp");if(!o)return;o.classList.remove("hide");clearTimeout(fp.timer);
+  fp.timer=setTimeout(()=>{if(fp.st===1&&!fp.drag)document.querySelector(".fp")?.classList.add("hide")},3000)}
+function fpHide(){clearTimeout(fp.timer);document.querySelector(".fp")?.classList.add("hide")}
+function fpToggle(){fpCmd(fp.st===1||fp.st===3?"pauseVideo":"playVideo");fpShow()}
+function fpSeek(t){fp.t=Math.max(0,Math.min(fp.dur||t,t));fpCmd("seekTo",[fp.t,true]);fpPaint();fpShow()}
+function fpInfo(d){const i=d.event==="infoDelivery"?d.info:null;
+  if(d.event==="onStateChange")fp.st=d.info;
+  if(i){if(i.playerState!=null)fp.st=i.playerState;if(i.currentTime!=null&&!fp.drag)fp.t=+i.currentTime;if(i.duration)fp.dur=+i.duration;if(i.muted!=null)fp.muted=!!i.muted}
+  if(d.event==="onStateChange"||(i&&i.playerState!=null)){if(fp.st===2||fp.st===0)fpShow();else if(fp.st===1&&!document.querySelector(".fp.hide"))fpShow()}
+  fpPaint()}
+document.addEventListener("click",e=>{const o=e.target.closest(".fp");if(!o)return;
+  if(e.target.closest("[data-fptap]")){e.preventDefault();if(fpPtr==="mouse"){fpToggle();return} // computer: a click plays/pauses, like YouTube
+    if(o.classList.contains("hide"))fpShow();else fpHide();return} // phone: a tap shows or hides the controls, playing or paused
+  if(e.target.closest("[data-fpplay]")){e.preventDefault();fpToggle();return}
+  if(e.target.closest("[data-fpmute]")){e.preventDefault();fp.muted=!fp.muted;fpCmd(fp.muted?"mute":"unMute");fpPaint();fpShow();return}
+  if(e.target.closest("[data-fpcc]")){e.preventDefault();fp.cc=!fp.cc;fpCmd(fp.cc?"loadModule":"unloadModule",["captions"]);if(fp.cc)fpCmd("setOption",["captions","track",{languageCode:YT_LANG}]);
+    e.target.closest("[data-fpcc]").classList.toggle("on",fp.cc);fpShow();return}
+  fpShow()},true);
+let fpPtr=matchMedia("(pointer:fine)").matches?"mouse":"touch";document.addEventListener("pointerdown",e=>{if(e.target.closest?.(".fp"))fpPtr=e.pointerType||"mouse"},true);
+document.addEventListener("mousemove",e=>{if(e.target.closest?.(".fp")&&fpPtr==="mouse")fpShow()},{passive:true});
+document.addEventListener("input",e=>{if(!e.target.matches?.(".fpseek"))return;fp.drag=true;fp.t=e.target.value/1000*(fp.dur||0);
+  const tm=document.querySelector(".fptime");if(tm)tm.textContent=fpTime(fp.t)+(fp.dur?" / "+fpTime(fp.dur):"");fpShow()});
+document.addEventListener("change",e=>{if(!e.target.matches?.(".fpseek"))return;fp.drag=false;fpSeek(e.target.value/1000*(fp.dur||0))});
+// keyboard on the film page: space/k play-pause, arrows ±5 s, j/l ±10 s, m mute, f full screen
+document.addEventListener("keydown",e=>{if(state.view!=="watch"||!document.querySelector(".fp")||e.ctrlKey||e.metaKey||e.altKey)return;
+  if(/^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName)&&!e.target.matches(".fpseek")||e.target.isContentEditable)return;
+  const k=e.key.toLowerCase();
+  if(k===" "||k==="k"){e.preventDefault();fpToggle()}else if(k==="arrowleft")fpSeek(fp.t-5);else if(k==="arrowright")fpSeek(fp.t+5);
+  else if(k==="j")fpSeek(fp.t-10);else if(k==="l")fpSeek(fp.t+10);else if(k==="m"){fp.muted=!fp.muted;fpCmd(fp.muted?"mute":"unMute");fpPaint();fpShow()}
+  else if(k==="f"){if(document.body.classList.contains("wfs"))closeWfs();else openWfs();fpPaint()}});
 function hideEnd(){clearInterval(endTimer);endTimer=null;document.querySelector(".endnext")?.remove()}
 const endSeen={}; // films where the viewer chose "Watch the ending": no early Up next again
 function showEnd(pl,early){
@@ -2192,8 +2258,7 @@ addEventListener("message",e=>{
   const playing=(d.event==="onStateChange"&&d.info===1)||(d.event==="infoDelivery"&&d.info&&d.info.playerState===1);
   const fr=[...document.querySelectorAll(".player iframe, .sp iframe")].find(i=>i.contentWindow===e.source);if(!fr)return;
   if(playing&&fr.closest(".player")&&!document.querySelector(".endnext.early"))hideEnd();
-  if(fr.closest(".player")){const st=d.event==="onStateChange"?d.info:(d.event==="infoDelivery"&&d.info?d.info.playerState:undefined);
-    if(st!=null&&st!==ysState){ysState=st;if(st===1){clearTimeout(ysT);ysT=setTimeout(()=>{if(ysState===1)document.querySelector(".ytbtns")?.classList.add("hide")},4000)}else if(st===2||st===0)ytShareShow()}}
+  if(fr.closest(".player"))fpInfo(d);
   // YouTube shows its own end-screen suggestions in the last seconds; Fanreelz shows its Up next there instead
   const inf=d.event==="infoDelivery"&&d.info,pl=fr.closest(".player");
   if(inf&&pl&&state.view==="watch"){if(inf.duration)fr._dur=+inf.duration;
@@ -2328,7 +2393,7 @@ function openWfs(){if(document.body.classList.contains("wfs"))return;document.bo
   try{history.pushState({...(history.state||{}),overlay:"wfs"},"",location.href);wfsPushed=true}catch(e){}}
 function closeWfs(fromBack){if(!document.body.classList.contains("wfs"))return;document.body.classList.remove("wfs");$("#wfsClose")?.remove();$("#wfsShare")?.remove();
   if(wfsPushed&&!fromBack){wfsPushed=false;ignorePop=true;history.back()}wfsPushed=false}
-document.addEventListener("click",e=>{if(e.target.closest("[data-ytfs]")){e.preventDefault();if(document.body.classList.contains("wfs"))closeWfs();else openWfs();ytShareShow();return}if(e.target.closest("[data-wfs]")){e.preventDefault();openWfs()}else if(e.target.closest("#wfsClose")){e.preventDefault();closeWfs()}});
+document.addEventListener("click",e=>{if(e.target.closest("[data-ytfs]")){e.preventDefault();if(document.body.classList.contains("wfs"))closeWfs();else openWfs();fpPaint();fpShow();return}if(e.target.closest("[data-wfs]")){e.preventDefault();openWfs()}else if(e.target.closest("#wfsClose")){e.preventDefault();closeWfs()}});
 document.addEventListener("keydown",e=>{if(e.key==="Escape"&&document.body.classList.contains("wfs"))closeWfs()});
 window.addEventListener("popstate",e=>{
   if(ignorePop){ignorePop=false;return}
