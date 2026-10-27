@@ -158,7 +158,7 @@ main{min-width:0;padding-right:max(16px,env(safe-area-inset-right,0px));padding-
 .player.hasbar:fullscreen iframe,body.wfs .player.hasbar iframe{flex:1;aspect-ratio:auto;min-height:0;height:auto!important}
 .player.ended iframe{visibility:hidden}
 .fpbar.fshide{visibility:hidden}
-.fpscroll{display:none}body.fsmode .fpscroll{display:flex}
+.fpb.fpscroll{display:none}body.fsmode .fpb.fpscroll,body.wfs .fpb.fpscroll{display:flex}
 body.fsmode .fpscroll svg{animation:fpbounce 1.4s ease-in-out infinite}
 @keyframes fpbounce{0%,100%{transform:translateY(-2px)}50%{transform:translateY(3px)}}
 @media (prefers-reduced-motion:reduce){body.fsmode .fpscroll svg{animation:none}}
@@ -2327,6 +2327,19 @@ let fpT=null;
 /* Phone: swipe up on the control bar for full screen, swipe down to leave it (like YouTube).
    The picture itself belongs to YouTube's player and doesn't pass touches to the page, so the swipe starts on the bar. */
 let fpSw=null;
+/* Phone, like the YouTube app:
+   - swipe up on the film: the picture belongs to YouTube's player, so the page never sees that touch, but the page scrolls.
+     A scroll that starts at the top with no touch on the page itself = a swipe on the film -> full screen.
+   - turn the phone sideways on a film -> it fills the screen; turn it back -> normal view. */
+let fpTouchAt=0,fpLastY=0,fpAuto="";
+document.addEventListener("touchstart",()=>{fpTouchAt=Date.now()},{capture:true,passive:true});
+const fpPhone=()=>matchMedia("(pointer:coarse)").matches;
+addEventListener("scroll",()=>{const y=window.scrollY,was=fpLastY;fpLastY=y;
+  if(state.view!=="watch"||!fpPhone()||fpIsFs()||!document.querySelector(".fpbar"))return;
+  if(was<10&&y>=10&&Date.now()-fpTouchAt>900){window.scrollTo(0,0);openWfs();fpAuto="swipe";fpPaint();fpShow()}},{passive:true});
+matchMedia("(orientation: landscape)").addEventListener?.("change",e=>{if(state.view!=="watch"||!fpPhone()||!document.querySelector(".fpbar"))return;
+  if(e.matches&&!fpIsFs()){openWfs();fpAuto="rotate";fpPaint();fpShow()}
+  else if(!e.matches&&fpAuto==="rotate"&&document.body.classList.contains("wfs")){closeWfs();fpAuto="";fpPaint()}});
 document.addEventListener("touchstart",e=>{const b=e.target.closest?.(".fpbar");if(!b||e.target.closest(".fpseek,.fpvol"))return;const t=e.touches[0];fpSw={x:t.clientX,y:t.clientY,at:Date.now()}},{passive:true});
 document.addEventListener("touchend",e=>{if(!fpSw)return;const t=e.changedTouches[0],dy=t.clientY-fpSw.y,dx=t.clientX-fpSw.x,fast=Date.now()-fpSw.at<700;fpSw=null;
   if(!fast||Math.abs(dy)<40||Math.abs(dx)>Math.abs(dy))return;
@@ -2347,7 +2360,7 @@ function fpInfo(d){const i=d.event==="infoDelivery"?d.info:null;
   if(d.event==="onStateChange"||(i&&i.playerState!=null)){if(fp.st!==fp.lastSt){fp.lastSt=fp.st;if(fp.st===2||fp.st===0||fp.st===1)fpShow()}}
   fpPaint()}
 document.addEventListener("click",e=>{const o=e.target.closest(".fpbar");if(!o)return;
-  if(e.target.closest("[data-fpscroll]")){e.preventDefault();const pl=document.querySelector(".player");window.scrollTo({top:pl?pl.getBoundingClientRect().bottom+window.scrollY-8:window.innerHeight,behavior:"smooth"});return}
+  if(e.target.closest("[data-fpscroll]")){e.preventDefault();if(document.body.classList.contains("wfs")){closeWfs();fpAuto="";fpPaint();setTimeout(()=>{const p2=document.querySelector(".player");if(p2)window.scrollTo({top:p2.getBoundingClientRect().bottom+window.scrollY-8,behavior:"smooth"})},60);return}const pl=document.querySelector(".player");window.scrollTo({top:pl?pl.getBoundingClientRect().bottom+window.scrollY-8:window.innerHeight,behavior:"smooth"});return}
   if(e.target.closest("[data-fpplay]")){e.preventDefault();fpToggle();return}
   if(e.target.closest("[data-fpmute]")){e.preventDefault();fp.muted=!fp.muted;fpCmd(fp.muted?"mute":"unMute");fpPaint();fpShow();return}
   if(e.target.closest("[data-fpcc]")){e.preventDefault();fp.cc=!fp.cc;fpCmd(fp.cc?"loadModule":"unloadModule",["captions"]);if(fp.cc)fpCmd("setOption",["captions","track",{languageCode:YT_LANG}]);
