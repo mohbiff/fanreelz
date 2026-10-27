@@ -154,6 +154,8 @@ main{min-width:0;padding-right:max(16px,env(safe-area-inset-right,0px));padding-
 .player.hasbar:fullscreen{width:100vw;height:100vh;border-radius:0}
 .player.hasbar:fullscreen iframe,body.wfs .player.hasbar iframe{flex:1;aspect-ratio:auto;min-height:0;height:auto!important}
 .player.ended iframe{visibility:hidden}
+.fpbar.fshide{visibility:hidden}
+.player.hasbar:-webkit-full-screen{display:flex;flex-direction:column;justify-content:center;background:#000;width:100vw;height:100vh}
 .fpseek{width:100%;margin:0 0 6px;height:20px;accent-color:#f2c94c;cursor:pointer;display:block;opacity:.9}
 .fprow{display:flex;align-items:center;gap:6px;color:rgba(255,255,255,.92);min-width:0}
 .fprow .fpsp{flex:1}
@@ -2249,23 +2251,35 @@ function fpMount(f){const pl=$(".player");if(!pl||pl.querySelector(".fpbar"))ret
   fpPaint()}
 const fpIsFs=()=>!!document.fullscreenElement||document.body.classList.contains("wfs");
 // computer: the browser's real full screen (whole monitor); phone: fills the page, so Android shows no "swipe to exit" notice each time
+// real full screen on phones and computers (status and navigation bars hidden); phones also turn to landscape, like YouTube
 function fpFull(){const pl=$(".player");if(!pl)return;
-  if(document.fullscreenElement){document.exitFullscreen();return}if(document.body.classList.contains("wfs")){closeWfs();fpPaint();return}
-  if(matchMedia("(pointer:fine)").matches&&pl.requestFullscreen)pl.requestFullscreen().catch(()=>{openWfs();fpPaint()});else{openWfs();fpPaint()}}
-document.addEventListener("fullscreenchange",()=>fpPaint());
+  if(document.fullscreenElement){try{screen.orientation?.unlock?.()}catch(e){}document.exitFullscreen().catch(()=>{});return}
+  if(document.body.classList.contains("wfs")){closeWfs();fpPaint();return}
+  const req=pl.requestFullscreen||pl.webkitRequestFullscreen;
+  if(req){Promise.resolve(req.call(pl,{navigationUI:"hide"})).then(()=>{if(!matchMedia("(pointer:fine)").matches)screen.orientation?.lock?.("landscape").catch(()=>{});fpShow()}).catch(()=>{openWfs();fpPaint();fpShow()})}
+  else{openWfs();fpPaint();fpShow()}}
+document.addEventListener("fullscreenchange",()=>{if(!document.fullscreenElement){try{screen.orientation?.unlock?.()}catch(e){}document.querySelector(".fpbar")?.classList.remove("fshide")}fpPaint()});
 function fpPaint(){const o=document.querySelector(".fpbar");if(!o)return;const playing=fp.st===1||fp.st===3;
   o.querySelectorAll("[data-fpplay]").forEach(b=>b.innerHTML=playing?FPI.pause:FPI.play);
   const m=o.querySelector("[data-fpmute]");if(m)m.innerHTML=fp.muted?FPI.mute:FPI.vol;
   const tm=o.querySelector(".fptime");if(tm)tm.textContent=fpTime(fp.t)+(fp.dur?" / "+fpTime(fp.dur):"");
   const sk=o.querySelector(".fpseek");if(sk&&!fp.drag&&fp.dur)sk.value=Math.round(fp.t/fp.dur*1000);
   const fs=o.querySelector("[data-ytfs]");if(fs)fs.innerHTML=fpIsFs()?FPI.fsout:FPI.fsin}
-function fpShow(){} function fpHide(){} // the bar under the film is always visible
+/* In full screen the bar hides like YouTube's controls: 3 s after play, back on a tap on the film or a pause.
+   It sits under the film (never on top of it), and keeps its space so the film doesn't jump. */
+let fpT=null;
+function fpShow(){const b=document.querySelector(".fpbar");if(!b)return;b.classList.remove("fshide");clearTimeout(fpT);
+  if(fpIsFs())fpT=setTimeout(()=>{if(fp.st===1&&!fp.drag&&fpIsFs())document.querySelector(".fpbar")?.classList.add("fshide")},3000)}
+function fpHide(){clearTimeout(fpT);if(fpIsFs())document.querySelector(".fpbar")?.classList.add("fshide")}
+// a tap on the film moves focus into YouTube's player; the page notices ("blur"), toggles the bar and takes focus back for the next tap
+addEventListener("blur",()=>setTimeout(()=>{const a=document.activeElement;if(!a?.matches?.(".player iframe")||!fpIsFs())return;
+  const b=document.querySelector(".fpbar");if(b?.classList.contains("fshide"))fpShow();else fpHide();setTimeout(()=>{try{a.blur();window.focus()}catch(e){}},80)},0));
 function fpToggle(){fpCmd(fp.st===1||fp.st===3?"pauseVideo":"playVideo");fpShow()}
 function fpSeek(t){fp.t=Math.max(0,Math.min(fp.dur||t,t));fpCmd("seekTo",[fp.t,true]);fpPaint();fpShow()}
 function fpInfo(d){const i=d.event==="infoDelivery"?d.info:null;
   if(d.event==="onStateChange")fp.st=d.info;
   if(i){if(i.playerState!=null)fp.st=i.playerState;if(i.currentTime!=null&&!fp.drag)fp.t=+i.currentTime;if(i.duration)fp.dur=+i.duration;if(i.muted!=null)fp.muted=!!i.muted}
-  if(d.event==="onStateChange"||(i&&i.playerState!=null)){if(fp.st===2||fp.st===0)fpShow();else if(fp.st===1&&!document.querySelector(".fp.hide"))fpShow()}
+  if(d.event==="onStateChange"||(i&&i.playerState!=null)){if(fp.st!==fp.lastSt){fp.lastSt=fp.st;if(fp.st===2||fp.st===0||fp.st===1)fpShow()}}
   fpPaint()}
 document.addEventListener("click",e=>{const o=e.target.closest(".fpbar");if(!o)return;
   if(e.target.closest("[data-fpplay]")){e.preventDefault();fpToggle();return}
