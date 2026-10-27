@@ -840,7 +840,7 @@ function renderGuide(){renderTabbar();
   const fi=(k,label,ic)=>`<button class="gi ${state.view==="home"&&!state.cat&&state.feed===k&&(k!=="home"||state.format==="all")?"on":""}" data-feed="${k}">${icon(ic)}<span>${label}</span></button>`;
   const fnav=(k,label)=>`<button class="gi ${(state.view==="home"&&!state.cat&&state.feed==="home"&&state.format===k)||(k==="short"&&state.view==="shorts")||(k==="series"&&state.view==="series")?"on":""}" data-fmtnav="${k}">${icon(k)}<span>${label}</span></button>`;
   const T=trendingByGroup();
-  $("#guide").innerHTML=fi("home","Home","home")+fnav("short","Shorts")+fnav("series","Series")+fi("top","Top rated","top")+fi("new","New","fresh")+
+  $("#guide").innerHTML=fi("home","Home","home")+fnav("short","Shorts")+fnav("series","Series")+`<button class="gi ${state.view==="home"&&!state.cat&&state.format==="film"&&state.dur==="o20"?"on":""}" data-longnav="">${icon("film")}<span>Full-length films</span></button>`+fi("top","Top rated","top")+fi("new","New","fresh")+
     `<button class="gi ${state.view==="browse"?"on":""}" data-browse="All">${icon("list")}<span>Browse all</span></button><hr>`+
     `<button class="gi youhead ${state.view==="you"?"on":""}" data-view="you"><span>You</span><svg class="i" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></button>`+
     [["channel","Creator page","user"],["history","History","clock"],["playlists","Playlists","list"],["later","Watch later","clock"],["liked","Liked videos","like"],["yourvideos","Your videos","film"]]
@@ -2265,7 +2265,7 @@ function pathFor(st){
       if(st.q)return "/search?q="+e(st.q);
       if(st.cat)return "/c/"+e(st.cat)+(st.char?"?char="+e(st.char):"");
       if(st.feed&&st.feed!=="home")return "/feed/"+e(st.feed);
-      if(st.format&&st.format!=="all")return "/?f="+e(st.format);
+      if(st.format&&st.format!=="all")return "/?f="+e(st.format)+(st.format==="film"&&st.dur&&st.dur!=="any"?"&d="+e(st.dur):"");
       return "/";}
     default:return PAGES.includes(st.view)?"/"+st.view:"/";
   }
@@ -2286,7 +2286,7 @@ function parsePath(){
   if(a==="search")return {view:"home",feed:"home",q:q.get("q")||""};
   if(a==="browse")return {view:"browse",bgroup:q.get("g")||"All"};
   if(a&&PAGES.includes(a))return {view:a};
-  if(q.get("f"))return {view:"home",format:q.get("f")};
+  if(q.get("f"))return {view:"home",format:q.get("f"),dur:q.get("d")||"any"};
   return {};
 }
 const urlNow=()=>location.pathname+location.search;
@@ -2438,6 +2438,7 @@ document.addEventListener("click",async e=>{
   if(x=A("[data-adminhide]")){const id=x.dataset.adminhide;if(!confirm("Hide this film from Fanreelz for everyone?"))return;modCall({action:"hide",id}).then(r=>{if(r.ok){const i=FILMS.findIndex(f=>f.id===id);if(i>=0)FILMS.splice(i,1);toast("Film hidden");go({view:"home"})}else toast("Couldn't hide: "+(r.error||"error"))});return}
   if(x=A("[data-adminrun]")){adminDo({action:"run",job:x.dataset.adminrun},x.dataset.adminrun==="showdown"?"Running the showdown judge":"Running the importer");return}
   if(A("[data-creport]")){toast("Thanks. A moderator will review this comment.");return}
+  if(x=A("[data-longnav]")){$("#shell").classList.remove("open");go({view:"home",feed:"home",cat:null,char:null,q:"",group:"All",format:"film",dur:"o20"});return}
   if(x=A("[data-fmtnav]")){$("#shell").classList.remove("open");go({view:"home",feed:"home",cat:null,char:null,format:x.dataset.fmtnav});return}
   if(x=A("[data-fmt]")){state.format=x.dataset.fmt;go({});return}
   if(x=A("[data-dur]")){state.dur=x.dataset.dur;render();return}
