@@ -139,7 +139,6 @@ main{min-width:0;padding-right:max(16px,env(safe-area-inset-right,0px));padding-
 .theater .pbar,.theater .ythelp{max-width:min(100%,calc((100vh - 170px)*16/9));margin-left:auto;margin-right:auto}
 .watch{display:grid;grid-template-columns:minmax(0,1fr) 402px;gap:24px;padding-top:16px;max-width:1700px}
 .player{position:relative;aspect-ratio:16/9;max-width:100%;border-radius:12px;overflow:hidden;background:#000}
-.endshield{position:absolute;left:0;right:0;top:64px;bottom:56px;z-index:3;background:transparent;border:0;padding:0;cursor:pointer}
 .shelfh{all:unset;cursor:pointer;font:inherit}.shelfh span{color:var(--accent)}.shelfh:hover{text-decoration:underline}
 .endnext{position:absolute;inset:0;z-index:7;background:rgba(10,8,18,.94);display:flex;flex-direction:column;justify-content:center;gap:14px;padding:18px;box-sizing:border-box;overflow:auto}
 .endtop{display:flex;justify-content:space-between;align-items:center;gap:10px;color:#fff}.endtop span{color:var(--accent);font-weight:700;font-size:14px}
@@ -2145,13 +2144,6 @@ addEventListener("message",e=>{
   const playing=(d.event==="onStateChange"&&d.info===1)||(d.event==="infoDelivery"&&d.info&&d.info.playerState===1);
   const fr=[...document.querySelectorAll(".player iframe, .sp iframe")].find(i=>i.contentWindow===e.source);if(!fr)return;
   if(playing&&fr.closest(".player"))hideEnd();
-  // YouTube's own end-screen cards (last ~20 s) open YouTube when clicked: cover the picture with a clear layer then,
-  // so a click only pauses or plays. The top bar and the bottom controls stay reachable.
-  const inf=d.event==="infoDelivery"&&d.info;
-  if(inf&&fr.closest(".player")){
-    if(inf.duration)fr._dur=+inf.duration;if(inf.playerState!=null)fr._st=inf.playerState;
-    if(inf.currentTime!=null&&fr._dur>30){const pl=fr.closest(".player"),near=fr._dur-inf.currentTime<=22;let sh=pl.querySelector(".endshield");
-      if(near&&!sh)pl.insertAdjacentHTML("beforeend",`<button class="endshield" aria-label="Play or pause"></button>`);else if(!near&&sh)sh.remove()}}
   if(!ended)return;
   if(fr.closest(".sp")){if(state.view==="shorts"&&!spPaused)stepShort(1);return}
   if(state.view==="watch")showEnd(fr.closest(".player"));
@@ -2161,8 +2153,6 @@ document.addEventListener("click",e=>{
   if(e.target.closest("[data-endreplay]")){e.preventDefault();hideEnd();const fr=document.querySelector(".player iframe");
     try{fr.contentWindow.postMessage(JSON.stringify({event:"command",func:"seekTo",args:[0,true]}),"*");fr.contentWindow.postMessage(JSON.stringify({event:"command",func:"playVideo",args:[]}),"*")}catch(x){}return}
   if(e.target.closest(".endnext [data-open]"))hideEnd();
-  if(e.target.closest(".endshield")){e.preventDefault();const fr=document.querySelector(".player iframe");
-    try{fr.contentWindow.postMessage(JSON.stringify({event:"command",func:fr._st===1?"pauseVideo":"playVideo",args:[]}),"*")}catch(x){}return}
 },true);
 /* TikTok's player can't be muted or unmuted by a link setting, only by messages once it is ready */
 addEventListener("message",e=>{
