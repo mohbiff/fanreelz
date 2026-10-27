@@ -3,7 +3,7 @@
 import CATS from "./catmap.mjs";
 
 // Words that show a video is AI-made.
-export const AI_RE = /(\bai\b|\ba\.i\.|artificial intelligence|\bsora\b|\bveo ?[23]?\b|\bkling\b|\brunway\b|midjourney|hailuo|minimax|\bpika\b|seedance|\bluma\b|\bwan ?2|higgsfield|super panavision|panavision 70|80'?s dark fantasy|1980'?s dark fantasy|1950'?s|ai[- ]generated|aigenerated|ذكاء اصطناعي|الذكاء الاصطناعي|بالذكاء)/i;
+export const AI_RE = /(\bai\b|\ba\.i\.|artificial intelligence|\bsora\b|\bveo ?[23]?\b|\bkling\b|\brunway\b|midjourney|hailuo|minimax|\bpika\b|seedance|\bluma\b|\bwan ?2|higgsfield|super panavision|panavision 70|80'?s dark fantasy|1980'?s dark fantasy|1950'?s|ai[- ]generated|aigenerated|ذكاء\s*(ال)?اصطناعي|بالذكاء)/i;
 // Words that show it is a film, trailer, story or series rather than a tutorial or news.
 export const FILM_RE = /(فيلم|مسلسل|حلقة|واقعي|كرتون|film|movie|cinema|cinematic|trailer|teaser|short|story|episode|\bep\.? ?\d|series|live[- ]action|in real life|reimagined|re-imagined|as an? \d0'?s|panavision|dark fantasy|parody|saga|chapter|part \d|music video)/i;
 // Things that are not fan films.
