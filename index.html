@@ -136,7 +136,9 @@ main{min-width:0;padding-right:max(16px,env(safe-area-inset-right,0px));padding-
 /* watch view */
 @media (max-width:860px){[data-theater]{display:none!important}}
 @media (min-width:861px){.wfsbtn{display:none!important}}
-#wfsShare{position:fixed;z-index:9001;top:calc(10px + env(safe-area-inset-top));right:calc(10px + env(safe-area-inset-right));height:40px;padding:0 14px;border-radius:20px;border:0;background:var(--accent);color:var(--ink-on-accent,#000);font:700 14px/1 inherit;display:flex;align-items:center;gap:6px;cursor:pointer}#wfsShare .i{width:18px;height:18px}
+.ytshare{position:absolute;top:0;right:0;z-index:4;margin:8px;height:44px;min-width:118px;padding:0 14px;box-sizing:border-box;border-radius:22px;border:0;background:rgba(15,12,22,.94);color:#fff;font:700 14px/1 inherit;display:flex;align-items:center;justify-content:center;gap:6px;cursor:pointer;box-shadow:0 2px 10px rgba(0,0,0,.35)}.ytshare .i{width:18px;height:18px}.ytshare:hover{background:var(--accent);color:var(--ink-on-accent,#000)}
+@media (max-width:860px){.ytshare{min-width:0;height:40px;margin:6px;padding:0 12px;font-size:13px}}
+body.wfs .ytshare{position:fixed;top:env(safe-area-inset-top);right:env(safe-area-inset-right);z-index:9001;background:var(--accent);color:var(--ink-on-accent,#000)}
 .theater{background:#000;margin:0 -24px;padding:12px 24px 4px}.theater .player{width:min(100%,calc((100vh - 170px)*16/9));margin:0 auto;border-radius:0}
 .theater .pbar,.theater .ythelp{max-width:min(100%,calc((100vh - 170px)*16/9));margin-left:auto;margin-right:auto}
 .watch{display:grid;grid-template-columns:minmax(0,1fr) 402px;gap:24px;padding-top:16px;max-width:1700px}
@@ -934,6 +936,8 @@ function renderWatch(){
   $(".watch>div").insertAdjacentHTML("beforeend",commentsHtml(f));
   if(f.yt){if(keepYt){const pl=$(".player");pl.innerHTML="";try{pl.moveBefore(keepYt,null)}catch(e){pl.appendChild(keepYt)}if(keepEnd)pl.appendChild(keepEnd)}else $(".player").innerHTML=matchMedia("(max-width:860px)").matches?ytFrame(f.yt).replace("&enablejsapi=1","&enablejsapi=1&fs=0"):ytFrame(f.yt);if(f.age)$(".player").insertAdjacentHTML("afterend",`<div class="ythelp"><b>18+</b>Age-restricted on YouTube, so it may only play there: <a href="${esc(f.url||"https://www.youtube.com/watch?v="+f.yt)}" target="_blank" rel="noopener">watch on YouTube ↗</a></div>`)}
   if(f.tt)$(".player").innerHTML=ttFrame(f.tt);
+  // Fanreelz share button on top of YouTube's own share icon (top right of the player), so sharing gives a fanreelz.com link
+  if(f.yt)setTimeout(()=>{const pl=$(".player");if(pl&&!pl.querySelector(".ytshare"))pl.insertAdjacentHTML("beforeend",`<button class="ytshare" data-share="${esc(f.id)}" aria-label="Share this film"><svg class="i" viewBox="0 0 24 24"><circle cx="18" cy="5" r="2.5"/><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="19" r="2.5"/><path d="M8.2 10.8l7.6-4.4M8.2 13.2l7.6 4.4"/></svg>Share</button>`)},0);
   if(f.ig||f.vm||f.dm||f.tt||f.yt)setTimeout(()=>{const pl=$(".player");if(pl&&pl.querySelector("iframe")&&!$(".pbar"))pl.insertAdjacentHTML("afterend",`<div class="pbar"><button class="btn ghost" data-theater="" aria-pressed="${theater}"><svg class="i" viewBox="0 0 24 24">${theater?'<rect x="5" y="7" width="14" height="10" rx="1.5"/>':'<rect x="2" y="6" width="20" height="12" rx="1.5"/>'}</svg>${theater?"Default view":"Theater mode"}</button><button class="btn ghost wfsbtn" data-wfs=""><svg class="i" viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>Full screen</button></div>`)},0);
   if(f.ig||f.vm||f.dm)$(".player").innerHTML=extFrame(f);
 }
@@ -2308,7 +2312,6 @@ function go(patch){
 let wfsPushed=false;
 function openWfs(){if(document.body.classList.contains("wfs"))return;document.body.classList.add("wfs");
   if(!$("#wfsClose"))document.body.insertAdjacentHTML("beforeend",'<button id="wfsClose" aria-label="Close full screen">✕</button>');
-  if(!$("#wfsShare")&&state.film)document.body.insertAdjacentHTML("beforeend",`<button id="wfsShare" data-share="${esc(state.film)}" aria-label="Share this film"><svg class="i" viewBox="0 0 24 24"><circle cx="18" cy="5" r="2.5"/><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="19" r="2.5"/><path d="M8.2 10.8l7.6-4.4M8.2 13.2l7.6 4.4"/></svg>Share</button>`);
   try{history.pushState({...(history.state||{}),overlay:"wfs"},"",location.href);wfsPushed=true}catch(e){}}
 function closeWfs(fromBack){if(!document.body.classList.contains("wfs"))return;document.body.classList.remove("wfs");$("#wfsClose")?.remove();$("#wfsShare")?.remove();
   if(wfsPushed&&!fromBack){wfsPushed=false;ignorePop=true;history.back()}wfsPushed=false}
