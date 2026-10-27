@@ -2484,7 +2484,7 @@ document.addEventListener("click",async e=>{
   const rm=e.target.closest("[data-remind]");if(rm){const id=rm.dataset.remind;if(reminders[id])delete reminders[id];else reminders[id]=true;store.set("fr_remind",reminders);render();toast(reminders[id]?"Reminder saved in this browser":"Reminder removed");return}
   const br=e.target.closest("[data-browse]");if(br){$("#shell").classList.remove("open");go({view:"browse",bgroup:br.dataset.browse,azLimit:60,cat:null,char:null});return}
   if(e.target.closest("[data-more]")){state.azLimit+=60;render();return}
-  const fd=e.target.closest("[data-feed]");if(fd){$("#shell").classList.remove("open");go({view:"home",feed:fd.dataset.feed,cat:null,char:null,format:fd.dataset.feed==="home"?"all":state.format});return}
+  const fd=e.target.closest("[data-feed]");if(fd){$("#shell").classList.remove("open");const home=fd.dataset.feed==="home";if(home)resetSections();go({view:"home",feed:fd.dataset.feed,cat:null,char:null,format:home?"all":state.format,...(home?{group:"All",q:"",dur:"any",lore:"all"}:{})});return}
   const c=e.target.closest("[data-cat]");if(c){$("#shell").classList.remove("open");go({view:"home",feed:"home",cat:c.dataset.cat,char:c.dataset.charGo||null,lore:"all"});return}
   const g=e.target.closest("[data-group]");if(g){groupTouched=true;go({group:g.dataset.group});return}
   const ch=e.target.closest("[data-char]");if(ch){go({char:ch.dataset.char||null});return}
