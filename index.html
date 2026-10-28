@@ -967,6 +967,9 @@ async function loadViews(){if(!sb)return;const all={};
   for(let from=0;from<200000;from+=1000){const {data,error}=await sb.from("film_views").select("id,n").range(from,from+999);
     if(error||!data){if(error)console.warn("views",error.message);break}data.forEach(r=>all[r.id]=+r.n||0);if(data.length<1000)break}
   for(const k in VIEWS)if(counted.has(k))all[k]=Math.max(all[k]||0,VIEWS[k]);VIEWS=all;if(Object.keys(all).length)render()}
+/* publish dates: on YouTube (or the film's own site) and when Fanreelz added it */
+const fdate=t=>new Date(t).toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"});
+const datesLine=f=>[f.pub?`Published on ${esc(f.src||"YouTube")} ${fdate(f.pub)}`:"",f.added?`Added to Fanreelz ${fdate(f.added)}`:""].filter(Boolean).join(" · ");
 const metaLine=f=>{const s=stats(f);return `${viewTxt(f)}${s.n?`<span class="st">★</span> ${s.avg.toFixed(1)} · ${fmtN(s.n)} ratings`:"No ratings yet"} · ${f.days==null?"on "+esc(f.src):ago(f.days)}`};
 function card(f,rank){
   return `<button class="vid" data-open="${esc(f.id)}"><div class="thumb"><canvas data-f="${esc(f.id)}"></canvas>${rank?`<span class="rank">${rank}</span>`:""}<span class="len">${esc(f.len)}</span></div>
@@ -1098,7 +1101,7 @@ function renderWatch(){
     ${f.seriesId&&findSeries(f.seriesId)?`<button class="serieslink" data-series="${esc(f.seriesId)}">${esc(findSeries(f.seriesId)?.title||"Series")} · Season ${f.season}, Episode ${f.ep}</button>`:""}<h1 class="wtitle" ${f.format==="episode"?'style="margin-top:4px"':""}>${esc(f.title)}${f.real?'<span class="pill">Real</span>':""}${isVerified(f)?'<span class="pill">Verified original</span>':""}</h1>
     <div class="wbar">${(f.real||f.yt||f.tt||f.ig||f.vm||f.dm)?`<div class="owner">${cav(byName(f),40)}<div><b>${esc(byName(f)||"YouTube creator")}</b><small>${esc(catName(f.cat))} · ${esc(f.char)}</small></div></div>`:`<button class="owner link" data-creator="${esc(f.byId||f.by)}">${cav(byName(f),40)}<div><b>${esc(byName(f)||"YouTube creator")}</b><small>${fmtN(followerCount(f.byId||f.by))} followers · ${esc(catName(f.cat))}</small></div></button>`}
       <div class="ratebox" role="group" aria-label="Rate this film"><span>${mine?"Your rating":"Rate"}</span>${[1,2,3,4,5].map(k=>`<button data-rate="${k}" class="${k<=mine?"on":""}" aria-label="${k} stars">★</button>`).join("")}</div></div>
-    <div class="desc"><div class="top2">${[viewsOf(f)>=VIEW_MIN?viewsOf(f).toLocaleString("en-US")+" views on Fanreelz":"",f.ytViews?f.ytViews.toLocaleString("en-US")+" views on YouTube":""].filter(Boolean).map(x=>x+" · ").join("")}${s.n?`★ ${s.avg.toFixed(1)} from ${s.n.toLocaleString("en-US")} ratings`:"No ratings yet"} · ${f.days==null?"":ago(f.days)+" · "}${esc(f.src)} · made with ${esc(f.tool)}</div>
+    <div class="desc"><div class="top2">${[viewsOf(f)>=VIEW_MIN?viewsOf(f).toLocaleString("en-US")+" views on Fanreelz":"",f.ytViews?f.ytViews.toLocaleString("en-US")+" views on YouTube":""].filter(Boolean).map(x=>x+" · ").join("")}${s.n?`★ ${s.avg.toFixed(1)} from ${s.n.toLocaleString("en-US")} ratings`:"No ratings yet"} · ${f.days==null?"":ago(f.days)+" · "}${esc(f.src)} · made with ${esc(f.tool)}</div>${datesLine(f)?`<div class="vmeta" style="margin-top:4px">${datesLine(f)}</div>`:""}
       <div class="dist">${[5,4,3,2,1].map(k=>`<span>${k}★</span><span class="bar"><i style="width:${max?s.c[k-1]/max*100:0}%"></i></span><span>${fmtN(s.c[k-1])}</span>`).join("")}</div>
       <div class="tags"><button data-cat="${f.cat}">${esc(catName(f.cat))}</button><button data-cat="${f.cat}" data-char-go="${esc(f.char)}">${esc(f.char)}</button><button data-cat="${f.cat}" data-lore-go="${loreOf(f)}">${loreOf(f)==="lore"?"Lore-accurate":"What if"}</button>${isKids(f)?'<button data-family-info="">Family-friendly</button>':""}</div>
       ${f.real||f.yt||f.tt||f.ig||f.vm||f.dm||f.byId?"":`<div class="howmade"><b>How it was made</b><div class="vmeta">Tool: ${esc(f.tool)} · Prompt shared by ${esc(byName(f)||"YouTube creator")}</div><div class="prompt" id="promptText">${esc(promptOf(f))}</div><div class="row"><button class="btn ghost" data-copyprompt="" style="padding:6px 12px">Copy prompt</button></div></div>`}
@@ -2187,7 +2190,7 @@ function renderShorts(){
    ${nx?`<button class="spnext" data-snav="1" aria-label="Next short: ${esc(nx.title)}"><div class="thumb vert"><canvas data-f="${esc(nx.id)}"></canvas></div><span class="spnext-l">↓ Next: ${esc(nx.title)}</span></button>`:""}</div>
    <div class="sside">
      ${(f.real||f.yt||f.tt||f.ig||f.vm||f.dm)?`<div class="owner">${cav(byName(f),40)}<div><b>${esc(byName(f)||"YouTube creator")}</b></div></div>`:`<button class="owner link" data-creator="${esc(f.byId||f.by)}">${cav(byName(f),40)}<div><b>${esc(byName(f)||"YouTube creator")}</b><small>${fmtN(followerCount(f.byId||f.by))} followers</small></div></button>`}
-     <div class="vmeta">${viewTxt(f)}${s.n?`★ ${s.avg.toFixed(1)} from ${fmtN(s.n)} ratings`:"No ratings yet"} · ${f.days==null?"on "+esc(f.src):ago(f.days)}</div>
+     <div class="vmeta">${viewTxt(f)}${s.n?`★ ${s.avg.toFixed(1)} from ${fmtN(s.n)} ratings`:"No ratings yet"} · ${f.days==null?"on "+esc(f.src):ago(f.days)}</div>${datesLine(f)?`<div class="vmeta" style="font-size:12px">${datesLine(f)}</div>`:""}
      <div class="ratebox" role="group" aria-label="Rate this short" style="align-self:flex-start"><span>${mine?"Your rating":"Rate"}</span>${[1,2,3,4,5].map(k=>`<button data-rate="${k}" class="${k<=mine?"on":""}" aria-label="${k} stars">★</button>`).join("")}</div>
      <div class="wactions" style="margin-top:0">${f.real||f.yt||f.tt||f.ig||f.vm||f.dm?"":`<button data-tip="${esc(f.byId||f.by)}" data-tipfilm="${esc(f.id)}">${icon("heart")}Tip</button>`}<button data-save="${esc(f.id)}">${icon("save")}Save</button><button data-share="${esc(f.id)}" data-share-short="1">${icon("share")}Share</button><button data-open-full="${esc(f.id)}">${icon("film")}Details</button></div>
      <div class="snav"><button class="iconbtn navb" data-snav="-1" aria-label="Previous short" ${state.shortI===0?"disabled":""}><svg class="i" viewBox="0 0 24 24"><path d="M6 15l6-6 6 6"/></svg></button>
@@ -3036,10 +3039,10 @@ async function sbSave(col,id,data){
 /* The big catalogue: AI fan films the importer has found on YouTube.
    The last copy is kept on the device (IndexedDB), so the page shows every film at once on the next visit;
    a fresh copy is then read from the database in parallel pages of 1,000 (only the columns the page uses). */
-const CAT_COLS="id,video_id,title,cat,char,channel,duration,published_at,format,lore,age_restricted,views";
+const CAT_COLS="id,video_id,title,cat,char,channel,duration,published_at,added_at,format,lore,age_restricted,views";
 const idb=(mode,fn)=>new Promise((res,rej)=>{try{const o=indexedDB.open("fanreelz",1);o.onupgradeneeded=()=>o.result.createObjectStore("kv");
   o.onsuccess=()=>{try{const tx=o.result.transaction("kv",mode),r=fn(tx.objectStore("kv"));tx.oncomplete=()=>{res(r?.result);o.result.close()};tx.onerror=()=>rej(tx.error)}catch(e){rej(e)}};o.onerror=()=>rej(o.error)}catch(e){rej(e)}});
-const catSig=rows=>rows.length+"|"+rows.map(r=>r.id).join(",").length+"|"+(rows[0]?.id||"")+"|"+(rows[rows.length-1]?.id||"");
+const catSig=rows=>(rows[0]?.added_at?"a|":"")+rows.length+"|"+rows.map(r=>r.id).join(",").length+"|"+(rows[0]?.id||"")+"|"+(rows[rows.length-1]?.id||"");
 let catLoaded="";
 function useCatalog(rows){
   const sig=catSig(rows);if(sig===catLoaded)return 0;catLoaded=sig;
@@ -3050,7 +3053,7 @@ function useCatalog(rows){
     FILMS.push({id:r.id,yt:r.video_id,title:r.title,cat:r.cat,char:r.char||"",src:"YouTube",tool:"AI tools",by:r.channel||"",
       len:d?`${Math.floor(d/60)}:${String(d%60).padStart(2,"0")}`:"",days:r.published_at?daysSince(Date.parse(r.published_at)):null,
       counts:[0,0,0,0,0],hue:(k*47)%360,format:r.format==="short"?"short":"film",lore:r.lore||"whatif",boost:Math.max(0,20-k/50),
-      url:"https://www.youtube.com/watch?v="+r.video_id,age:!!r.age_restricted,ytViews:+r.views||0,db:true});n++});
+      url:"https://www.youtube.com/watch?v="+r.video_id,age:!!r.age_restricted,ytViews:+r.views||0,db:true,pub:r.published_at?Date.parse(r.published_at):null,added:r.added_at?Date.parse(r.added_at):null});n++});
   autoCache.k="";filmIdx.k="";return n||1;
 }
 async function loadCatalog(){
