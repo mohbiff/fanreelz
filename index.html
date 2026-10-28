@@ -501,7 +501,12 @@ body.spfs{overflow:hidden}
 body.spfs::after{content:"";position:fixed;inset:0;background:#000;z-index:59}
 body.spfs .shorts-view .sp{position:fixed;inset:0;width:100vw;max-width:none;height:100vh;height:100dvh;border-radius:0;z-index:60;aspect-ratio:auto}
 body.spfs .tabbar,body.spfs .toast{z-index:61}
-body.spfs .tabbar{display:none}
+/* phone Shorts: like YouTube, the bottom bar (Home, Shorts…) stays, the video ends just above it, and a back arrow sits top-left */
+body.spfs .shorts-view .sp{bottom:calc(54px + env(safe-area-inset-bottom,0px));height:auto}
+body.spfs .tabbar{background:#000;border-top-color:rgba(255,255,255,.12)}body.spfs .tb{color:#fff}body.spfs .tbplus .i{border-color:#fff}
+.spback{display:none;position:absolute;top:calc(8px + env(safe-area-inset-top,0px));left:8px;z-index:7;width:44px;height:44px;border:0;border-radius:50%;background:rgba(0,0,0,.35);color:#fff;cursor:pointer;align-items:center;justify-content:center;padding:0}
+.spback svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+body.spfs .spback{display:flex}
 .spcatch{position:absolute;inset:120px 0 110px 0;z-index:3;cursor:pointer;touch-action:none;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none}
 /* YouTube shows the short's own title in its player, so ours would sit on top of it */
 /* with a player: our title sits at the bottom left (YouTube's own is at the top) and comes and goes with the side icons */
@@ -2193,8 +2198,9 @@ function renderHomeF(){
 /* shorts viewer */
 function openShorts(id){
   const f=findFilm(id);if(!f)return;
-  const pool=allFilms().filter(x=>x.format==="short");
-  go({view:"shorts",shortList:[id,...shuffledShorts([id])],shortI:0,film:id});
+  // an episode of a series: the rest of the series in order first, then new shorts (like YouTube)
+  const sr=f.seriesId&&findSeries(f.seriesId),eps=sr?sr.episodes.slice(sr.episodes.findIndex(e=>e.id===id)+1).map(e=>e.id):[];
+  go({view:"shorts",shortList:[id,...eps,...shuffledShorts([id,...eps])],shortI:0,film:id});
   if(phone()&&state.view==="shorts")toggleShortsFull(true);
 }
 function renderShorts(){
@@ -2237,8 +2243,8 @@ function renderShorts(){
       <button data-splike="${esc(f.id)}" aria-label="Like"><span class="spb ${(likeDocs[acct.uid]?.ids||{})["film-"+f.id]?"liked":""}"><svg viewBox="0 0 24 24"><path d="M12 20s-7-4.4-9-8.6C1.6 8.3 3.5 5 6.8 5c2 0 3.4 1.1 4.2 2.4C11.8 6.1 13.2 5 15.2 5 18.5 5 20.4 8.3 19 11.4 17 15.6 12 20 12 20z"/></svg></span><small>${Object.values(likeDocs).filter(d=>d?.ids?.["film-"+f.id]).length||"Like"}</small></button>
       <button data-spsheet="comments" aria-label="Comments"><span class="spb"><svg viewBox="0 0 24 24"><path d="M4 5h16v11H9l-5 4z"/></svg></span><small>${nC}</small></button>
       <button data-share="${esc(f.id)}" data-share-short="1" aria-label="Share"><span class="spb"><svg viewBox="0 0 24 24"><path d="M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7M16 6l-4-4-4 4M12 2v13"/></svg></span><small>Share</small></button>
-      <button data-spfull="" aria-label="${full?"Exit full screen":"Full screen"}"><span class="spb"><svg viewBox="0 0 24 24"><path d="${full?"M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5":"M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"}"/></svg></span><small>${full?"Exit":"Full"}</small></button>
-    </div>
+      ${phone()?"":`<button data-spfull="" aria-label="${full?"Exit full screen":"Full screen"}"><span class="spb"><svg viewBox="0 0 24 24"><path d="${full?"M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5":"M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"}"/></svg></span><small>${full?"Exit":"Full"}</small></button>`}
+    </div><button class="spback" data-spback="" aria-label="Back"><svg viewBox="0 0 24 24"><path d="M19 12H5M11 6l-6 6 6 6"/></svg></button>
     <div class="spsheet" ${spSheet?"":"hidden"}><div class="spsheet-h"><b>${spSheet==="rate"?"Rate this short":"Comments"}</b><button data-spsheet="" aria-label="Close">✕</button></div>
       ${spSheet==="rate"?`<div class="ratebox spbig" role="group" aria-label="Rate this short"><span>${mine?"Your rating":"Rate"}</span>${[1,2,3,4,5].map(k=>`<button data-rate="${k}" class="${k<=mine?"on":""}" aria-label="${k} stars">★</button>`).join("")}</div><p class="vmeta" style="margin:10px 0 0">${s.n?`★ ${s.avg.toFixed(1)} from ${fmtN(s.n)} ratings`:"No ratings yet. Be the first."}</p>`:spSheet==="comments"?commentsHtml(f):""}
     </div>`)}}
@@ -2633,6 +2639,7 @@ addEventListener("message",e=>{
 document.addEventListener("click",e=>{
   const ne=e.target.closest("[data-epnext]");if(ne){e.preventDefault();e.stopPropagation();playEpisode(ne.dataset.epnext);return}
   const ae=e.target.closest("[data-autoep]");if(ae){autoEp=ae.checked;store.set("fr_autoep",autoEp);if(!autoEp){clearInterval(endTimer);const c=$("#endCount");if(c)c.textContent="Autoplay is off"}toast(autoEp?"Episodes play one after another":"Episodes no longer play automatically");return}
+  if(e.target.closest("[data-spback]")){e.preventDefault();e.stopPropagation();toggleShortsFull();return}
   if(e.target.closest("[data-endstay]")){e.preventDefault();clearInterval(endTimer);const c=$("#endCount");if(c)c.textContent="";document.querySelector('.endep [data-endstay]')?.remove();return}
   if(e.target.closest("[data-endfinish]")){e.preventDefault();endSeen[state.film]=true;hideEnd();const fr=document.querySelector(".player iframe");
     try{fr.contentWindow.postMessage(JSON.stringify({event:"command",func:"playVideo",args:[]}),"*")}catch(x){}return}
@@ -2962,7 +2969,7 @@ document.addEventListener("click",async e=>{
     const k=+r.dataset.rate;
     if(!acct.online&&sb){myRatings={...myRatings,[state.film]:k};GUEST.r[state.film]=k;guestSave();render();toast(`You rated it ${k} out of 5. Sign in to make it count`);guestNudge();return}
     if(!needAccount("Sign in to rate films. Your ratings count toward the top lists everyone sees."))return;if(await saveRating(state.film,k)){render();toast(`You rated it ${k} out of 5`)}return}
-  const o=e.target.closest("[data-open]");if(o){const f=findFilm(o.dataset.open);if(!f)return;if(f.format==="short"&&!(f.seriesId&&findSeries(f.seriesId))){openShorts(f.id);return}if(f.format==="episode"||f.seriesId){watched[f.id]=true;store.set("fr_watched",watched)}go({view:"watch",film:f.id})}
+  const o=e.target.closest("[data-open]");if(o){const f=findFilm(o.dataset.open);if(!f)return;if(f.format==="short"||f.vert){openShorts(f.id);return}if(f.format==="episode"||f.seriesId){watched[f.id]=true;store.set("fr_watched",watched)}go({view:"watch",film:f.id})}
 });
 document.addEventListener("keydown",e=>{if(e.key==="Escape")closeModal()});
 document.addEventListener("submit",async e=>{
