@@ -1159,7 +1159,7 @@ function renderWatch(){
   </div><aside class="upnext"><h3>${f.seriesId&&findSeries(f.seriesId)?"Next episodes":"Up next"}</h3>${next.map(x=>`<button class="mini-v" data-open="${esc(x.id)}"><div class="thumb"><canvas data-f="${esc(x.id)}"></canvas><span class="len">${esc(x.len)}</span></div><div class="vtext"><h4 class="vtitle">${esc(x.title)}</h4><div class="vmeta">${esc(byName(x)||"YouTube creator")}</div><div class="vmeta">${metaLine(x)}</div></div></button>`).join("")}</aside></div>`;
   $(".watch>div").insertAdjacentHTML("beforeend",commentsHtml(f));
   closeMini();
-  if(f.yt){if(keepYt){const pl=$(".player");pl.innerHTML="";try{pl.moveBefore(keepYt,null)}catch(e){pl.appendChild(keepYt)}if(keepEnd)pl.appendChild(keepEnd)}else $(".player").innerHTML=ytFrame(f.yt).replace("&enablejsapi=1",ytCtrl()?"&enablejsapi=1":"&enablejsapi=1&controls=0&fs=0&disablekb=1");if(f.age)$(".player").insertAdjacentHTML("afterend",`<div class="ythelp"><b>18+</b>Age-restricted on YouTube, so it may only play there: <a href="${esc(f.url||"https://www.youtube.com/watch?v="+f.yt)}" target="_blank" rel="noopener">watch on YouTube ↗</a></div>`)}
+  if(f.yt){if(keepYt){const pl=$(".player");pl.innerHTML="";try{pl.moveBefore(keepYt,null)}catch(e){pl.appendChild(keepYt)}if(keepEnd)pl.appendChild(keepEnd);ytListen(keepYt)}else $(".player").innerHTML=ytFrame(f.yt).replace("&enablejsapi=1",ytCtrl()?"&enablejsapi=1":"&enablejsapi=1&controls=0&fs=0&disablekb=1");if(f.age)$(".player").insertAdjacentHTML("afterend",`<div class="ythelp"><b>18+</b>Age-restricted on YouTube, so it may only play there: <a href="${esc(f.url||"https://www.youtube.com/watch?v="+f.yt)}" target="_blank" rel="noopener">watch on YouTube ↗</a></div>`)}
   if(f.tt)$(".player").innerHTML=ttFrame(f.tt);
   // Fanreelz share button on top of YouTube's own share icon (top right of the player), so sharing gives a fanreelz.com link
   if(f.yt)setTimeout(()=>fpMount(f),0);
@@ -2611,18 +2611,19 @@ function minimize(fromDrag){
   // moveBefore keeps the video playing; older browsers reload it, so it continues from the same second instead
   if(box.moveBefore){try{box.moveBefore(fr,null)}catch(e){box.appendChild(fr)}}
   else{const t=Math.floor((short?spCur:fp.t)||0);fr.src=fr.src.replace(/&start=\d+/,"")+(t?"&start="+t:"");box.appendChild(fr)}
-  mini={id:f.id,short,list:short?state.shortList:null,i:short?state.shortI:0};document.body.classList.add("mini-on");miniPaint();
+  mini={id:f.id,short,list:short?state.shortList:null,i:short?state.shortI:0};document.body.classList.add("mini-on");miniPaint();ytListen(fr);
   // back to the tab you came from
   if(short){document.body.classList.remove("spfs");try{if(document.fullscreenElement)document.exitFullscreen().catch(()=>{})}catch(e){}spLeave();return}
   if(history.state?.fr&&history.length>1)history.back();else go({view:"home"});
 }
 addEventListener("message",e=>{const fr=$("#mini iframe");if(!fr||e.source!==fr.contentWindow)return;let d=e.data;if(typeof d==="string"){try{d=JSON.parse(d)}catch(x){return}}if(!d)return;
   const ps=d.event==="onStateChange"?d.info:d.event==="infoDelivery"&&d.info?d.info.playerState:undefined;
-  if(typeof ps==="number"){miniSt=ps;miniPaint()}if(d.event==="infoDelivery"&&d.info&&typeof d.info.currentTime==="number")fp.t=+d.info.currentTime});
+  if(typeof ps==="number"){miniSt=ps;miniPaint();if(mini&&mini.id===fp.film)fp.st=ps}
+  if(d.event==="infoDelivery"&&d.info&&typeof d.info.currentTime==="number"){if(+d.info.currentTime>fp.t+.05){fp.tickAt=Date.now();if(miniSt!==1){miniSt=1;miniPaint()}}fp.t=+d.info.currentTime}});
 document.addEventListener("click",e=>{
   if(e.target.closest("[data-minimize]")){e.preventDefault();e.stopPropagation();minimize();return}
   if(e.target.closest("[data-miniclose]")){e.preventDefault();closeMini();return}
-  if(e.target.closest("[data-minitoggle]")){e.preventDefault();const fr=$("#mini iframe");try{fr.contentWindow.postMessage(JSON.stringify({event:"command",func:miniSt===1||miniSt===3?"pauseVideo":"playVideo",args:[]}),"*")}catch(x){}return}
+  if(e.target.closest("[data-minitoggle]")){e.preventDefault();const fr=$("#mini iframe");try{fr.contentWindow.postMessage(JSON.stringify({event:"command",func:(miniSt===1||miniSt===3||Date.now()-(fp.tickAt||0)<1500)?"pauseVideo":"playVideo",args:[]}),"*")}catch(x){}return}
   if(e.target.closest("[data-miniopen]")&&mini){e.preventDefault();miniOpen();return}
 },true);
 // swipe the video down (top of the player, or the control bar) to minimize; swipe the miniplayer up to open it again
@@ -2658,7 +2659,7 @@ function fpNoZoom(on){const m=document.querySelector('meta[name="viewport"]');if
 function fpFsChange(){const on=!!(document.fullscreenElement||document.webkitFullscreenElement)&&state.view==="watch";document.body.classList.toggle("fsmode",on);document.documentElement.classList.toggle("fsmode",on);fpNoZoom(on||document.body.classList.contains("wfs"));
   if(on)window.scrollTo({top:0});else{try{screen.orientation?.unlock?.()}catch(e){}document.querySelector(".fpbar")?.classList.remove("fshide")}fpPaint();if(on)fpShow()}
 document.addEventListener("fullscreenchange",fpFsChange);document.addEventListener("webkitfullscreenchange",fpFsChange);
-function fpPaint(){const o=document.querySelector(".fpbar");if(!o)return;const playing=fp.st===1||fp.st===3;
+function fpPaint(){const o=document.querySelector(".fpbar");if(!o)return;const playing=fpPlaying();
   o.querySelectorAll("[data-fpplay]").forEach(b=>b.innerHTML=playing?FPI.pause:FPI.play);
   const m=o.querySelector("[data-fpmute]");if(m)m.innerHTML=fp.muted||!fp.vol?FPI.mute:FPI.vol;
   const vs=o.querySelector(".fpvol");if(vs&&!fp.volDrag){vs.value=fp.muted?0:fp.vol;vs.style.setProperty("--v",(fp.muted?0:fp.vol)+"%")}
@@ -2699,11 +2700,13 @@ function fpHide(){clearTimeout(fpT);if(fpIsFs())document.querySelector(".fpbar")
 // a tap on the film moves focus into YouTube's player; the page notices ("blur"), toggles the bar and takes focus back for the next tap
 addEventListener("blur",()=>setTimeout(()=>{const a=document.activeElement;if(!a?.matches?.(".player iframe")||!fpIsFs())return;
   const b=document.querySelector(".fpbar");if(b?.classList.contains("fshide"))fpShow();else fpHide();setTimeout(()=>{try{a.blur();window.focus()}catch(e){}},80)},0));
-function fpToggle(){fpCmd(fp.st===1||fp.st===3?"pauseVideo":"playVideo");fpShow()}
+// playing = YouTube says so, or the time moved in the last 1.5 s (the reported state can be stale after the video was moved)
+const fpPlaying=()=>fp.st===1||fp.st===3||Date.now()-(fp.tickAt||0)<1500;
+function fpToggle(){const on=fpPlaying();fpCmd(on?"pauseVideo":"playVideo");fp.st=on?2:1;fp.tickAt=on?0:fp.tickAt;fpPaint?.();fpShow()}
 function fpSeek(t){fp.t=Math.max(0,Math.min(fp.dur||t,t));fpCmd("seekTo",[fp.t,true]);fpPaint();fpShow()}
 function fpInfo(d){const i=d.event==="infoDelivery"?d.info:null;
   if(d.event==="onStateChange")fp.st=d.info;
-  if(i){if(i.playerState!=null)fp.st=i.playerState;if(i.currentTime!=null&&!fp.drag)fp.t=+i.currentTime;if(i.duration)fp.dur=+i.duration;if(i.muted!=null)fp.muted=!!i.muted;if(i.volume!=null&&!fp.volDrag)fp.vol=+i.volume}
+  if(i){if(i.playerState!=null)fp.st=i.playerState;if(i.currentTime!=null&&!fp.drag){if(Math.abs(+i.currentTime-fp.t)>.05&&+i.currentTime>fp.t)fp.tickAt=Date.now();fp.t=+i.currentTime}if(i.duration)fp.dur=+i.duration;if(i.muted!=null)fp.muted=!!i.muted;if(i.volume!=null&&!fp.volDrag)fp.vol=+i.volume}
   if(d.event==="onStateChange"||(i&&i.playerState!=null)){if(fp.st!==fp.lastSt){fp.lastSt=fp.st;if(fp.st===2||fp.st===0||fp.st===1)fpShow()}}
   fpPaint()}
 document.addEventListener("click",e=>{const o=e.target.closest(".fpbar");if(!o)return;
