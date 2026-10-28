@@ -7,7 +7,9 @@ export const AI_RE = /(\bai\b|\ba\.i\.|artificial intelligence|\bsora\b|\bveo ?[
 // Words that show it is a film, trailer, story or series rather than a tutorial or news.
 export const FILM_RE = /(película|pelicula|filme|cortometraje|cortometraggio|curta|court[- ]m[ée]trage|kurzfilm|фильм|мультфильм|сериал|映画|영화|电影|動画|动画|アニメ|애니|phim|หนัง|série|serie |episodio|episódio|エピソード|에피소드|odcinek|bölüm|فيلم|مسلسل|حلقة|واقعي|كرتون|film|movie|cinema|cinematic|trailer|teaser|short|story|episode|\bep\.? ?\d|series|live[- ]action|in real life|reimagined|re-imagined|as an? \d0'?s|panavision|dark fantasy|parody|saga|chapter|part \d|music video)/i;
 // Things that are not fan films.
-export const BLOCK_RE = /(tutorial|how to|how i made|prompt(s)? (guide|tips)|course|explained|react(s|ing|ion|ions)?\b|review|news|podcast|livestream|\blive stream\b|stream highlights|top \d+|ranking|tier list|unboxing|speedrun|gameplay|walkthrough|\b[1-4]v[1-4]\b|ranked|outplayed|road to (gc|ssl|grand champ)|patch notes|nsfw|18\+|onlyfans|hentai|gore|sexy|bikini|\bhot\b|deepfake|starring [A-Z][a-z]+ [A-Z])/i;
+export const BLOCK_RE = /(tutorial|how to|how i made|prompt(s)? (guide|tips)|course|explained|react(s|ing|ion|ions)?\b|review|news|podcast|livestream|\blive stream\b|stream highlights|top \d+|ranking|tier list|unboxing|speedrun|gameplay|walkthrough|\b[1-4]v[1-4]\b|ranked|outplayed|road to (gc|ssl|grand champ)|patch notes|nsfw|18\+|onlyfans|hentai|gore|sexy|bikini|\bhot\b|deepfake|starring [A-Z][a-z]+ [A-Z]|voice ?chang(er|ing)|voice ?chat|voice ?lines?|voicemod|soundboard|troll(s|ing)?\b|prank|ai (voice|cover|song)s?\b)/i;
+// AI voices, AI song covers and voice changers are not AI films: they don't make a channel an "AI channel"
+export const VOICE_RE = /(ai ?voice|voice ?chang(er|ing)|voicemod|ai cover|ai song|soundboard|text to speech|\btts\b)/i;
 
 // Extra names that point to a category (the category's own name and characters are added automatically).
 const ALIASES = {

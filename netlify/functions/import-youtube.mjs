@@ -8,7 +8,7 @@
 // About 150–250 units per run, 12 runs a day.
 //
 // Needs in Netlify: YOUTUBE_API_KEY, SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY (secret; never in the page).
-import { classify, AI_RE } from "./lib/classify.mjs";
+import { classify, AI_RE, VOICE_RE, BLOCK_RE } from "./lib/classify.mjs";
 
 const TOPICS = [
   "AI fan film", "AI movie trailer", "as an 80s dark fantasy film", "1950s super panavision 70", "AI live action anime",
@@ -140,7 +140,7 @@ async function run() {
       const pl = await yt("playlistItems", { part: "snippet", playlistId: ch.uploads, maxResults: "50", ...(page ? { pageToken: page } : {}) }).catch(() => null);
       if (!pl) { page = null; break; }
       const items = (pl.items || []).filter((i) => i.snippet?.resourceId?.videoId && i.snippet.title !== "Private video" && i.snippet.title !== "Deleted video");
-      seen += items.length; aiCount += items.filter((i) => AI_RE.test(i.snippet.title) || AI_RE.test(i.snippet.description || "")).length;
+      seen += items.length; aiCount += items.filter((i) => (AI_RE.test(i.snippet.title) || AI_RE.test(i.snippet.description || "")) && !VOICE_RE.test(i.snippet.title + " " + (i.snippet.description || ""))).length;
       if (!isAi) isAi = seen >= 10 && aiCount / seen >= MIN_AI_SHARE;
       for (const i of items) {
         const c = classify(i.snippet.title, i.snippet.description || "", isAi);

@@ -3,6 +3,7 @@
 // {action:"remove", owner:"<user id>", id:"<comment id>"} removes that comment and its replies; {action:"hide", id:"yt-…"} hides a film.
 // Needs: ADMIN_EMAILS (comma-separated sign-in emails of the admins), SUPABASE_URL, SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY (secret).
 import importYoutube, { searchNow, addByLinks } from "./import-youtube.mjs";
+import { BLOCK_RE } from "./lib/classify.mjs";
 import showdown from "./showdown.mjs";
 const json = (o, status = 200) => new Response(JSON.stringify(o), { status, headers: { "Content-Type": "application/json", "Cache-Control": "no-store" } });
 
@@ -177,6 +178,35 @@ export default async (req) => {
     v.x = "";
     const r = await fetch(url, { method: "PATCH", headers: h, body: JSON.stringify({ data, updated_at: new Date().toISOString() }) });
     return r.ok ? json({ ok: true, removed: 1 }) : json({ error: "save failed " + r.status }, 500);
+  }
+  if (body.action === "hidechannel" || body.action === "cleanup") {
+    const key = Netlify.env.get("SUPABASE_SERVICE_ROLE_KEY"), base = Netlify.env.get("SUPABASE_URL") + "/rest/v1/";
+    const h = { apikey: key, "Content-Type": "application/json", Prefer: "return=minimal" };
+    if (!key.startsWith("sb_secret_")) h.Authorization = "Bearer " + key;
+    if (body.action === "hidechannel") {
+      // hide every film from one channel and stop reading that channel
+      const ch = String(body.channel || "").slice(0, 200);
+      if (!ch) return json({ error: "no channel" }, 400);
+      const r = await fetch(base + "catalog?channel=eq." + encodeURIComponent(ch), { method: "PATCH", headers: { ...h, Prefer: "return=representation" }, body: JSON.stringify({ hidden: true }) });
+      if (!r.ok) return json({ error: "save failed " + r.status }, 500);
+      const n = (await r.json().catch(() => [])).length;
+      await fetch(base + "catalog_channels?title=eq." + encodeURIComponent(ch), { method: "PATCH", headers: h, body: JSON.stringify({ status: "skipped", next_page: null }) });
+      return json({ ok: true, hidden: n });
+    }
+    // cleanup: hide catalogue films whose titles the current filters would now reject (gameplay, voice changers, trolling…)
+    const bad = [];
+    for (let from = 0; from < 300000; from += 1000) {
+      const r = await fetch(base + `catalog?select=id,title&hidden=eq.false&order=id&offset=${from}&limit=1000`, { headers: h });
+      if (!r.ok) return json({ error: "Supabase " + r.status }, 500);
+      const rows = await r.json();
+      for (const x of rows) if (BLOCK_RE.test(x.title || "")) bad.push(x.id);
+      if (rows.length < 1000) break;
+    }
+    for (let i = 0; i < bad.length; i += 300) {
+      const ids = bad.slice(i, i + 300).map((x) => '"' + x.replace(/"/g, "") + '"').join(",");
+      await fetch(base + "catalog?id=in.(" + encodeURIComponent(ids) + ")", { method: "PATCH", headers: h, body: JSON.stringify({ hidden: true }) });
+    }
+    return json({ ok: true, hidden: bad.length });
   }
   if (body.action === "hide") {
     if (!/^yt-[\w-]{6,20}$/.test(String(body.id || ""))) return json({ error: "bad film id" }, 400);
