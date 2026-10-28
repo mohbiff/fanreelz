@@ -501,6 +501,7 @@ body.spfs .tabbar{display:none}
 .spicon.show{animation:spflash .7s ease}
 /* shorts: a tap on the video only shows this button; the button itself pauses and plays */
 .spicon.ctl{opacity:1;pointer-events:auto;cursor:pointer;transition:opacity .25s;-webkit-tap-highlight-color:transparent}
+.sprail{transition:opacity .3s}.sp.uihide .sprail{opacity:0;pointer-events:none}
 @keyframes spflash{0%{opacity:0;transform:scale(.8)}25%{opacity:1;transform:scale(1)}100%{opacity:0;transform:scale(1.15)}}
 @keyframes hovin{from{opacity:0}to{opacity:1}}
 .thumb:hover .tttile{animation:ttdrift 4s ease-in-out infinite alternate;background-size:160% 160%}
@@ -2136,7 +2137,7 @@ function renderShorts(){
     else sp.insertAdjacentHTML("afterbegin",f.tt?ttFrame(f.tt).replace("?music_info=1","?fullscreen_button=0&music_info=1"):ytFrame(f.yt).replace("&enablejsapi=1","&enablejsapi=1&fs=0"))}
   if(spSlide){const sp=$(".sp");if(sp){sp.classList.add(spSlide>0?"slideup":"slidedown")}spSlide=0}
   if(!keepFrame||fromPre){spPaused=false;spState=null}if(fromPre){spWake();setTimeout(spWake,400)}
-    spPreload(nx);{const sp=$(".sp");if(sp){
+    spPreload(nx);setTimeout(()=>spShowCtl(spPaused),0);{const sp=$(".sp");if(sp){
     if(sp.querySelector("iframe"))sp.insertAdjacentHTML("beforeend",'<div class="spcatch" aria-hidden="true"></div><div class="spicon" aria-hidden="true"></div>');
     const nC=filmComments(f.id).length,full=document.body.classList.contains("spfs");
     sp.insertAdjacentHTML("beforeend",`<div class="sprail">
@@ -2309,12 +2310,15 @@ function spToggle(){
   spShowCtl();
 }
 let spCtlT=null;
-function spShowCtl(){const ic=document.querySelector(".spicon");if(!ic)return;ic.className="spicon ctl "+(spPaused?"playing":"paused");
-  clearTimeout(spCtlT);if(!spPaused)spCtlT=setTimeout(()=>ic.classList.remove("ctl"),2500)}
+/* shorts: the centre button and the side icons (rate, like, comments…) come and go together, like YouTube's app */
+function spHideUi(){const sp=document.querySelector(".sp"),ic=document.querySelector(".spicon");if(spPaused||spSheet)return;sp?.classList.add("uihide");ic?.classList.remove("ctl")}
+function spShowCtl(btn=true){const sp=document.querySelector(".sp"),ic=document.querySelector(".spicon");sp?.classList.remove("uihide");
+  if(ic&&btn)ic.className="spicon ctl "+(spPaused?"playing":"paused");
+  clearTimeout(spCtlT);spCtlT=setTimeout(spHideUi,3000)}
 document.addEventListener("click",e=>{
   if(e.target.closest(".spicon")){e.preventDefault();e.stopPropagation();spToggle();return}
   if(e.target.closest(".spcatch")){e.preventDefault();e.stopPropagation();const ic=document.querySelector(".spicon");
-    if(ic?.classList.contains("ctl")&&!spPaused){clearTimeout(spCtlT);ic.classList.remove("ctl")}else spShowCtl()}},true);
+    const sp=document.querySelector(".sp");if(!spPaused&&sp&&!sp.classList.contains("uihide")&&ic?.classList.contains("ctl")){clearTimeout(spCtlT);spHideUi()}else spShowCtl()}},true);
 document.addEventListener("touchstart",e=>{if(e.target.closest(".spcatch"))spTouchY=e.touches[0].clientY},{passive:true});
 document.addEventListener("touchmove",e=>{if(spTouchY==null)return;const sp=document.querySelector(".sp");if(sp){sp.style.transition="none";sp.style.transform=`translateY(${Math.max(-140,Math.min(140,(e.touches[0].clientY-spTouchY)*.6))}px)`}},{passive:true});
 document.addEventListener("touchend",e=>{if(spTouchY==null)return;const dy=spTouchY-e.changedTouches[0].clientY;spTouchY=null;const sp=document.querySelector(".sp");
