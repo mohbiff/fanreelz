@@ -93,9 +93,9 @@ export default async (req) => {
       base = api + "/websites/" + site;
       headers = { Accept: "application/json", "x-umami-share-token": sd.token, "x-umami-share-context": "1" };
     }
-    const days = { "24h": 1, "7d": 7, "30d": 30, "90d": 90 }[body.range] || 7;
-    const endAt = Date.now(), startAt = endAt - days * 864e5, prevStart = startAt - days * 864e5;
-    const tz = "Europe/Stockholm", unit = days === 1 ? "hour" : "day";
+    let days = { "24h": 1, "7d": 7, "30d": 30, "90d": 90, "365d": 365 }[body.range] || 7;
+    const endAt = Date.now();
+    let startAt = endAt - days * 864e5;
     const get = async (path, q = {}) => {
       const u = new URL(base + path);
       for (const [k, v] of Object.entries(q)) u.searchParams.set(k, String(v));
@@ -103,6 +103,13 @@ export default async (req) => {
       if (!r.ok) throw new Error("Umami " + r.status + " " + path);
       return r.json();
     };
+    // All time: from the first visit Umami has ({startDate, endDate} from /daterange)
+    if (body.range === "all") {
+      const dr = await get("/daterange").catch(() => null);
+      const first = Date.parse(dr?.startDate || dr?.mindate || "") || Date.parse("2026-10-01T00:00:00Z");
+      startAt = Math.min(first, endAt - 864e5);days = Math.max(1, Math.ceil((endAt - startAt) / 864e5));
+    }
+    const prevStart = startAt - days * 864e5, tz = "Europe/Stockholm", unit = days <= 1 ? "hour" : days > 180 ? "month" : "day";
     const range = { startAt, endAt };
     // a number from either version of Umami ({value, prev} in v2, plain numbers in v3)
     const num = (x) => (x && typeof x === "object" ? +x.value || 0 : +x || 0);
@@ -123,7 +130,7 @@ export default async (req) => {
       const pick = (o) => ({ pageviews: num(o?.pageviews), visitors: num(o?.visitors), visits: num(o?.visits), bounces: num(o?.bounces), totaltime: num(o?.totaltime) });
       const pts = (a) => (Array.isArray(a) ? a.map((p) => ({ t: p.x ?? p.t, n: +p.y || 0 })) : []);
       return json({
-        range: body.range || "7d", unit, site,
+        range: body.range || "7d", unit, site, from: startAt,
         stats: pick(stats), prev: stats?.comparison ? pick(stats.comparison) : prev ? pick(prev) : null,
         active: num(active?.visitors ?? active?.x ?? (Array.isArray(active) ? active[0]?.x : active)),
         series: { pageviews: pts(series?.pageviews), visitors: pts(series?.sessions ?? series?.visitors) },
