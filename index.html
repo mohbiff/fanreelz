@@ -393,6 +393,8 @@ html:has(.player.hasbar),html:has(.player.hasbar) body{overscroll-behavior-y:non
 .sp .ov{position:absolute;inset:auto 0 auto 0;top:0;padding:14px 16px 40px;background:linear-gradient(rgba(0,0,0,.75),transparent)!important;background:linear-gradient(transparent,rgba(0,0,0,.85));color:#fff;display:flex;flex-direction:column;gap:6px;pointer-events:none}
 .sp .ov b{font-size:17px;line-height:1.3}
 .moresent{height:1px}
+/* off-screen shelves and cards skip layout and painting until they scroll near */
+#main .shelf{content-visibility:auto;contain-intrinsic-size:auto 320px}#main .grid>.vid,#main .shortgrid>.vid{content-visibility:auto;contain-intrinsic-size:auto 300px}
 .sside{display:flex;flex-direction:column;gap:14px;padding-top:8px;min-width:0}
 .sside .comments{margin-top:6px;gap:14px;max-height:calc(100vh - 430px);min-height:220px;overflow:auto;padding-right:6px}
 .sside .comments .sect-h{font-size:16px}
@@ -852,7 +854,9 @@ function findFilm(id){
 const groupOf=catId=>GROUPS.find(g=>g.cats.some(c=>c.id===catId));
 const catName=id=>CATS.find(c=>c.id===id)?.name||id;
 function counts(f){const c=[...f.counts];const x=community[f.id];if(x)x.forEach((v,i)=>c[i]+=v);return c}
-function stats(f){const c=counts(f);const n=c.reduce((a,b)=>a+b,0);const avg=n?c.reduce((a,v,i)=>a+v*(i+1),0)/n:0;return {n,avg,bayes:(avg*n+3.4*50)/(n+50),c}}
+let statMemo=null;
+function stats(f){if(statMemo){const m=statMemo.get(f);if(m)return m;const r=statsRaw(f);statMemo.set(f,r);return r}return statsRaw(f)}
+function statsRaw(f){const c=counts(f);const n=c.reduce((a,b)=>a+b,0);const avg=n?c.reduce((a,v,i)=>a+v*(i+1),0)/n:0;return {n,avg,bayes:(avg*n+3.4*50)/(n+50),c}}
 const fmtN=n=>n>=1000?(n/1000).toFixed(1).replace(/\.0$/,"")+"K":String(n);
 const ago=d=>d==null?"on YouTube":d===0?"today":d===1?"1 day ago":d<7?`${d} days ago`:d<14?"1 week ago":d<60?`${Math.round(d/7)} weeks ago`:d<365?`${Math.round(d/30)} months ago`:"1 year ago";
 const byName=f=>f.byId?(f.byId===acct.uid?"You":(names[f.byId]||"Fanreelz member")):f.by;
@@ -861,7 +865,8 @@ const cav=(name0,size,name=name0||"YouTube")=>`<span class="cav" style="backgrou
 const daysSince=t=>Math.max(0,Math.floor((Date.now()-t)/864e5));
 const I={user:'<circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/>',clock:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',like:'<path d="M7 11v9H4v-9zM7 11l4-8a2 2 0 0 1 2 2v4h5.5a2 2 0 0 1 2 2.3l-1.2 7A2 2 0 0 1 17.3 20H7"/>',share:'<path d="M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7M16 6l-4-4-4 4M12 2v13"/>',info:'<circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 7.5v.5"/>',home:'<path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/>',top:'<path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/>',
   fresh:'<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>',mine:'<path d="M5 4h14v17l-7-4-7 4z"/>',list:'<path d="M9 6h11M9 12h11M9 18h11M4.5 6h.01M4.5 12h.01M4.5 18h.01"/>',trend:'<path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/>',live:'<circle cx="12" cy="12" r="2.5"/><path d="M7.8 7.8a6 6 0 0 0 0 8.4M16.2 7.8a6 6 0 0 1 0 8.4M5 5a10 10 0 0 0 0 14M19 5a10 10 0 0 1 0 14"/>',prem:'<rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4"/>',tv:'<rect x="3" y="6" width="18" height="13" rx="2"/><path d="M8 3l4 3 4-3"/>',battle:'<path d="M14.5 17.5L3 6V3h3l11.5 11.5M13 19l6-6M16 16l4 4M9.5 17.5L21 6V3h-3L6.5 14.5M11 19l-6-6M8 16l-4 4"/>',req:'<path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-4 10.5c.8.8 1 1.5 1 2.5h6c0-1 .2-1.7 1-2.5A6 6 0 0 0 12 3z"/>',trophy:'<path d="M8 4h8v5a4 4 0 0 1-8 0zM8 6H4a3 3 0 0 0 4 4M16 6h4a3 3 0 0 1-4 4M12 13v4M8 21h8M10 17h4v4"/>',bot:'<rect x="4" y="8" width="16" height="11" rx="3"/><path d="M12 4v4M9 13h.01M15 13h.01M9 16h6"/>',save:'<path d="M4 6h12M4 12h12M4 18h7M18 14v7M14.5 17.5h7"/>',flag:'<path d="M5 21V4h11l-2 4 2 4H5"/>',shield:'<path d="M12 3l8 3v6c0 4.5-3.4 8-8 9-4.6-1-8-4.5-8-9V6z"/><path d="M8.5 12l2.5 2.5 4.5-5"/>',short:'<rect x="7" y="3" width="10" height="18" rx="2.5"/><path d="M11 9.5v5l3.5-2.5z"/>',series:'<rect x="3" y="8" width="14" height="12" rx="2"/><path d="M7 5h12a2 2 0 0 1 2 2v9"/>',heart:'<path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/>',film:'<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M7 5v14M17 5v14M3 9.5h4M17 9.5h4M3 14.5h4M17 14.5h4"/>'};
-const filmTrend=f=>(stats(f).n+(f.real?3000:0)+(f.boost||0))*Math.exp(-(f.days??14)/21);
+let trendMemo=null;
+const filmTrend=f=>{if(trendMemo){const v=trendMemo.get(f);if(v!==undefined)return v}const v=(stats(f).n+(f.real?3000:0)+(f.boost||0))*Math.exp(-(f.days??14)/21);trendMemo?.set(f,v);return v};
 function trendingByGroup(){const per={};for(const f of allFilms())per[f.cat]=(per[f.cat]||0)+filmTrend(f);const m={};for(const g of GROUPS)m[g.name]=g.cats.map(c=>({c,s:per[c.id]||0})).sort((a,b)=>b.s-a.s);return m}
 const icon=k=>`<svg class="i" viewBox="0 0 24 24">${I[k]}</svg>`;
 
@@ -2531,7 +2536,8 @@ function render(){
   if(!renderHard&&fsEl()&&!document.body.classList.contains("spfs")){fsPending=true;return}
   if(!renderHard&&(state.view==="battles"||state.view==="showdown")&&document.querySelector(".bplay iframe")){renderGuide();return}
   if(state.view==="liveplay"&&!renderHard&&$("#lchat")&&$("#lchat").dataset.live===state.liveId){renderGuide();updateLiveChat();return}
-  renderHard=false;stopPreview();for(const k in MORE)delete MORE[k];
+  renderHard=false;stopPreview();for(const k in MORE)delete MORE[k];statMemo=new Map();trendMemo=new Map();try{renderInner()}finally{statMemo=null;trendMemo=null}}
+function renderInner(){
   const drafts={};let focusKey=null;
   if(lastFilm===state.film&&state.view==="watch"){document.querySelectorAll(".cmform").forEach(fm=>{const v=fm.querySelector("textarea").value;if(v)drafts[fm.dataset.cparent]=v});focusKey=document.activeElement?.closest?.(".cmform")?.dataset.cparent??null}
   lastFilm=state.view==="watch"?state.film:null;
@@ -2919,21 +2925,42 @@ async function sbSave(col,id,data){
     throw new Error((error.message||"error")+(i?` [token role: ${i.role||"?"}, expires ${i.exp?new Date(i.exp*1000).toLocaleTimeString():"?"}]`:" [no sign-in token in this browser]")+(sbTokenNote?` [${sbTokenNote}]`:""))}
 }
 /* The big catalogue: AI fan films the importer has found on YouTube, read from the database in pages of 1,000 */
-async function loadCatalog(){
-  if(!sb)return;const rows=[];
-  for(let from=0;from<30000;from+=1000){
-    const {data,error}=await sb.from("catalog").select("*").eq("hidden",false).order("views",{ascending:false}).range(from,from+999);
-    if(error||!data){if(error)console.warn("catalogue",error.message);break}
-    rows.push(...data);if(data.length<1000)break;
-  }
+/* The big catalogue: AI fan films the importer has found on YouTube.
+   The last copy is kept on the device (IndexedDB), so the page shows every film at once on the next visit;
+   a fresh copy is then read from the database in parallel pages of 1,000 (only the columns the page uses). */
+const CAT_COLS="id,video_id,title,cat,char,channel,duration,published_at,format,lore,age_restricted,views";
+const idb=(mode,fn)=>new Promise((res,rej)=>{try{const o=indexedDB.open("fanreelz",1);o.onupgradeneeded=()=>o.result.createObjectStore("kv");
+  o.onsuccess=()=>{try{const tx=o.result.transaction("kv",mode),r=fn(tx.objectStore("kv"));tx.oncomplete=()=>{res(r?.result);o.result.close()};tx.onerror=()=>rej(tx.error)}catch(e){rej(e)}};o.onerror=()=>rej(o.error)}catch(e){rej(e)}});
+const catSig=rows=>rows.length+"|"+rows.map(r=>r.id).join(",").length+"|"+(rows[0]?.id||"")+"|"+(rows[rows.length-1]?.id||"");
+let catLoaded="";
+function useCatalog(rows){
+  const sig=catSig(rows);if(sig===catLoaded)return 0;catLoaded=sig;
+  const keep=FILMS.filter(f=>!f.db);FILMS.length=0;for(const f of keep)FILMS.push(f);
   const have=new Set(FILMS.map(f=>f.id)),known=new Set(CATS.map(c=>c.id));let n=0;
   rows.forEach((r,k)=>{if(have.has(r.id)||!known.has(r.cat))return;have.add(r.id);
     const d=+r.duration||0;
     FILMS.push({id:r.id,yt:r.video_id,title:r.title,cat:r.cat,char:r.char||"",src:"YouTube",tool:"AI tools",by:r.channel||"",
       len:d?`${Math.floor(d/60)}:${String(d%60).padStart(2,"0")}`:"",days:r.published_at?daysSince(Date.parse(r.published_at)):null,
       counts:[0,0,0,0,0],hue:(k*47)%360,format:r.format==="short"?"short":"film",lore:r.lore||"whatif",boost:Math.max(0,20-k/50),
-      url:"https://www.youtube.com/watch?v="+r.video_id,age:!!r.age_restricted,ytViews:+r.views||0});n++});
-  if(n){console.log("Fanreelz catalogue:",n,"films");openLinkedFilm();render()}
+      url:"https://www.youtube.com/watch?v="+r.video_id,age:!!r.age_restricted,ytViews:+r.views||0,db:true});n++});
+  autoCache.k="";filmIdx.k="";return n||1;
+}
+async function loadCatalog(){
+  if(!sb)return;
+  if(!catLoaded){try{const c=await idb("readonly",st=>st.get("catalog"));if(c?.rows?.length&&useCatalog(c.rows)){openLinkedFilm();render()}}catch(e){}}
+  const page=async from=>{let r=await sb.from("catalog").select(CAT_COLS).eq("hidden",false).order("views",{ascending:false}).order("id").range(from,from+999);
+    if(r.error)r=await sb.from("catalog").select("*").eq("hidden",false).order("views",{ascending:false}).order("id").range(from,from+999);
+    if(r.error)throw r.error;return r.data||[]};
+  const rows=[];
+  for(let from=0;from<200000;from+=4000){
+    const parts=await Promise.all([0,1000,2000,3000].map(o=>page(from+o)));
+    for(const d of parts)rows.push(...d);if(parts.some(d=>d.length<1000))break;
+  }
+  if(!rows.length)return;
+  const slim=rows.map(r=>{const o={};for(const k of CAT_COLS.split(","))if(r[k]!=null&&r[k]!=="")o[k]=r[k];return o});
+  idb("readwrite",st=>st.put({t:Date.now(),rows:slim},"catalog")).catch(()=>{});
+  const n=useCatalog(slim);
+  if(n){console.log("Fanreelz catalogue:",slim.length,"films");openLinkedFilm();render()}
 }
 async function sbSignIn(provider,pick){
   if(!sb)return;try{localStorage.setItem("fr_back",JSON.stringify(history.state?.fr||null))}catch(e){}
