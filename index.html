@@ -163,6 +163,8 @@ main{min-width:0;padding-right:max(16px,env(safe-area-inset-right,0px));padding-
 /* full screen: YouTube's player fills the screen except two 56px strips at the sides, which are Fanreelz's own ±10 s buttons (not on top of the video) */
 .player.hasbar:fullscreen iframe,body.wfs .player.hasbar iframe{flex:1;aspect-ratio:auto;width:calc(100% - 112px)!important;min-height:0;height:auto!important;margin:0 auto}
 .player.ended iframe{visibility:hidden}
+.edgegrab{display:none;position:absolute;left:0;top:0;bottom:64px;width:26px;z-index:6}
+@media (max-width:860px){.player.hasbar .edgegrab{display:block}body.fsmode .edgegrab,body.wfs .edgegrab{display:none!important}}
 /* vertical videos (9:16): a tall player like YouTube's, and in full screen they use the whole width of a standing phone */
 .player.vert.hasbar iframe{aspect-ratio:9/16;width:auto!important;height:min(78vh,calc((100vw - 32px)*16/9),760px)!important;margin:0 auto}
 .player.vert:not(.hasbar){aspect-ratio:auto;height:min(78vh,760px)}
@@ -1004,6 +1006,15 @@ function closeMenu(fromBack){const sh=$("#shell");if(!sh.classList.contains("ope
   document.addEventListener("touchstart",e=>{if(!phone()||!$("#shell").classList.contains("open")||!e.target.closest("#guide,#menuBack"))return;x0=e.touches[0].clientX;dx=0;g().style.transition="none"},{passive:true});
   document.addEventListener("touchmove",e=>{if(x0==null)return;dx=Math.min(0,e.touches[0].clientX-x0);g().style.transform=`translateX(${dx}px)`},{passive:true});
   document.addEventListener("touchend",()=>{if(x0==null)return;x0=null;const el=g();el.style.transition="";if(dx<-70)closeMenu();else el.style.transform=""},{passive:true});
+})();
+/* Swipe right to open the menu (phones). Rows that scroll sideways, the player's controls, Shorts and full screen keep their own swipes.
+   A video's picture swallows touches, so the player has a thin strip at its left edge (.edgegrab) that catches the swipe instead. */
+(()=>{let sw=null;
+  const skip=t=>t.closest(".shelfrow,.shortrow,.chips,.lorebar,.fmtbar,.endgrid,.fpbar,.fpzone,.sp,.dlg,#guide,#menuBack,input,textarea,select,[contenteditable]");
+  document.addEventListener("touchstart",e=>{sw=null;if(!phone()||e.touches.length>1||$("#shell").classList.contains("open")||state.view==="shorts"||document.body.classList.contains("spfs")||(typeof fpIsFs==="function"&&fpIsFs())||skip(e.target))return;
+    const t=e.touches[0];if(t.clientX>innerWidth*.6&&!e.target.closest(".edgegrab"))return;sw={x:t.clientX,y:t.clientY,at:Date.now()}},{passive:true});
+  document.addEventListener("touchend",e=>{if(!sw)return;const t=e.changedTouches[0],dx=t.clientX-sw.x,dy=t.clientY-sw.y,fast=Date.now()-sw.at<800;sw=null;
+    if(fast&&dx>60&&Math.abs(dx)>Math.abs(dy)*1.6)openMenu()},{passive:true});
 })();
 /* Shorts full screen: our own, so swipe, stars and comments still work (the platforms' players would hide them) */
 /* Phone: shorts are only watched in full screen. Leaving full screen (Exit, back) leaves shorts too. */
@@ -2440,7 +2451,7 @@ const fpFrame=()=>document.querySelector(".player iframe");
 function fpCmd(func,args=[]){try{fpFrame().contentWindow.postMessage(JSON.stringify({event:"command",func,args}),"*")}catch(e){}}
 function fpMount(f){const pl=$(".player");if(!pl||pl.querySelector(".fpbar"))return;
   if(fp.film!==f.id){Object.assign(fp,{film:f.id,st:-1,t:0,dur:/^\d+:\d\d$/.test(f.len||"")?secs(f.len):0,drag:false,cc:false})}
-  const later=myLater.some(x=>x.id===f.id);pl.classList.add("hasbar");
+  const later=myLater.some(x=>x.id===f.id);pl.classList.add("hasbar");if(!pl.querySelector(".edgegrab"))pl.insertAdjacentHTML("afterbegin",'<div class="edgegrab" aria-hidden="true"></div>');
   pl.insertAdjacentHTML("beforeend",`<div class="fpbar"><div class="fptip" hidden><b></b></div><input class="fpseek" type="range" min="0" max="1000" value="0" aria-label="Seek">
     <div class="fprow"><button class="fpb" data-fpskip="-10" aria-label="Back 10 seconds"><svg viewBox="0 0 24 24"><path d="M4 12a8 8 0 1 0 2.4-5.7"/><path d="M4 4v4h4"/><text x="12" y="15.5" text-anchor="middle" font-size="7.5" font-weight="700" fill="currentColor" stroke="none">10</text></svg></button><button class="fpb" data-fpplay="" aria-label="Play or pause"></button><button class="fpb" data-fpskip="10" aria-label="Forward 10 seconds"><svg viewBox="0 0 24 24"><path d="M20 12a8 8 0 1 1-2.4-5.7"/><path d="M20 4v4h-4"/><text x="12" y="15.5" text-anchor="middle" font-size="7.5" font-weight="700" fill="currentColor" stroke="none">10</text></svg></button><span class="fpvolwrap"><button class="fpb" data-fpmute="" aria-label="Mute"></button><input class="fpvol" type="range" min="0" max="100" step="1" value="100" aria-label="Volume"></span><span class="fptime"></span><span class="fpsp"></span><button class="fpb fpscroll" data-fpscroll="" aria-label="Scroll down for details and comments"><svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg><span class="lbl">Comments &amp; more</span></button><span class="fpsp"></span>
     <button class="fpb" data-fpset="" aria-label="Settings"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>
