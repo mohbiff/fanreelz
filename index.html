@@ -220,6 +220,8 @@ body.wfs .fpbar{padding-bottom:calc(8px + env(safe-area-inset-bottom))}
 .endnext{position:absolute;inset:0;z-index:7;background:rgba(10,8,18,.94);display:flex;flex-direction:column;justify-content:center;gap:14px;padding:18px;box-sizing:border-box;overflow:auto}
 .endtop{display:flex;justify-content:space-between;align-items:center;gap:10px;color:#fff}.endtop span{color:var(--accent);font-weight:700;font-size:14px}
 .endgrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}.endcard{all:unset;cursor:pointer;display:flex;flex-direction:column;gap:6px;color:#fff;font-size:13px;font-weight:600}
+.endep .endcard{flex-direction:row;align-items:center;gap:12px;max-width:520px}.endep .endcard .thumb{width:44%;flex:none}.endep .endcard span{font-size:15px;line-height:1.3}.endep .endcard small{display:block;color:rgba(255,255,255,.65);font-weight:500;margin-bottom:2px}
+.endep .eptoggle{display:flex;align-items:center;gap:8px;color:rgba(255,255,255,.8);font-size:13px;cursor:pointer}.endep .eptoggle input{accent-color:var(--accent);width:18px;height:18px}
 .endcard .thumb{aspect-ratio:16/9;border-radius:8px;overflow:hidden}.endcard .thumb img,.endcard .thumb canvas{width:100%;height:100%;object-fit:cover}.endcard em{font-style:normal;color:var(--accent)}.endcard:hover .thumb{outline:2px solid var(--accent)}
 @media (max-width:860px){.endgrid{grid-template-columns:repeat(2,minmax(0,1fr))}.endgrid .endcard:nth-child(n+3){display:none}}
 .pbar{display:flex;justify-content:flex-end;margin-top:8px}.pbar .btn{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;font-size:13px}.pbar .i{width:16px;height:16px}
@@ -2561,8 +2563,23 @@ document.addEventListener("keydown",e=>{if(state.view!=="watch"||!document.query
   else if(k==="f")fpFull()});
 function hideEnd(){clearInterval(endTimer);endTimer=null;document.querySelector(".endnext")?.remove();document.querySelector(".player")?.classList.remove("ended")}
 const endSeen={}; // films where the viewer chose "Watch the ending": no early Up next again
+/* Series: when an episode ends, the next one starts by itself after a short countdown (can be turned off) */
+let autoEp=store.get("fr_autoep",true);
+const nextEpisode=f=>{const s=f&&f.seriesId&&findSeries(f.seriesId);if(!s)return null;const i=s.episodes.findIndex(e=>e.id===f.id);return i>=0?s.episodes[i+1]||null:null};
+function playEpisode(id){hideEnd();watched[id]=true;store.set("fr_watched",watched);go({view:"watch",film:id})}
+function showEpEnd(pl,nx){
+  pl.insertAdjacentHTML("beforeend",`<div class="endnext endep"><div class="endtop"><b>Next episode</b><span id="endCount"></span></div>
+    <button class="endcard" data-epnext="${esc(nx.id)}"><div class="thumb"><canvas data-f="${esc(nx.id)}"></canvas></div><span><small>Season ${nx.season} · Episode ${nx.ep}</small>${esc(nx.epTitle||nx.title)}</span></button>
+    <div class="row"><button class="btn" data-epnext="${esc(nx.id)}">▶ Play now</button><button class="btn ghost" data-endreplay="">↻ Watch again</button>${autoEp?`<button class="btn ghost" data-endstay="">Cancel</button>`:""}
+    <label class="eptoggle"><input type="checkbox" data-autoep="" ${autoEp?"checked":""}> Play episodes automatically</label></div></div>`);
+  pl.classList.add("ended");paintAll(pl);
+  if(!autoEp){const c=$("#endCount");if(c)c.textContent="Autoplay is off";return}
+  let n=5;const tick=()=>{const c=$("#endCount");if(!c){clearInterval(endTimer);return}c.textContent=`Starts in ${n}s`;if(n--<=0)playEpisode(nx.id)};
+  tick();endTimer=setInterval(tick,1000);
+}
 function showEnd(pl,early){
   const f=findFilm(state.film);if(!f||!pl||pl.querySelector(".endnext"))return;
+  const nx=!early&&nextEpisode(f);if(nx&&(nx.yt||nx.tt||nx.ig||nx.vm||nx.dm)){showEpEnd(pl,nx);return}
   const next=nextFor(f).filter(x=>x.yt||x.tt||x.ig||x.vm||x.dm).slice(0,4);if(!next.length)return;
   pl.insertAdjacentHTML("beforeend",`<div class="endnext"><div class="endtop"><b>Up next on Fanreelz</b><span id="endCount"></span></div>
     <div class="endgrid">${next.map((x,i)=>`<button class="endcard" data-open="${esc(x.id)}"><div class="thumb"><canvas data-f="${esc(x.id)}"></canvas></div><span>${i===0?"<em>Next</em> ":""}${esc(x.title)}</span></button>`).join("")}</div>
@@ -2585,7 +2602,9 @@ addEventListener("message",e=>{
   if(state.view==="watch")showEnd(fr.closest(".player"));
 });
 document.addEventListener("click",e=>{
-  if(e.target.closest("[data-endstay]")){e.preventDefault();clearInterval(endTimer);const c=$("#endCount");if(c)c.textContent="";return}
+  const ne=e.target.closest("[data-epnext]");if(ne){e.preventDefault();e.stopPropagation();playEpisode(ne.dataset.epnext);return}
+  const ae=e.target.closest("[data-autoep]");if(ae){autoEp=ae.checked;store.set("fr_autoep",autoEp);if(!autoEp){clearInterval(endTimer);const c=$("#endCount");if(c)c.textContent="Autoplay is off"}toast(autoEp?"Episodes play one after another":"Episodes no longer play automatically");return}
+  if(e.target.closest("[data-endstay]")){e.preventDefault();clearInterval(endTimer);const c=$("#endCount");if(c)c.textContent="";document.querySelector('.endep [data-endstay]')?.remove();return}
   if(e.target.closest("[data-endfinish]")){e.preventDefault();endSeen[state.film]=true;hideEnd();const fr=document.querySelector(".player iframe");
     try{fr.contentWindow.postMessage(JSON.stringify({event:"command",func:"playVideo",args:[]}),"*")}catch(x){}return}
   if(e.target.closest("[data-endreplay]")){e.preventDefault();delete endSeen[state.film];hideEnd();const fr=document.querySelector(".player iframe");
@@ -2914,7 +2933,7 @@ document.addEventListener("click",async e=>{
     const k=+r.dataset.rate;
     if(!acct.online&&sb){myRatings={...myRatings,[state.film]:k};GUEST.r[state.film]=k;guestSave();render();toast(`You rated it ${k} out of 5. Sign in to make it count`);guestNudge();return}
     if(!needAccount("Sign in to rate films. Your ratings count toward the top lists everyone sees."))return;if(await saveRating(state.film,k)){render();toast(`You rated it ${k} out of 5`)}return}
-  const o=e.target.closest("[data-open]");if(o){const f=findFilm(o.dataset.open);if(!f)return;if(f.format==="short"){openShorts(f.id);return}if(f.format==="episode"){watched[f.id]=true;store.set("fr_watched",watched)}go({view:"watch",film:f.id})}
+  const o=e.target.closest("[data-open]");if(o){const f=findFilm(o.dataset.open);if(!f)return;if(f.format==="short"&&!(f.seriesId&&findSeries(f.seriesId))){openShorts(f.id);return}if(f.format==="episode"||f.seriesId){watched[f.id]=true;store.set("fr_watched",watched)}go({view:"watch",film:f.id})}
 });
 document.addEventListener("keydown",e=>{if(e.key==="Escape")closeModal()});
 document.addEventListener("submit",async e=>{
