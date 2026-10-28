@@ -507,6 +507,11 @@ body.spfs .tabbar{display:none}
 /* shorts: a tap on the video only shows this button; the button itself pauses and plays */
 .spicon.ctl{opacity:1;pointer-events:auto;cursor:pointer;transition:opacity .25s;-webkit-tap-highlight-color:transparent}
 .sprail{transition:opacity .3s}.sp.uihide .sprail{opacity:0;pointer-events:none}
+/* shorts: YouTube's own controls are off (they doubled our pause button and never showed on a tap), so the short has its own time bar */
+.spbar{position:absolute;left:0;right:0;bottom:0;z-index:5;padding:14px 12px calc(10px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:2px;background:linear-gradient(transparent,rgba(0,0,0,.5));transition:background .3s}
+.spseek{width:100%;margin:0;height:22px;accent-color:#ff2d55;cursor:pointer;touch-action:none}
+.sptime{color:#fff;font-size:12px;font-weight:600;text-shadow:0 1px 3px #000;transition:opacity .3s}
+.sp.uihide .spbar{background:none}.sp.uihide .sptime{opacity:0}.sp.uihide .spseek{opacity:.55}
 @keyframes spflash{0%{opacity:0;transform:scale(.8)}25%{opacity:1;transform:scale(1)}100%{opacity:0;transform:scale(1.15)}}
 @keyframes hovin{from{opacity:0}to{opacity:1}}
 .thumb:hover .tttile{animation:ttdrift 4s ease-in-out infinite alternate;background-size:160% 160%}
@@ -2143,11 +2148,12 @@ function renderShorts(){
   if(f.ig||f.vm||f.dm){const sp=$(".sp");sp.querySelector("canvas")?.remove();sp.querySelector(".play")?.remove();sp.insertAdjacentHTML("afterbegin",f.ig?extFrame(f):extFrame(f).replace("inset:0","inset:0;top:25%;height:50%"))}
   if(f.tt||f.yt){const sp=$(".sp");sp.querySelector("canvas")?.remove();sp.querySelector(".play")?.remove();
     if(keepFrame){try{sp.moveBefore(keepFrame,sp.firstChild)}catch(e){sp.insertBefore(keepFrame,sp.firstChild)}}
-    else sp.insertAdjacentHTML("afterbegin",f.tt?ttFrame(f.tt).replace("?music_info=1","?fullscreen_button=0&music_info=1"):ytFrame(f.yt).replace("&enablejsapi=1","&enablejsapi=1&fs=0"))}
+    else sp.insertAdjacentHTML("afterbegin",f.tt?ttFrame(f.tt).replace("?music_info=1","?fullscreen_button=0&music_info=1"):ytFrame(f.yt).replace("&enablejsapi=1","&enablejsapi=1&fs=0&controls=0"))}
   if(spSlide){const sp=$(".sp");if(sp){sp.classList.add(spSlide>0?"slideup":"slidedown")}spSlide=0}
-  if(!keepFrame||fromPre){spPaused=false;spState=null}if(fromPre){spWake();setTimeout(spWake,400)}
+  if(!keepFrame||fromPre){spPaused=false;spState=null;spDur=0;spCur=0}if(fromPre){spWake();setTimeout(spWake,400)}
     spPreload(nx);setTimeout(()=>spShowCtl(spPaused),0);{const sp=$(".sp");if(sp){
     if(sp.querySelector("iframe"))sp.insertAdjacentHTML("beforeend",'<div class="spcatch" aria-hidden="true"></div><div class="spicon" aria-hidden="true"></div>');
+    if(f.yt&&sp.querySelector("iframe"))sp.insertAdjacentHTML("beforeend",'<div class="spbar"><input class="spseek" type="range" min="0" max="1000" step="1" value="0" aria-label="Seek"><span class="sptime">0:00 / 0:00</span></div>');
     const nC=filmComments(f.id).length,full=document.body.classList.contains("spfs");
     sp.insertAdjacentHTML("beforeend",`<div class="sprail">
       <button data-spsheet="rate" aria-label="Rate"><span class="spb ${mine?"on":""}"><svg viewBox="0 0 24 24"><path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/></svg></span><small>${s.n?s.avg.toFixed(1):"Rate"}</small></button>
@@ -2318,7 +2324,12 @@ function spToggle(){
   else if(f.vm)w.postMessage(JSON.stringify({method:cmd}),"*");
   spShowCtl();
 }
-let spCtlT=null;
+let spCtlT=null,spDur=0,spCur=0,spDrag=false;
+function spPaintBar(){const r=document.querySelector(".spseek"),t=document.querySelector(".sptime");if(!r||!t)return;
+  if(!spDrag&&spDur)r.value=Math.round(spCur/spDur*1000);t.textContent=hms((spDrag?r.value/1000*spDur:spCur)*1000)+" / "+hms(spDur*1000)}
+document.addEventListener("input",e=>{if(!e.target.matches?.(".spseek"))return;spDrag=true;spShowCtl(false);spPaintBar()});
+document.addEventListener("change",e=>{if(!e.target.matches?.(".spseek"))return;const fr=document.querySelector(".sp iframe");spCur=e.target.value/1000*spDur;spDrag=false;
+  try{fr.contentWindow.postMessage(JSON.stringify({event:"command",func:"seekTo",args:[spCur,true]}),"*")}catch(x){}spPaintBar()});
 /* shorts: the centre button and the side icons (rate, like, comments…) come and go together, like YouTube's app */
 function spHideUi(){const sp=document.querySelector(".sp"),ic=document.querySelector(".spicon");if(spPaused||spSheet)return;sp?.classList.add("uihide");ic?.classList.remove("ctl")}
 function spShowCtl(btn=true){const sp=document.querySelector(".sp"),ic=document.querySelector(".spicon");sp?.classList.remove("uihide");
@@ -2341,7 +2352,7 @@ function spPreload(nx){const box=$("#spPre");if(!box)return;
   if(!document.body.moveBefore||!nx||!nx.yt||state.view!=="shorts"){box.innerHTML="";return}
   const id="yt-"+nx.yt;[...box.querySelectorAll("iframe")].forEach(i=>{if(i.dataset.fid!==id)i.remove()});
   if(!box.querySelector("iframe"))setTimeout(()=>{if(state.view!=="shorts"||box.querySelector("iframe"))return;
-    box.insertAdjacentHTML("beforeend",ytFrame(nx.yt).replace("autoplay=1","autoplay=0").replace("&enablejsapi=1","&enablejsapi=1&fs=0"))},1200)}
+    box.insertAdjacentHTML("beforeend",ytFrame(nx.yt).replace("autoplay=1","autoplay=0").replace("&enablejsapi=1","&enablejsapi=1&fs=0&controls=0"))},1200)}
 /* The short being watched should play with sound. Browsers sometimes start embedded players muted,
    so ask the player to unmute and play once it has loaded. */
 function spWake(){
@@ -2515,6 +2526,7 @@ addEventListener("message",e=>{
   if(playing&&fr.closest(".player")&&!document.querySelector(".endnext.early"))hideEnd();
   if(fr.closest(".player"))fpInfo(d);
   if(fr.closest(".sp")){const ps=d.event==="onStateChange"?d.info:d.event==="infoDelivery"&&d.info?d.info.playerState:undefined;if(typeof ps==="number")spState=ps}
+  if(fr.closest(".sp")&&d.event==="infoDelivery"&&d.info){if(typeof d.info.duration==="number"&&d.info.duration>0)spDur=d.info.duration;if(typeof d.info.currentTime==="number")spCur=d.info.currentTime;spPaintBar()}
   if(!ended)return;
   if(fr.closest(".sp")){if(state.view==="shorts"&&!spPaused)stepShort(1);return}
   if(state.view==="watch")showEnd(fr.closest(".player"));
