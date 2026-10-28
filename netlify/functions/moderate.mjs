@@ -69,17 +69,29 @@ export default async (req) => {
   }
   if (body.action === "umami") {
     // Umami Cloud statistics for the admin page. The API key stays on the server (setting UMAMI_API_KEY in Cloudflare).
+    // Two ways in: an API key (Umami Pro), or the website's share link (free) — the same way Umami's own share page reads the numbers.
     const apiKey = Netlify.env.get("UMAMI_API_KEY");
-    const site = Netlify.env.get("UMAMI_WEBSITE_ID") || "d8274143-7ceb-4717-aa02-13bfb95bfbf3";
-    if (!apiKey) return json({ error: "no-key" });
-    const base = (Netlify.env.get("UMAMI_API_URL") || "https://api.umami.is/v1") + "/websites/" + site;
+    let site = Netlify.env.get("UMAMI_WEBSITE_ID") || "d8274143-7ceb-4717-aa02-13bfb95bfbf3", base, headers;
+    if (apiKey) {
+      base = (Netlify.env.get("UMAMI_API_URL") || "https://api.umami.is/v1") + "/websites/" + site;
+      headers = { Accept: "application/json", Authorization: "Bearer " + apiKey, "x-umami-api-key": apiKey };
+    } else {
+      const share = String(Netlify.env.get("UMAMI_SHARE") || "gbzu2pDfQWfQ6LZ2").replace(/^.*\/share\//, "").split(/[/?#]/)[0];
+      const sr = await fetch("https://cloud.umami.is/api/share/" + encodeURIComponent(share), { headers: { Accept: "application/json" } });
+      if (!sr.ok) return json({ error: "Umami share link " + sr.status + " (is the share still on in Umami?)" });
+      const sd = await sr.json();
+      if (!sd?.token) return json({ error: "Umami share link gave no token" });
+      site = sd.websiteId || site;
+      base = "https://cloud.umami.is/api/websites/" + site;
+      headers = { Accept: "application/json", "x-umami-share-token": sd.token, "x-umami-share-context": "1" };
+    }
     const days = { "24h": 1, "7d": 7, "30d": 30, "90d": 90 }[body.range] || 7;
     const endAt = Date.now(), startAt = endAt - days * 864e5, prevStart = startAt - days * 864e5;
     const tz = "Europe/Stockholm", unit = days === 1 ? "hour" : "day";
     const get = async (path, q = {}) => {
       const u = new URL(base + path);
       for (const [k, v] of Object.entries(q)) u.searchParams.set(k, String(v));
-      const r = await fetch(u, { headers: { Accept: "application/json", Authorization: "Bearer " + apiKey, "x-umami-api-key": apiKey } });
+      const r = await fetch(u, { headers });
       if (!r.ok) throw new Error("Umami " + r.status + " " + path);
       return r.json();
     };
@@ -104,7 +116,7 @@ export default async (req) => {
       const pts = (a) => (Array.isArray(a) ? a.map((p) => ({ t: p.x ?? p.t, n: +p.y || 0 })) : []);
       return json({
         range: body.range || "7d", unit, site,
-        stats: pick(stats), prev: prev ? pick(prev) : null,
+        stats: pick(stats), prev: stats?.comparison ? pick(stats.comparison) : prev ? pick(prev) : null,
         active: num(active?.visitors ?? active?.x ?? (Array.isArray(active) ? active[0]?.x : active)),
         series: { pageviews: pts(series?.pageviews), visitors: pts(series?.sessions ?? series?.visitors) },
         pages, referrers, countries, devices, browsers, os, events, entries,
