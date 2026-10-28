@@ -958,15 +958,14 @@ let VIEWS={};const counted=new Set();
 const viewsOf=f=>VIEWS[f.id]||0;
 /* Fanreelz views are counted from day one but not shown yet; the YouTube count is shown instead */
 const VIEW_MIN=Infinity; // hidden for now; set a number (e.g. 1000) to start showing Fanreelz views
-const viewTxt=f=>{const v=viewsOf(f);return v>=VIEW_MIN?`${fmtN(v)} views · `:f.ytViews?`${fmtN(f.ytViews)} YouTube views · `:""};
+const viewTxt=f=>{const v=viewsOf(f);return (isMod?`${fmtN(v)} Fanreelz views · `:"")+(f.ytViews?`${fmtN(f.ytViews)} YouTube views · `:"")};
 function countView(f){if(!f||counted.has(f.id))return;let seen=[];try{seen=JSON.parse(sessionStorage.getItem("fr_seen")||"[]")}catch(e){}
   counted.add(f.id);if(seen.includes(f.id))return;VIEWS[f.id]=viewsOf(f)+1;
   try{sessionStorage.setItem("fr_seen",JSON.stringify([...seen,f.id].slice(-500)))}catch(e){}
   if(sb)sb.rpc("add_view",{p_id:f.id}).then(({error})=>{if(error)console.warn("view",error.message)})}
-async function loadViews(){if(!sb)return;const all={};
-  for(let from=0;from<200000;from+=1000){const {data,error}=await sb.from("film_views").select("id,n").range(from,from+999);
-    if(error||!data){if(error)console.warn("views",error.message);break}data.forEach(r=>all[r.id]=+r.n||0);if(data.length<1000)break}
-  for(const k in VIEWS)if(counted.has(k))all[k]=Math.max(all[k]||0,VIEWS[k]);VIEWS=all;if(Object.keys(all).length)render()}
+/* Fanreelz's own view counts are private: only admins get them, from the server */
+async function loadViews(){if(!isMod)return;const r=await modCall({action:"views"});if(!r||!r.views)return;const all=r.views;
+  for(const k in VIEWS)if(counted.has(k))all[k]=Math.max(all[k]||0,VIEWS[k]);VIEWS=all;renderHard=true;render()}
 /* publish dates: on YouTube (or the film's own site) and when Fanreelz added it */
 const fdate=t=>new Date(t).toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"});
 const datesLine=f=>[f.pub?`Published on ${esc(f.src||"YouTube")} ${fdate(f.pub)}`:"",f.added?`Added to Fanreelz ${fdate(f.added)}`:""].filter(Boolean).join(" · ");
@@ -1101,7 +1100,7 @@ function renderWatch(){
     ${f.seriesId&&findSeries(f.seriesId)?`<button class="serieslink" data-series="${esc(f.seriesId)}">${esc(findSeries(f.seriesId)?.title||"Series")} · Season ${f.season}, Episode ${f.ep}</button>`:""}<h1 class="wtitle" ${f.format==="episode"?'style="margin-top:4px"':""}>${esc(f.title)}${f.real?'<span class="pill">Real</span>':""}${isVerified(f)?'<span class="pill">Verified original</span>':""}</h1>
     <div class="wbar">${(f.real||f.yt||f.tt||f.ig||f.vm||f.dm)?`<div class="owner">${cav(byName(f),40)}<div><b>${esc(byName(f)||"YouTube creator")}</b><small>${esc(catName(f.cat))} · ${esc(f.char)}</small></div></div>`:`<button class="owner link" data-creator="${esc(f.byId||f.by)}">${cav(byName(f),40)}<div><b>${esc(byName(f)||"YouTube creator")}</b><small>${fmtN(followerCount(f.byId||f.by))} followers · ${esc(catName(f.cat))}</small></div></button>`}
       <div class="ratebox" role="group" aria-label="Rate this film"><span>${mine?"Your rating":"Rate"}</span>${[1,2,3,4,5].map(k=>`<button data-rate="${k}" class="${k<=mine?"on":""}" aria-label="${k} stars">★</button>`).join("")}</div></div>
-    <div class="desc"><div class="top2">${[viewsOf(f)>=VIEW_MIN?viewsOf(f).toLocaleString("en-US")+" views on Fanreelz":"",f.ytViews?f.ytViews.toLocaleString("en-US")+" views on YouTube":""].filter(Boolean).map(x=>x+" · ").join("")}${s.n?`★ ${s.avg.toFixed(1)} from ${s.n.toLocaleString("en-US")} ratings`:"No ratings yet"} · ${f.days==null?"":ago(f.days)+" · "}${esc(f.src)} · made with ${esc(f.tool)}</div>${datesLine(f)?`<div class="vmeta" style="margin-top:4px">${datesLine(f)}</div>`:""}
+    <div class="desc"><div class="top2">${[isMod?viewsOf(f).toLocaleString("en-US")+" views on Fanreelz":"",f.ytViews?f.ytViews.toLocaleString("en-US")+" views on YouTube":""].filter(Boolean).map(x=>x+" · ").join("")}${s.n?`★ ${s.avg.toFixed(1)} from ${s.n.toLocaleString("en-US")} ratings`:"No ratings yet"} · ${f.days==null?"":ago(f.days)+" · "}${esc(f.src)} · made with ${esc(f.tool)}</div>${datesLine(f)?`<div class="vmeta" style="margin-top:4px">${datesLine(f)}</div>`:""}
       <div class="dist">${[5,4,3,2,1].map(k=>`<span>${k}★</span><span class="bar"><i style="width:${max?s.c[k-1]/max*100:0}%"></i></span><span>${fmtN(s.c[k-1])}</span>`).join("")}</div>
       <div class="tags"><button data-cat="${f.cat}">${esc(catName(f.cat))}</button><button data-cat="${f.cat}" data-char-go="${esc(f.char)}">${esc(f.char)}</button><button data-cat="${f.cat}" data-lore-go="${loreOf(f)}">${loreOf(f)==="lore"?"Lore-accurate":"What if"}</button>${isKids(f)?'<button data-family-info="">Family-friendly</button>':""}</div>
       ${f.real||f.yt||f.tt||f.ig||f.vm||f.dm||f.byId?"":`<div class="howmade"><b>How it was made</b><div class="vmeta">Tool: ${esc(f.tool)} · Prompt shared by ${esc(byName(f)||"YouTube creator")}</div><div class="prompt" id="promptText">${esc(promptOf(f))}</div><div class="row"><button class="btn ghost" data-copyprompt="" style="padding:6px 12px">Copy prompt</button></div></div>`}
@@ -1410,7 +1409,8 @@ function renderAdmin(){
   if(state.adminUser){renderAdminUser(U.find(u=>u.id===state.adminUser)||{id:state.adminUser});return}
   $("#main").innerHTML=`<h1 class="sect-h" style="font-size:22px">${icon("shield")} Accounts</h1>
   <p class="vmeta" style="margin:0 0 14px">Live: updates every 30 seconds · last update ${new Date(adminUsersAt).toLocaleTimeString("sv-SE")}${adminUsersErr?` · <b style="color:#ff6b6b">${esc(adminUsersErr)}</b>`:""} · <button class="chip" data-adminreload="">Refresh now</button></p>
-  <div class="adm-cards">${card(U.length,"accounts")}${card(since(1),"new today")}${card(since(7),"new 7 days")}${card(since(30),"new 30 days")}${card(by("google"),"Google")}${card(by("discord"),"Discord")}</div>
+  <div class="adm-cards">${card(U.length,"accounts")}${card(since(1),"new today")}${card(since(7),"new 7 days")}${card(since(30),"new 30 days")}${card(by("google"),"Google")}${card(by("discord"),"Discord")}</div>${(()=>{const tot=Object.values(VIEWS).reduce((a,b)=>a+b,0),top=Object.entries(VIEWS).sort((a,b)=>b[1]-a[1]).slice(0,10).map(([id,n])=>[findFilm(id),n]).filter(x=>x[0]);
+    return `<h2 class="sect-h" style="font-size:17px;margin-top:22px">Fanreelz views <small class="vmeta" style="font-weight:500">only you see these · ${tot.toLocaleString("sv-SE")} in total</small></h2>`+(top.length?`<div class="adm-list">${top.map(([f,n])=>`<div class="adm-row" data-open="${esc(f.id)}" role="button" tabindex="0"><div class="adm-who"><b>${esc(f.title)}</b><span>${esc(catName(f.cat))}</span></div><b>${n.toLocaleString("sv-SE")}</b></div>`).join("")}</div>`:`<p class="vmeta">No views counted yet.</p>`)})()}
   <div class="adm-list">${U.map(u=>`<div class="adm-row" data-adminuser="${esc(u.id||"")}" role="button" tabindex="0">${u.avatar?`<img src="${esc(u.avatar)}" alt="" referrerpolicy="no-referrer" loading="lazy">`:cav(u.name||u.email||"?",36)}
     <div class="adm-who"><b>${esc(u.name||"(no name)")}</b><span>${esc(u.email)}</span></div>
     <div class="adm-meta"><span class="chip">${esc(u.provider||"–")}</span><span>Joined ${d(u.created)}</span><span>Last sign-in ${d(u.last)}</span></div></div>`).join("")||`<div class="empty">No accounts yet.</div>`}</div>
@@ -2318,7 +2318,7 @@ async function adminDo(body,label){if(adminBusy)return;adminBusy=true;adminMsg=l
   catch(e){adminMsg="Error: "+esc(e.message||e)}
   adminBusy=false;render()}
 async function modCall(body){const r=await fetch("/api/moderate",{method:"POST",headers:{"Content-Type":"application/json",Authorization:"Bearer "+(sbToken||"")},body:JSON.stringify(body)});return r.json().catch(()=>({}))}
-async function checkMod(){if(!sbToken)return;try{const r=await modCall({action:"check"});if(r.admin){isMod=true;try{renderGuide()}catch(e){}renderHard=true;render()}}catch{}}
+async function checkMod(){if(!sbToken)return;try{const r=await modCall({action:"check"});if(r.admin){isMod=true;try{renderGuide()}catch(e){}renderHard=true;render();loadViews().catch(()=>{})}}catch{}}
 async function modRemove(v){const i=v.indexOf("|"),owner=v.slice(0,i),id=v.slice(i+1);
   if(!confirm("Remove this comment for everyone?"))return;
   const r=await modCall({action:"remove",owner,id});
@@ -3017,7 +3017,6 @@ async function startSupabase(){
   const user={me:async()=>me||{},profiles:async ids=>{const out={};if(!ids.length)return out;
     const {data}=await sb.from("profiles").select("id,name,avatar_url,created_at").in("id",ids.slice(0,300));for(const r of data||[]){out[r.id]={name:r.name||"Fan",avatar:r.avatar_url||""};if(r.created_at)joined[r.id]=r.created_at}return out}};
   loadCatalog().catch(e=>console.warn("catalogue",e));
-  loadViews().catch(e=>console.warn("views",e));
   if(u)setTimeout(checkMod,0);
   return {user,db:supabaseDb(me?.id||null),me};
 }

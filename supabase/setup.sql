@@ -146,9 +146,9 @@ grant execute on function public.requeue_done_channels() to service_role;
 -- 7. Fanreelz views: one count per film per visit. Anyone can read; only add_view can add.
 create table if not exists public.film_views (id text primary key, n bigint not null default 0, updated_at timestamptz not null default now());
 alter table public.film_views enable row level security;
+-- view counts are private: only the server (admin page) reads them; visitors can only add a view through add_view
 drop policy if exists "views are public" on public.film_views;
-create policy "views are public" on public.film_views for select using (true);
-grant select on public.film_views to anon, authenticated;
+revoke select on public.film_views from anon, authenticated;
 create or replace function public.add_view(p_id text) returns void
 language sql security definer set search_path = public as $$
   insert into public.film_views (id, n) values (left(p_id, 80), 1)

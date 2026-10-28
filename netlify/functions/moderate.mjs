@@ -45,6 +45,20 @@ export default async (req) => {
     users.sort((a, b) => String(b.created).localeCompare(String(a.created)));
     return json({ users });
   }
+  if (body.action === "views") {
+    // Fanreelz's own view counts (table film_views), only for admins
+    const key = Netlify.env.get("SUPABASE_SERVICE_ROLE_KEY"), h = { apikey: key };
+    if (!key.startsWith("sb_secret_")) h.Authorization = "Bearer " + key;
+    const views = {};
+    for (let from = 0; from < 500000; from += 1000) {
+      const r = await fetch(Netlify.env.get("SUPABASE_URL") + `/rest/v1/film_views?select=id,n&order=id&offset=${from}&limit=1000`, { headers: h });
+      if (!r.ok) return json({ error: "Supabase " + r.status }, 500);
+      const rows = await r.json();
+      for (const x of rows) views[x.id] = +x.n || 0;
+      if (rows.length < 1000) break;
+    }
+    return json({ views });
+  }
   if (body.action === "run") {
     const job = { "import-youtube": importYoutube, showdown }[body.job];
     if (!job) return json({ error: "unknown job" }, 400);
