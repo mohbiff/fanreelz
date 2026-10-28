@@ -184,7 +184,7 @@ body.fsmode .player.hasbar:not(.ytctrl) .fpcenter,body.wfs .player.hasbar:not(.y
 .dragzone{display:none;position:absolute;left:0;width:56px;top:0;height:52px;z-index:7;touch-action:none}
 .dragzone button{position:absolute;left:6px;top:6px;width:40px;height:40px;border:0;border-radius:50%;background:rgba(0,0,0,.35);color:#fff;display:flex;align-items:center;justify-content:center;padding:0;cursor:pointer}
 .dragzone svg,#mini svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
-#mini{position:fixed;z-index:45;left:0;right:0;bottom:calc(54px + env(safe-area-inset-bottom,0px));height:64px;display:flex;align-items:center;gap:10px;background:var(--bg2,#1b1724);border-top:1px solid var(--line);box-shadow:0 -4px 16px rgba(0,0,0,.25)}
+#mini{position:fixed;z-index:45;left:0;right:0;bottom:var(--tabh,calc(54px + env(safe-area-inset-bottom,0px)));height:64px;display:flex;align-items:center;gap:10px;background:var(--bg2,#1b1724);border-top:1px solid var(--line);box-shadow:0 -4px 16px rgba(0,0,0,.25)}
 #mini .mvid{position:relative;width:114px;height:64px;flex:none;background:#000;overflow:hidden;order:3;transform-origin:100% 100%}
 #mini [data-minitoggle]{order:1}#mini [data-miniclose]{order:2}#mini{touch-action:none}
 #mini .mvid iframe{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;aspect-ratio:auto!important;margin:0!important;border:0;pointer-events:none}
@@ -2704,6 +2704,9 @@ const fpIsFs=()=>document.body.classList.contains("fsmode")||document.body.class
 // full screen = the whole page in the browser's real full screen, with the film filling the screen;
 // scroll down for the title, ratings and comments, like YouTube. Phones also turn to landscape.
 /* ===== Miniplayer ===== */
+// the miniplayer sits exactly on top of the bottom tab bar, whatever its real height (it differs in the app and in browsers)
+(()=>{const tb=document.getElementById("tabbar");if(!tb)return;const set=()=>{const h=tb.offsetParent||getComputedStyle(tb).display!=="none"?tb.getBoundingClientRect().height:0;document.documentElement.style.setProperty("--tabh",Math.round(h)+"px")};
+  set();if(window.ResizeObserver)new ResizeObserver(set).observe(tb);addEventListener("resize",set)})();
 let mini=null,miniSt=1;
 function miniOpen(){if(!mini)return;const was=mini;
   if(was.short){go({view:"shorts",shortList:was.list,shortI:was.i,film:was.id});if(phone()&&state.view==="shorts")toggleShortsFull(true)}else go({view:"watch",film:was.id});
