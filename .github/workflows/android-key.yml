@@ -1,0 +1,39 @@
+# One time: creates the Android upload key for Google Play and saves it straight into the repository secrets
+# KEYSTORE_BASE64 and KEYSTORE_PASSWORD. The key never appears in a file, log or download (this repository is public).
+# Before running: add a secret SECRETS_TOKEN (a GitHub token allowed to write this repository's secrets).
+# Run: GitHub → Actions → "Android upload key (one time)" → Run workflow. Afterwards the token can be deleted.
+name: Android upload key (one time)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  actions: write
+
+jobs:
+  key:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create the key and save it as secrets
+        env:
+          GH_TOKEN: ${{ secrets.SECRETS_TOKEN }}
+          HAVE_KEY: ${{ secrets.KEYSTORE_BASE64 != '' }}
+        run: |
+          set -euo pipefail
+          if [ "$HAVE_KEY" = "true" ]; then echo "::error::An upload key (KEYSTORE_BASE64) already exists. It was not replaced."; exit 1; fi
+          if [ -z "$GH_TOKEN" ]; then echo "::error::Add the SECRETS_TOKEN secret first (see the top of this file)."; exit 1; fi
+          PASS=$(openssl rand -hex 24)
+          echo "::add-mask::$PASS"
+          keytool -genkeypair -keystore "$RUNNER_TEMP/upload.jks" -storetype PKCS12 -alias fanreelz -keyalg RSA -keysize 2048 -validity 10000 \
+            -storepass "$PASS" -keypass "$PASS" -dname "CN=Fanreelz, O=Fanreelz, C=SE" >/dev/null 2>&1
+          base64 -w0 "$RUNNER_TEMP/upload.jks" | gh secret set KEYSTORE_BASE64 --repo "$GITHUB_REPOSITORY"
+          printf '%s' "$PASS" | gh secret set KEYSTORE_PASSWORD --repo "$GITHUB_REPOSITORY"
+          FP=$(keytool -list -v -keystore "$RUNNER_TEMP/upload.jks" -storepass "$PASS" | sed -n 's/.*SHA256: *//p' | head -1)
+          rm -f "$RUNNER_TEMP/upload.jks"
+          echo "Upload key created and saved as secrets."
+          echo "::notice title=Upload key SHA-256 (public, safe to share)::$FP"
+
+      - name: Build the signed app
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run android.yml --repo "$GITHUB_REPOSITORY" --ref main
