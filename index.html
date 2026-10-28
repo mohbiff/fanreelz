@@ -1100,7 +1100,7 @@ function renderWatch(){
     ${f.seriesId&&findSeries(f.seriesId)?`<button class="serieslink" data-series="${esc(f.seriesId)}">${esc(findSeries(f.seriesId)?.title||"Series")} · Season ${f.season}, Episode ${f.ep}</button>`:""}<h1 class="wtitle" ${f.format==="episode"?'style="margin-top:4px"':""}>${esc(f.title)}${f.real?'<span class="pill">Real</span>':""}${isVerified(f)?'<span class="pill">Verified original</span>':""}</h1>
     <div class="wbar">${(f.real||f.yt||f.tt||f.ig||f.vm||f.dm)?`<div class="owner">${cav(byName(f),40)}<div><b>${esc(byName(f)||"YouTube creator")}</b><small>${esc(catName(f.cat))} · ${esc(f.char)}</small></div></div>`:`<button class="owner link" data-creator="${esc(f.byId||f.by)}">${cav(byName(f),40)}<div><b>${esc(byName(f)||"YouTube creator")}</b><small>${fmtN(followerCount(f.byId||f.by))} followers · ${esc(catName(f.cat))}</small></div></button>`}
       <div class="ratebox" role="group" aria-label="Rate this film"><span>${mine?"Your rating":"Rate"}</span>${[1,2,3,4,5].map(k=>`<button data-rate="${k}" class="${k<=mine?"on":""}" aria-label="${k} stars">★</button>`).join("")}</div></div>
-    <div class="desc"><div class="top2">${[isMod?viewsOf(f).toLocaleString("en-US")+" views on Fanreelz":"",f.ytViews?f.ytViews.toLocaleString("en-US")+" views on YouTube":""].filter(Boolean).map(x=>x+" · ").join("")}${s.n?`★ ${s.avg.toFixed(1)} from ${s.n.toLocaleString("en-US")} ratings`:"No ratings yet"} · ${f.days==null?"":ago(f.days)+" · "}${esc(f.src)} · made with ${esc(f.tool)}</div>${datesLine(f)?`<div class="vmeta" style="margin-top:4px">${datesLine(f)}</div>`:""}
+    <div class="desc"><div class="top2">${[isMod?viewsOf(f).toLocaleString("en-US")+" views on Fanreelz":"",f.ytViews?f.ytViews.toLocaleString("en-US")+" views on YouTube":""].filter(Boolean).map(x=>x+" · ").join("")}${s.n?`★ ${s.avg.toFixed(1)} from ${s.n.toLocaleString("en-US")} ratings`:"No ratings yet"} · ${f.days==null?"":ago(f.days)+" · "}${esc(f.src)}${f.tool&&f.tool!=="Unknown"?" · made with "+esc(f.tool):""}</div>${datesLine(f)?`<div class="vmeta" style="margin-top:4px">${datesLine(f)}</div>`:""}
       <div class="dist">${[5,4,3,2,1].map(k=>`<span>${k}★</span><span class="bar"><i style="width:${max?s.c[k-1]/max*100:0}%"></i></span><span>${fmtN(s.c[k-1])}</span>`).join("")}</div>
       <div class="tags"><button data-cat="${f.cat}">${esc(catName(f.cat))}</button><button data-cat="${f.cat}" data-char-go="${esc(f.char)}">${esc(f.char)}</button><button data-cat="${f.cat}" data-lore-go="${loreOf(f)}">${loreOf(f)==="lore"?"Lore-accurate":"What if"}</button>${isKids(f)?'<button data-family-info="">Family-friendly</button>':""}</div>
       ${f.real||f.yt||f.tt||f.ig||f.vm||f.dm||f.byId?"":`<div class="howmade"><b>How it was made</b><div class="vmeta">Tool: ${esc(f.tool)} · Prompt shared by ${esc(byName(f)||"YouTube creator")}</div><div class="prompt" id="promptText">${esc(promptOf(f))}</div><div class="row"><button class="btn ghost" data-copyprompt="" style="padding:6px 12px">Copy prompt</button></div></div>`}
@@ -3077,13 +3077,14 @@ async function loadCatalog(){
   if(n){console.log("Fanreelz catalogue:",slim.length,"films");openLinkedFilm();render()}
   loadHandViews().catch(()=>{});
 }
-/* YouTube view counts for films added by hand (not in the database), 50 per request, cached by the server */
-let handViewsDone=false;
-async function loadHandViews(){if(handViewsDone)return;handViewsDone=true;
-  const ids=[...new Set(FILMS.filter(f=>f.yt&&!f.ytViews).map(f=>f.yt))].sort();let got=0;
+/* YouTube view counts and publish dates for films that aren't in the database (added by hand or by members), 50 per request, cached by the server */
+const ytInfo={},ytAsked=new Set();
+function applyYtInfo(f){const x=f.yt&&ytInfo[f.yt];if(!x)return false;let ch=false;if(!f.ytViews&&x.v){f.ytViews=x.v;ch=true}if(!f.pub&&x.p){f.pub=Date.parse(x.p);f.days=daysSince(f.pub);ch=true}return ch}
+async function loadHandViews(){
+  const ids=[...new Set(rawFilms().filter(f=>f.yt&&(!f.ytViews||!f.pub)&&!ytAsked.has(f.yt)).map(f=>f.yt))].sort();if(!ids.length)return;ids.forEach(x=>ytAsked.add(x));
   for(let i=0;i<ids.length;i+=50){const r=await fetch("/api/yt-views?ids="+ids.slice(i,i+50).join(",")).then(r=>r.json()).catch(()=>({}));
-    for(const f of FILMS)if(f.yt&&r[f.yt]&&!f.ytViews){f.ytViews=r[f.yt];got++}}
-  if(got)render()}
+    for(const k in r)ytInfo[k]=typeof r[k]==="number"?{v:r[k]}:r[k]}
+  let got=0;for(const f of rawFilms())if(applyYtInfo(f))got++;if(got)render()}
 async function sbSignIn(provider,pick){
   if(!sb)return;try{localStorage.setItem("fr_back",JSON.stringify(history.state?.fr||null))}catch(e){}
   // pick=true: ask Google/Discord which account to use instead of signing straight back into the same one
@@ -3116,9 +3117,9 @@ async function sbSignOut(){if(sb){await sb.auth.signOut();location.reload()}}
   db.collection("submissions").onSnapshot(snap=>{const all=[],mine=[];
     for(const d of snap.docs){const films=Array.isArray(d.data()?.films)?d.data().films:[];
       for(const f of films){if(!f||!CATS.some(c=>c.id===f.cat)||typeof f.title!=="string")continue;
-        all.push({id:String(f.id),title:f.title.slice(0,120),cat:f.cat,char:String(f.char||""),src:String(f.src||"YouTube"),tool:String(f.tool||"Unknown"),len:"",days:daysSince(+f.t||Date.now()),counts:[0,0,0,0,0],hue:(+f.hue||0)%360,url:/^https:\/\//.test(f.url)?f.url:"",byId:d.id,topic:String(f.topic||"").slice(0,60),...(/^https:\/\//.test(f.url)?parseVid(f.url):{}),format:["short","film","episode"].includes(f.format)?f.format:"film",seriesTitle:String(f.seriesTitle||"").slice(0,80),season:Math.max(1,+f.season||1),ep:Math.max(1,+f.ep||1)});
+        all.push({id:String(f.id),title:f.title.slice(0,120),cat:f.cat,char:String(f.char||""),src:String(f.src||"YouTube"),tool:String(f.tool||"Unknown"),len:"",days:daysSince(+f.t||Date.now()),added:+f.t||null,counts:[0,0,0,0,0],hue:(+f.hue||0)%360,url:/^https:\/\//.test(f.url)?f.url:"",byId:d.id,topic:String(f.topic||"").slice(0,60),...(/^https:\/\//.test(f.url)?parseVid(f.url):{}),format:["short","film","episode"].includes(f.format)?f.format:"film",seriesTitle:String(f.seriesTitle||"").slice(0,80),season:Math.max(1,+f.season||1),ep:Math.max(1,+f.ep||1)});
         if(d.id===acct.uid)mine.push(f);}}
-    sharedSubs=all;mySubs=mine;openLinkedFilm();render();resolveNames();},()=>{});
+    all.forEach(applyYtInfo);sharedSubs=all;mySubs=mine;openLinkedFilm();render();resolveNames();setTimeout(()=>loadHandViews().catch(()=>{}),1500);},()=>{});
 })();
 </script>
 
