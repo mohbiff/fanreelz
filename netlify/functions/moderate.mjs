@@ -77,12 +77,19 @@ export default async (req) => {
       headers = { Accept: "application/json", Authorization: "Bearer " + apiKey, "x-umami-api-key": apiKey };
     } else {
       const share = String(Netlify.env.get("UMAMI_SHARE") || "gbzu2pDfQWfQ6LZ2").replace(/^.*\/share\//, "").split(/[/?#]/)[0];
-      const sr = await fetch("https://cloud.umami.is/api/share/" + encodeURIComponent(share), { headers: { Accept: "application/json" } });
-      if (!sr.ok) return json({ error: "Umami share link " + sr.status + " (is the share still on in Umami?)" });
-      const sd = await sr.json();
-      if (!sd?.token) return json({ error: "Umami share link gave no token" });
+      // Umami Cloud serves its API from another address than the dashboard: try the known ones and keep the one that answers
+      const apis = [Netlify.env.get("UMAMI_API_URL"), "https://api.umami.is/v1", "https://cloud.umami.is/api", "https://cloud.umami.is/analytics/api", "https://api.umami.is"].filter(Boolean);
+      let sd = null, api = "", tried = [];
+      for (const a of apis) {
+        const sr = await fetch(a + "/share/" + encodeURIComponent(share), { headers: { Accept: "application/json" } }).catch(() => null);
+        tried.push(a.replace(/^https:\/\//, "") + " " + (sr ? sr.status : "x"));
+        if (!sr || !sr.ok) continue;
+        const j = await sr.json().catch(() => null);
+        if (j?.token) { sd = j; api = a; break; }
+      }
+      if (!sd) return json({ error: "Umami share link not found (" + tried.join(", ") + ")" });
       site = sd.websiteId || site;
-      base = "https://cloud.umami.is/api/websites/" + site;
+      base = api + "/websites/" + site;
       headers = { Accept: "application/json", "x-umami-share-token": sd.token, "x-umami-share-context": "1" };
     }
     const days = { "24h": 1, "7d": 7, "30d": 30, "90d": 90 }[body.range] || 7;
