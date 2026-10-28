@@ -499,6 +499,8 @@ body.spfs .tabbar{display:none}
 .spicon.paused{background-image:url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 24 24%27%3E%3Cpath fill=%27white%27 d=%27M6 5h4v14H6zM14 5h4v14h-4z%27/%3E%3C/svg%3E")}
 .spicon.playing{background-image:url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 24 24%27%3E%3Cpath fill=%27white%27 d=%27M8 5v14l11-7z%27/%3E%3C/svg%3E")}
 .spicon.show{animation:spflash .7s ease}
+/* shorts: a tap on the video only shows this button; the button itself pauses and plays */
+.spicon.ctl{opacity:1;pointer-events:auto;cursor:pointer;transition:opacity .25s;-webkit-tap-highlight-color:transparent}
 @keyframes spflash{0%{opacity:0;transform:scale(.8)}25%{opacity:1;transform:scale(1)}100%{opacity:0;transform:scale(1.15)}}
 @keyframes hovin{from{opacity:0}to{opacity:1}}
 .thumb:hover .tttile{animation:ttdrift 4s ease-in-out infinite alternate;background-size:160% 160%}
@@ -2304,9 +2306,15 @@ function spToggle(){
   if(f.yt)w.postMessage(JSON.stringify({event:"command",func:cmd+"Video",args:[]}),"*");
   else if(f.tt)w.postMessage({"x-tiktok-player":true,type:cmd},"*");
   else if(f.vm)w.postMessage(JSON.stringify({method:cmd}),"*");
-  const ic=document.querySelector(".spicon");if(ic){ic.className="spicon "+(spPaused?"paused":"playing");void ic.offsetWidth;ic.classList.add("show")}
+  spShowCtl();
 }
-document.addEventListener("click",e=>{if(e.target.closest(".spcatch")){e.preventDefault();e.stopPropagation();spToggle()}},true);
+let spCtlT=null;
+function spShowCtl(){const ic=document.querySelector(".spicon");if(!ic)return;ic.className="spicon ctl "+(spPaused?"playing":"paused");
+  clearTimeout(spCtlT);if(!spPaused)spCtlT=setTimeout(()=>ic.classList.remove("ctl"),2500)}
+document.addEventListener("click",e=>{
+  if(e.target.closest(".spicon")){e.preventDefault();e.stopPropagation();spToggle();return}
+  if(e.target.closest(".spcatch")){e.preventDefault();e.stopPropagation();const ic=document.querySelector(".spicon");
+    if(ic?.classList.contains("ctl")&&!spPaused){clearTimeout(spCtlT);ic.classList.remove("ctl")}else spShowCtl()}},true);
 document.addEventListener("touchstart",e=>{if(e.target.closest(".spcatch"))spTouchY=e.touches[0].clientY},{passive:true});
 document.addEventListener("touchmove",e=>{if(spTouchY==null)return;const sp=document.querySelector(".sp");if(sp){sp.style.transition="none";sp.style.transform=`translateY(${Math.max(-140,Math.min(140,(e.touches[0].clientY-spTouchY)*.6))}px)`}},{passive:true});
 document.addEventListener("touchend",e=>{if(spTouchY==null)return;const dy=spTouchY-e.changedTouches[0].clientY;spTouchY=null;const sp=document.querySelector(".sp");
