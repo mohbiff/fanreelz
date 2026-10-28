@@ -78,7 +78,8 @@ export default async (req) => {
     } else {
       const share = String(Netlify.env.get("UMAMI_SHARE") || "gbzu2pDfQWfQ6LZ2").replace(/^.*\/share\//, "").split(/[/?#]/)[0];
       // Umami Cloud serves its API from another address than the dashboard: try the known ones and keep the one that answers
-      const apis = [Netlify.env.get("UMAMI_API_URL"), "https://api.umami.is/v1", "https://cloud.umami.is/api", "https://cloud.umami.is/analytics/api", "https://api.umami.is"].filter(Boolean);
+      // (EU accounts like Fanreelz's: gateway-eu.umami.is; US accounts: gateway.umami.is)
+      const apis = [Netlify.env.get("UMAMI_API_URL"), "https://gateway-eu.umami.is/api", "https://gateway.umami.is/api", "https://api.umami.is/v1"].filter(Boolean);
       let sd = null, api = "", tried = [];
       for (const a of apis) {
         const sr = await fetch(a + "/share/" + encodeURIComponent(share), { headers: { Accept: "application/json" } }).catch(() => null);
