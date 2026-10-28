@@ -163,7 +163,7 @@ main{min-width:0;padding-right:max(16px,env(safe-area-inset-right,0px));padding-
 /* full screen: YouTube's player fills the screen except two 56px strips at the sides, which are Fanreelz's own ±10 s buttons (not on top of the video) */
 .player.hasbar:fullscreen iframe,body.wfs .player.hasbar iframe{flex:1;aspect-ratio:auto;width:calc(100% - 112px)!important;min-height:0;height:auto!important;margin:0 auto}
 .player.ended iframe{visibility:hidden}
-.edgegrab{display:none;position:absolute;left:0;top:0;bottom:64px;width:26px;z-index:6}
+.edgegrab{display:none;position:absolute;left:0;top:0;bottom:64px;width:64px;z-index:6;touch-action:pan-y}
 @media (max-width:860px){.player.hasbar .edgegrab{display:block}body.fsmode .edgegrab,body.wfs .edgegrab{display:none!important}}
 /* vertical videos (9:16): a tall player like YouTube's, and in full screen they use the whole width of a standing phone */
 .player.vert.hasbar iframe{aspect-ratio:9/16;width:auto!important;height:min(78vh,calc((100vw - 32px)*16/9),760px)!important;margin:0 auto}
@@ -1010,11 +1010,18 @@ function closeMenu(fromBack){const sh=$("#shell");if(!sh.classList.contains("ope
 /* Swipe right to open the menu (phones). Rows that scroll sideways, the player's controls, Shorts and full screen keep their own swipes.
    A video's picture swallows touches, so the player has a thin strip at its left edge (.edgegrab) that catches the swipe instead. */
 (()=>{let sw=null;
-  const skip=t=>t.closest(".shelfrow,.shortrow,.chips,.lorebar,.fmtbar,.endgrid,.fpbar,.fpzone,.sp,.dlg,#guide,#menuBack,input,textarea,select,[contenteditable]");
+  // rows that scroll sideways only keep the swipe when they can scroll back (a row already at its start can't move right anyway)
+  const skip=t=>{const row=t.closest(".shelfrow,.shortrow,.chips,.lorebar,.fmtbar");if(row&&row.scrollLeft>2)return true;
+    return !!t.closest(".endgrid,.fpbar,.fpzone,.sp,.dlg,#guide,#menuBack,input,textarea,select,[contenteditable]")};
   document.addEventListener("touchstart",e=>{sw=null;if(!phone()||e.touches.length>1||$("#shell").classList.contains("open")||state.view==="shorts"||document.body.classList.contains("spfs")||(typeof fpIsFs==="function"&&fpIsFs())||skip(e.target))return;
     const t=e.touches[0];if(t.clientX>innerWidth*.6&&!e.target.closest(".edgegrab"))return;sw={x:t.clientX,y:t.clientY,at:Date.now()}},{passive:true});
-  document.addEventListener("touchend",e=>{if(!sw)return;const t=e.changedTouches[0],dx=t.clientX-sw.x,dy=t.clientY-sw.y,fast=Date.now()-sw.at<800;sw=null;
-    if(fast&&dx>60&&Math.abs(dx)>Math.abs(dy)*1.6)openMenu()},{passive:true});
+  // decide while the finger moves: Chrome often cancels the touch (no touchend) once it starts handling the swipe itself
+  const check=t=>{if(!sw)return;const dx=t.clientX-sw.x,dy=t.clientY-sw.y;
+    if(Math.abs(dy)>40&&Math.abs(dy)>Math.abs(dx)){sw=null;return}
+    if(dx>50&&Math.abs(dx)>Math.abs(dy)*1.4&&Date.now()-sw.at<900){sw=null;openMenu()}};
+  document.addEventListener("touchmove",e=>check(e.touches[0]),{passive:true});
+  document.addEventListener("touchend",e=>{check(e.changedTouches[0]);sw=null},{passive:true});
+  document.addEventListener("touchcancel",()=>{sw=null},{passive:true});
 })();
 /* Shorts full screen: our own, so swipe, stars and comments still work (the platforms' players would hide them) */
 /* Phone: shorts are only watched in full screen. Leaving full screen (Exit, back) leaves shorts too. */
