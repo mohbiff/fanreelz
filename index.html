@@ -145,6 +145,7 @@ main{min-width:0;padding-right:max(16px,env(safe-area-inset-right,0px));padding-
 .affrow:hover{background:var(--hover)}.affrow b{font-size:14px}.affrow em{font-style:normal;margin-left:auto;font-weight:700;color:var(--accent);white-space:nowrap}
 .affnote{font-size:11px;color:var(--muted);margin:4px 2px 0}
 .umplus{font-style:normal;color:#3ecf8e;font-size:.6em;font-weight:700;margin-left:6px;vertical-align:middle}
+.umrow .umplus{position:relative;font-size:12px;margin:0 2px 0 0;vertical-align:baseline}
 .adm-link{font-size:12.5px;color:var(--accent);text-decoration:none;overflow-wrap:anywhere;margin-top:2px}.adm-link:hover{text-decoration:underline}
 .adm-row[data-adminuser]{cursor:pointer}.adm-row[data-adminuser]:hover{border-color:var(--accent)}
 .adm-row{display:flex;align-items:center;gap:12px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 12px;flex-wrap:wrap}
@@ -1587,8 +1588,11 @@ function renderUmami(){
   const S=U.stats,P=U.prev,bounce=S.visits?S.bounces/S.visits*100:0,avg=S.visits?S.totaltime/S.visits:0;
   const delta=(a,b)=>{if(!P||!b||r==="all")return "";const d=(a-b)/b*100;return `<small style="color:${d>=0?"#3ecf8e":"#ff6b6b"};font-weight:600">${d>=0?"▲":"▼"} ${Math.abs(d).toFixed(0)}%</small>`};
   // what's new since you last opened Statistics (green +N), remembered on this device per period
-  if(!umBase[r]){let seen={};try{seen=JSON.parse(localStorage.getItem("fr_umseen")||"{}")}catch(e){}umBase[r]=seen[r]||{visitors:S.visitors,visits:S.visits,pageviews:S.pageviews};
-    seen[r]={visitors:S.visitors,visits:S.visits,pageviews:S.pageviews};try{localStorage.setItem("fr_umseen",JSON.stringify(seen))}catch(e){}}
+  // what you saw last time (per period), so every number that grew shows a green +N — the totals and each row in the lists
+  const UMLISTS=["pages","entries","referrers","countries","devices","browsers","os","events"];
+  const snap=()=>({visitors:S.visitors,visits:S.visits,pageviews:S.pageviews,lists:Object.fromEntries(UMLISTS.map(k=>[k,Object.fromEntries((U[k]||[]).map(x=>[x.x,x.y]))]))});
+  if(!umBase[r]){let seen={};try{seen=JSON.parse(localStorage.getItem("fr_umseen")||"{}")}catch(e){}umBase[r]=seen[r]||snap();
+    seen[r]=snap();try{localStorage.setItem("fr_umseen",JSON.stringify(seen))}catch(e){}}
   const plus=k=>{const d=(S[k]||0)-(umBase[r][k]||0);return d>0?`<em class="umplus">+${nf(d)}</em>`:""};
   const cards=[[nf(U.active||0),"online now",""],[nf(S.visitors)+plus("visitors"),"unique visitors",delta(S.visitors,P?.visitors)],[nf(S.visits)+plus("visits"),"visits (sessions)",delta(S.visits,P?.visits)],[nf(S.pageviews)+plus("pageviews"),"page views",delta(S.pageviews,P?.pageviews)],[bounce.toFixed(0)+"%","bounce rate",""],[dur(avg),"avg. visit",""]];
   // page views per hour/day as bars, visitors as a line
@@ -1603,8 +1607,9 @@ function renderUmami(){
     <p class="vmeta" style="font-size:12px;margin:4px 0 0"><span style="color:var(--accent)">■</span> page views · <span style="color:#7c5cff">━</span> unique visitors</p>`:`<p class="vmeta">No data in this period.</p>`;
   let cn=null;try{cn=new Intl.DisplayNames(["en"],{type:"region"})}catch(e){}
   const name={pages:x=>x,referrers:x=>x||"Direct / none",countries:x=>x?(cn?.of(x)||x):"Unknown",devices:x=>x||"Unknown",browsers:x=>x||"Unknown",os:x=>x||"Unknown",events:x=>x,entries:x=>x};
+  const rowPlus=(k,x)=>{const b=umBase[r]?.lists?.[k];if(!b)return "";const d=x.y-(b[x.x]||0);return d>0?`<em class="umplus">+${nf(d)}</em>`:""};
   const list=(k,title)=>{const a=U[k]||[];if(!a.length)return "";const top=Math.max(...a.map(x=>x.y),1),tot=a.reduce((s,x)=>s+x.y,0);
-    return `<div class="umbox"><h3>${title}${a.length>=10?`<button class="seeall" data-ummore="${k}">See all</button>`:""}</h3>${(k==="countries"||k==="devices")?`<p class="vmeta" style="font-size:12px;margin:-4px 0 6px">Tap one to see which pages they visited</p>`:""}${a.slice(0,10).map(x=>`<div class="umrow"${(k==="countries"||k==="devices")&&x.x?` data-umdrill="${k==="countries"?"country":"device"}|${esc(x.x)}|${esc(String(name[k](x.x)))}" role="button" style="cursor:pointer"`:""}><span class="umbar" style="width:${x.y/top*100}%"></span><span class="umname">${esc(String(name[k](x.x)||"–"))}</span><b>${nf(x.y)}</b><small>${tot?Math.round(x.y/tot*100):0}%</small></div>`).join("")}</div>`};
+    return `<div class="umbox"><h3>${title}${a.length>=10?`<button class="seeall" data-ummore="${k}">See all</button>`:""}</h3>${(k==="countries"||k==="devices")?`<p class="vmeta" style="font-size:12px;margin:-4px 0 6px">Tap one to see which pages they visited</p>`:""}${a.slice(0,10).map(x=>`<div class="umrow"${(k==="countries"||k==="devices")&&x.x?` data-umdrill="${k==="countries"?"country":"device"}|${esc(x.x)}|${esc(String(name[k](x.x)))}" role="button" style="cursor:pointer"`:""}><span class="umbar" style="width:${x.y/top*100}%"></span><span class="umname">${esc(String(name[k](x.x)||"–"))}</span>${rowPlus(k,x)}<b>${nf(x.y)}</b><small>${tot?Math.round(x.y/tot*100):0}%</small></div>`).join("")}</div>`};
   $("#main").innerHTML=head+`<div class="adm-cards">${cards.map(([n,l,d])=>`<div class="adm-card"><b>${n}</b><span>${l} ${d}</span></div>`).join("")}</div>
     <div class="umbox" style="margin-top:14px">${chart}</div>
     <div class="umgrid">${list("pages","Pages")}${list("entries","Entry pages")}${list("referrers","Where visitors come from")}${list("countries","Countries")}${list("devices","Devices")}${list("browsers","Browsers")}${list("os","Operating systems")}${list("events","Events")}</div>
