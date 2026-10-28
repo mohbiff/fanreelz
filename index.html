@@ -1456,20 +1456,51 @@ function renderAdmin(){
   const U=adminUsers||[],day=864e5,now=Date.now(),since=d=>U.filter(u=>now-Date.parse(u.created)<d*day).length,by=p=>U.filter(u=>u.provider===p).length;
   const d=x=>x?new Date(x).toLocaleString("sv-SE",{dateStyle:"short",timeStyle:"short"}):"–";
   const card=(n,l)=>`<div class="adm-card"><b>${n}</b><span>${l}</span></div>`;
+  const act=u=>Math.max(Date.parse(u.active||"")||0,Date.parse(u.last||"")||0);
+  const activeIn=m=>U.filter(u=>now-act(u)<m*60e3).length;
   if(state.adminUser){renderAdminUser(U.find(u=>u.id===state.adminUser)||{id:state.adminUser});return}
   $("#main").innerHTML=`<h1 class="sect-h" style="font-size:22px">${icon("shield")} Accounts</h1>
   <p class="vmeta" style="margin:0 0 14px">Live: updates every 30 seconds · last update ${new Date(adminUsersAt).toLocaleTimeString("sv-SE")}${adminUsersErr?` · <b style="color:#ff6b6b">${esc(adminUsersErr)}</b>`:""} · <button class="chip" data-adminreload="">Refresh now</button></p>
-  <div class="adm-cards">${card(U.length,"accounts")}${card(since(1),"new today")}${card(since(7),"new 7 days")}${card(since(30),"new 30 days")}${card(by("google"),"Google")}${card(by("discord"),"Discord")}</div>${(()=>{const tot=Object.values(VIEWS).reduce((a,b)=>a+b,0),top=Object.entries(VIEWS).sort((a,b)=>b[1]-a[1]).slice(0,10).map(([id,n])=>[findFilm(id),n]).filter(x=>x[0]);
+  <div class="adm-cards">${card(U.length,"accounts")}${card(since(1),"new today")}${card(since(7),"new 7 days")}${card(since(30),"new 30 days")}${card(activeIn(15),"active now")}${card(activeIn(1440),"active today")}${card(activeIn(10080),"active 7 days")}${card(by("google"),"Google")}${card(by("discord"),"Discord")}</div>${(()=>{const tot=Object.values(VIEWS).reduce((a,b)=>a+b,0),top=Object.entries(VIEWS).sort((a,b)=>b[1]-a[1]).slice(0,10).map(([id,n])=>[findFilm(id),n]).filter(x=>x[0]);
     return `<h2 class="sect-h" style="font-size:17px;margin-top:22px">Fanreelz views <small class="vmeta" style="font-weight:500">only you see these · ${tot.toLocaleString("sv-SE")} in total</small></h2>`+(top.length?`<div class="adm-list">${top.map(([f,n])=>`<div class="adm-row" data-open="${esc(f.id)}" role="button" tabindex="0"><div class="adm-who"><b>${esc(f.title)}</b><span>${esc(catName(f.cat))}</span></div><b>${n.toLocaleString("sv-SE")}</b></div>`).join("")}</div>`:`<p class="vmeta">No views counted yet.</p>`)})()}
-  <div class="adm-list">${U.map(u=>`<div class="adm-row" data-adminuser="${esc(u.id||"")}" role="button" tabindex="0">${u.avatar?`<img src="${esc(u.avatar)}" alt="" referrerpolicy="no-referrer" loading="lazy">`:cav(u.name||u.email||"?",36)}
+  <div class="chips" style="margin:18px 0 8px">${[["active","Recently active"],["new","Newest accounts"]].map(([k,l])=>`<button class="chip ${(state.adminSort||"active")===k?"on":""}" data-adminsort="${k}">${l}</button>`).join("")}</div>
+  <div class="adm-list">${[...U].sort((a,b)=>(state.adminSort||"active")==="active"?act(b)-act(a):String(b.created).localeCompare(String(a.created))).map(u=>`<div class="adm-row" data-adminuser="${esc(u.id||"")}" role="button" tabindex="0">${u.avatar?`<img src="${esc(u.avatar)}" alt="" referrerpolicy="no-referrer" loading="lazy">`:cav(u.name||u.email||"?",36)}
     <div class="adm-who"><b>${esc(u.name||"(no name)")}</b><span>${esc(u.email)}</span></div>
-    <div class="adm-meta"><span class="chip">${esc(u.provider||"–")}</span><span>Joined ${d(u.created)}</span><span>Last sign-in ${d(u.last)}</span></div></div>`).join("")||`<div class="empty">No accounts yet.</div>`}</div>
+    <div class="adm-meta"><span class="chip">${esc(u.provider||"–")}</span><span>${now-act(u)<15*60e3?'<b style="color:#3ecf8e">● Active now</b>':"Last active "+admAgo(act(u))}</span><span>Joined ${d(u.created)}</span></div></div>`).join("")||`<div class="empty">No accounts yet.</div>`}</div>
   <p class="vmeta" style="margin-top:14px;font-size:12px">Only you see this page. Use the details only to run Fanreelz (GDPR).</p>`}
+// "5 min ago", "3 h ago", "2 days ago", or the date
+const admAgo=t=>{if(!t)return "–";const m=(Date.now()-t)/60e3;return m<1?"just now":m<60?Math.round(m)+" min ago":m<1440?Math.round(m/60)+" h ago":m<10080?Math.round(m/1440)+" days ago":new Date(t).toLocaleDateString("sv-SE")};
 document.addEventListener("click",e=>{if(e.target.closest("[data-adminreload]")){e.preventDefault();loadAdminUsers()}
+  const so=e.target.closest("[data-adminsort]");if(so){e.preventDefault();state.adminSort=so.dataset.adminsort;render();return}
   const u=e.target.closest("[data-adminuser]");if(u&&u.dataset.adminuser){e.preventDefault();go({view:"admin",adminUser:u.dataset.adminuser})}
-  if(e.target.closest("[data-adminback]")){e.preventDefault();go({view:"admin",adminUser:null})}});
+  if(e.target.closest("[data-adminback]")){e.preventDefault();state.adminActAll=false;go({view:"admin",adminUser:null})}
+  if(e.target.closest("[data-adminactall]")){e.preventDefault();state.adminActAll=true;render()}});
 // one account: everything it has written or voted on Fanreelz
+/* one account's saved data, including its private watch history (read by the server for admins) */
+const adminAct={};
+async function loadAdminAct(uid){adminAct[uid]={loading:true};try{const r=await modCall({action:"activity",uid});adminAct[uid]=r.error?{err:r.error}:{docs:r.docs||[],at:Date.now()}}catch(e){adminAct[uid]={err:String(e.message||e)}}
+  if(state.view==="admin"&&state.adminUser===uid)render()}
+function actOf(uid){const A=adminAct[uid];if(!A||!A.docs)return null;const doc=(col,id)=>A.docs.find(x=>x.col===col&&(id==null||x.id===id));
+  const priv="data/users/"+uid,items=x=>Array.isArray(x?.data?.items)?x.data.items:[];
+  const hist=items(doc(priv,"history")),later=items(doc(priv,"later"));
+  const likesDoc=doc("commentlikes"),liked=Object.keys(likesDoc?.data?.ids||{}).filter(k=>k.startsWith("film-")).map(k=>k.slice(5));
+  const ev=[],T=x=>+x||Date.parse(x)||0;
+  for(const h of hist)ev.push({t:T(h.t),k:"Watched",film:h.id});
+  for(const h of later)ev.push({t:T(h.t),k:"Saved to Watch later",film:h.id});
+  for(const c of items(doc("comments")))if(c&&c.text)ev.push({t:T(c.t),k:"Commented",film:c.film,text:c.text});
+  for(const [key,v] of Object.entries(doc("showdown")?.data?.a||{}))ev.push({t:T(v.t),k:"Voted in Showdown",text:key});
+  for(const r of items(doc("requests")))ev.push({t:T(r.t),k:"Requested a film",text:r.title||r.text||""});
+  for(const r of items(doc("tips")))ev.push({t:T(r.t),k:"Sent a tip",film:r.film});
+  const rd=doc("ratings");if(rd)ev.push({t:T(rd.data?.t)||T(rd.updated_at),k:"Rated films (latest change)"});
+  if(likesDoc)ev.push({t:T(likesDoc.updated_at),k:"Liked (latest change)"});
+  const pd=doc("playlists");if(pd)ev.push({t:T(pd.updated_at),k:"Changed playlists",text:(pd.data?.lists||[]).map(l=>l.name).filter(Boolean).join(", ")});
+  const fd=doc("follows");if(fd)ev.push({t:T(fd.updated_at),k:"Changed who they follow"});
+  ev.sort((a,b)=>b.t-a.t);
+  const last=Math.max(0,...A.docs.map(x=>T(x.updated_at)),...ev.map(x=>x.t));
+  return {hist,later,liked,ev:ev.filter(x=>x.t),last,lists:pd?.data?.lists||[],follows:Object.keys(fd?.data?.c||{})}}
 function renderAdminUser(u){const uid=u.id,d=x=>x?new Date(+x||x).toLocaleString("sv-SE",{dateStyle:"short",timeStyle:"short"}):"–";
+  if(!adminAct[uid]||(!adminAct[uid].loading&&adminAct[uid].at&&Date.now()-adminAct[uid].at>60e3))loadAdminAct(uid);
+  const AC=actOf(uid),AE=adminAct[uid]?.err;
   const comments=(Array.isArray(commentDocs[uid]?.items)?commentDocs[uid].items:[]).filter(c=>c&&c.text).sort((a,b)=>(b.t||0)-(a.t||0));
   const votes=Object.entries(sdVotes[uid]?.a||{}).map(([key,v])=>({key,...v,m:sdList().find(x=>x.key===key)})).sort((a,b)=>(b.t||0)-(a.t||0));
   const ratings=Object.entries(ratingsBy[uid]||{}).map(([fid,r])=>({f:findFilm(fid),fid,r})).sort((a,b)=>b.r-a.r);
@@ -1480,9 +1511,13 @@ function renderAdminUser(u){const uid=u.id,d=x=>x?new Date(+x||x).toLocaleString
   $("#main").innerHTML=`<button class="btn ghost" data-adminback="">← All accounts</button>
   <div class="adm-row" style="margin:12px 0 16px">${u.avatar?`<img src="${esc(u.avatar)}" alt="" referrerpolicy="no-referrer">`:cav(u.name||names[uid]||"?",36)}
     <div class="adm-who"><b>${esc(u.name||names[uid]||"(no name)")} ${earlyBadge(uid)}</b><span>${esc(u.email||"")}</span></div>
-    <div class="adm-meta"><span class="chip">${esc(u.provider||"–")}</span><span>Joined ${d(u.created)}</span><span>Last sign-in ${d(u.last)}</span><button class="chip" data-user="${esc(uid)}">Public profile</button></div></div>
-  <div class="adm-cards">${[[comments.length,"comments"],[votes.length,"showdown votes"],[votes.filter(v=>String(v.x||"").trim()).length,"showdown reasons"],[ratings.length,"ratings"],[made.length,"showdowns started"]].map(([n,l])=>`<div class="adm-card"><b>${n}</b><span>${l}</span></div>`).join("")}</div>
-  <h2 class="sect-h" style="font-size:17px">Comments</h2>
+    <div class="adm-meta"><span class="chip">${esc(u.provider||"–")}</span><span><b>Last active ${AC&&AC.last?d(AC.last)+" ("+admAgo(AC.last)+")":u.active?d(u.active):"–"}</b></span><span>Last sign-in ${d(u.last)}</span><span>Joined ${d(u.created)}</span><button class="chip" data-user="${esc(uid)}">Public profile</button></div></div>
+  <div class="adm-cards">${[[comments.length,"comments"],[votes.length,"showdown votes"],[votes.filter(v=>String(v.x||"").trim()).length,"showdown reasons"],[ratings.length,"ratings"],[made.length,"showdowns started"],...(AC?[[AC.hist.length,"films watched"],[AC.liked.length,"films liked"],[AC.later.length,"watch later"],[AC.lists.length,"playlists"],[AC.follows.length,"following"]]:[])].map(([n,l])=>`<div class="adm-card"><b>${n}</b><span>${l}</span></div>`).join("")}</div>
+  <h2 class="sect-h" style="font-size:17px">Activity <small class="vmeta" style="font-weight:500">newest first</small></h2>
+  ${AE?`<p class="vmeta" style="color:#ff6b6b">Couldn't load the activity: ${esc(AE)}</p>`:!AC?`<p class="vmeta">Loading activity…</p>`:`<div class="adm-list">${AC.ev.slice(0,state.adminActAll?500:40).map(x=>`<div class="adm-row"><div class="adm-who"><b>${esc(x.k)}${x.film?": "+esc(filmName(x.film)):""}</b>${x.text?`<span>${esc(String(x.text).slice(0,200))}</span>`:""}${x.film?filmLink(x.film):""}</div><div class="adm-meta"><span>${d(x.t)}</span></div></div>`).join("")||`<p class="vmeta">No activity yet.</p>`}</div>${AC.ev.length>40&&!state.adminActAll?`<button class="btn ghost" data-adminactall="" style="margin-top:8px">Show all ${AC.ev.length}</button>`:""}
+  <h2 class="sect-h" style="font-size:17px;margin-top:18px">Liked films</h2>
+  <div class="adm-list">${AC.liked.map(id=>`<div class="adm-row"><div class="adm-who"><b>${esc(filmName(id))}</b>${filmLink(id)}</div></div>`).join("")||`<p class="vmeta">No liked films.</p>`}</div>`}
+  <h2 class="sect-h" style="font-size:17px;margin-top:18px">Comments</h2>
   <div class="adm-list">${comments.map(c=>`<div class="adm-row"><div class="adm-who"><b>${esc(filmName(c.film))}</b><span>${esc(c.text)}</span>${filmLink(c.film)}</div>
     <div class="adm-meta"><span>${d(c.t)}</span>${findFilm(c.film)?`<button class="chip" data-open="${esc(c.film)}">Open film</button>`:""}<button class="chip" data-cmod="${esc(uid)}|${esc(c.id)}">Remove</button></div></div>`).join("")||`<p class="vmeta">No comments.</p>`}</div>
   <h2 class="sect-h" style="font-size:17px;margin-top:18px">Character Showdown votes</h2>

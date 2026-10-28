@@ -43,7 +43,29 @@ export default async (req) => {
       if (list.length < 1000) break;
     }
     users.sort((a, b) => String(b.created).localeCompare(String(a.created)));
+    // last activity per account: the newest save of anything it owns (each film watched updates its history, so this follows visits too)
+    const h = { apikey: key };
+    if (!key.startsWith("sb_secret_")) h.Authorization = "Bearer " + key;
+    const active = {};
+    for (let from = 0; from < 200000; from += 1000) {
+      const r = await fetch(Netlify.env.get("SUPABASE_URL") + `/rest/v1/docs?select=owner,updated_at&order=updated_at.desc&offset=${from}&limit=1000`, { headers: h });
+      if (!r.ok) break;
+      const rows = await r.json();
+      for (const x of rows) if (x.owner && (!active[x.owner] || x.updated_at > active[x.owner])) active[x.owner] = x.updated_at;
+      if (rows.length < 1000) break;
+    }
+    for (const u of users) u.active = active[u.id] || null;
     return json({ users });
+  }
+  if (body.action === "activity") {
+    // everything one account has saved, including its private watch history and Watch later (admins only, read with the secret key)
+    const uid = String(body.uid || "");
+    if (!/^[0-9a-f-]{36}$/i.test(uid)) return json({ error: "bad account id" }, 400);
+    const key = Netlify.env.get("SUPABASE_SERVICE_ROLE_KEY"), h = { apikey: key };
+    if (!key.startsWith("sb_secret_")) h.Authorization = "Bearer " + key;
+    const r = await fetch(Netlify.env.get("SUPABASE_URL") + `/rest/v1/docs?owner=eq.${uid}&select=col,id,data,updated_at&limit=1000`, { headers: h });
+    if (!r.ok) return json({ error: "Supabase " + r.status }, 500);
+    return json({ docs: await r.json() });
   }
   if (body.action === "views") {
     // Fanreelz's own view counts (table film_views), only for admins
