@@ -21,6 +21,25 @@ const TOPICS = [
   "Fruit Love Island episode", "AI series episode 1", "AI web series episode", "AI animated series episode", "AI anime series episode 1", "AI cinematic series part 1", "AI sitcom episode", "AI fan series season 1",
   "AI pokemon live action", "AI fortnite movie", "fortnite live action AI", "fortnite AI short film", "rocket league AI movie", "rocket league live action AI", "rocket league AI cinematic", "AI warcraft 3 cinematic remake", "AI world of warcraft movie",
 ];
+// Searches around the world: every other hourly search uses one of these, with YouTube told which country and language to favour
+const WORLD = [
+  // Middle East
+  { r: "SA", l: "ar", q: "فيلم بالذكاء الاصطناعي" }, { r: "EG", l: "ar", q: "كرتون بالذكاء الاصطناعي" }, { r: "AE", l: "ar", q: "مسلسل ذكاء اصطناعي" }, { r: "TR", l: "tr", q: "yapay zeka kısa film" },
+  // Europe
+  { r: "DE", l: "de", q: "KI Kurzfilm" }, { r: "FR", l: "fr", q: "court métrage IA" }, { r: "ES", l: "es", q: "cortometraje IA" }, { r: "IT", l: "it", q: "cortometraggio IA" },
+  { r: "PL", l: "pl", q: "film AI krótki" }, { r: "SE", l: "sv", q: "AI film kortfilm" }, { r: "GB", l: "en", q: "AI fan film" }, { r: "NL", l: "nl", q: "AI film" }, { r: "RU", l: "ru", q: "нейросеть фильм" },
+  // Asia
+  { r: "JP", l: "ja", q: "AI実写化 映画" }, { r: "KR", l: "ko", q: "AI 영화 실사화" }, { r: "TW", l: "zh-Hant", q: "AI 電影 短片" }, { r: "IN", l: "hi", q: "AI movie trailer hindi" },
+  { r: "ID", l: "id", q: "film pendek AI" }, { r: "TH", l: "th", q: "หนังสั้น AI" }, { r: "VN", l: "vi", q: "phim ngắn AI" }, { r: "PH", l: "en", q: "AI short film" },
+  // Africa
+  { r: "NG", l: "en", q: "AI animated short film" }, { r: "ZA", l: "en", q: "AI movie trailer" }, { r: "MA", l: "fr", q: "film IA animation" }, { r: "KE", l: "en", q: "AI film" },
+  // Latin America
+  { r: "MX", l: "es", q: "película IA" }, { r: "BR", l: "pt", q: "filme feito com IA" }, { r: "AR", l: "es", q: "corto animado IA" }, { r: "CO", l: "es", q: "tráiler IA" },
+  // America
+  { r: "US", l: "en", q: "AI movie trailer" }, { r: "CA", l: "en", q: "AI cinematic short film" },
+  // Rest of the world
+  { r: "AU", l: "en", q: "AI fan film" }, { r: "NZ", l: "en", q: "AI short film" },
+];
 // Topics added later are searched first, once each, before the normal rotation continues
 const NEW_TOPICS = [
   "Pat and Mat AI", "Pat a Mat AI", "Pat & Mat AI live action", "بات ومات ذكاء اصطناعي",
@@ -78,11 +97,12 @@ async function run() {
   const doSearch = !state.lastSearch || Date.now() - Date.parse(state.lastSearch) > 55 * 60e3;
   const seen = new Set(state.seen || []);
   const fresh1 = doSearch ? NEW_TOPICS.find((t) => !seen.has(t)) : null;
-  const topic = fresh1 || TOPICS[state.topic % TOPICS.length];
+  const world = !fresh1 && (state.topic % 2 === 1) ? WORLD[(state.world || 0) % WORLD.length] : null;
+  const topic = fresh1 || (world ? world.q : TOPICS[state.topic % TOPICS.length]);
   if (fresh1) seen.add(fresh1);
   const known = new Set((await sb.get("catalog_channels?select=channel_id")).map((c) => c.channel_id));
   if (doSearch) {
-  const found = await yt("search", { part: "snippet", type: "video", q: topic, maxResults: "50", safeSearch: "moderate", videoEmbeddable: "true" });
+  const found = await yt("search", { part: "snippet", type: "video", q: topic, maxResults: "50", safeSearch: "moderate", videoEmbeddable: "true", ...(world ? { regionCode: world.r, relevanceLanguage: world.l } : {}) });
   const newChannels = {};
   for (const it of found.items || []) {
     const s = it.snippet;
@@ -95,7 +115,7 @@ async function run() {
       channel_id: c.id, title: c.snippet.title, uploads: c.contentDetails.relatedPlaylists.uploads, status: "new", next_page: null,
     })));
   }
-  log.push(`topic "${topic}": ${fresh.length} new channels`);
+  log.push(`topic "${topic}"${world ? " [" + world.r + "]" : ""}: ${fresh.length} new channels`);
   }
 
   // Followed channels count as AI channels from the start
@@ -161,7 +181,7 @@ async function run() {
   }
   // Finished channels are re-checked for new uploads about once a week
   await sb.post("rpc/requeue_done_channels", {}).catch(() => null);
-  await sb.upsert("import_state", [{ key: "youtube", value: { topic: !doSearch || fresh1 ? state.topic : state.topic + 1, seen: [...seen].slice(-300), lastSearch: doSearch ? new Date().toISOString() : state.lastSearch, last: new Date().toISOString(), added } }]);
+  await sb.upsert("import_state", [{ key: "youtube", value: { topic: !doSearch || fresh1 ? state.topic : state.topic + 1, seen: [...seen].slice(-300), lastSearch: doSearch ? new Date().toISOString() : state.lastSearch, world: (state.world || 0) + (doSearch && world ? 1 : 0), last: new Date().toISOString(), added } }]);
   return { added, log };
 }
 

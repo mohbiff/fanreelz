@@ -3,9 +3,9 @@
 import CATS from "./catmap.mjs";
 
 // Words that show a video is AI-made.
-export const AI_RE = /(\bai\b|\ba\.i\.|artificial intelligence|\bsora\b|\bveo ?[23]?\b|\bkling\b|\brunway\b|midjourney|hailuo|minimax|\bpika\b|seedance|\bluma\b|\bwan ?2|higgsfield|super panavision|panavision 70|80'?s dark fantasy|1980'?s dark fantasy|1950'?s|ai[- ]generated|aigenerated|ذكاء\s*(ال)?اصطناعي|بالذكاء)/i;
+export const AI_RE = /(\bai\b|\ba\.i\.|artificial intelligence|\bsora\b|\bveo ?[23]?\b|\bkling\b|\brunway\b|midjourney|hailuo|minimax|\bpika\b|seedance|\bluma\b|\bwan ?2|higgsfield|super panavision|panavision 70|80'?s dark fantasy|1980'?s dark fantasy|1950'?s|ai[- ]generated|aigenerated|生成ai|ai生成|人工智能|inteligencia artificial|intelig[eê]ncia artificial|intelligence artificielle|künstliche intelligenz|yapay zeka|нейросет|(?:^|[\s(\[|#])ии(?=$|[\s)\]|,.!:])|(?:^|[\s(\[|#])(?:ia|ki)(?=$|[\s)\]|,.!:])|ذكاء\s*(ال)?اصطناعي|بالذكاء)/i;
 // Words that show it is a film, trailer, story or series rather than a tutorial or news.
-export const FILM_RE = /(فيلم|مسلسل|حلقة|واقعي|كرتون|film|movie|cinema|cinematic|trailer|teaser|short|story|episode|\bep\.? ?\d|series|live[- ]action|in real life|reimagined|re-imagined|as an? \d0'?s|panavision|dark fantasy|parody|saga|chapter|part \d|music video)/i;
+export const FILM_RE = /(película|pelicula|filme|cortometraje|cortometraggio|curta|court[- ]m[ée]trage|kurzfilm|фильм|мультфильм|сериал|映画|영화|电影|動画|动画|アニメ|애니|phim|หนัง|série|serie |episodio|episódio|エピソード|에피소드|odcinek|bölüm|فيلم|مسلسل|حلقة|واقعي|كرتون|film|movie|cinema|cinematic|trailer|teaser|short|story|episode|\bep\.? ?\d|series|live[- ]action|in real life|reimagined|re-imagined|as an? \d0'?s|panavision|dark fantasy|parody|saga|chapter|part \d|music video)/i;
 // Things that are not fan films.
 export const BLOCK_RE = /(tutorial|how to|how i made|prompt(s)? (guide|tips)|course|explained|react(s|ing|ion|ions)?\b|review|news|podcast|livestream|\blive stream\b|stream highlights|top \d+|ranking|tier list|unboxing|speedrun|gameplay|walkthrough|\b[1-4]v[1-4]\b|ranked|outplayed|road to (gc|ssl|grand champ)|patch notes|nsfw|18\+|onlyfans|hentai|gore|sexy|bikini|\bhot\b|deepfake|starring [A-Z][a-z]+ [A-Z])/i;
 
@@ -123,8 +123,8 @@ export function classify(title, description = "", channelIsAi = false) {
     const char = /love island|dating|reality|bachelor|island/i.test(all) ? "Reality" : /comedy|sitcom|funny|brainrot/i.test(all) ? "Comedy" : "Drama";
     return { cat: "aiseries", char, lore: "lore" };
   }
-  // An AI short film that names no franchise: an original world.
-  if (/(ai|a\.i\.) (short )?film|short film|ai movie|ai cinematic|veo ?3|sora|kling|seedance/i.test(title) && FILM_RE.test(t)) {
+  // An AI short film that names no franchise (in any language): an original world.
+  if ((/(ai|a\.i\.) (short )?film|short film|ai movie|ai cinematic|veo ?3|sora|kling|seedance/i.test(title) || AI_RE.test(title)) && FILM_RE.test(t)) {
     const char = /horror|haunt|ghost|demon|nightmare/i.test(all) ? "Horror" : /space|robot|alien|future|cyber|android|planet|sci-?fi/i.test(all) ? "Sci-fi" : /dragon|magic|kingdom|knight|wizard|fantasy|myth/i.test(all) ? "Fantasy" : "Drama";
     return { cat: "original", char, lore: "lore" };
   }
