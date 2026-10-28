@@ -482,6 +482,8 @@ img.cav.uimg{object-fit:cover;background:var(--chip);display:block}
 .spb.on svg{fill:#fbbf24;stroke:#fbbf24}.spb.liked svg{fill:#ff3d5a;stroke:#ff3d5a}
 .spsheet{position:absolute;left:0;right:0;bottom:0;max-height:70%;overflow:auto;z-index:7;background:var(--surface);color:var(--fg);border-radius:16px 16px 0 0;padding:14px 16px 20px;box-shadow:0 -10px 30px rgba(0,0,0,.4);animation:sheetin .2s ease-out;overscroll-behavior:contain}
 .spsheet .comments{margin-top:6px;max-height:none;overflow:visible}
+/* full-screen shorts: the comment sheet rides above the phone keyboard (--kb is the keyboard height) */
+body.spfs .spsheet{bottom:var(--kb,0px);max-height:min(70%,calc(100% - var(--kb,0px) - 40px))}
 .spsheet-h{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}.spsheet-h button{background:var(--chip);border:0;color:var(--fg);width:36px;height:36px;border-radius:50%;font-size:16px;cursor:pointer}
 .ratebox.spbig button{font-size:30px}
 @keyframes sheetin{from{transform:translateY(100%)}to{transform:none}}
@@ -2330,6 +2332,10 @@ document.addEventListener("touchstart",e=>{if(e.target.closest(".spcatch"))spTou
 document.addEventListener("touchmove",e=>{if(spTouchY==null)return;const sp=document.querySelector(".sp");if(sp){sp.style.transition="none";sp.style.transform=`translateY(${Math.max(-140,Math.min(140,(e.touches[0].clientY-spTouchY)*.6))}px)`}},{passive:true});
 document.addEventListener("touchend",e=>{if(spTouchY==null)return;const dy=spTouchY-e.changedTouches[0].clientY;spTouchY=null;const sp=document.querySelector(".sp");
   if(Math.abs(dy)>50){if(sp){sp.style.transition="";sp.style.transform=""}stepShort(dy>0?1:-1)}else if(sp){sp.style.transition="transform .2s";sp.style.transform=""}},{passive:true});
+/* how much of the screen the keyboard covers, so the full-screen comment box stays visible while typing */
+if(window.visualViewport){const kb=()=>{const v=visualViewport,h=Math.max(0,Math.round(innerHeight-v.height-v.offsetTop));document.documentElement.style.setProperty("--kb",(h>80?h:0)+"px");
+    if(h>80&&document.body.classList.contains("spfs")){const a=document.activeElement;if(a?.closest?.(".spsheet"))setTimeout(()=>a.scrollIntoView({block:"nearest"}),50)}};
+  visualViewport.addEventListener("resize",kb);visualViewport.addEventListener("scroll",kb)}
 /* Load the next short's YouTube player off-screen (paused) while this one plays, so swiping to it is instant */
 function spPreload(nx){const box=$("#spPre");if(!box)return;
   if(!document.body.moveBefore||!nx||!nx.yt||state.view!=="shorts"){box.innerHTML="";return}
