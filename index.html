@@ -392,6 +392,7 @@ html:has(.player.hasbar),html:has(.player.hasbar) body{overscroll-behavior-y:non
 .sp canvas{width:100%;height:100%;display:block}
 .sp .ov{position:absolute;inset:auto 0 auto 0;top:0;padding:14px 16px 40px;background:linear-gradient(rgba(0,0,0,.75),transparent)!important;background:linear-gradient(transparent,rgba(0,0,0,.85));color:#fff;display:flex;flex-direction:column;gap:6px;pointer-events:none}
 .sp .ov b{font-size:17px;line-height:1.3}
+.moresent{height:1px}
 .sside{display:flex;flex-direction:column;gap:14px;padding-top:8px;min-width:0}
 .sside .comments{margin-top:6px;gap:14px;max-height:calc(100vh - 430px);min-height:220px;overflow:auto;padding-right:6px}
 .sside .comments .sect-h{font-size:16px}
@@ -486,7 +487,7 @@ body.spfs .shorts-view .sp{position:fixed;inset:0;width:100vw;max-width:none;hei
 body.spfs .tabbar,body.spfs .toast{z-index:61}
 body.spfs .tabbar{display:none}
 .spcatch{position:absolute;inset:120px 0 110px 0;z-index:3;cursor:pointer;touch-action:none}
-.sp .ov{z-index:4}
+.sp .ov{z-index:4}.sp:has(.spyt) .ov{padding-top:46px}
 .spicon{position:absolute;inset:0;margin:auto;width:72px;height:72px;border-radius:50%;z-index:5;pointer-events:none;opacity:0;background:rgba(0,0,0,.55) center/30px no-repeat}
 .spicon.paused{background-image:url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 24 24%27%3E%3Cpath fill=%27white%27 d=%27M6 5h4v14H6zM14 5h4v14h-4z%27/%3E%3C/svg%3E")}
 .spicon.playing{background-image:url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 24 24%27%3E%3Cpath fill=%27white%27 d=%27M8 5v14l11-7z%27/%3E%3C/svg%3E")}
@@ -841,7 +842,13 @@ const $=s=>document.querySelector(s);
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const rawFilms=()=>[...sharedSubs.filter(f=>f.format!=="episode"),...FILMS];
 const allFilms=()=>state.family?rawFilms().filter(f=>!f.age&&isKids(f)):rawFilms();
-const findFilm=id=>rawFilms().find(f=>f.id===id)||allEpisodes().find(e=>e.id===id);
+/* id → film index, rebuilt only when the film lists change (findFilm runs once per card on every page) */
+let filmIdx={k:"",s:null,m:null};
+function findFilm(id){
+  const k=FILMS.length+"|"+(FILMS[0]?.id||"")+"|"+(FILMS[FILMS.length-1]?.id||"")+"|"+sharedSubs.length+"|"+EPISODES.length;
+  if(filmIdx.k!==k||filmIdx.s!==sharedSubs){const m=new Map();for(const f of rawFilms())if(!m.has(f.id))m.set(f.id,f);for(const e of allEpisodes())if(!m.has(e.id))m.set(e.id,e);filmIdx={k,s:sharedSubs,m}}
+  return filmIdx.m.get(id)||rawFilms().find(f=>f.id===id)||allEpisodes().find(e=>e.id===id);
+}
 const groupOf=catId=>GROUPS.find(g=>g.cats.some(c=>c.id===catId));
 const catName=id=>CATS.find(c=>c.id===id)?.name||id;
 function counts(f){const c=[...f.counts];const x=community[f.id];if(x)x.forEach((v,i)=>c[i]+=v);return c}
@@ -993,7 +1000,7 @@ function renderHome(){
   if(state.feed==="new"&&!c)html+=`<h2 class="sect-h">${icon("fresh")} Newest</h2>`;
   if(state.feed==="mine"&&!c)html+=`<h2 class="sect-h">${icon("mine")} Your ratings</h2>`;
   if(showShelf)html+=`<h2 class="sect-h">${icon("fresh")} Latest</h2>`;
-  html+=rest.length?`<div class="grid">${rest.map(f=>card(f)).join("")}</div>`
+  html+=rest.length?moreGrid("grid",rest,f=>card(f))
     :`<div class="empty">${state.feed==="mine"?(acct.online?"You haven't rated anything yet.":"Sign in to see the films you've rated."):"No films here yet. Submit the first one."}</div>`;
   html+=`<p class="note">Layout demo of Fanreelz. Films marked Real are actual viral AI content; all other films, creators and ratings are made-up examples.</p>`;
   $("#main").innerHTML=html;
@@ -1735,8 +1742,8 @@ function renderUser(){
   const tabs=[["liked",`Liked videos`,liked.length],["videos","Videos",vids.length],["playlists","Playlists",lists.length],["following","Following",following.length],["followers","Followers",followers.length]];
   const personRow=k=>{const isU=isUid(k);return `<button ${isU?`data-user="${esc(k)}"`:`data-creator="${esc(k)}"`}>${isU?uav(k):cav(k)}<span>${esc(isU?cname(k):k)}</span></button>`};
   let body="";
-  if(tab==="liked")body=liked.length?`<div class="grid">${liked.map(f=>card(f)).join("")}</div>`:`<div class="empty">${me?"Films you rate 4 or 5 stars show up here.":"No liked videos yet."}</div>`;
-  if(tab==="videos")body=vids.length?`<div class="grid">${vids.map(f=>card(f)).join("")}</div>`:`<div class="empty">${me?"Films you submit show up here.":"No videos yet."}</div>`;
+  if(tab==="liked")body=liked.length?moreGrid("grid",liked,f=>card(f)):`<div class="empty">${me?"Films you rate 4 or 5 stars show up here.":"No liked videos yet."}</div>`;
+  if(tab==="videos")body=vids.length?moreGrid("grid",vids,f=>card(f)):`<div class="empty">${me?"Films you submit show up here.":"No videos yet."}</div>`;
   if(tab==="playlists")body=lists.length?`<div class="plgrid">${lists.map(l=>listCard(l,me)).join("")}</div>`:`<div class="empty">No playlists yet.</div>`;
   if(tab==="following")body=following.length?`<div class="ulist">${following.map(personRow).join("")}</div>`:`<div class="empty">Not following anyone yet.</div>`;
   if(tab==="followers")body=followers.length?`<div class="ulist">${followers.map(personRow).join("")}</div>`:`<div class="empty">No followers yet.</div>`;
@@ -2024,7 +2031,7 @@ function forYouHtml(){
   if(shorts.length)html+=`<section class="shelf"><h2>${icon("short")} Shorts for you<button class="seeall" data-fmt="short">See all</button></h2><div class="shortrow">${shorts.slice(0,12).map(shortCard).join("")}</div></section>`;
   rows.forEach(r=>html+=`<section class="shelf"><h2>Because you watched <button class="linkbtn" data-open="${esc(r.f.id)}">${esc(r.f.title.length>50?r.f.title.slice(0,50)+"…":r.f.title)}</button></h2><div class="shelfrow">${r.like.map(f=>card(f)).join("")}</div></section>`);
   const rest=films.filter(f=>!used.has(f.id)).slice(0,48);
-  if(rest.length)html+=`<h2 class="sect-h">${icon("film")} More for you</h2><div class="grid">${rest.map(f=>card(f)).join("")}</div>`;
+  if(rest.length)html+=`<h2 class="sect-h">${icon("film")} More for you</h2>`+moreGrid("grid",rest,f=>card(f));
   return html;
 }
 function renderHomeF(){
@@ -2049,11 +2056,11 @@ function renderHomeF(){
   if(state.format==="film"){
     const fl=films.filter(durOk);
     html+=sub+`<div class="lorebar">${DUR.map(([k,l])=>`<button class="${state.dur===k?"on":""}" data-dur="${k}">${l}</button>`).join("")}</div>`;
-    html+=fl.length?`<div class="grid">${fl.map(f=>card(f)).join("")}</div>`:empty;
+    html+=fl.length?moreGrid("grid",fl,f=>card(f)):empty;
   }else if(state.format==="short"){
-    html+=shorts.length?`<div class="shortgrid">${shorts.map(shortCard).join("")}</div>`:empty;
+    html+=shorts.length?moreGrid("shortgrid",shorts,shortCard):empty;
   }else if(state.format==="series"){
-    html+=series.length?`<div class="grid">${series.map(seriesCard).join("")}</div>`:empty;
+    html+=series.length?moreGrid("grid",series,seriesCard):empty;
   }else{
     html+=sub;
     const shelves=state.feed==="home"&&!state.q;
@@ -2073,7 +2080,7 @@ function renderHomeF(){
     if(shorts.length){const sl=shelves?[...shorts].sort((a,b)=>filmTrend(b)-filmTrend(a)):shorts;
       html+=`<section class="shelf"><h2>${icon("short")} Shorts<button class="seeall" data-fmt="short">See all${isMod?" "+shorts.length:""}</button></h2><div class="shortrow">${sl.slice(0,12).map(shortCard).join("")}</div></section>`;}
     if(series.length)html+=`<section class="shelf"><h2>${icon("series")} Series<button class="seeall" data-fmt="series">See all${isMod?" "+series.length:""}</button></h2><div class="shelfrow">${series.slice(0,8).map(seriesCard).join("")}</div></section>`;
-    if(rest.length)html+=`<h2 class="sect-h">${icon("film")} ${shelves?"Latest films":"Films"}</h2><div class="grid">${rest.map(f=>card(f)).join("")}</div>`;
+    if(rest.length)html+=`<h2 class="sect-h">${icon("film")} ${shelves?"Latest films":"Films"}</h2>`+moreGrid("grid",rest,f=>card(f));
     if(!films.length&&!shorts.length&&!series.length)html+=empty;
   }
   html+=`<p class="note">The films are real AI fan films from YouTube, TikTok and Vimeo, picked by Fanreelz. Premieres and some Community pages still show examples.</p>`;
@@ -2165,9 +2172,9 @@ function creatorContent(key,films){
   const fl=films.filter(f=>f.format!=="short"),sh=films.filter(f=>f.format==="short"),se=allSeries().filter(s=>(s.byId||s.by)===key);
   const tab=state.ctab||"film";
   return `<div class="fmtbar" style="margin-top:24px">${[["film","Films",fl.length],["short","Shorts",sh.length],["series","Series",se.length]].map(([k,l,n])=>`<button class="${tab===k?"on":""}" data-ctab="${k}">${l}<small>${n}</small></button>`).join("")}</div>`+
-   (tab==="short"?(sh.length?`<div class="shortgrid">${sh.map(shortCard).join("")}</div>`:`<div class="empty">No shorts yet.</div>`)
-   :tab==="series"?(se.length?`<div class="grid">${se.map(seriesCard).join("")}</div>`:`<div class="empty">No series yet.</div>`)
-   :(fl.length?`<div class="grid">${fl.sort((a,b)=>a.days-b.days).map(f=>card(f)).join("")}</div>`:`<div class="empty">No films yet.</div>`));
+   (tab==="short"?(sh.length?moreGrid("shortgrid",sh,shortCard):`<div class="empty">No shorts yet.</div>`)
+   :tab==="series"?(se.length?moreGrid("grid",se,seriesCard):`<div class="empty">No series yet.</div>`)
+   :(fl.length?moreGrid("grid",fl.sort((a,b)=>a.days-b.days),f=>card(f)):`<div class="empty">No films yet.</div>`));
 }
 /* Reads a video link and returns what the player needs: {yt|tt|ig|vm|dm: id, src} */
 function parseVid(u){u=String(u||"");let m;
@@ -2507,20 +2514,31 @@ function pageTitle(){const T=t=>t+" | Fanreelz",f=findFilm(state.film);
   return names[state.view]?T(names[state.view]):"Fanreelz – Where AI fan films find their fans"}
 let fsPending=false;
 const fsEl=()=>document.fullscreenElement||document.webkitFullscreenElement||null;
+/* Long grids show 36 cards first and add more as you scroll, so pages with thousands of films open fast */
+const MORE={};let moreN=0,moreObs=null;
+function moreGrid(cls,items,fn,first=36){const k="m"+(moreN++);MORE[k]={items,fn,i:first};
+  return `<div class="${cls}" data-mgrid="${k}">${items.slice(0,first).map(x=>fn(x)).join("")}</div>${items.length>first?`<div class="moresent" data-msent="${k}" aria-hidden="true"></div>`:""}`}
+function moreStep(sent){const k=sent.dataset.msent,m=MORE[k],g=document.querySelector(`[data-mgrid="${k}"]`);if(!m||!g){sent.remove();return}
+  const w=document.createElement("div");w.style.display="contents";w.innerHTML=m.items.slice(m.i,m.i+36).map(x=>m.fn(x)).join("");g.appendChild(w);paintAll(w);
+  m.i+=36;if(m.i>=m.items.length){sent.remove();delete MORE[k]}}
+function armMore(){moreObs?.disconnect();const ss=document.querySelectorAll("[data-msent]");if(!ss.length)return;
+  if(!("IntersectionObserver" in window)){ss.forEach(x=>{while(x.isConnected)moreStep(x)});return}
+  moreObs=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){moreStep(e.target);if(e.target.isConnected){moreObs.unobserve(e.target);moreObs.observe(e.target)}}}),{rootMargin:"1500px 0px"});
+  ss.forEach(x=>moreObs.observe(x))}
 function render(){
   if(state.view!=="watch"||state.film!==lastFilm)clearInterval(endTimer);
   if(state.view!=="watch"&&document.body.classList.contains("wfs")){document.body.classList.remove("wfs");$("#wfsClose")?.remove();$("#wfsShare")?.remove();wfsPushed=false}
   if(!renderHard&&fsEl()&&!document.body.classList.contains("spfs")){fsPending=true;return}
   if(!renderHard&&(state.view==="battles"||state.view==="showdown")&&document.querySelector(".bplay iframe")){renderGuide();return}
   if(state.view==="liveplay"&&!renderHard&&$("#lchat")&&$("#lchat").dataset.live===state.liveId){renderGuide();updateLiveChat();return}
-  renderHard=false;stopPreview();
+  renderHard=false;stopPreview();for(const k in MORE)delete MORE[k];
   const drafts={};let focusKey=null;
   if(lastFilm===state.film&&state.view==="watch"){document.querySelectorAll(".cmform").forEach(fm=>{const v=fm.querySelector("textarea").value;if(v)drafts[fm.dataset.cparent]=v});focusKey=document.activeElement?.closest?.(".cmform")?.dataset.cparent??null}
   lastFilm=state.view==="watch"?state.film:null;
   renderWho();renderGuide();
   clearInterval(ticker);ticker=null;tvNow=null;
   ({watch:renderWatch,browse:renderBrowse,live:renderLive,liveplay:renderLivePlay,premieres:renderPremieres,tv:renderTV,battles:renderBattles,showdown:renderShowdown,top10:renderTop10,admin:renderAdmin,requests:renderRequests,contest:renderContest,playlists:renderPlaylists,creator:renderCreator,discord:renderDiscord,about:renderAbout,user:renderUser,you:renderYou,history:renderYouList,later:renderYouList,liked:renderYouList,yourvideos:renderYouList,shorts:renderShorts,series:renderSeries}[state.view]||renderHomeF)();
-  paintAll();
+  paintAll();armMore();
   document.querySelectorAll(".cmform").forEach(fm=>{const k=fm.dataset.cparent;const ta=fm.querySelector("textarea");if(drafts[k])ta.value=drafts[k];if(focusKey===k){ta.focus();ta.setSelectionRange(ta.value.length,ta.value.length)}});
   if(state.view==="premieres")ticker=setInterval(tickPremieres,1000);
   if(state.view==="tv")ticker=setInterval(tickTV,1000);
