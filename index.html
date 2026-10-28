@@ -163,6 +163,11 @@ main{min-width:0;padding-right:max(16px,env(safe-area-inset-right,0px));padding-
 /* full screen: YouTube's player fills the screen except two 56px strips at the sides, which are Fanreelz's own ±10 s buttons (not on top of the video) */
 .player.hasbar:fullscreen iframe,body.wfs .player.hasbar iframe{flex:1;aspect-ratio:auto;width:calc(100% - 112px)!important;min-height:0;height:auto!important;margin:0 auto}
 .player.ended iframe{visibility:hidden}
+/* vertical videos (9:16): a tall player like YouTube's, and in full screen they use the whole width of a standing phone */
+.player.vert.hasbar iframe{aspect-ratio:9/16;width:auto!important;height:min(78vh,calc((100vw - 32px)*16/9),760px)!important;margin:0 auto}
+.player.vert:not(.hasbar){aspect-ratio:auto;height:min(78vh,760px)}
+.player.vert.hasbar:fullscreen iframe,body.wfs .player.vert.hasbar iframe,body.fsmode .player.vert.hasbar iframe{width:100%!important;height:auto!important;aspect-ratio:auto;flex:1}
+body.fsmode .player.vert .fpzone,body.wfs .player.vert .fpzone,.player.vert:fullscreen .fpzone{display:none}
 .fpbar.fshide{visibility:hidden}
 .fpset{padding:10px 12px;background:rgba(18,14,26,.6);border-top:1px solid rgba(255,255,255,.08);display:flex;flex-direction:column;gap:8px;color:#fff;font-size:13px}.fpset-row{display:flex;flex-wrap:wrap;align-items:center;gap:6px}.fpset-row b{min-width:62px}.fpset-t{display:flex;gap:8px;align-items:center;cursor:pointer}
 /* full screen: the black edges beside the 16:9 picture are Fanreelz's own space (not on top of the video):
@@ -1091,12 +1096,12 @@ document.addEventListener("click",e=>{if(!e.target.closest("[data-theater]"))ret
 function renderWatch(){
   addHistory(state.film);
   const f=findFilm(state.film);if(!f){state.view="home";return renderHome()}
-  const s=stats(f),max=Math.max(...s.c),mine=myRatings[f.id]||0;countView(f);
+  const s=stats(f),max=Math.max(...s.c),mine=myRatings[f.id]||0;countView(f);setTimeout(()=>checkVert(f),0);
   const keepEnd=document.querySelector(".player .endnext");
   let keepYt=null;{const old=document.querySelector(".player iframe");if(f.yt&&old&&old.dataset.fid==="yt-"+f.yt&&document.body.moveBefore){try{$("#frameHold").moveBefore(old,null);keepYt=old}catch(e){keepYt=null}}}
   const next=nextFor(f);
   const url=f.url||"https://www.youtube.com/results?search_query="+encodeURIComponent(f.title+" AI film");
-  const playerHtml=`<div class="player"><canvas data-f="${esc(f.id)}"></canvas><a class="play" href="${esc(url)}" target="_blank" rel="noopener"><span><svg viewBox="0 0 12 12"><path d="M2 1l9 5-9 5z"/></svg>Watch on ${esc(f.src)}</span></a></div>`;
+  const playerHtml=`<div class="player${f.format==="short"||f.vert?" vert":""}"><canvas data-f="${esc(f.id)}"></canvas><a class="play" href="${esc(url)}" target="_blank" rel="noopener"><span><svg viewBox="0 0 12 12"><path d="M2 1l9 5-9 5z"/></svg>Watch on ${esc(f.src)}</span></a></div>`;
   $("#main").innerHTML=`${theater?`<div class="theater">${playerHtml}</div>`:""}<div class="watch"><div>
     ${theater?"":playerHtml}
     ${f.seriesId&&findSeries(f.seriesId)?`<button class="serieslink" data-series="${esc(f.seriesId)}">${esc(findSeries(f.seriesId)?.title||"Series")} · Season ${f.season}, Episode ${f.ep}</button>`:""}<h1 class="wtitle" ${f.format==="episode"?'style="margin-top:4px"':""}>${esc(f.title)}${f.real?'<span class="pill">Real</span>':""}${isVerified(f)?'<span class="pill">Verified original</span>':""}</h1>
@@ -2449,11 +2454,17 @@ const fpIsFs=()=>document.body.classList.contains("fsmode")||document.body.class
 // real full screen on phones and computers (status and navigation bars hidden); phones also turn to landscape, like YouTube
 // full screen = the whole page in the browser's real full screen, with the film filling the screen;
 // scroll down for the title, ratings and comments, like YouTube. Phones also turn to landscape.
+/* Is this YouTube video vertical? The catalogue only knows the length, so check YouTube's original-shape thumbnail once */
+const vertSeen={};
+function checkVert(f){if(!f||!f.yt)return;const apply=v=>{f.vert=v;const pl=document.querySelector(".player");if(pl&&state.film===f.id)pl.classList.toggle("vert",v)};
+  if(f.yt in vertSeen){apply(vertSeen[f.yt]);return}
+  const im=new Image();im.onload=()=>{vertSeen[f.yt]=im.naturalHeight>im.naturalWidth*1.1;apply(vertSeen[f.yt])};im.onerror=()=>{vertSeen[f.yt]=false;apply(false)};
+  im.src="https://i.ytimg.com/vi/"+f.yt+"/oardefault.jpg"}
 function fpFull(){const pl=$(".player");if(!pl)return;
   if(document.fullscreenElement||document.webkitFullscreenElement){try{screen.orientation?.unlock?.()}catch(e){}(document.exitFullscreen||document.webkitExitFullscreen).call(document)?.catch?.(()=>{});return}
   if(document.body.classList.contains("wfs")){closeWfs();fpPaint();return}
   const de=document.documentElement,req=de.requestFullscreen||de.webkitRequestFullscreen;
-  if(req){Promise.resolve(req.call(de,{navigationUI:"hide"})).then(()=>{if(!matchMedia("(pointer:fine)").matches)screen.orientation?.lock?.("landscape").catch(()=>{})}).catch(()=>{openWfs();fpPaint();fpShow()})}
+  if(req){Promise.resolve(req.call(de,{navigationUI:"hide"})).then(()=>{if(!matchMedia("(pointer:fine)").matches)screen.orientation?.lock?.(pl.classList.contains("vert")?"portrait":"landscape").catch(()=>{})}).catch(()=>{openWfs();fpPaint();fpShow()})}
   else{openWfs();fpPaint();fpShow()}}
 // in full screen the page must not zoom on a double tap (YouTube's own double-tap ±10 s works on the picture)
 function fpNoZoom(on){const m=document.querySelector('meta[name="viewport"]');if(!m)return;
