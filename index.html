@@ -3047,7 +3047,11 @@ function useCatalog(rows){
   const sig=catSig(rows);if(sig===catLoaded)return 0;catLoaded=sig;
   const keep=FILMS.filter(f=>!f.db);FILMS.length=0;for(const f of keep)FILMS.push(f);
   const have=new Set(FILMS.map(f=>f.id)),known=new Set(CATS.map(c=>c.id));let n=0;
-  rows.forEach((r,k)=>{if(have.has(r.id)||!known.has(r.cat))return;have.add(r.id);
+  const byId=new Map(FILMS.map(f=>[f.id,f]));
+  rows.forEach((r,k)=>{
+    // films added by hand that the importer also has: take YouTube's view count and dates from the database
+    const own=byId.get(r.id);if(own){if(!own.ytViews&&r.views)own.ytViews=+r.views;if(!own.pub&&r.published_at)own.pub=Date.parse(r.published_at);if(!own.added&&r.added_at)own.added=Date.parse(r.added_at);if(own.days==null&&r.published_at)own.days=daysSince(Date.parse(r.published_at));return}
+    if(have.has(r.id)||!known.has(r.cat))return;have.add(r.id);
     const d=+r.duration||0;
     FILMS.push({id:r.id,yt:r.video_id,title:r.title,cat:r.cat,char:r.char||"",src:"YouTube",tool:"AI tools",by:r.channel||"",
       len:d?`${Math.floor(d/60)}:${String(d%60).padStart(2,"0")}`:"",days:r.published_at?daysSince(Date.parse(r.published_at)):null,
@@ -3071,7 +3075,15 @@ async function loadCatalog(){
   idb("readwrite",st=>st.put({t:Date.now(),rows:slim},"catalog")).catch(()=>{});
   const n=useCatalog(slim);
   if(n){console.log("Fanreelz catalogue:",slim.length,"films");openLinkedFilm();render()}
+  loadHandViews().catch(()=>{});
 }
+/* YouTube view counts for films added by hand (not in the database), 50 per request, cached by the server */
+let handViewsDone=false;
+async function loadHandViews(){if(handViewsDone)return;handViewsDone=true;
+  const ids=[...new Set(FILMS.filter(f=>f.yt&&!f.ytViews).map(f=>f.yt))].sort();let got=0;
+  for(let i=0;i<ids.length;i+=50){const r=await fetch("/api/yt-views?ids="+ids.slice(i,i+50).join(",")).then(r=>r.json()).catch(()=>({}));
+    for(const f of FILMS)if(f.yt&&r[f.yt]&&!f.ytViews){f.ytViews=r[f.yt];got++}}
+  if(got)render()}
 async function sbSignIn(provider,pick){
   if(!sb)return;try{localStorage.setItem("fr_back",JSON.stringify(history.state?.fr||null))}catch(e){}
   // pick=true: ask Google/Discord which account to use instead of signing straight back into the same one
