@@ -163,6 +163,7 @@ main{min-width:0;padding-right:max(16px,env(safe-area-inset-right,0px));padding-
 .player.hasbar:fullscreen iframe,body.wfs .player.hasbar iframe{flex:none;aspect-ratio:16/9;width:min(100vw,calc((100dvh - 82px)*16/9))!important;height:auto!important;margin:auto}
 .player.ended iframe{visibility:hidden}
 .fpbar.fshide{visibility:hidden}
+.fpset{padding:10px 12px;background:rgba(18,14,26,.6);border-top:1px solid rgba(255,255,255,.08);display:flex;flex-direction:column;gap:8px;color:#fff;font-size:13px}.fpset-row{display:flex;flex-wrap:wrap;align-items:center;gap:6px}.fpset-row b{min-width:62px}.fpset-t{display:flex;gap:8px;align-items:center;cursor:pointer}
 /* full screen: the black edges beside the 16:9 picture are Fanreelz's own space (not on top of the video):
    double tap there for -10 s / +10 s like YouTube, single tap shows or hides the bar */
 .fpzone{display:none;position:absolute;top:0;bottom:82px;width:calc((100vw - min(100vw,(100dvh - 82px)*16/9))/2);align-items:center;justify-content:center;z-index:2;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
@@ -191,6 +192,7 @@ body.fsmode .watch>div>:not(.player):nth-child(2){margin-top:18px}
 .fpvol{width:0;opacity:0;margin:0;transition:width .2s,opacity .2s;accent-color:#f2c94c;cursor:pointer;height:18px}
 .fpvolwrap:hover .fpvol,.fpvol:focus-visible{width:84px;opacity:1;margin:0 6px 0 2px}
 @media (pointer:coarse){.fpvol{display:none}}
+@media (max-width:440px){.fpb{min-width:30px;padding:0 4px}.fpb svg{width:19px;height:19px}.fptime{font-size:11.5px}.fpvolwrap{display:none}.fpbar [data-later],.fpbar [data-share]{display:none}}
 @media (pointer:fine){.fpbar.fshide{visibility:visible;opacity:0;cursor:none}body.fsmode .fpbar.fshide{max-height:10px;background:#000;backdrop-filter:none}}
 .player.hasbar:-webkit-full-screen{display:flex;flex-direction:column;justify-content:center;background:#000;width:100vw;height:100vh}
 .fpseek{width:100%;margin:0 0 6px;height:20px;accent-color:#f2c94c;cursor:pointer;display:block;opacity:.9}
@@ -1019,7 +1021,7 @@ function renderWatch(){
     <div class="wactions">${f.real||f.yt||f.tt||f.ig||f.vm||f.dm?"":`<button data-tip="${esc(f.byId||f.by)}" data-tipfilm="${esc(f.id)}">${icon("heart")}Tip</button>`}<button data-save="${esc(f.id)}">${icon("save")}Save</button><button data-share="${esc(f.id)}">${icon("share")}Share</button><button data-later="${esc(f.id)}" class="${myLater.some(x=>x.id===f.id)?"on":""}">${icon("clock")}${myLater.some(x=>x.id===f.id)?"Saved":"Watch later"}</button>${isVerified(f)?"":`<button data-claimorig="${esc(f.id)}">${icon("shield")}Is this yours?</button>`}<button data-report="${esc(f.id)}">${icon("flag")}Report re-upload</button>${isMod&&f.yt?`<button data-adminhide="${esc(f.id)}">${icon("shield")}Hide from Fanreelz</button>`:""}</div>
   </div><aside class="upnext"><h3>${f.seriesId&&findSeries(f.seriesId)?"Next episodes":"Up next"}</h3>${next.map(x=>`<button class="mini-v" data-open="${esc(x.id)}"><div class="thumb"><canvas data-f="${esc(x.id)}"></canvas><span class="len">${esc(x.len)}</span></div><div class="vtext"><h4 class="vtitle">${esc(x.title)}</h4><div class="vmeta">${esc(byName(x)||"YouTube creator")}</div><div class="vmeta">${metaLine(x)}</div></div></button>`).join("")}</aside></div>`;
   $(".watch>div").insertAdjacentHTML("beforeend",commentsHtml(f));
-  if(f.yt){if(keepYt){const pl=$(".player");pl.innerHTML="";try{pl.moveBefore(keepYt,null)}catch(e){pl.appendChild(keepYt)}if(keepEnd)pl.appendChild(keepEnd)}else $(".player").innerHTML=ytFrame(f.yt).replace("&enablejsapi=1","&enablejsapi=1&controls=0&fs=0&disablekb=1");if(f.age)$(".player").insertAdjacentHTML("afterend",`<div class="ythelp"><b>18+</b>Age-restricted on YouTube, so it may only play there: <a href="${esc(f.url||"https://www.youtube.com/watch?v="+f.yt)}" target="_blank" rel="noopener">watch on YouTube ↗</a></div>`)}
+  if(f.yt){if(keepYt){const pl=$(".player");pl.innerHTML="";try{pl.moveBefore(keepYt,null)}catch(e){pl.appendChild(keepYt)}if(keepEnd)pl.appendChild(keepEnd)}else $(".player").innerHTML=ytFrame(f.yt).replace("&enablejsapi=1",ytCtrl()?"&enablejsapi=1":"&enablejsapi=1&controls=0&fs=0&disablekb=1");if(f.age)$(".player").insertAdjacentHTML("afterend",`<div class="ythelp"><b>18+</b>Age-restricted on YouTube, so it may only play there: <a href="${esc(f.url||"https://www.youtube.com/watch?v="+f.yt)}" target="_blank" rel="noopener">watch on YouTube ↗</a></div>`)}
   if(f.tt)$(".player").innerHTML=ttFrame(f.tt);
   // Fanreelz share button on top of YouTube's own share icon (top right of the player), so sharing gives a fanreelz.com link
   if(f.yt)setTimeout(()=>fpMount(f),0);
@@ -2313,6 +2315,7 @@ function fpMount(f){const pl=$(".player");if(!pl||pl.querySelector(".fpbar"))ret
   const later=myLater.some(x=>x.id===f.id);pl.classList.add("hasbar");
   pl.insertAdjacentHTML("beforeend",`<div class="fpbar"><div class="fptip" hidden><b></b></div><input class="fpseek" type="range" min="0" max="1000" value="0" aria-label="Seek">
     <div class="fprow"><button class="fpb" data-fpskip="-10" aria-label="Back 10 seconds"><svg viewBox="0 0 24 24"><path d="M4 12a8 8 0 1 0 2.4-5.7"/><path d="M4 4v4h4"/><text x="12" y="15.5" text-anchor="middle" font-size="7.5" font-weight="700" fill="currentColor" stroke="none">10</text></svg></button><button class="fpb" data-fpplay="" aria-label="Play or pause"></button><button class="fpb" data-fpskip="10" aria-label="Forward 10 seconds"><svg viewBox="0 0 24 24"><path d="M20 12a8 8 0 1 1-2.4-5.7"/><path d="M20 4v4h-4"/><text x="12" y="15.5" text-anchor="middle" font-size="7.5" font-weight="700" fill="currentColor" stroke="none">10</text></svg></button><span class="fpvolwrap"><button class="fpb" data-fpmute="" aria-label="Mute"></button><input class="fpvol" type="range" min="0" max="100" step="1" value="100" aria-label="Volume"></span><span class="fptime"></span><span class="fpsp"></span><button class="fpb fpscroll" data-fpscroll="" aria-label="Scroll down for details and comments"><svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg><span class="lbl">Comments &amp; more</span></button><span class="fpsp"></span>
+    <button class="fpb" data-fpset="" aria-label="Settings"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>
     <button class="fpb${fp.cc?" on":""}" data-fpcc="" aria-label="Subtitles">${FPI.cc}</button>
     <button class="fpb" data-share="${esc(f.id)}" aria-label="Share this film">${FPI.share}<span class="lbl">Share</span></button>
     <button class="fpb${later?" on":""}" data-later="${esc(f.id)}" aria-label="Watch later">${FPI.later}<span class="lbl">${later?"Saved":"Watch later"}</span></button>
@@ -2407,6 +2410,19 @@ function fpSetVol(v){v=Math.max(0,Math.min(100,Math.round(v)));fp.vol=v;fpCmd("s
 document.addEventListener("input",e=>{if(e.target.matches?.(".fpvol")){fp.volDrag=true;fpSetVol(+e.target.value);e.target.style.setProperty("--v",e.target.value+"%")}});
 document.addEventListener("change",e=>{if(e.target.matches?.(".fpvol"))fp.volDrag=false});
 document.addEventListener("wheel",e=>{if(!e.target.closest?.(".fpvolwrap"))return;e.preventDefault();fpSetVol((fp.muted?0:fp.vol)+(e.deltaY<0?5:-5))},{passive:false});
+/* Settings (gear in the bar): playback speed, and "YouTube controls" for quality and subtitle languages.
+   YouTube no longer lets other sites pick the quality, so quality is only in YouTube's own controls. The panel opens under the bar, never over the film. */
+function ytCtrl(){return store.get("fr_ytctrl",false)}
+function fpSettings(){const bar=document.querySelector(".fpbar");if(!bar)return;let p=document.querySelector(".fpset");if(p){p.remove();return}
+  const rates=[0.5,0.75,1,1.25,1.5,2],cur=fp.rate||1;
+  bar.insertAdjacentHTML("afterend",`<div class="fpset"><div class="fpset-row"><b>Speed</b>${rates.map(r=>`<button class="chip ${r===cur?"on":""}" data-fprate="${r}">${r===1?"Normal":r+"×"}</button>`).join("")}</div>
+    <div class="fpset-row"><b>Quality</b><label class="fpset-t"><input type="checkbox" data-fpytctrl="" ${ytCtrl()?"checked":""}> Show YouTube's controls in the player (choose quality and subtitle language there)</label></div></div>`)}
+document.addEventListener("click",e=>{if(e.target.closest("[data-fpset]")){e.preventDefault();fpSettings();return}
+  const r=e.target.closest("[data-fprate]");if(r){e.preventDefault();fp.rate=+r.dataset.fprate;fpCmd("setPlaybackRate",[fp.rate]);document.querySelectorAll("[data-fprate]").forEach(b=>b.classList.toggle("on",b===r));toast("Speed "+(fp.rate===1?"normal":fp.rate+"×"))}});
+document.addEventListener("change",e=>{if(!e.target.matches?.("[data-fpytctrl]"))return;store.set("fr_ytctrl",e.target.checked);
+  const f=findFilm(state.film),pl=document.querySelector(".player"),old=pl?.querySelector("iframe");if(!f?.yt||!old)return;
+  const t=Math.floor(fp.t||0);old.outerHTML=ytFrame(f.yt).replace("&enablejsapi=1",(e.target.checked?"&enablejsapi=1":"&enablejsapi=1&controls=0&fs=0&disablekb=1")+(t?"&start="+t:""));
+  toast(e.target.checked?"YouTube's controls on: choose quality under the gear in the player":"YouTube's controls off")});
 /* Time stamps in comments (0:20, 1:02:03) are links: they jump the film to that moment */
 const tsSecs=t=>t.split(":").reduce((a,x)=>a*60+(+x),0);
 const linkTimes=html=>html.replace(/(^|[^\d:])((?:\d{1,2}:)?\d{1,2}:[0-5]\d)(?![\d:])/g,(m,pre,t)=>`${pre}<button class="tslink" data-ts="${tsSecs(t)}">${t}</button>`);
