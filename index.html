@@ -488,7 +488,9 @@ body.spfs{overflow:hidden}
 body.spfs .shorts-view .sp{position:fixed;inset:0;width:100vw;max-width:none;height:100vh;height:100dvh;border-radius:0;z-index:60;aspect-ratio:auto}
 body.spfs .tabbar,body.spfs .toast{z-index:61}
 body.spfs .tabbar{display:none}
-.spcatch{position:absolute;inset:120px 0 110px 0;z-index:3;cursor:pointer;touch-action:none}
+.spcatch{position:absolute;inset:120px 0 110px 0;z-index:3;cursor:pointer;touch-action:none;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none}
+/* YouTube shows the short's own title in its player, so ours would sit on top of it */
+.sp:has(iframe) .ov{display:none}
 .sp .ov{z-index:4}.sp:has(.spyt) .ov{padding-top:46px}
 .spicon{position:absolute;inset:0;margin:auto;width:72px;height:72px;border-radius:50%;z-index:5;pointer-events:none;opacity:0;background:rgba(0,0,0,.55) center/30px no-repeat}
 .spicon.paused{background-image:url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 24 24%27%3E%3Cpath fill=%27white%27 d=%27M6 5h4v14H6zM14 5h4v14h-4z%27/%3E%3C/svg%3E")}
@@ -2125,7 +2127,7 @@ function renderShorts(){
     if(keepFrame){try{sp.moveBefore(keepFrame,sp.firstChild)}catch(e){sp.insertBefore(keepFrame,sp.firstChild)}}
     else sp.insertAdjacentHTML("afterbegin",f.tt?ttFrame(f.tt).replace("?music_info=1","?fullscreen_button=0&music_info=1"):ytFrame(f.yt).replace("&enablejsapi=1","&enablejsapi=1&fs=0"))}
   if(spSlide){const sp=$(".sp");if(sp){sp.classList.add(spSlide>0?"slideup":"slidedown")}spSlide=0}
-  if(!keepFrame)spPaused=false;{const sp=$(".sp");if(sp){
+  if(!keepFrame){spPaused=false;spState=null}{const sp=$(".sp");if(sp){
     if(sp.querySelector("iframe"))sp.insertAdjacentHTML("beforeend",'<div class="spcatch" aria-hidden="true"></div><div class="spicon" aria-hidden="true"></div>');
     if(f.yt&&sp.querySelector("iframe"))sp.insertAdjacentHTML("beforeend",`<a class="spyt" href="${esc(f.url||"https://www.youtube.com/watch?v="+f.yt)}" target="_blank" rel="noopener">${f.age?"<b>18+</b>":""}Watch on YouTube ↗</a>`);
     const nC=filmComments(f.id).length,full=document.body.classList.contains("spfs");
@@ -2286,10 +2288,13 @@ document.addEventListener("pointerover",e=>{
 document.addEventListener("pointerout",e=>{if(hovEl&&!hovEl.closest("[data-open],[data-short]")?.contains(e.relatedTarget))stopPreview()});
 /* Shorts: the player sits inside a frame that swallows scroll and swipe, so a see-through layer
    above it (leaving the player's own control bar free) takes scroll/swipe for next/previous and a click for pause. */
-let spPaused=false,spTouchY=null,spSlide=0,spSheet="";
+let spState=null,spPaused=false,spTouchY=null,spSlide=0,spSheet="";
 function spToggle(){
   const fr=document.querySelector(".sp iframe"),f=findFilm(state.film);if(!fr||!f)return;
-  spPaused=!spPaused;const w=fr.contentWindow,cmd=spPaused?"pause":"play";
+  // follow what the player really does (it may have paused itself), so one tap always flips it
+  if(f.yt&&spState!=null)spPaused=spState===1||spState===3;else spPaused=!spPaused;
+  if(f.yt)spState=spPaused?2:1;
+  const w=fr.contentWindow,cmd=spPaused?"pause":"play";
   if(f.yt)w.postMessage(JSON.stringify({event:"command",func:cmd+"Video",args:[]}),"*");
   else if(f.tt)w.postMessage({"x-tiktok-player":true,type:cmd},"*");
   else if(f.vm)w.postMessage(JSON.stringify({method:cmd}),"*");
@@ -2472,6 +2477,7 @@ addEventListener("message",e=>{
   const fr=[...document.querySelectorAll(".player iframe, .sp iframe")].find(i=>i.contentWindow===e.source);if(!fr)return;
   if(playing&&fr.closest(".player")&&!document.querySelector(".endnext.early"))hideEnd();
   if(fr.closest(".player"))fpInfo(d);
+  if(fr.closest(".sp")){const ps=d.event==="onStateChange"?d.info:d.event==="infoDelivery"&&d.info?d.info.playerState:undefined;if(typeof ps==="number")spState=ps}
   if(!ended)return;
   if(fr.closest(".sp")){if(state.view==="shorts"&&!spPaused)stepShort(1);return}
   if(state.view==="watch")showEnd(fr.closest(".player"));
