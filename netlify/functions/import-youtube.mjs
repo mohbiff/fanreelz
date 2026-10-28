@@ -93,8 +93,8 @@ async function run() {
   const state = ((await sb.get("import_state?key=eq.youtube&select=value"))[0] || {}).value || { topic: 0 };
 
   // 1. Discover channels with one search. The importer runs every 10 minutes, but searching costs 100 quota units,
-  //    so it only searches about once an hour; the other runs just read more of the queued channels (1 unit per 50 videos).
-  const doSearch = !state.lastSearch || Date.now() - Date.parse(state.lastSearch) > 55 * 60e3;
+  //    so it only searches about every 30 minutes; the other runs just read more of the queued channels (1 unit per 50 videos).
+  const doSearch = !state.lastSearch || Date.now() - Date.parse(state.lastSearch) > 25 * 60e3; // a search about every 30 minutes (48 a day, ~4,800 quota units)
   const seen = new Set(state.seen || []);
   const fresh1 = doSearch ? NEW_TOPICS.find((t) => !seen.has(t)) : null;
   const world = !fresh1 && (state.topic % 2 === 1) ? WORLD[(state.world || 0) % WORLD.length] : null;

@@ -1,7 +1,7 @@
 // Fanreelz: who is live on YouTube right now making AI films?
 // Runs on Netlify. Reads YOUTUBE_API_KEY from the site's environment variables.
 // A YouTube live search costs 100 of the 10,000 free daily quota units, so this answer is cached
-// on Netlify's CDN for 20 minutes (about 72 searches a day, roughly 7,300 units).
+// for 60 minutes (about 24 searches a day, roughly 2,400 units), leaving quota for the importer's searches.
 
 // Tested: "AI film" with safe search off returns live AI streams; strict safe search returns none.
 const QUERY = "AI film";
@@ -43,7 +43,7 @@ export default async (req) => {
       !block.has((it.snippet.channelTitle || "").toLowerCase()) && !block.has((it.snippet.channelId || "").toLowerCase()));
     // Test mode (/api/live-youtube?demo=1): everything YouTube returned, unfiltered
     const items = demo ? raw : raw.filter((it) => AI_WORDS.test(it.snippet.title) && FILM_WORDS.test(it.snippet.title));
-    if (!items.length) return json({ streams: [], found: raw.length, demo, query, checked: new Date().toISOString() }, 1200);
+    if (!items.length) return json({ streams: [], found: raw.length, demo, query, checked: new Date().toISOString() }, 3600);
 
     // Viewer counts (1 quota unit)
     const ids = items.map((it) => it.id.videoId).join(",");
@@ -68,7 +68,7 @@ export default async (req) => {
       ...(demo ? { demo: true } : {}),
     })).sort((a, b) => b.viewers - a.viewers);
 
-    return json({ streams: out, found: raw.length, demo, query, checked: new Date().toISOString() }, 1200);
+    return json({ streams: out, found: raw.length, demo, query, checked: new Date().toISOString() }, 3600);
   } catch (e) {
     return json({ streams: [], error: String(e.message || e) }, 300);
   }
