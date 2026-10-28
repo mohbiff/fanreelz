@@ -1464,6 +1464,7 @@ async function loadAdminUsers(){try{const r=await modCall({action:"users"});if(r
 function renderAdmin(){
   clearInterval(adminTimer);adminTimer=setInterval(()=>{if(state.view!=="admin"){clearInterval(adminTimer);return}loadAdminUsers()},30000); // live: refreshes every 30 s
   if(!isMod){$("#main").innerHTML=`<div class="empty">This page is only for Fanreelz admins.</div>`;return}
+  if(state.adminSec==="videos"){renderAdminVideos();return}
   if(!adminUsers&&!adminUsersErr){$("#main").innerHTML=`<div class="empty">Loading accounts…</div>`;if(Date.now()-adminUsersAt>3000)loadAdminUsers();return}
   const U=adminUsers||[],day=864e5,now=Date.now(),since=d=>U.filter(u=>now-Date.parse(u.created)<d*day).length,by=p=>U.filter(u=>u.provider===p).length;
   const d=x=>x?new Date(x).toLocaleString("sv-SE",{dateStyle:"short",timeStyle:"short"}):"–";
@@ -1491,7 +1492,23 @@ document.addEventListener("click",e=>{if(e.target.closest("[data-adminreload]"))
   if(e.target.closest("[data-adminactall]")){e.preventDefault();state.adminActAll=true;render()}});
 // one account: everything it has written or voted on Fanreelz
 /* ===== Statistics from Umami (visitors, pages, sources, countries, devices), read by the server for admins ===== */
-const admSecTabs=()=>`<div class="fmtbar" style="margin:8px 0 14px">${[["accounts","Accounts"],["stats","Statistics"]].map(([k,l])=>`<button class="${(state.adminSec||"accounts")===k?"on":""}" data-adminsec="${k}">${l}</button>`).join("")}</div>`;
+/* Admin: every video Fanreelz has added (importer, links, members), newest first */
+let admVidFmt="all";
+function renderAdminVideos(){
+  const all=rawFilms().filter(f=>f.added).sort((a,b)=>b.added-a.added),now=Date.now(),day=864e5,inDays=d=>all.filter(f=>now-f.added<d*day).length;
+  const list=all.filter(f=>admVidFmt==="all"||(admVidFmt==="short"?f.format==="short":f.format!=="short"));
+  const card=(n,l)=>`<div class="adm-card"><b>${n}</b><span>${l}</span></div>`;
+  const row=f=>`<div class="adm-row">${f.yt?`<img src="https://i.ytimg.com/vi/${esc(f.yt)}/mqdefault.jpg" alt="" loading="lazy" style="width:96px;height:54px;border-radius:8px;object-fit:cover">`:""}
+    <div class="adm-who" data-open="${esc(f.id)}" role="button" tabindex="0" style="cursor:pointer"><b>${esc(f.title)}</b><span>${esc([catName(f.cat),f.char,f.format==="short"?"Short":"Film",f.len].filter(Boolean).join(" · "))} · ${esc(byName(f)||"YouTube creator")}${f.ytViews?" · "+fmtN(f.ytViews)+" YouTube views":""}</span></div>
+    <div class="adm-meta"><span><b>Added ${admAgo(f.added)}</b></span><span>${f.pub?"Published "+fdate(f.pub):""}</span>${f.yt&&f.db?`<button class="chip" data-adminhide="${esc(f.id)}">Hide</button>`:""}</div></div>`;
+  $("#main").innerHTML=`${admSecTabs()}<h1 class="sect-h" style="font-size:22px">${icon("fresh")} New videos</h1>
+  <p class="vmeta" style="margin:0 0 14px">Every video Fanreelz has added, newest first · <button class="chip" data-admvidreload="">Refresh now</button></p>
+  <div class="adm-cards">${card(all.length.toLocaleString("sv-SE"),"videos in total")}${card(inDays(1),"added today")}${card(inDays(7),"added 7 days")}${card(inDays(30),"added 30 days")}</div>
+  <div class="chips" style="margin:18px 0 8px">${[["all","All"],["film","Films"],["short","Shorts"]].map(([k,l])=>`<button class="chip ${admVidFmt===k?"on":""}" data-admvidfmt="${k}">${l}</button>`).join("")}</div>
+  ${list.length?moreGrid("adm-list",list,row,50):`<div class="empty">No videos yet.</div>`}`}
+document.addEventListener("click",e=>{const b=e.target.closest("[data-admvidfmt]");if(b){e.preventDefault();admVidFmt=b.dataset.admvidfmt;render();return}
+  if(e.target.closest("[data-admvidreload]")){e.preventDefault();catLoaded="";loadCatalog().then(render).catch(()=>{})}});
+const admSecTabs=()=>`<div class="fmtbar" style="margin:8px 0 14px">${[["accounts","Accounts"],["videos","New videos"],["stats","Statistics"]].map(([k,l])=>`<button class="${(state.adminSec||"accounts")===k?"on":""}" data-adminsec="${k}">${l}</button>`).join("")}</div>`;
 const umami={},umamiAll={};let umamiRange="7d",umamiMore=null,umamiQ="";
 async function loadUmamiAll(k,r){const key=k+"|"+r;umamiAll[key]={loading:true};try{umamiAll[key]={...(await modCall({action:"umami",range:r,metric:k})),at:Date.now()}}catch(e){umamiAll[key]={error:String(e.message||e)}}if(state.view==="admin"&&state.adminSec==="stats")render()}
 async function loadUmami(r){umami[r]={loading:true};try{umami[r]={...(await modCall({action:"umami",range:r})),at:Date.now()}}catch(e){umami[r]={error:String(e.message||e),at:Date.now()}}if(state.view==="admin"&&state.adminSec==="stats")render()}
