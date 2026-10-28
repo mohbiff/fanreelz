@@ -82,8 +82,8 @@ export default async (req) => {
       let sd = null, api = "", tried = [];
       for (const a of apis) {
         const sr = await fetch(a + "/share/" + encodeURIComponent(share), { headers: { Accept: "application/json" } }).catch(() => null);
-        tried.push(a.replace(/^https:\/\//, "") + " " + (sr ? sr.status : "x"));
-        if (!sr || !sr.ok) continue;
+        if (!sr || !sr.ok) { const why = sr ? (await sr.text().catch(() => "")).replace(/\s+/g, " ").slice(0, 120) : ""; tried.push(a.replace(/^https:\/\//, "") + " " + (sr ? sr.status : "x") + (why && sr.status !== 404 ? " “" + why + "”" : "")); continue; }
+        tried.push(a.replace(/^https:\/\//, "") + " " + sr.status);
         const j = await sr.json().catch(() => null);
         if (j?.token) { sd = j; api = a; break; }
       }
