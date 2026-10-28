@@ -8,6 +8,7 @@ import android.graphics.Color;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.view.OrientationEventListener;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
@@ -50,6 +51,9 @@ public class MainActivity extends ComponentActivity {
     private ValueCallback<Uri[]> fileCallback;
     private ActivityResultLauncher<Intent> filePicker;
     private WebChromeClient chrome;
+    // full screen locked to landscape: once the phone really lies sideways, turning it back upright leaves full screen (like YouTube)
+    private OrientationEventListener turn;
+    private boolean lockedLandscape = false, seenSideways = false;
 
     @SuppressLint({"SetJavaScriptEnabled", "AddJavascriptInterface"})
     @Override
@@ -79,8 +83,26 @@ public class MainActivity extends ComponentActivity {
             } else {
                 v.setPadding(insets.getSystemWindowInsetLeft(), insets.getSystemWindowInsetTop(), insets.getSystemWindowInsetRight(), insets.getSystemWindowInsetBottom());
             }
-            return insets;
+            // the app already keeps the page clear of the bars: don't pass them on, or the page adds the same space again
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) return WindowInsets.CONSUMED;
+            return insets.consumeSystemWindowInsets();
         });
+
+        turn = new OrientationEventListener(this) {
+            @Override
+            public void onOrientationChanged(int deg) {
+                if (!lockedLandscape || deg == ORIENTATION_UNKNOWN) return;
+                if ((deg > 60 && deg < 120) || (deg > 240 && deg < 300)) seenSideways = true;
+                else if (seenSideways && (deg < 25 || deg > 335)) {
+                    lockedLandscape = false;
+                    turn.disable();
+                    runOnUiThread(() -> {
+                        setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED);
+                        web.evaluateJavascript("window.fanreelzExitFull&&window.fanreelzExitFull()", null);
+                    });
+                }
+            }
+        };
 
         WebSettings s = web.getSettings();
         s.setJavaScriptEnabled(true);
@@ -253,6 +275,9 @@ public class MainActivity extends ComponentActivity {
                 int o = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED;
                 if ("landscape".equals(mode)) o = ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE;
                 else if ("portrait".equals(mode)) o = ActivityInfo.SCREEN_ORIENTATION_SENSOR_PORTRAIT;
+                lockedLandscape = "landscape".equals(mode);
+                seenSideways = false;
+                if (lockedLandscape && turn.canDetectOrientation()) turn.enable(); else turn.disable();
                 setRequestedOrientation(o);
             });
         }
@@ -288,6 +313,7 @@ public class MainActivity extends ComponentActivity {
 
     @Override
     protected void onDestroy() {
+        if (turn != null) turn.disable();
         if (web != null) web.destroy();
         super.onDestroy();
     }
