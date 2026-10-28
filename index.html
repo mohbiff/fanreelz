@@ -493,7 +493,10 @@ body.spfs .tabbar,body.spfs .toast{z-index:61}
 body.spfs .tabbar{display:none}
 .spcatch{position:absolute;inset:120px 0 110px 0;z-index:3;cursor:pointer;touch-action:none;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none}
 /* YouTube shows the short's own title in its player, so ours would sit on top of it */
-.sp:has(iframe) .ov{display:none}
+/* with a player: our title sits at the bottom left (YouTube's own is at the top) and comes and goes with the side icons */
+.sp:has(iframe) .ov{top:auto;bottom:110px;right:64px;padding:30px 14px 10px;background:none!important;transition:opacity .3s;text-shadow:0 1px 4px rgba(0,0,0,.9),0 0 12px rgba(0,0,0,.6)}
+.sp:has(iframe) .ov b{font-size:15px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.sp.uihide .ov{opacity:0}
 .sp .ov{z-index:4}.sp:has(.spyt) .ov{padding-top:46px}
 .spicon{position:absolute;inset:0;margin:auto;width:72px;height:72px;border-radius:50%;z-index:5;pointer-events:none;opacity:0;background:rgba(0,0,0,.55) center/30px no-repeat}
 .spicon.paused{background-image:url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 24 24%27%3E%3Cpath fill=%27white%27 d=%27M6 5h4v14H6zM14 5h4v14h-4z%27/%3E%3C/svg%3E")}
@@ -2124,7 +2127,7 @@ function renderShorts(){
   const nx=findFilm(list[state.shortI+1]);
   $("#main").innerHTML=`<div class="shorts-view"><div class="spcol"><div class="sp"><canvas data-f="${esc(f.id)}"></canvas>
      <a class="play" href="${esc(url)}" target="_blank" rel="noopener"><span><svg viewBox="0 0 12 12"><path d="M2 1l9 5-9 5z"/></svg>Watch on ${esc(f.src)}</span></a>
-     <div class="ov"><span class="vmeta" style="color:#fff;opacity:.85">${esc(catName(f.cat))} · ${esc(f.char)} · ${esc(f.len)}</span><b>${esc(f.title)}</b></div></div>
+     <div class="ov"><span class="vmeta" style="color:#fff;opacity:.85">${[catName(f.cat),f.char,f.len].filter(Boolean).map(esc).join(" · ")}</span><b>${esc(f.title)}</b></div></div>
    ${nx?`<button class="spnext" data-snav="1" aria-label="Next short: ${esc(nx.title)}"><div class="thumb vert"><canvas data-f="${esc(nx.id)}"></canvas></div><span class="spnext-l">↓ Next: ${esc(nx.title)}</span></button>`:""}</div>
    <div class="sside">
      ${(f.real||f.yt||f.tt||f.ig||f.vm||f.dm)?`<div class="owner">${cav(byName(f),40)}<div><b>${esc(byName(f)||"YouTube creator")}</b></div></div>`:`<button class="owner link" data-creator="${esc(f.byId||f.by)}">${cav(byName(f),40)}<div><b>${esc(byName(f)||"YouTube creator")}</b><small>${fmtN(followerCount(f.byId||f.by))} followers</small></div></button>`}
