@@ -141,6 +141,7 @@ main{min-width:0;padding-right:max(16px,env(safe-area-inset-right,0px));padding-
 .adm-card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:2px}
 .adm-card b{font-size:26px;line-height:1.1}.adm-card span{color:var(--muted);font-size:13px}
 .adm-list{display:flex;flex-direction:column;gap:6px}
+.umplus{font-style:normal;color:#3ecf8e;font-size:.6em;font-weight:700;margin-left:6px;vertical-align:middle}
 .adm-link{font-size:12.5px;color:var(--accent);text-decoration:none;overflow-wrap:anywhere;margin-top:2px}.adm-link:hover{text-decoration:underline}
 .adm-row[data-adminuser]{cursor:pointer}.adm-row[data-adminuser]:hover{border-color:var(--accent)}
 .adm-row{display:flex;align-items:center;gap:12px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 12px;flex-wrap:wrap}
@@ -1509,7 +1510,7 @@ function renderAdminVideos(){
 document.addEventListener("click",e=>{const b=e.target.closest("[data-admvidfmt]");if(b){e.preventDefault();admVidFmt=b.dataset.admvidfmt;render();return}
   if(e.target.closest("[data-admvidreload]")){e.preventDefault();catLoaded="";loadCatalog().then(render).catch(()=>{})}});
 const admSecTabs=()=>`<div class="fmtbar" style="margin:8px 0 14px">${[["accounts","Accounts"],["videos","New videos"],["stats","Statistics"]].map(([k,l])=>`<button class="${(state.adminSec||"accounts")===k?"on":""}" data-adminsec="${k}">${l}</button>`).join("")}</div>`;
-const umami={},umamiAll={};let umamiRange="7d",umamiMore=null,umamiQ="",umamiFlt=null;
+const umami={},umamiAll={};let umamiRange="7d",umamiMore=null,umamiQ="",umamiFlt=null,umBase={};
 const umFkey=()=>umamiFlt?"|"+umamiFlt.k+"="+umamiFlt.v:"";
 async function loadUmamiAll(k,r){const key=k+"|"+r+umFkey();umamiAll[key]={loading:true};try{umamiAll[key]={...(await modCall({action:"umami",range:r,metric:k,filter:umamiFlt?{[umamiFlt.k]:umamiFlt.v}:undefined})),at:Date.now()}}catch(e){umamiAll[key]={error:String(e.message||e)}}if(state.view==="admin"&&state.adminSec==="stats")render()}
 async function loadUmami(r){umami[r]={loading:true};try{umami[r]={...(await modCall({action:"umami",range:r})),at:Date.now()}}catch(e){umami[r]={error:String(e.message||e),at:Date.now()}}if(state.view==="admin"&&state.adminSec==="stats")render()}
@@ -1540,7 +1541,11 @@ function renderUmami(){
     return}
   const S=U.stats,P=U.prev,bounce=S.visits?S.bounces/S.visits*100:0,avg=S.visits?S.totaltime/S.visits:0;
   const delta=(a,b)=>{if(!P||!b||r==="all")return "";const d=(a-b)/b*100;return `<small style="color:${d>=0?"#3ecf8e":"#ff6b6b"};font-weight:600">${d>=0?"▲":"▼"} ${Math.abs(d).toFixed(0)}%</small>`};
-  const cards=[[nf(U.active||0),"online now",""],[nf(S.visitors),"unique visitors",delta(S.visitors,P?.visitors)],[nf(S.visits),"visits (sessions)",delta(S.visits,P?.visits)],[nf(S.pageviews),"page views",delta(S.pageviews,P?.pageviews)],[bounce.toFixed(0)+"%","bounce rate",""],[dur(avg),"avg. visit",""]];
+  // what's new since you last opened Statistics (green +N), remembered on this device per period
+  if(!umBase[r]){let seen={};try{seen=JSON.parse(localStorage.getItem("fr_umseen")||"{}")}catch(e){}umBase[r]=seen[r]||{visitors:S.visitors,visits:S.visits,pageviews:S.pageviews};
+    seen[r]={visitors:S.visitors,visits:S.visits,pageviews:S.pageviews};try{localStorage.setItem("fr_umseen",JSON.stringify(seen))}catch(e){}}
+  const plus=k=>{const d=(S[k]||0)-(umBase[r][k]||0);return d>0?`<em class="umplus">+${nf(d)}</em>`:""};
+  const cards=[[nf(U.active||0),"online now",""],[nf(S.visitors)+plus("visitors"),"unique visitors",delta(S.visitors,P?.visitors)],[nf(S.visits)+plus("visits"),"visits (sessions)",delta(S.visits,P?.visits)],[nf(S.pageviews)+plus("pageviews"),"page views",delta(S.pageviews,P?.pageviews)],[bounce.toFixed(0)+"%","bounce rate",""],[dur(avg),"avg. visit",""]];
   // page views per hour/day as bars, visitors as a line
   const pv=U.series?.pageviews||[],vs=U.series?.visitors||[],max=Math.max(1,...pv.map(x=>x.n),...vs.map(x=>x.n)),W=640,H=180,bw=pv.length?W/pv.length:W;
   const lbl=t=>{const d=new Date(t);return U.unit==="hour"?d.toLocaleTimeString("sv-SE",{hour:"2-digit"}):U.unit==="month"?d.toLocaleDateString("sv-SE",{month:"short",year:"2-digit"}):d.toLocaleDateString("sv-SE",{day:"numeric",month:"short"})};
@@ -1561,7 +1566,7 @@ function renderUmami(){
     <p class="vmeta" style="margin-top:12px;font-size:12px">${r==="all"?`All time since ${U.from?new Date(U.from).toLocaleDateString("sv-SE"):"the start"}`:`Compared with the previous ${({"24h":"24 hours","7d":"7 days","30d":"30 days","90d":"90 days","365d":"year"})[r]}`} · updated ${new Date(U.at).toLocaleTimeString("sv-SE")} · <a href="https://cloud.umami.is" target="_blank" rel="noopener">Open Umami ↗</a></p>`;
 }
 document.addEventListener("click",e=>{
-  const sc=e.target.closest("[data-adminsec]");if(sc){e.preventDefault();state.adminSec=sc.dataset.adminsec;umamiMore=null;umamiFlt=null;render();return}
+  const sc=e.target.closest("[data-adminsec]");if(sc){e.preventDefault();state.adminSec=sc.dataset.adminsec;umBase={};umamiMore=null;umamiFlt=null;render();return}
   const ur=e.target.closest("[data-umrange]");if(ur){e.preventDefault();umamiRange=ur.dataset.umrange;render();return}
   if(e.target.closest("[data-umreload]")){e.preventDefault();loadUmami(umamiRange);if(umamiMore)loadUmamiAll(umamiMore,umamiRange);return}
   const um=e.target.closest("[data-ummore]");if(um){e.preventDefault();umamiMore=um.dataset.ummore;umamiFlt=null;umamiQ="";state.umLimit=100;render();scrollTo(0,0);return}
@@ -3020,7 +3025,7 @@ function parsePath(){
   return {};
 }
 const urlNow=()=>location.pathname+location.search;
-function go(patch){
+function go(patch){if(patch.view==="admin"&&typeof umBase!=="undefined")umBase={};
   if(patch.view&&patch.view!=="watch"&&document.body.classList.contains("fsmode")){try{(document.exitFullscreen||document.webkitExitFullscreen).call(document)}catch(e){}}
   renderHard=true;
   if(patch.view&&patch.view!=="shorts"&&document.body.classList.contains("spfs"))toggleShortsFull(false);
