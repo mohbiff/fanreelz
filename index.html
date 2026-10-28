@@ -939,15 +939,18 @@ function closeMenu(fromBack){const sh=$("#shell");if(!sh.classList.contains("ope
   document.addEventListener("touchend",()=>{if(x0==null)return;x0=null;const el=g();el.style.transition="";if(dx<-70)closeMenu();else el.style.transform=""},{passive:true});
 })();
 /* Shorts full screen: our own, so swipe, stars and comments still work (the platforms' players would hide them) */
+/* Phone: shorts are only watched in full screen. Leaving full screen (Exit, back) leaves shorts too. */
+function spLeave(){if(history.state?.fr&&history.length>1){history.back();setTimeout(()=>{if(state.view==="shorts")go({view:"home"})},400)}else go({view:"home"})}
 function toggleShortsFull(force){
   const on=force!=null?force:!document.body.classList.contains("spfs");
+  if(!on&&phone()&&state.view==="shorts"&&force==null){document.body.classList.remove("spfs");try{if(document.fullscreenElement)document.exitFullscreen().catch(()=>{})}catch(e){}spLeave();return}
   document.body.classList.toggle("spfs",on);
   try{if(on&&!document.fullscreenElement&&document.documentElement.requestFullscreen)document.documentElement.requestFullscreen().catch(()=>{});
       if(!on&&document.fullscreenElement)document.exitFullscreen().catch(()=>{})}catch(e){}
   if(state.view==="shorts")render();
 }
 ["fullscreenchange","webkitfullscreenchange"].forEach(ev=>document.addEventListener(ev,()=>{if(!fsEl()&&fsPending){fsPending=false;setTimeout(render,50)}}));
-document.addEventListener("fullscreenchange",()=>{if(!document.fullscreenElement&&document.body.classList.contains("spfs")){document.body.classList.remove("spfs");if(state.view==="shorts")render()}});
+document.addEventListener("fullscreenchange",()=>{if(!document.fullscreenElement&&document.body.classList.contains("spfs")){document.body.classList.remove("spfs");if(state.view==="shorts"){if(phone())spLeave();else render()}}});
 document.addEventListener("keydown",e=>{if(e.key==="Escape"&&document.body.classList.contains("spfs"))toggleShortsFull(false)});
 function setTheme(t){try{localStorage.setItem("fr_theme",t)}catch(e){}document.documentElement.dataset.theme=t;render()}
 function renderGuide(){renderTabbar();
@@ -2105,6 +2108,7 @@ function openShorts(id){
   const f=findFilm(id);if(!f)return;
   const pool=allFilms().filter(x=>x.format==="short");
   go({view:"shorts",shortList:[id,...shuffledShorts([id])],shortI:0,film:id});
+  if(phone()&&state.view==="shorts")toggleShortsFull(true);
 }
 function renderShorts(){
   let keepFrame=null;{const old=document.querySelector(".sp iframe"),want=(state.shortList||[])[state.shortI];
@@ -2566,6 +2570,8 @@ function render(){
   if(!renderHard&&fsEl()&&!document.body.classList.contains("spfs")){fsPending=true;return}
   if(!renderHard&&(state.view==="battles"||state.view==="showdown")&&document.querySelector(".bplay iframe")){renderGuide();return}
   if(state.view==="liveplay"&&!renderHard&&$("#lchat")&&$("#lchat").dataset.live===state.liveId){renderGuide();updateLiveChat();return}
+  if(state.view!=="shorts"&&document.body.classList.contains("spfs"))document.body.classList.remove("spfs");
+  else if(state.view==="shorts"&&phone()&&!document.body.classList.contains("spfs"))document.body.classList.add("spfs");
   renderHard=false;stopPreview();if(state.view!=="shorts"){const b=$("#spPre");if(b&&b.firstChild)b.innerHTML=""}for(const k in MORE)delete MORE[k];statMemo=new Map();trendMemo=new Map();try{renderInner()}finally{statMemo=null;trendMemo=null}}
 function renderInner(){
   const drafts={};let focusKey=null;
@@ -2761,7 +2767,7 @@ document.addEventListener("click",async e=>{
   if(x=A("[data-livetab]")){liveTab=x.dataset.livetab;renderHard=true;render();return}
   if(x=A("[data-spsheet]")){const v=x.dataset.spsheet;spSheet=spSheet===v?"":v;render();return}
   if(A("[data-spfull]")){toggleShortsFull();return}
-  if(A("[data-tabshorts]")){resetSections();go({view:"shorts",shortList:null,shortI:0,film:null,cat:null,char:null,group:"All",q:"",dur:"any",lore:"all"});return}
+  if(A("[data-tabshorts]")){resetSections();go({view:"shorts",shortList:null,shortI:0,film:null,cat:null,char:null,group:"All",q:"",dur:"any",lore:"all"});if(phone()&&state.view==="shorts")toggleShortsFull(true);return}
   if(x=A("[data-user]")){closeModal&&!$("#scrim").hidden&&closeModal();go({view:"user",user:x.dataset.user,utab:"liked"});return}
   if(x=A("[data-utab]")){state.utab=x.dataset.utab;render();try{history.replaceState({fr:navSnap(),y:scrollY},"",pathFor(state))}catch(e){}return}
   if((x=A("[data-copylink]"))&&!A("#scrim")){try{navigator.clipboard.writeText(x.dataset.copylink);toast("Profile link copied")}catch(e){}return}
