@@ -159,17 +159,19 @@ main{min-width:0;padding-right:max(16px,env(safe-area-inset-right,0px));padding-
 .fpbar{position:relative;padding:6px 10px 8px;background:rgba(18,14,26,.45);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);user-select:none;-webkit-user-select:none}
 .player.hasbar:fullscreen,body.wfs .player.hasbar{display:flex;flex-direction:column;justify-content:center;background:#000}
 .player.hasbar:fullscreen{width:100vw;height:100vh;border-radius:0}
-/* full screen: YouTube's player fills the whole screen, so its own pinch-to-zoom (fill the screen) and double-tap ±10 s work everywhere */
-.player.hasbar:fullscreen iframe,body.wfs .player.hasbar iframe{flex:1;aspect-ratio:auto;width:100%!important;min-height:0;height:auto!important;margin:0}
+/* full screen: YouTube's player fills the screen except two 56px strips at the sides, which are Fanreelz's own ±10 s buttons (not on top of the video) */
+.player.hasbar:fullscreen iframe,body.wfs .player.hasbar iframe{flex:1;aspect-ratio:auto;width:calc(100% - 112px)!important;min-height:0;height:auto!important;margin:0 auto}
 .player.ended iframe{visibility:hidden}
 .fpbar.fshide{visibility:hidden}
 .fpset{padding:10px 12px;background:rgba(18,14,26,.6);border-top:1px solid rgba(255,255,255,.08);display:flex;flex-direction:column;gap:8px;color:#fff;font-size:13px}.fpset-row{display:flex;flex-wrap:wrap;align-items:center;gap:6px}.fpset-row b{min-width:62px}.fpset-t{display:flex;gap:8px;align-items:center;cursor:pointer}
 /* full screen: the black edges beside the 16:9 picture are Fanreelz's own space (not on top of the video):
    double tap there for -10 s / +10 s like YouTube, single tap shows or hides the bar */
-.fpzone{display:none;position:absolute;top:0;bottom:82px;width:calc((100vw - min(100vw,(100dvh - 82px)*16/9))/2);align-items:center;justify-content:center;z-index:2;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+.fpzone{display:none;flex-direction:column;gap:6px;position:absolute;top:0;bottom:82px;width:56px;color:rgba(255,255,255,.55);font:600 11px/1 inherit;cursor:pointer;user-select:none;align-items:center;justify-content:center;z-index:2;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
 .fpzone.l{left:0}.fpzone.r{right:0}
+body.wfs .fpzone,.player.hasbar:fullscreen .fpzone,body.fsmode .fpzone{display:flex}
+.fpzone i{font-style:normal;font-size:22px}.fpzone:active{color:#fff}
 
-.fpzone b{opacity:0;color:#fff;font:700 18px/1 inherit;background:rgba(255,255,255,.14);padding:10px 12px;border-radius:999px;transition:opacity .2s}
+.fpzone b{position:absolute;top:22%;opacity:0;color:#fff;font:700 18px/1 inherit;background:rgba(255,255,255,.14);padding:10px 12px;border-radius:999px;transition:opacity .2s}
 .fpzone.flash b{opacity:1}
 /* no double-tap zoom on the player and its buttons (fast taps on ±10 s should each count) */
 .player,.player *,.fpbar,.fpbar *,body.fsmode,body.wfs{touch-action:manipulation}
@@ -185,7 +187,7 @@ body.fsmode #betabar,body.fsmode header.top,body.fsmode #guide,body.fsmode .tabb
 body.fsmode .shell{display:block}body.fsmode main{padding:0 0 40px}
 body.fsmode .theater{margin:0;padding:0}body.fsmode .watch{display:block;padding-top:0;max-width:none}
 body.fsmode .player.hasbar{width:100vw;height:100vh;height:100dvh;max-width:none;border-radius:0;display:flex;flex-direction:column;justify-content:center;background:#000;margin:0}
-body.fsmode .player.hasbar iframe{flex:1;aspect-ratio:auto;width:100%!important;min-height:0;height:auto!important;margin:0}
+body.fsmode .player.hasbar iframe{flex:1;aspect-ratio:auto;width:calc(100% - 112px)!important;min-height:0;height:auto!important;margin:0 auto}
 body.fsmode .watch>div>:not(.player),body.fsmode .watch>aside,body.fsmode .watch>div+*{margin-left:max(16px,4vw);margin-right:max(16px,4vw)}
 body.fsmode .watch>div>:not(.player):nth-child(2){margin-top:18px}
 .fpvolwrap{display:flex;align-items:center}
@@ -2319,7 +2321,7 @@ function fpMount(f){const pl=$(".player");if(!pl||pl.querySelector(".fpbar"))ret
     <button class="fpb${fp.cc?" on":""}" data-fpcc="" aria-label="Subtitles">${FPI.cc}</button>
     <button class="fpb" data-share="${esc(f.id)}" aria-label="Share this film">${FPI.share}<span class="lbl">Share</span></button>
     <button class="fpb${later?" on":""}" data-later="${esc(f.id)}" aria-label="Watch later">${FPI.later}<span class="lbl">${later?"Saved":"Watch later"}</span></button>
-    <button class="fpb" data-ytfs="" aria-label="Full screen"></button></div></div><div class="fpzone l" data-fpzone="-10"><b></b></div><div class="fpzone r" data-fpzone="10"><b></b></div>`);
+    <button class="fpb" data-ytfs="" aria-label="Full screen"></button></div></div><div class="fpzone l" data-fpzone="-10" role="button" aria-label="Back 10 seconds"><b></b><i>↺</i>10 s</div><div class="fpzone r" data-fpzone="10" role="button" aria-label="Forward 10 seconds"><b></b><i>↻</i>10 s</div>`);
   fpPaint()}
 const fpIsFs=()=>document.body.classList.contains("fsmode")||document.body.classList.contains("wfs");
 // computer: the browser's real full screen (whole monitor); phone: fills the page, so Android shows no "swipe to exit" notice each time
@@ -2348,13 +2350,12 @@ function fpPaint(){const o=document.querySelector(".fpbar");if(!o)return;const p
 /* In full screen the bar hides like YouTube's controls: 3 s after play, back on a tap on the film or a pause.
    It sits under the film (never on top of it), and keeps its space so the film doesn't jump. */
 let fpT=null;
-let fpZoneTap={t:0,z:null,timer:null,sum:0};
+let fpZoneSum=0,fpZoneLast=null;
+/* full screen: the strips beside the picture (outside YouTube's player) skip 10 s per tap; quick taps add up */
 document.addEventListener("click",e=>{const z=e.target.closest?.("[data-fpzone]");if(!z)return;e.preventDefault();
-  const now=Date.now(),d=+z.dataset.fpzone;
-  if(fpZoneTap.z===z&&now-fpZoneTap.t<350){clearTimeout(fpZoneTap.timer);fpZoneTap.sum+=d;fpSeek(fp.t+d);
-    const b=z.querySelector("b");b.textContent=(fpZoneTap.sum>0?"+":"")+fpZoneTap.sum+" s";z.classList.add("flash");clearTimeout(z._ft);z._ft=setTimeout(()=>{z.classList.remove("flash");fpZoneTap.sum=0},700);
-    fpZoneTap.t=now;return}
-  fpZoneTap={t:now,z,sum:0,timer:setTimeout(()=>{const b=document.querySelector(".fpbar");if(b?.classList.contains("fshide"))fpShow();else fpHide()},360)}},true);
+  const d=+z.dataset.fpzone;if(fpZoneLast!==z)fpZoneSum=0;fpZoneLast=z;fpZoneSum+=d;fpSeek(fp.t+d);
+  const b=z.querySelector("b");b.textContent=(fpZoneSum>0?"+":"")+fpZoneSum+" s";z.classList.add("flash");
+  clearTimeout(z._ft);z._ft=setTimeout(()=>{z.classList.remove("flash");fpZoneSum=0;fpZoneLast=null},900)},true);
 /* Phone: swipe up on the control bar for full screen, swipe down to leave it (like YouTube).
    The picture itself belongs to YouTube's player and doesn't pass touches to the page, so the swipe starts on the bar. */
 let fpSw=null;
