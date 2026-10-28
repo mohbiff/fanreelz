@@ -1067,7 +1067,7 @@ function toggleShortsFull(force){
   const on=force!=null?force:!document.body.classList.contains("spfs");
   if(!on&&phone()&&state.view==="shorts"&&force==null){document.body.classList.remove("spfs");try{if(document.fullscreenElement)document.exitFullscreen().catch(()=>{})}catch(e){}spLeave();return}
   document.body.classList.toggle("spfs",on);
-  try{if(on&&!document.fullscreenElement&&document.documentElement.requestFullscreen)document.documentElement.requestFullscreen().catch(()=>{});
+  try{if(on&&!IN_APP&&!document.fullscreenElement&&document.documentElement.requestFullscreen)document.documentElement.requestFullscreen().catch(()=>{});
       if(!on&&document.fullscreenElement)document.exitFullscreen().catch(()=>{})}catch(e){}
   if(state.view==="shorts")render();
 }
@@ -2748,9 +2748,14 @@ function checkVert(f){if(!f||!f.yt)return;const apply=v=>{f.vert=v;const pl=docu
   if(f.yt in vertSeen){apply(vertSeen[f.yt]);return}
   const im=new Image();im.onload=()=>{vertSeen[f.yt]=im.naturalHeight>im.naturalWidth*1.1;apply(vertSeen[f.yt])};im.onerror=()=>{vertSeen[f.yt]=false;apply(false)};
   im.src="https://i.ytimg.com/vi/"+f.yt+"/oardefault.jpg"}
+/* Inside the Android app (or the installed web app) Chrome shows its "swipe from the top to exit full screen" notice
+   every time the page uses the browser's full screen. There the player fills the screen by itself instead — no notice. */
+const IN_APP=(()=>{try{if(/[?&]source=(android|app)/.test(location.search))sessionStorage.setItem("fr_inapp","1");
+  return sessionStorage.getItem("fr_inapp")==="1"||/^android-app:/.test(document.referrer)||matchMedia("(display-mode: standalone)").matches||matchMedia("(display-mode: fullscreen)").matches||!!navigator.standalone}catch(e){return false}})();
 function fpFull(){const pl=$(".player");if(!pl)return;
   if(document.fullscreenElement||document.webkitFullscreenElement){try{screen.orientation?.unlock?.()}catch(e){}(document.exitFullscreen||document.webkitExitFullscreen).call(document)?.catch?.(()=>{});return}
   if(document.body.classList.contains("wfs")){closeWfs();fpPaint();return}
+  if(IN_APP&&!matchMedia("(pointer:fine)").matches){openWfs();fpPaint();fpShow();return}
   const de=document.documentElement,req=de.requestFullscreen||de.webkitRequestFullscreen;
   if(req){Promise.resolve(req.call(de,{navigationUI:"hide"})).then(()=>{if(!matchMedia("(pointer:fine)").matches)screen.orientation?.lock?.(pl.classList.contains("vert")?"portrait":"landscape").catch(()=>{})}).catch(()=>{openWfs();fpPaint();fpShow()})}
   else{openWfs();fpPaint();fpShow()}}
