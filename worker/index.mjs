@@ -38,21 +38,26 @@ function assetLinks(env) {
 }
 
 // Sign-in from the Android app: Google refuses sign-in inside an app's web view, so the app opens it in a Chrome tab.
-// Google/Discord then come back here, and this page hands the result (?code=…) back to the app, which finishes the sign-in.
-function appAuth() {
+// Google/Discord then come back here with ?code=…; this answers with a redirect to fanreelz://auth?u=<page>, which Chrome
+// hands to the app (a server redirect gets through where a script-driven jump to the app is blocked). The app loads the
+// page with the code and finishes the sign-in itself. A button is the fallback if the phone asks first.
+function appAuth(url) {
+  let to = url.searchParams.get("to") || "/";
+  if (!/^\/(?!\/)/.test(to)) to = "/";
+  const rest = new URLSearchParams(url.searchParams);
+  rest.delete("to");
+  const q = rest.toString();
+  const back = "https://fanreelz.com" + to + (q ? (to.includes("?") ? "&" : "?") + q : "");
+  const app = "fanreelz://auth?u=" + encodeURIComponent(back);
+  const esc = (x) => x.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;");
   const html = `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Back to Fanreelz</title><meta name="robots" content="noindex">
 <style>body{margin:0;min-height:100vh;display:grid;place-items:center;background:#110f17;color:#f3f0fa;font:16px/1.5 system-ui,sans-serif;text-align:center;padding:24px;box-sizing:border-box}
 a{display:inline-block;margin-top:16px;padding:14px 22px;border-radius:999px;background:#f5c542;color:#111;font-weight:700;text-decoration:none}</style></head>
-<body><div><h1 style="font-size:22px;margin:0 0 6px">Signed in</h1><p style="margin:0;opacity:.8">Taking you back to the Fanreelz app…</p><a id="go" href="#">Open the Fanreelz app</a></div>
-<script>
-var u=new URL(location.href),to=u.searchParams.get("to")||"/";u.searchParams.delete("to");
-if(!/^\/(?!\/)/.test(to))to="/";
-var q=u.searchParams.toString(),back="https://fanreelz.com"+to+(q?(to.indexOf("?")>-1?"&":"?")+q:"")+location.hash;
-var app="intent://auth?u="+encodeURIComponent(back)+"#Intent;scheme=fanreelz;package=com.fanreelz.app;S.browser_fallback_url="+encodeURIComponent(back)+";end";
-document.getElementById("go").href=app;location.replace(app);
-</script></body></html>`;
-  return new Response(html, { headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store", "Referrer-Policy": "no-referrer" } });
+<body><div><h1 style="font-size:22px;margin:0 0 6px">Signed in</h1><p style="margin:0;opacity:.8">Tap below to go back to the Fanreelz app.</p><a href="${esc(app)}">Open the Fanreelz app</a></div></body></html>`;
+  // no code (someone opened the page by hand): just show the button
+  if (!rest.get("code") && !rest.get("error")) return new Response(html, { headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store", "Referrer-Policy": "no-referrer" } });
+  return new Response(html, { status: 302, headers: { Location: app, "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store", "Referrer-Policy": "no-referrer" } });
 }
 
 const useEnv = (env) => { globalThis.Netlify = { env: { get: (k) => (env[k] == null ? undefined : String(env[k])) } }; };
@@ -76,7 +81,7 @@ export default {
       useEnv(env); return job(req);
     }
     if (url.pathname === "/.well-known/assetlinks.json") return assetLinks(env);
-    if (url.pathname === "/app-auth") return appAuth();
+    if (url.pathname === "/app-auth") return appAuth(url);
     if (url.pathname === "/sitemap.xml") {
       const hit = await caches.default.match(req); if (hit) return hit;
       const res = await sitemap(env, ctx); ctx.waitUntil(caches.default.put(req, res.clone())); return res;
