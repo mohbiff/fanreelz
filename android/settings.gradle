@@ -1,4 +1,4 @@
-// Fanreelz for Android: a Trusted Web Activity that opens fanreelz.com full screen, without a browser bar.
+// Fanreelz for Android: fanreelz.com in Android's own web view, so the app controls full screen like YouTube.
 // Built by GitHub Actions (.github/workflows/android.yml); no Android Studio needed.
 pluginManagement {
     repositories {

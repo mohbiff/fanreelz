@@ -9,7 +9,7 @@
     "binding": "ASSETS",
     "not_found_handling": "single-page-application",
     // the Worker handles the functions and the pages that get their own title and preview; icons and other files go straight out
-    "run_worker_first": ["/.well-known/assetlinks.json", "/api/*", "/", "/film/*", "/shorts", "/shorts/*", "/c/*", "/showdown", "/showdown/*", "/sitemap.xml", "/top10", "/about", "/browse", "/battles", "/requests", "/discord", "/live", "/playlists"]
+    "run_worker_first": ["/.well-known/assetlinks.json", "/app-auth", "/api/*", "/", "/film/*", "/shorts", "/shorts/*", "/c/*", "/showdown", "/showdown/*", "/sitemap.xml", "/top10", "/about", "/browse", "/battles", "/requests", "/discord", "/live", "/playlists"]
   },
   "triggers": { "crons": ["*/10 * * * *", "41 * * * *"] },
   "vars": { "IMPORT_CHANNELS": "3" },

@@ -18,14 +18,9 @@ android {
         versionCode = vc
         versionName = "1.0." + vc
 
-        manifestPlaceholders = [
-            hostName       : HOST,
-            launchUrl      : "https://" + HOST + "/?source=android"
-        ]
+        // fanreelz.com links open in the app; the site proves it belongs together with the app via /.well-known/assetlinks.json
+        manifestPlaceholders = [hostName: HOST]
         resValue "string", "app_name", "Fanreelz"
-        // Digital Asset Links: tells Android that this app and fanreelz.com belong together, so no browser bar is shown
-        // (quotes are escaped because Android drops plain quotes in string resources)
-        resValue "string", "asset_statements", ('[{ "relation": ["delegate_permission/common.handle_all_urls"], "target": {"namespace": "web", "site": "https://' + HOST + '"}}]').replace('"', '\\"')
     }
 
     signingConfigs {
@@ -55,5 +50,7 @@ android {
 }
 
 dependencies {
-    implementation "com.google.androidbrowserhelper:androidbrowserhelper:2.5.0"
+    // the app is fanreelz.com in Android's own web view; sign-in and outside links open in a Chrome tab
+    implementation "androidx.activity:activity:1.9.3"
+    implementation "androidx.browser:browser:1.8.0"
 }
