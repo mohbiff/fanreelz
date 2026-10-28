@@ -163,6 +163,8 @@ main{min-width:0;padding-right:max(16px,env(safe-area-inset-right,0px));padding-
 /* full screen: YouTube's player fills the screen except two 56px strips at the sides, which are Fanreelz's own ±10 s buttons (not on top of the video) */
 .player.hasbar:fullscreen iframe,body.wfs .player.hasbar iframe{flex:1;aspect-ratio:auto;width:calc(100% - 112px)!important;min-height:0;height:auto!important;margin:0 auto}
 .player.ended iframe{visibility:hidden}
+.umbox h3 .seeall{float:right;margin:0}.umsearch{width:100%;box-sizing:border-box;margin:0 0 10px;padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--fg);font:inherit}
+.umrank{position:relative;width:28px;color:var(--muted,#999);font-size:12px;text-align:right;flex:none}
 .umgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px;margin-top:14px}
 .umbox{background:var(--bg2,#1b1724);border:1px solid var(--line);border-radius:12px;padding:14px}.umbox h3{margin:0 0 10px;font-size:15px}
 .umrow{position:relative;display:flex;align-items:center;gap:8px;padding:6px 8px;font-size:13.5px;border-radius:6px;overflow:hidden}
@@ -1490,7 +1492,8 @@ document.addEventListener("click",e=>{if(e.target.closest("[data-adminreload]"))
 // one account: everything it has written or voted on Fanreelz
 /* ===== Statistics from Umami (visitors, pages, sources, countries, devices), read by the server for admins ===== */
 const admSecTabs=()=>`<div class="fmtbar" style="margin:8px 0 14px">${[["accounts","Accounts"],["stats","Statistics"]].map(([k,l])=>`<button class="${(state.adminSec||"accounts")===k?"on":""}" data-adminsec="${k}">${l}</button>`).join("")}</div>`;
-const umami={};let umamiRange="7d";
+const umami={},umamiAll={};let umamiRange="7d",umamiMore=null,umamiQ="";
+async function loadUmamiAll(k,r){const key=k+"|"+r;umamiAll[key]={loading:true};try{umamiAll[key]={...(await modCall({action:"umami",range:r,metric:k})),at:Date.now()}}catch(e){umamiAll[key]={error:String(e.message||e)}}if(state.view==="admin"&&state.adminSec==="stats")render()}
 async function loadUmami(r){umami[r]={loading:true};try{umami[r]={...(await modCall({action:"umami",range:r})),at:Date.now()}}catch(e){umami[r]={error:String(e.message||e),at:Date.now()}}if(state.view==="admin"&&state.adminSec==="stats")render()}
 function renderUmami(){
   const r=umamiRange,U=umami[r];if(!U||(!U.loading&&Date.now()-(U.at||0)>60e3))loadUmami(r);
@@ -1503,6 +1506,20 @@ function renderUmami(){
     <li>In Cloudflare: <b>Workers & Pages</b> → <b>fanreelz</b> → <b>Settings</b> → <b>Variables and Secrets</b> → <b>Add</b>: type <b>Secret</b>, name <code>UMAMI_API_KEY</code>, paste the key → <b>Deploy</b>.</li>
     <li>Come back here and press Refresh.</li></ol></div>`;return}
   if(U.error){$("#main").innerHTML=head+`<p class="vmeta" style="color:#ff6b6b">Couldn't read Umami: ${esc(U.error)}</p>`;return}
+  if(umamiMore){const k=umamiMore,key=k+"|"+r,A=umamiAll[key];if(!A||(!A.loading&&Date.now()-(A.at||0)>60e3))loadUmamiAll(k,r);
+    const titles={pages:"Pages",entries:"Entry pages",referrers:"Where visitors come from",countries:"Countries",devices:"Devices",browsers:"Browsers",os:"Operating systems",events:"Events"};
+    let cn2=null;try{cn2=new Intl.DisplayNames(["en"],{type:"region"})}catch(e){}
+    const nm=x=>k==="countries"?(x?(cn2?.of(x)||x):"Unknown"):k==="referrers"?(x||"Direct / none"):(x||"Unknown");
+    const rows=(A?.rows||[]).map(x=>({...x,n:String(nm(x.x))})),q=umamiQ.trim().toLowerCase(),shown=q?rows.filter(x=>x.n.toLowerCase().includes(q)):rows;
+    const top=Math.max(1,...rows.map(x=>x.y)),tot=rows.reduce((a,x)=>a+x.y,0);
+    $("#main").innerHTML=head+`<button class="btn ghost" data-umback="">← All statistics</button>
+      <div class="umbox" style="margin-top:12px"><h3>${titles[k]} <small class="vmeta" style="font-weight:500">${rows.length.toLocaleString("sv-SE")} in total</small></h3>
+      <input class="umsearch" type="search" placeholder="Search ${esc(titles[k].toLowerCase())}…" value="${esc(umamiQ)}" data-umq="" aria-label="Search">
+      ${!A||A.loading&&!A.rows?`<p class="vmeta">Loading…</p>`:A.error?`<p class="vmeta" style="color:#ff6b6b">${esc(A.error)}</p>`:
+        (shown.slice(0,state.umLimit||100).map((x,i)=>`<div class="umrow"><span class="umbar" style="width:${x.y/top*100}%"></span><span class="umrank">${rows.indexOf(x)+1}</span><span class="umname" title="${esc(x.n)}">${esc(x.n)}</span><b>${nf(x.y)}</b><small>${tot?Math.round(x.y/tot*100):0}%</small></div>`).join("")||`<p class="vmeta">Nothing matches.</p>`)+
+        (shown.length>(state.umLimit||100)?`<button class="btn ghost" data-ummorerows="" style="margin-top:10px">Show more (${(shown.length-(state.umLimit||100)).toLocaleString("sv-SE")} left)</button>`:"")}</div>`;
+    const inp=$("[data-umq]");if(inp&&umamiQFocus){inp.focus();inp.setSelectionRange(inp.value.length,inp.value.length)}
+    return}
   const S=U.stats,P=U.prev,bounce=S.visits?S.bounces/S.visits*100:0,avg=S.visits?S.totaltime/S.visits:0;
   const delta=(a,b)=>{if(!P||!b||r==="all")return "";const d=(a-b)/b*100;return `<small style="color:${d>=0?"#3ecf8e":"#ff6b6b"};font-weight:600">${d>=0?"▲":"▼"} ${Math.abs(d).toFixed(0)}%</small>`};
   const cards=[[nf(U.active||0),"online now",""],[nf(S.visitors),"unique visitors",delta(S.visitors,P?.visitors)],[nf(S.visits),"visits (sessions)",delta(S.visits,P?.visits)],[nf(S.pageviews),"page views",delta(S.pageviews,P?.pageviews)],[bounce.toFixed(0)+"%","bounce rate",""],[dur(avg),"avg. visit",""]];
@@ -1519,16 +1536,21 @@ function renderUmami(){
   let cn=null;try{cn=new Intl.DisplayNames(["en"],{type:"region"})}catch(e){}
   const name={pages:x=>x,referrers:x=>x||"Direct / none",countries:x=>x?(cn?.of(x)||x):"Unknown",devices:x=>x||"Unknown",browsers:x=>x||"Unknown",os:x=>x||"Unknown",events:x=>x,entries:x=>x};
   const list=(k,title)=>{const a=U[k]||[];if(!a.length)return "";const top=Math.max(...a.map(x=>x.y),1),tot=a.reduce((s,x)=>s+x.y,0);
-    return `<div class="umbox"><h3>${title}</h3>${a.slice(0,10).map(x=>`<div class="umrow"><span class="umbar" style="width:${x.y/top*100}%"></span><span class="umname">${esc(String(name[k](x.x)||"–"))}</span><b>${nf(x.y)}</b><small>${tot?Math.round(x.y/tot*100):0}%</small></div>`).join("")}</div>`};
+    return `<div class="umbox"><h3>${title}${a.length>=10?`<button class="seeall" data-ummore="${k}">See all</button>`:""}</h3>${a.slice(0,10).map(x=>`<div class="umrow"><span class="umbar" style="width:${x.y/top*100}%"></span><span class="umname">${esc(String(name[k](x.x)||"–"))}</span><b>${nf(x.y)}</b><small>${tot?Math.round(x.y/tot*100):0}%</small></div>`).join("")}</div>`};
   $("#main").innerHTML=head+`<div class="adm-cards">${cards.map(([n,l,d])=>`<div class="adm-card"><b>${n}</b><span>${l} ${d}</span></div>`).join("")}</div>
     <div class="umbox" style="margin-top:14px">${chart}</div>
     <div class="umgrid">${list("pages","Pages")}${list("entries","Entry pages")}${list("referrers","Where visitors come from")}${list("countries","Countries")}${list("devices","Devices")}${list("browsers","Browsers")}${list("os","Operating systems")}${list("events","Events")}</div>
     <p class="vmeta" style="margin-top:12px;font-size:12px">${r==="all"?`All time since ${U.from?new Date(U.from).toLocaleDateString("sv-SE"):"the start"}`:`Compared with the previous ${({"24h":"24 hours","7d":"7 days","30d":"30 days","90d":"90 days","365d":"year"})[r]}`} · updated ${new Date(U.at).toLocaleTimeString("sv-SE")} · <a href="https://cloud.umami.is" target="_blank" rel="noopener">Open Umami ↗</a></p>`;
 }
 document.addEventListener("click",e=>{
-  const sc=e.target.closest("[data-adminsec]");if(sc){e.preventDefault();state.adminSec=sc.dataset.adminsec;render();return}
+  const sc=e.target.closest("[data-adminsec]");if(sc){e.preventDefault();state.adminSec=sc.dataset.adminsec;umamiMore=null;render();return}
   const ur=e.target.closest("[data-umrange]");if(ur){e.preventDefault();umamiRange=ur.dataset.umrange;render();return}
-  if(e.target.closest("[data-umreload]")){e.preventDefault();loadUmami(umamiRange);return}});
+  if(e.target.closest("[data-umreload]")){e.preventDefault();loadUmami(umamiRange);if(umamiMore)loadUmamiAll(umamiMore,umamiRange);return}
+  const um=e.target.closest("[data-ummore]");if(um){e.preventDefault();umamiMore=um.dataset.ummore;umamiQ="";state.umLimit=100;render();scrollTo(0,0);return}
+  if(e.target.closest("[data-umback]")){e.preventDefault();umamiMore=null;umamiQ="";render();return}
+  if(e.target.closest("[data-ummorerows]")){e.preventDefault();state.umLimit=(state.umLimit||100)+200;render();return}});
+let umamiQFocus=false;
+document.addEventListener("input",e=>{if(!e.target.matches?.("[data-umq]"))return;umamiQ=e.target.value;state.umLimit=100;umamiQFocus=true;render();umamiQFocus=false});
 /* one account's saved data, including its private watch history (read by the server for admins) */
 const adminAct={};
 async function loadAdminAct(uid){adminAct[uid]={loading:true};try{const r=await modCall({action:"activity",uid});adminAct[uid]=r.error?{err:r.error}:{docs:r.docs||[],at:Date.now()}}catch(e){adminAct[uid]={err:String(e.message||e)}}

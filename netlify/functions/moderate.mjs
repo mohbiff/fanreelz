@@ -119,6 +119,9 @@ export default async (req) => {
       }
       return [];
     };
+    // "See all" for one list: just that metric, up to 1,000 rows
+    const ONE = { pages: ["path", "url"], entries: ["entry"], referrers: ["referrer"], countries: ["country"], devices: ["device"], browsers: ["browser"], os: ["os"], events: ["event"] };
+    if (body.metric && ONE[body.metric]) return json({ metric: body.metric, rows: await metric(ONE[body.metric], 1000), from: startAt });
     try {
       const [stats, prev, active, series, pages, referrers, countries, devices, browsers, os, events, entries] = await Promise.all([
         get("/stats", range),
