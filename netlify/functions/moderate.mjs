@@ -67,6 +67,52 @@ export default async (req) => {
     if (!r.ok) return json({ error: "Supabase " + r.status }, 500);
     return json({ docs: await r.json() });
   }
+  if (body.action === "umami") {
+    // Umami Cloud statistics for the admin page. The API key stays on the server (setting UMAMI_API_KEY in Cloudflare).
+    const apiKey = Netlify.env.get("UMAMI_API_KEY");
+    const site = Netlify.env.get("UMAMI_WEBSITE_ID") || "d8274143-7ceb-4717-aa02-13bfb95bfbf3";
+    if (!apiKey) return json({ error: "no-key" });
+    const base = (Netlify.env.get("UMAMI_API_URL") || "https://api.umami.is/v1") + "/websites/" + site;
+    const days = { "24h": 1, "7d": 7, "30d": 30, "90d": 90 }[body.range] || 7;
+    const endAt = Date.now(), startAt = endAt - days * 864e5, prevStart = startAt - days * 864e5;
+    const tz = "Europe/Stockholm", unit = days === 1 ? "hour" : "day";
+    const get = async (path, q = {}) => {
+      const u = new URL(base + path);
+      for (const [k, v] of Object.entries(q)) u.searchParams.set(k, String(v));
+      const r = await fetch(u, { headers: { Accept: "application/json", Authorization: "Bearer " + apiKey, "x-umami-api-key": apiKey } });
+      if (!r.ok) throw new Error("Umami " + r.status + " " + path);
+      return r.json();
+    };
+    const range = { startAt, endAt };
+    // a number from either version of Umami ({value, prev} in v2, plain numbers in v3)
+    const num = (x) => (x && typeof x === "object" ? +x.value || 0 : +x || 0);
+    const metric = async (types, limit = 10) => {
+      for (const type of types) {
+        try { const d = await get("/metrics", { ...range, type, limit, timezone: tz }); if (Array.isArray(d)) return d.map((x) => ({ x: x.x ?? x.name ?? "", y: +x.y || +x.value || 0 })); } catch (e) {}
+      }
+      return [];
+    };
+    try {
+      const [stats, prev, active, series, pages, referrers, countries, devices, browsers, os, events, entries] = await Promise.all([
+        get("/stats", range),
+        get("/stats", { startAt: prevStart, endAt: startAt }).catch(() => null),
+        get("/active").catch(() => null),
+        get("/pageviews", { ...range, unit, timezone: tz }).catch(() => null),
+        metric(["path", "url"], 15), metric(["referrer"]), metric(["country"]), metric(["device"]), metric(["browser"]), metric(["os"]), metric(["event"]), metric(["entry"]),
+      ]);
+      const pick = (o) => ({ pageviews: num(o?.pageviews), visitors: num(o?.visitors), visits: num(o?.visits), bounces: num(o?.bounces), totaltime: num(o?.totaltime) });
+      const pts = (a) => (Array.isArray(a) ? a.map((p) => ({ t: p.x ?? p.t, n: +p.y || 0 })) : []);
+      return json({
+        range: body.range || "7d", unit, site,
+        stats: pick(stats), prev: prev ? pick(prev) : null,
+        active: num(active?.visitors ?? active?.x ?? (Array.isArray(active) ? active[0]?.x : active)),
+        series: { pageviews: pts(series?.pageviews), visitors: pts(series?.sessions ?? series?.visitors) },
+        pages, referrers, countries, devices, browsers, os, events, entries,
+      });
+    } catch (e) {
+      return json({ error: String(e.message || e) });
+    }
+  }
   if (body.action === "views") {
     // Fanreelz's own view counts (table film_views), only for admins
     const key = Netlify.env.get("SUPABASE_SERVICE_ROLE_KEY"), h = { apikey: key };
