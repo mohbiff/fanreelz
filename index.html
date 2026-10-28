@@ -2751,14 +2751,14 @@ function needAccount(reason){
   openSignin(reason);return false;
 }
 function openProfile(){
-  const rated=Object.entries(myRatings).map(([id,r])=>({f:findFilm(id),r})).filter(x=>x.f).sort((a,b)=>b.r-a.r);
+  const rated=Object.keys(myRatings).filter(id=>findFilm(id));
   openModal(`<div class="dlg" role="dialog" aria-modal="true" aria-label="Your profile"><div class="row"><img class="avatar" id="pAv" alt="" style="width:48px;height:48px"><h2 id="pName"></h2></div>
     <div class="vmeta">${rated.length} films rated · ${mySubs.length} submitted · signed in with ${sb?(acct.me.provider==="discord"?"Discord":acct.me.provider==="google"?"Google":"your account"):"your Claude account"}</div>
-    ${rated.length?`<ul class="plist">${rated.map(x=>`<li data-open="${esc(x.f.id)}"><span>${esc(x.f.title)}</span><span style="color:var(--star)">${"★".repeat(x.r)}</span></li>`).join("")}</ul>`:`<p class="vmeta">Nothing rated yet.</p>`}
-    <div class="row"><button class="btn ghost" data-close>Close</button><button class="btn ghost" data-user="${esc(acct.uid)}">Your profile</button>${sb?`<button class="btn ghost" data-switch>Switch account</button><button class="btn ghost" data-signout>Sign out</button>`:""}</div>
+    <div class="row"><button class="btn ghost" data-user="${esc(acct.uid)}">Your profile</button><button class="btn ghost" data-myratings>Your ratings</button>${sb?`<button class="btn ghost" data-switch>Switch account</button><button class="btn ghost" data-signout>Sign out</button>`:""}<button class="btn ghost" data-close>Close</button></div>
     ${sb?`<div class="switchbox" id="switchBox" hidden><b>Switch to another account</b><p class="vmeta" style="margin:4px 0 10px">You're signed out of this one and can pick any Google or Discord account.</p>
       <div class="row"><button class="btn" data-switchto="google">Google account</button><button class="btn" data-switchto="discord">Discord account</button></div></div>`:""}</div>`,
     e=>{if(e.target.closest("[data-signout]")){sbSignOut();return}
+      if(e.target.closest("[data-myratings]")){closeModal();go({view:"home",feed:"mine",cat:null,char:null});return}
       if(e.target.closest("[data-switch]")){const b=$("#switchBox");if(b)b.hidden=!b.hidden;return}
       const sw=e.target.closest("[data-switchto]");if(sw){sbSwitch(sw.dataset.switchto);return}const u=e.target.closest("[data-user]");if(u){closeModal();go({view:"user",user:u.dataset.user,utab:"liked"});return}const o=e.target.closest("[data-open]");if(o){closeModal();go({view:"watch",film:o.dataset.open})}});
   $("#pAv").src=acct.me.avatarUrl;$("#pName").textContent=acct.me.name||"Your profile";
