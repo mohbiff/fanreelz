@@ -54,7 +54,11 @@ export default {
       // pages get their own title, description and preview; browsers must always check for a newer version of a page
       const page = await withSeo(req, await env.ASSETS.fetch(req), env, ctx);
       if (!(page.headers.get("Content-Type") || "").includes("text/html")) return page;
-      const out = new Response(page.body, page); out.headers.set("Cache-Control", "no-cache"); return out;
+      const out = new Response(page.body, page); out.headers.set("Cache-Control", "no-cache");
+      // the visitor's country (two letters, no other details), so the page can put films in the local language first
+      const cc = String(req.cf?.country || "").toUpperCase();
+      if (!/^[A-Z]{2}$/.test(cc)) return out;
+      return new HTMLRewriter().on("head", { element(e) { e.prepend(`<meta name="fr-cc" content="${cc}">`, { html: true }); } }).transform(out);
     }
     useEnv(env);
     const cacheable = req.method === "GET" && !url.searchParams.has("debug");

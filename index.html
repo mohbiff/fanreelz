@@ -871,6 +871,54 @@ function findFilm(id){
 }
 const groupOf=catId=>GROUPS.find(g=>g.cats.some(c=>c.id===catId));
 const catName=id=>CATS.find(c=>c.id===id)?.name||id;
+/* Films in the visitor's language first.
+   The catalogue doesn't store a language, so it is read from the title (its script, special letters and common words).
+   The visitor's languages come from the browser plus the country Cloudflare sees (a Swede with an English browser still counts as Swedish).
+   Ranking: the visitor's own language first, then English (and titles that can't be told apart), then other languages much lower. Nothing is hidden. */
+const LANG_W={sv:"och med på är för inte som det av till när om den sista saga sagan kortfilm svensk svenska tecknad",no:"og ikke på er til med norsk",da:"og ikke på er til med dansk",
+  fi:"ja ei lyhytelokuva tekoäly suomi suomeksi",de:"und der die das mit nicht ist ein eine kurzfilm zeichentrick ki-film deutsch",
+  fr:"le la les des de et une du avec pour est court métrage dessin animé français",es:"el los las del de la y con para una película cortometraje corto español",
+  pt:"os do da dos de com para uma não filme feito curta português dublado",it:"il gli della del di la con per una cortometraggio italiano",
+  nl:"de het een en van met niet korte nederlands",pl:"na się nie krótki polski",tr:"ve bir ile için yapay zeka kısa türkçe",
+  id:"dan yang di dengan untuk ini pendek buatan kecerdasan",en:"the of and in with is to my his her from vs on at for by but it its this that if all new last first die will"};
+const LANG_SETS=Object.fromEntries(Object.entries(LANG_W).map(([k,v])=>[k,new Set(v.split(" "))]));
+// words used by several languages count less than words only one language uses
+const LANG_SHARED=(()=>{const n={};for(const s of Object.values(LANG_SETS))for(const w of s)n[w]=(n[w]||0)+1;return n})();
+const LANG_CHARS=[[/[ăâîșțşţ]/,"ro"],[/[ěščřžůť]/,"cs"],[/[őű]/,"hu"],[/[ąęłńśźż]/,"pl"],[/[ğışİ]/,"tr"],[/[ơưđạảấầẩẫậắằẳẵặẹẻẽếềểễệỉịọỏốồổỗộớờởỡợụủứừửữựỳỵỷỹ]/,"vi"],[/[ãõ]/,"pt"],[/ñ|¿|¡/,"es"],[/ß/,"de"],[/[øæ]/,"no"],[/å/,"sv"],[/[äö]/,"sv1"]];
+function detectLang(t){
+  t=String(t||"");
+  if(/[؀-ۿ]/.test(t))return /[پچژگ]/.test(t)?"fa":/[ٹڈڑںے]/.test(t)?"ur":"ar";
+  if(/[֐-׿]/.test(t))return "he";
+  if(/[぀-ヿ]/.test(t))return "ja";
+  if(/[가-힯ᄀ-ᇿ]/.test(t))return "ko";
+  if(/[一-鿿]/.test(t))return "zh";
+  if(/[Ѐ-ӿ]/.test(t))return /[іїєґ]/i.test(t)?"uk":"ru";
+  if(/[Ͱ-Ͽ]/.test(t))return "el";
+  if(/[฀-๿]/.test(t))return "th";
+  if(/[ऀ-ॿ]/.test(t))return "hi";
+  if(/[ঀ-৿]/.test(t))return "bn";
+  if(/[஀-௿]/.test(t))return "ta";
+  if(/[ఀ-౿]/.test(t))return "te";
+  const low=t.toLowerCase(),sc={};
+  for(const [re,l] of LANG_CHARS)if(re.test(low)){const k=l.replace("1","");sc[k]=(sc[k]||0)+(l.endsWith("1")?1:2)}
+  for(const w of low.split(/[^\p{L}-]+/u))if(w)for(const [l,s] of Object.entries(LANG_SETS))if(s.has(w))sc[l]=(sc[l]||0)+(LANG_SHARED[w]>1?.6:1.6);
+  // Hindi and other languages written in Latin letters rarely give themselves away: those stay "en" (neutral)
+  let best="en",bv=0;for(const [l,v] of Object.entries(sc))if(l!=="en"&&v>bv){best=l;bv=v}
+  return bv>=1.5&&bv>(sc.en||0)?best:"en";
+}
+const langOf=f=>f._lang||(f._lang=detectLang(f.title));
+const CC_LANG={SE:"sv",NO:"no",DK:"da",FI:"fi",IS:"is",DE:"de",AT:"de",CH:"de",LI:"de",FR:"fr",BE:"fr",LU:"fr",MC:"fr",NL:"nl",ES:"es",MX:"es",AR:"es",CO:"es",CL:"es",PE:"es",VE:"es",EC:"es",GT:"es",CU:"es",BO:"es",DO:"es",HN:"es",PY:"es",SV:"es",NI:"es",CR:"es",PA:"es",UY:"es",
+  BR:"pt",PT:"pt",AO:"pt",MZ:"pt",IT:"it",PL:"pl",TR:"tr",RU:"ru",BY:"ru",KZ:"ru",UA:"uk",GR:"el",CY:"el",CZ:"cs",RO:"ro",MD:"ro",HU:"hu",IL:"he",IR:"fa",PK:"ur",JP:"ja",KR:"ko",CN:"zh",TW:"zh",HK:"zh",MO:"zh",IN:"hi",BD:"bn",ID:"id",TH:"th",VN:"vi",
+  SA:"ar",AE:"ar",EG:"ar",MA:"ar",DZ:"ar",TN:"ar",LY:"ar",IQ:"ar",JO:"ar",LB:"ar",SY:"ar",PS:"ar",KW:"ar",QA:"ar",BH:"ar",OM:"ar",YE:"ar",SD:"ar"};
+const normLang=l=>{l=String(l||"").toLowerCase().split(/[-_]/)[0];return l==="nb"||l==="nn"?"no":l};
+const MY_LANGS=(()=>{const s=new Set();try{for(const l of (navigator.languages&&navigator.languages.length?navigator.languages:[navigator.language]))if(l)s.add(normLang(l))}catch(e){}
+  try{const cc=document.querySelector('meta[name="fr-cc"]')?.content;if(cc&&CC_LANG[cc])s.add(CC_LANG[cc])}catch(e){}
+  s.delete("en");s.delete("");return s})();
+let langFirst=store.get("fr_langfirst",true);
+// 2 = the visitor's language, 1 = English or can't tell, 0 = another language
+const langTier=f=>{if(!langFirst)return 1;const l=langOf(f);return MY_LANGS.has(l)?2:l==="en"?1:0};
+const LANG_MULT=[.12,1,3];
+const langMult=f=>LANG_MULT[langTier(f)];
 function counts(f){const c=[...f.counts];const x=community[f.id];if(x)x.forEach((v,i)=>c[i]+=v);return c}
 let statMemo=null;
 function stats(f){if(statMemo){const m=statMemo.get(f);if(m)return m;const r=statsRaw(f);statMemo.set(f,r);return r}return statsRaw(f)}
@@ -884,7 +932,7 @@ const daysSince=t=>Math.max(0,Math.floor((Date.now()-t)/864e5));
 const I={user:'<circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/>',clock:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',like:'<path d="M7 11v9H4v-9zM7 11l4-8a2 2 0 0 1 2 2v4h5.5a2 2 0 0 1 2 2.3l-1.2 7A2 2 0 0 1 17.3 20H7"/>',share:'<path d="M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7M16 6l-4-4-4 4M12 2v13"/>',info:'<circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 7.5v.5"/>',home:'<path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/>',top:'<path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/>',
   fresh:'<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>',mine:'<path d="M5 4h14v17l-7-4-7 4z"/>',list:'<path d="M9 6h11M9 12h11M9 18h11M4.5 6h.01M4.5 12h.01M4.5 18h.01"/>',trend:'<path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/>',live:'<circle cx="12" cy="12" r="2.5"/><path d="M7.8 7.8a6 6 0 0 0 0 8.4M16.2 7.8a6 6 0 0 1 0 8.4M5 5a10 10 0 0 0 0 14M19 5a10 10 0 0 1 0 14"/>',prem:'<rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4"/>',tv:'<rect x="3" y="6" width="18" height="13" rx="2"/><path d="M8 3l4 3 4-3"/>',battle:'<path d="M14.5 17.5L3 6V3h3l11.5 11.5M13 19l6-6M16 16l4 4M9.5 17.5L21 6V3h-3L6.5 14.5M11 19l-6-6M8 16l-4 4"/>',req:'<path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-4 10.5c.8.8 1 1.5 1 2.5h6c0-1 .2-1.7 1-2.5A6 6 0 0 0 12 3z"/>',trophy:'<path d="M8 4h8v5a4 4 0 0 1-8 0zM8 6H4a3 3 0 0 0 4 4M16 6h4a3 3 0 0 1-4 4M12 13v4M8 21h8M10 17h4v4"/>',bot:'<rect x="4" y="8" width="16" height="11" rx="3"/><path d="M12 4v4M9 13h.01M15 13h.01M9 16h6"/>',save:'<path d="M4 6h12M4 12h12M4 18h7M18 14v7M14.5 17.5h7"/>',flag:'<path d="M5 21V4h11l-2 4 2 4H5"/>',shield:'<path d="M12 3l8 3v6c0 4.5-3.4 8-8 9-4.6-1-8-4.5-8-9V6z"/><path d="M8.5 12l2.5 2.5 4.5-5"/>',short:'<rect x="7" y="3" width="10" height="18" rx="2.5"/><path d="M11 9.5v5l3.5-2.5z"/>',series:'<rect x="3" y="8" width="14" height="12" rx="2"/><path d="M7 5h12a2 2 0 0 1 2 2v9"/>',heart:'<path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/>',film:'<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M7 5v14M17 5v14M3 9.5h4M17 9.5h4M3 14.5h4M17 14.5h4"/>'};
 let trendMemo=null;
-const filmTrend=f=>{if(trendMemo){const v=trendMemo.get(f);if(v!==undefined)return v}const v=(stats(f).n+(f.real?3000:0)+(f.boost||0))*Math.exp(-(f.days??14)/21);trendMemo?.set(f,v);return v};
+const filmTrend=f=>{if(trendMemo){const v=trendMemo.get(f);if(v!==undefined)return v}const v=(stats(f).n+(f.real?3000:0)+(f.boost||0))*Math.exp(-(f.days??14)/21)*langMult(f);trendMemo?.set(f,v);return v};
 function trendingByGroup(){const per={};for(const f of allFilms())per[f.cat]=(per[f.cat]||0)+filmTrend(f);const m={};for(const g of GROUPS)m[g.name]=g.cats.map(c=>({c,s:per[c.id]||0})).sort((a,b)=>b.s-a.s);return m}
 const icon=k=>`<svg class="i" viewBox="0 0 24 24">${I[k]}</svg>`;
 
@@ -983,6 +1031,7 @@ function renderGuide(){renderTabbar();
       return `<hr><h4>${esc(g.name)}<span class="trendlbl">Trending</span></h4>`+top.map((c,i)=>`<button class="gi cat ${state.cat===c.id?"on":""}" data-cat="${c.id}"><span class="dot" style="background:hsl(${hueOf(c.id)},50%,42%)">${esc(c.name[0])}</span><span>${esc(c.name)}</span></button>`).join("")+
         (g.cats.length>3?`<button class="gi cat more" data-browse="${esc(g.name)}">${icon("list")}<span>All ${g.cats.length} in ${esc(g.name)}</span></button>`:"");}).join("")+
     `<hr><button class="toggle ${state.family?"on":""}" data-family="" role="switch" aria-checked="${state.family}"><span>Family-friendly mode</span><span class="sw"></span></button>
+     <button class="toggle ${langFirst?"on":""}" data-langfirst="" role="switch" aria-checked="${langFirst}"><span>Films in my language first</span><span class="sw"></span></button>
      <div class="newsbox"><b>Weekly top 10</b><span class="vmeta" style="font-size:13px">The best new AI fan films in your inbox every Monday.</span><button class="btn ${settings.newsletter?"ghost":""}" data-news="">${settings.newsletter?"✓ Subscribed":"Subscribe"}</button></div>`;
 }
 function renderWho(){
@@ -997,8 +1046,8 @@ function feedList(){
     (!q||[f.title,f.char,catName(f.cat),byName(f),f.tool].join(" ").toLowerCase().includes(q)));
   if(state.feed==="mine"&&!state.cat)list=list.filter(f=>myRatings[f.id]);
   if(state.cat&&state.lore!=="all")list=list.filter(f=>loreOf(f)===state.lore);
-  const k=state.feed==="new"?f=>f.days:f=>-stats(f).bayes;
-  return list.sort((a,b)=>k(a)-k(b));
+  const k=state.feed==="new"?f=>f.days:f=>-stats(f).bayes,L=state.feed==="mine"?()=>0:langTier;
+  return list.sort((a,b)=>(L(b)-L(a))||(k(a)-k(b)));
 }
 function renderHome(){
   const c=CATS.find(c=>c.id===state.cat);
@@ -1016,7 +1065,7 @@ function renderHome(){
   let rest=list;
   if(showShelf){
     const top=[...list].sort((a,b)=>filmTrend(b)-filmTrend(a)).slice(0,6);
-    const ids=new Set(top.map(f=>f.id));rest=list.filter(f=>!ids.has(f.id)).sort((a,b)=>a.days-b.days);
+    const ids=new Set(top.map(f=>f.id));rest=list.filter(f=>!ids.has(f.id)).sort((a,b)=>(langTier(b)-langTier(a))||(a.days-b.days));
     html+=`<section class="shelf"><h2>${icon("trend")} Trending ${c?"in "+esc(state.char||c.name):state.group==="All"?"now":"in "+esc(state.group)}</h2><div class="shelfrow">${top.map((f,i)=>card(f,i+1)).join("")}</div></section>`;
   }
   if(showShelf&&!c&&state.group==="All")GROUPS.forEach(g=>{const ids=new Set(g.cats.map(x=>x.id));
@@ -2039,7 +2088,7 @@ function forYouList(kind){
   const I=interests(),seen=new Set(myHistory.slice(0,60).map(x=>x.id));
   const pool=allFilms().filter(f=>(kind==="short")===(f.format==="short")&&!seen.has(f.id)&&!(f.age));
   const g={};for(const [k,v] of Object.entries(I.cat)){const gn=groupOf(k)?.name;if(gn)g[gn]=(g[gn]||0)+v}
-  return pool.map(f=>({f,s:(I.cat[f.cat]||0)+(I.ch[f.cat+"|"+f.char]||0)*1.2+(g[groupOf(f.cat)?.name]||0)*.25+Math.log1p(filmTrend(f))*.15+dayJitter(f.id)*.6}))
+  return pool.map(f=>({f,s:(I.cat[f.cat]||0)+(I.ch[f.cat+"|"+f.char]||0)*1.2+(g[groupOf(f.cat)?.name]||0)*.25+Math.log1p(filmTrend(f))*.15+dayJitter(f.id)*.6+[-2.5,0,1.5][langTier(f)]}))
     .sort((a,b)=>b.s-a.s).map(x=>x.f);
 }
 function forYouHtml(){
@@ -2094,7 +2143,7 @@ function renderHomeF(){
     if(shelves&&!c&&state.group==="All"&&interests().n>=2){const fy=forYouList("film").slice(0,8);
       if(fy.length>=3)html+=`<section class="shelf"><h2>✨ For you<button class="seeall" data-group="${FOR_YOU}">See all</button></h2><div class="shelfrow">${fy.map(f=>card(f)).join("")}</div></section>`}
     if(shelves&&films.length>=6){
-      const top=[...films].sort((a,b)=>filmTrend(b)-filmTrend(a)).slice(0,5);const ids=new Set(top.map(f=>f.id));rest=films.filter(f=>!ids.has(f.id)).sort((a,b)=>a.days-b.days);
+      const top=[...films].sort((a,b)=>filmTrend(b)-filmTrend(a)).slice(0,5);const ids=new Set(top.map(f=>f.id));rest=films.filter(f=>!ids.has(f.id)).sort((a,b)=>(langTier(b)-langTier(a))||(a.days-b.days));
       html+=`<section class="shelf"><h2>${icon("trend")} Trending films ${c?"in "+esc(state.char||c.name):state.group==="All"?"":"in "+esc(state.group)}</h2><div class="shelfrow">${top.map((f,i)=>card(f,i+1)).join("")}</div></section>`;
     }
     // Full-length films (20 min or more): something to sit down and watch like a real movie
@@ -2166,7 +2215,8 @@ function renderShorts(){
       ${spSheet==="rate"?`<div class="ratebox spbig" role="group" aria-label="Rate this short"><span>${mine?"Your rating":"Rate"}</span>${[1,2,3,4,5].map(k=>`<button data-rate="${k}" class="${k<=mine?"on":""}" aria-label="${k} stars">★</button>`).join("")}</div><p class="vmeta" style="margin:10px 0 0">${s.n?`★ ${s.avg.toFixed(1)} from ${fmtN(s.n)} ratings`:"No ratings yet. Be the first."}</p>`:spSheet==="comments"?commentsHtml(f):""}
     </div>`)}}
 }
-function shuffledShorts(skip){const a=allFilms().filter(x=>x.format==="short"&&!skip.includes(x.id)).map(x=>x.id);for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+// random order, but weighted: shorts in the visitor's language come up far more often, other languages rarely
+function shuffledShorts(skip){return allFilms().filter(x=>x.format==="short"&&!skip.includes(x.id)).map(x=>({id:x.id,k:Math.pow(Math.random(),1/langMult(x))})).sort((a,b)=>b.k-a.k).map(x=>x.id)}
 function stepShort(d){
   let list=state.shortList||[];const i=Math.max(0,state.shortI+d);
   if(i>=list.length){const more=shuffledShorts(list.slice(-4));if(!more.length)return;list=state.shortList=[...list,...more]}
@@ -2196,8 +2246,8 @@ function renderSeries(){
 }
 function nextFor(f){
   if(f.seriesId&&findSeries(f.seriesId)){const s=findSeries(f.seriesId);const eps=s?s.episodes:[];const i=eps.findIndex(e=>e.id===f.id);
-    const after=eps.slice(i+1),others=allFilms().filter(x=>x.format!=="short"&&x.cat===f.cat).sort((a,b)=>stats(b).bayes-stats(a).bayes);return [...after,...others].slice(0,14)}
-  return allFilms().filter(x=>x.id!==f.id&&x.format!=="short").sort((a,b)=>((b.cat===f.cat)-(a.cat===f.cat))||(stats(b).bayes-stats(a).bayes)).slice(0,14);
+    const after=eps.slice(i+1),others=allFilms().filter(x=>x.format!=="short"&&x.cat===f.cat).sort((a,b)=>(langTier(b)-langTier(a))||(stats(b).bayes-stats(a).bayes));return [...after,...others].slice(0,14)}
+  return allFilms().filter(x=>x.id!==f.id&&x.format!=="short").sort((a,b)=>((b.cat===f.cat)-(a.cat===f.cat))||(langTier(b)-langTier(a))||(stats(b).bayes-stats(a).bayes)).slice(0,14);
 }
 function creatorContent(key,films){
   const fl=films.filter(f=>f.format!=="short"),sh=films.filter(f=>f.format==="short"),se=allSeries().filter(s=>(s.byId||s.by)===key);
@@ -2821,6 +2871,7 @@ document.addEventListener("click",async e=>{
   if(x=A("[data-ctab]")){state.ctab=x.dataset.ctab;render();return}
   if(A("#submitBtn2")){openSubmit();return}
   if(A("[data-submitcat]")){openSubmit();return}
+  if(A("[data-langfirst]")){langFirst=!langFirst;store.set("fr_langfirst",langFirst);trendMemo=null;statMemo=null;state.shortList=null;render();toast(langFirst?"Films in your language come first":"Films in all languages are mixed equally");return}
   if(A("[data-family]")){state.family=!state.family;store.set("fr_family",state.family);render();toast(state.family?"Family-friendly mode on":"Family-friendly mode off");return}
   if(A("[data-family-info]")){toast("Marked as suitable for younger viewers");return}
   if(A("[data-news]")){toggleNewsletter();return}
