@@ -141,6 +141,9 @@ main{min-width:0;padding-right:max(16px,env(safe-area-inset-right,0px));padding-
 .adm-card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:2px}
 .adm-card b{font-size:26px;line-height:1.1}.adm-card span{color:var(--muted);font-size:13px}
 .adm-list{display:flex;flex-direction:column;gap:6px}
+.affrow{display:flex;align-items:center;gap:12px;margin-top:12px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:11px 14px;color:var(--fg);text-decoration:none}
+.affrow:hover{background:var(--hover)}.affrow b{font-size:14px}.affrow em{font-style:normal;margin-left:auto;font-weight:700;color:var(--accent);white-space:nowrap}
+.affnote{font-size:11px;color:var(--muted);margin:4px 2px 0}
 .umplus{font-style:normal;color:#3ecf8e;font-size:.6em;font-weight:700;margin-left:6px;vertical-align:middle}
 .adm-link{font-size:12.5px;color:var(--accent);text-decoration:none;overflow-wrap:anywhere;margin-top:2px}.adm-link:hover{text-decoration:underline}
 .adm-row[data-adminuser]{cursor:pointer}.adm-row[data-adminuser]:hover{border-color:var(--accent)}
@@ -1171,7 +1174,7 @@ function renderWatch(){
       <div class="dist">${[5,4,3,2,1].map(k=>`<span>${k}★</span><span class="bar"><i style="width:${max?s.c[k-1]/max*100:0}%"></i></span><span>${fmtN(s.c[k-1])}</span>`).join("")}</div>
       <div class="tags"><button data-cat="${f.cat}">${esc(catName(f.cat))}</button><button data-cat="${f.cat}" data-char-go="${esc(f.char)}">${esc(f.char)}</button><button data-cat="${f.cat}" data-lore-go="${loreOf(f)}">${loreOf(f)==="lore"?"Lore-accurate":"What if"}</button>${isKids(f)?'<button data-family-info="">Family-friendly</button>':""}</div>
       ${f.real||f.yt||f.tt||f.ig||f.vm||f.dm||f.byId?"":`<div class="howmade"><b>How it was made</b><div class="vmeta">Tool: ${esc(f.tool)} · Prompt shared by ${esc(byName(f)||"YouTube creator")}</div><div class="prompt" id="promptText">${esc(promptOf(f))}</div><div class="row"><button class="btn ghost" data-copyprompt="" style="padding:6px 12px">Copy prompt</button></div></div>`}
-      <div class="vmeta" style="font-size:12px">The video plays at the source, so the creator gets the views.</div></div>
+      <div class="vmeta" style="font-size:12px">The video plays at the source, so the creator gets the views.</div></div>${affRow(f)}
     <div class="wactions">${f.real||f.yt||f.tt||f.ig||f.vm||f.dm?"":`<button data-tip="${esc(f.byId||f.by)}" data-tipfilm="${esc(f.id)}">${icon("heart")}Tip</button>`}<button data-save="${esc(f.id)}">${icon("save")}Save</button><button data-share="${esc(f.id)}">${icon("share")}Share</button><button data-later="${esc(f.id)}" class="${myLater.some(x=>x.id===f.id)?"on":""}">${icon("clock")}${myLater.some(x=>x.id===f.id)?"Saved":"Watch later"}</button>${isVerified(f)?"":`<button data-claimorig="${esc(f.id)}">${icon("shield")}Is this yours?</button>`}<button data-report="${esc(f.id)}">${icon("flag")}Report re-upload</button>${isMod&&f.yt?`<button data-adminhide="${esc(f.id)}">${icon("shield")}Hide from Fanreelz</button>`:""}</div>
   </div><aside class="upnext"><h3>${f.seriesId&&findSeries(f.seriesId)?"Next episodes":"Up next"}</h3>${next.map(x=>`<button class="mini-v" data-open="${esc(x.id)}"><div class="thumb"><canvas data-f="${esc(x.id)}"></canvas><span class="len">${esc(x.len)}</span></div><div class="vtext"><h4 class="vtitle">${esc(x.title)}</h4><div class="vmeta">${esc(byName(x)||"YouTube creator")}</div><div class="vmeta">${metaLine(x)}</div></div></button>`).join("")}</aside></div>`;
   $(".watch>div").insertAdjacentHTML("beforeend",commentsHtml(f));
@@ -1471,6 +1474,7 @@ function renderAdmin(){
   clearInterval(adminTimer);adminTimer=setInterval(()=>{if(state.view!=="admin"){clearInterval(adminTimer);return}loadAdminUsers()},30000); // live: refreshes every 30 s
   if(!isMod){$("#main").innerHTML=`<div class="empty">This page is only for Fanreelz admins.</div>`;return}
   if(state.adminSec==="videos"){renderAdminVideos();return}
+  if(state.adminSec==="aff"){renderAdminAff();return}
   if(!adminUsers&&!adminUsersErr){$("#main").innerHTML=`<div class="empty">Loading accounts…</div>`;if(Date.now()-adminUsersAt>3000)loadAdminUsers();return}
   const U=adminUsers||[],day=864e5,now=Date.now(),since=d=>U.filter(u=>now-Date.parse(u.created)<d*day).length,by=p=>U.filter(u=>u.provider===p).length;
   const d=x=>x?new Date(x).toLocaleString("sv-SE",{dateStyle:"short",timeStyle:"short"}):"–";
@@ -1498,6 +1502,38 @@ document.addEventListener("click",e=>{if(e.target.closest("[data-adminreload]"))
   if(e.target.closest("[data-adminactall]")){e.preventDefault();state.adminActAll=true;render()}});
 // one account: everything it has written or voted on Fanreelz
 /* ===== Statistics from Umami (visitors, pages, sources, countries, devices), read by the server for admins ===== */
+/* Affiliate links: one quiet row under the film, chosen by what the film is about (its world, the AI tool in its title)
+   and otherwise by what this viewer watches most. Everything is decided in the browser: no tracking, no cookies. */
+let AFF=[];
+fetch("/api/affiliates").then(r=>r.json()).then(d=>{AFF=Array.isArray(d.list)?d.list:[];if(AFF.length&&state.view==="watch")render()}).catch(()=>{});
+const AFF_TOOLS=["kling","sora","veo","runway","higgsfield","hailuo","minimax","pika","luma","midjourney","seedance","wan"];
+function affPick(f){if(!AFF.length||!f)return null;const by=t=>AFF.find(x=>x.target===t);
+  let a=by("cat:"+f.cat);if(a)return a;
+  const t=(f.title+" "+(f.tool||"")).toLowerCase();for(const tool of AFF_TOOLS)if(new RegExp("\\b"+tool+"\\b").test(t)&&(a=by("tool:"+tool)))return a;
+  try{const I=interests();const top=Object.entries(I.cat).sort((x,y)=>y[1]-x[1]).slice(0,3);for(const [c] of top)if(a=by("cat:"+c))return a}catch(e){}
+  return by("all")||null}
+function affRow(f){const a=affPick(f);if(!a)return "";let host="";try{host=new URL(a.url).hostname.replace(/^www\./,"")}catch(e){}
+  return `<a class="affrow" href="${esc(a.url)}" target="_blank" rel="sponsored noopener" data-umami-event="affiliate-click" data-umami-event-target="${esc(a.target)}"><span style="display:flex;flex-direction:column"><b>${esc(a.label)}</b><small class="vmeta" style="font-size:12px">${esc(host)}</small></span><em>Open ↗</em></a><p class="affnote">Affiliate link: Fanreelz may earn a commission.</p>`}
+/* Admin: affiliate links */
+let affEdit=null,affMsg="";
+function renderAdminAff(){
+  if(!affEdit){$("#main").innerHTML=admSecTabs()+`<div class="empty">Loading…</div>`;modCall({action:"affget"}).then(r=>{affEdit=(r.list||[]).map(x=>({...x}));render()});return}
+  const opts=t=>`<option value="all" ${t==="all"?"selected":""}>Any film (fallback)</option><optgroup label="AI tool named in the title">${AFF_TOOLS.map(x=>`<option value="tool:${x}" ${t==="tool:"+x?"selected":""}>${x}</option>`).join("")}</optgroup><optgroup label="Category">${CATS.slice().sort((a,b)=>a.name.localeCompare(b.name)).map(c=>`<option value="cat:${esc(c.id)}" ${t==="cat:"+c.id?"selected":""}>${esc(c.name)}</option>`).join("")}</optgroup>`;
+  $("#main").innerHTML=`${admSecTabs()}<h1 class="sect-h" style="font-size:22px">${icon("heart")} Affiliate links</h1>
+  <p class="vmeta" style="margin:0 0 14px;max-width:720px">One quiet row under each film. The page picks the link for the film's category first, then for an AI tool named in its title, then for what the viewer watches most, then "Any film". Nothing shows until you add a link.</p>
+  <div class="adm-list">${affEdit.map((a,i)=>`<div class="adm-row" style="gap:8px">
+    <select data-affi="${i}" data-affk="target" aria-label="Where it shows" style="flex:1 1 180px">${opts(a.target)}</select>
+    <input data-affi="${i}" data-affk="label" value="${esc(a.label||"")}" placeholder="Text, e.g. Get Elden Ring" aria-label="Text" maxlength="60" style="flex:2 1 200px">
+    <input data-affi="${i}" data-affk="url" value="${esc(a.url||"")}" placeholder="https://your affiliate link" aria-label="Link" style="flex:3 1 260px">
+    <button class="chip" data-affdel="${i}">Remove</button></div>`).join("")||`<p class="vmeta">No links yet.</p>`}</div>
+  <div style="display:flex;gap:8px;margin-top:12px;align-items:center"><button class="btn ghost" data-affadd="">+ Add link</button><button class="btn" data-affsave="">Save</button><span class="vmeta">${esc(affMsg)}</span></div>`}
+document.addEventListener("input",e=>{const el=e.target.closest?.("[data-affi]");if(!el||!affEdit)return;const a=affEdit[+el.dataset.affi];if(a)a[el.dataset.affk]=el.value});
+document.addEventListener("change",e=>{const el=e.target.closest?.("select[data-affi]");if(!el||!affEdit)return;const a=affEdit[+el.dataset.affi];if(a)a.target=el.value});
+document.addEventListener("click",e=>{
+  if(e.target.closest("[data-affadd]")){e.preventDefault();affEdit.push({target:"all",label:"",url:""});affMsg="";render();return}
+  const d=e.target.closest("[data-affdel]");if(d){e.preventDefault();affEdit.splice(+d.dataset.affdel,1);affMsg="";render();return}
+  if(e.target.closest("[data-affsave]")){e.preventDefault();affMsg="Saving…";render();
+    modCall({action:"affset",list:affEdit}).then(r=>{if(r.ok){affEdit=r.list.map(x=>({...x}));AFF=r.list;affMsg=`Saved ${r.list.length} link${r.list.length===1?"":"s"} (rows without text or an https link are left out). Live within 5 minutes.`}else affMsg="Couldn't save: "+(r.error||"error");render()})}});
 /* Admin: every video Fanreelz has added (importer, links, members), newest first */
 let admVidFmt="all";
 function renderAdminVideos(){
@@ -1518,7 +1554,7 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-admvidfmt]
     modCall({action:"hidechannel",channel:ch}).then(r=>{if(r.ok){for(let i=FILMS.length-1;i>=0;i--)if(FILMS[i].db&&FILMS[i].by===ch)FILMS.splice(i,1);filmIdx.k="";autoCache.k="";toast(`Hid ${r.hidden} videos from ${ch}`);render()}else toast("Couldn't hide: "+(r.error||"error"))});return}
   if(e.target.closest("[data-admcleanup]")){e.preventDefault();if(!confirm("Hide every video whose title the current filters reject (gameplay, voice changers, trolling…)?"))return;toast("Cleaning up…");
     modCall({action:"cleanup"}).then(r=>{if(r.ok){toast(`Hid ${r.hidden} videos`);catLoaded="";loadCatalog().then(render).catch(()=>{})}else toast("Couldn't clean up: "+(r.error||"error"))})}});
-const admSecTabs=()=>`<div class="fmtbar" style="margin:8px 0 14px">${[["accounts","Accounts"],["videos","New videos"],["stats","Statistics"]].map(([k,l])=>`<button class="${(state.adminSec||"accounts")===k?"on":""}" data-adminsec="${k}">${l}</button>`).join("")}</div>`;
+const admSecTabs=()=>`<div class="fmtbar" style="margin:8px 0 14px">${[["accounts","Accounts"],["videos","New videos"],["stats","Statistics"],["aff","Affiliate"]].map(([k,l])=>`<button class="${(state.adminSec||"accounts")===k?"on":""}" data-adminsec="${k}">${l}</button>`).join("")}</div>`;
 const umami={},umamiAll={};let umamiRange="7d",umamiMore=null,umamiQ="",umamiFlt=null,umBase={};
 const umFkey=()=>umamiFlt?"|"+umamiFlt.k+"="+umamiFlt.v:"";
 async function loadUmamiAll(k,r){const key=k+"|"+r+umFkey();umamiAll[key]={loading:true};try{umamiAll[key]={...(await modCall({action:"umami",range:r,metric:k,filter:umamiFlt?{[umamiFlt.k]:umamiFlt.v}:undefined})),at:Date.now()}}catch(e){umamiAll[key]={error:String(e.message||e)}}if(state.view==="admin"&&state.adminSec==="stats")render()}

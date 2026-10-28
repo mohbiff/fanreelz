@@ -4,6 +4,7 @@
 // Needs: ADMIN_EMAILS (comma-separated sign-in emails of the admins), SUPABASE_URL, SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY (secret).
 import importYoutube, { searchNow, addByLinks } from "./import-youtube.mjs";
 import { BLOCK_RE } from "./lib/classify.mjs";
+import { readAffiliates } from "./affiliates.mjs";
 import showdown from "./showdown.mjs";
 const json = (o, status = 200) => new Response(JSON.stringify(o), { status, headers: { "Content-Type": "application/json", "Cache-Control": "no-store" } });
 
@@ -178,6 +179,17 @@ export default async (req) => {
     v.x = "";
     const r = await fetch(url, { method: "PATCH", headers: h, body: JSON.stringify({ data, updated_at: new Date().toISOString() }) });
     return r.ok ? json({ ok: true, removed: 1 }) : json({ error: "save failed " + r.status }, 500);
+  }
+  if (body.action === "affget") return json({ list: await readAffiliates().catch(() => []) });
+  if (body.action === "affset") {
+    // affiliate links: where each shows (a category, an AI tool named in the title, or any film), its text and its link
+    const list = (Array.isArray(body.list) ? body.list : []).slice(0, 200).map((x) => ({
+      target: String(x?.target || ""), label: String(x?.label || "").trim().slice(0, 60), url: String(x?.url || "").trim().slice(0, 600),
+    })).filter((x) => /^(cat:[\w-]{1,40}|tool:[a-z0-9]{1,20}|all)$/.test(x.target) && x.label && /^https:\/\/[^\s"'<>]+$/.test(x.url));
+    const key = Netlify.env.get("SUPABASE_SERVICE_ROLE_KEY"), h = { apikey: key, "Content-Type": "application/json", Prefer: "resolution=merge-duplicates,return=minimal" };
+    if (!key.startsWith("sb_secret_")) h.Authorization = "Bearer " + key;
+    const r = await fetch(Netlify.env.get("SUPABASE_URL") + "/rest/v1/import_state", { method: "POST", headers: h, body: JSON.stringify([{ key: "affiliates", value: { list, at: new Date().toISOString() } }]) });
+    return r.ok ? json({ ok: true, list }) : json({ error: "save failed " + r.status }, 500);
   }
   if (body.action === "hidechannel" || body.action === "cleanup") {
     const key = Netlify.env.get("SUPABASE_SERVICE_ROLE_KEY"), base = Netlify.env.get("SUPABASE_URL") + "/rest/v1/";
