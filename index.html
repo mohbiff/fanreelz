@@ -166,10 +166,11 @@ main{min-width:0;padding-right:max(16px,env(safe-area-inset-right,0px));padding-
 .fpset{padding:10px 12px;background:rgba(18,14,26,.6);border-top:1px solid rgba(255,255,255,.08);display:flex;flex-direction:column;gap:8px;color:#fff;font-size:13px}.fpset-row{display:flex;flex-wrap:wrap;align-items:center;gap:6px}.fpset-row b{min-width:62px}.fpset-t{display:flex;gap:8px;align-items:center;cursor:pointer}
 /* full screen: the black edges beside the 16:9 picture are Fanreelz's own space (not on top of the video):
    double tap there for -10 s / +10 s like YouTube, single tap shows or hides the bar */
-.fpzone{display:none;flex-direction:column;gap:6px;position:absolute;top:0;bottom:82px;width:56px;color:rgba(255,255,255,.55);font:600 11px/1 inherit;cursor:pointer;user-select:none;align-items:center;justify-content:center;z-index:2;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+.fpzone{display:none;flex-direction:column;gap:6px;position:absolute;top:0;bottom:82px;width:56px;color:rgba(255,255,255,.9);font:700 12px/1 inherit;transition:opacity .4s;cursor:pointer;user-select:none;align-items:center;justify-content:center;z-index:2;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
 .fpzone.l{left:0}.fpzone.r{right:0}
 body.wfs .fpzone,.player.hasbar:fullscreen .fpzone,body.fsmode .fpzone{display:flex}
-.fpzone i{font-style:normal;font-size:22px}.fpzone:active{color:#fff}
+.fpzone i{font-style:normal;font-size:24px;width:42px;height:42px;display:grid;place-items:center;border-radius:50%;background:rgba(255,255,255,.16)}.fpzone:active i{background:rgba(255,255,255,.3)}
+.fpbar.fshide~.fpzone{opacity:0}.fpbar.fshide~.fpzone.flash{opacity:1}
 
 .fpzone b{position:absolute;top:22%;opacity:0;color:#fff;font:700 18px/1 inherit;background:rgba(255,255,255,.14);padding:10px 12px;border-radius:999px;transition:opacity .2s}
 .fpzone.flash b{opacity:1}
@@ -2353,7 +2354,7 @@ let fpT=null;
 let fpZoneSum=0,fpZoneLast=null;
 /* full screen: the strips beside the picture (outside YouTube's player) skip 10 s per tap; quick taps add up */
 document.addEventListener("click",e=>{const z=e.target.closest?.("[data-fpzone]");if(!z)return;e.preventDefault();
-  const d=+z.dataset.fpzone;if(fpZoneLast!==z)fpZoneSum=0;fpZoneLast=z;fpZoneSum+=d;fpSeek(fp.t+d);
+  const d=+z.dataset.fpzone;if(fpZoneLast!==z)fpZoneSum=0;fpZoneLast=z;fpZoneSum+=d;fpSeek(fp.t+d);if(typeof fpShow==="function")fpShow();
   const b=z.querySelector("b");b.textContent=(fpZoneSum>0?"+":"")+fpZoneSum+" s";z.classList.add("flash");
   clearTimeout(z._ft);z._ft=setTimeout(()=>{z.classList.remove("flash");fpZoneSum=0;fpZoneLast=null},900)},true);
 /* Phone: swipe up on the control bar for full screen, swipe down to leave it (like YouTube).
