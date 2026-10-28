@@ -180,6 +180,17 @@ export default async (req) => {
     const r = await fetch(url, { method: "PATCH", headers: h, body: JSON.stringify({ data, updated_at: new Date().toISOString() }) });
     return r.ok ? json({ ok: true, removed: 1 }) : json({ error: "save failed " + r.status }, 500);
   }
+  if (body.action === "searches") {
+    // what visitors search for: most searched, searches with no results, and the latest
+    const key = Netlify.env.get("SUPABASE_SERVICE_ROLE_KEY"), h = { apikey: key };
+    if (!key.startsWith("sb_secret_")) h.Authorization = "Bearer " + key;
+    const base = Netlify.env.get("SUPABASE_URL") + "/rest/v1/search_log?select=q,n,zero,last_at";
+    const get = async (q) => { const r = await fetch(base + q, { headers: h }); if (!r.ok) throw new Error("Supabase " + r.status + (r.status === 404 ? " (run the search_log SQL first)" : "")); return r.json(); };
+    try {
+      const [top, missing, recent] = await Promise.all([get("&order=n.desc&limit=200"), get("&zero=gt.0&order=zero.desc&limit=100"), get("&order=last_at.desc&limit=50")]);
+      return json({ top, missing, recent });
+    } catch (e) { return json({ error: String(e.message || e) }); }
+  }
   if (body.action === "affget") return json({ list: await readAffiliates().catch(() => []) });
   if (body.action === "affset") {
     // affiliate links: where each shows (a category, an AI tool named in the title, or any film), its text and its link

@@ -1476,6 +1476,7 @@ function renderAdmin(){
   if(!isMod){$("#main").innerHTML=`<div class="empty">This page is only for Fanreelz admins.</div>`;return}
   if(state.adminSec==="videos"){renderAdminVideos();return}
   if(state.adminSec==="aff"){renderAdminAff();return}
+  if(state.adminSec==="searches"){renderAdminSearches();return}
   if(!adminUsers&&!adminUsersErr){$("#main").innerHTML=`<div class="empty">Loading accounts…</div>`;if(Date.now()-adminUsersAt>3000)loadAdminUsers();return}
   const U=adminUsers||[],day=864e5,now=Date.now(),since=d=>U.filter(u=>now-Date.parse(u.created)<d*day).length,by=p=>U.filter(u=>u.provider===p).length;
   const d=x=>x?new Date(x).toLocaleString("sv-SE",{dateStyle:"short",timeStyle:"short"}):"–";
@@ -1515,6 +1516,23 @@ function affPick(f){if(!AFF.length||!f)return null;const by=t=>AFF.find(x=>x.tar
   return by("all")||null}
 function affRow(f){const a=affPick(f);if(!a)return "";let host="";try{host=new URL(a.url).hostname.replace(/^www\./,"")}catch(e){}
   return `<a class="affrow" href="${esc(a.url)}" target="_blank" rel="sponsored noopener" data-umami-event="affiliate-click" data-umami-event-target="${esc(a.target)}"><span style="display:flex;flex-direction:column"><b>${esc(a.label)}</b><small class="vmeta" style="font-size:12px">${esc(host)}</small></span><em>Open ↗</em></a><p class="affnote">Affiliate link: Fanreelz may earn a commission.</p>`}
+/* Admin: what visitors search for */
+let admSearch=null,admSearchAt=0;
+function renderAdminSearches(){
+  if(!admSearch||Date.now()-admSearchAt>60e3){if(!admSearch)$("#main").innerHTML=admSecTabs()+`<div class="empty">Loading searches…</div>`;admSearchAt=Date.now();
+    modCall({action:"searches"}).then(r=>{admSearch=r;if(state.view==="admin"&&state.adminSec==="searches")render()});if(!admSearch)return}
+  const S=admSearch;
+  if(S.error){$("#main").innerHTML=admSecTabs()+`<p class="vmeta" style="color:#ff6b6b">${esc(S.error)}</p><p class="vmeta">Run the new "search_log" part of supabase/setup.sql in Supabase → SQL Editor once.</p>`;return}
+  const tot=(S.top||[]).reduce((a,x)=>a+(+x.n||0),0),max=Math.max(1,...(S.top||[]).map(x=>+x.n||0));
+  const row=(x,v,extra="")=>`<div class="umrow" data-admq="${esc(x.q)}" role="button" style="cursor:pointer" title="Search this on Fanreelz"><span class="umbar" style="width:${v/max*100}%"></span><span class="umname">${esc(x.q)}</span><b>${(+v).toLocaleString("sv-SE")}</b><small>${extra}</small></div>`;
+  $("#main").innerHTML=`${admSecTabs()}<h1 class="sect-h" style="font-size:22px">${icon("list")} Searches</h1>
+  <p class="vmeta" style="margin:0 0 14px">What visitors type in the search box (only the words, never who). Your own searches aren't counted. · ${tot.toLocaleString("sv-SE")} searches in total</p>
+  <div class="umgrid">
+   <div class="umbox"><h3>Most searched</h3>${(S.top||[]).slice(0,50).map(x=>row(x,x.n,x.zero>0?`<span style="color:#ff6b6b">${x.zero} no results</span>`:"")).join("")||`<p class="vmeta">No searches yet.</p>`}</div>
+   <div class="umbox"><h3>Searched, but nothing found <small class="vmeta" style="font-weight:500">ideas for new categories</small></h3>${(S.missing||[]).slice(0,50).map(x=>row(x,x.zero,"times")).join("")||`<p class="vmeta">Every search found something.</p>`}</div>
+   <div class="umbox"><h3>Latest searches</h3>${(S.recent||[]).map(x=>`<div class="umrow" data-admq="${esc(x.q)}" role="button" style="cursor:pointer"><span class="umname">${esc(x.q)}</span><small>${admAgo(Date.parse(x.last_at))}</small></div>`).join("")||`<p class="vmeta">No searches yet.</p>`}</div>
+  </div>`}
+document.addEventListener("click",e=>{const r=e.target.closest("[data-admq]");if(!r)return;e.preventDefault();const q=r.dataset.admq;$("#q").value=q;go({view:"home",feed:"home",q})});
 /* Admin: affiliate links */
 let affEdit=null,affMsg="";
 function renderAdminAff(){
@@ -1555,7 +1573,7 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-admvidfmt]
     modCall({action:"hidechannel",channel:ch}).then(r=>{if(r.ok){for(let i=FILMS.length-1;i>=0;i--)if(FILMS[i].db&&FILMS[i].by===ch)FILMS.splice(i,1);filmIdx.k="";autoCache.k="";toast(`Hid ${r.hidden} videos from ${ch}`);render()}else toast("Couldn't hide: "+(r.error||"error"))});return}
   if(e.target.closest("[data-admcleanup]")){e.preventDefault();if(!confirm("Hide every video whose title the current filters reject (gameplay, voice changers, trolling…)?"))return;toast("Cleaning up…");
     modCall({action:"cleanup"}).then(r=>{if(r.ok){toast(`Hid ${r.hidden} videos`);catLoaded="";loadCatalog().then(render).catch(()=>{})}else toast("Couldn't clean up: "+(r.error||"error"))})}});
-const admSecTabs=()=>`<div class="fmtbar" style="margin:8px 0 14px">${[["accounts","Accounts"],["videos","New videos"],["stats","Statistics"],["aff","Affiliate"]].map(([k,l])=>`<button class="${(state.adminSec||"accounts")===k?"on":""}" data-adminsec="${k}">${l}</button>`).join("")}</div>`;
+const admSecTabs=()=>`<div class="fmtbar" style="margin:8px 0 14px">${[["accounts","Accounts"],["videos","New videos"],["searches","Searches"],["stats","Statistics"],["aff","Affiliate"]].map(([k,l])=>`<button class="${(state.adminSec||"accounts")===k?"on":""}" data-adminsec="${k}">${l}</button>`).join("")}</div>`;
 const umami={},umamiAll={};let umamiRange="7d",umamiMore=null,umamiQ="",umamiFlt=null,umBase={};
 const umFkey=()=>umamiFlt?"|"+umamiFlt.k+"="+umamiFlt.v:"";
 async function loadUmamiAll(k,r){const key=k+"|"+r+umFkey();umamiAll[key]={loading:true};try{umamiAll[key]={...(await modCall({action:"umami",range:r,metric:k,filter:umamiFlt?{[umamiFlt.k]:umamiFlt.v}:undefined})),at:Date.now()}}catch(e){umamiAll[key]={error:String(e.message||e)}}if(state.view==="admin"&&state.adminSec==="stats")render()}
@@ -3321,7 +3339,9 @@ document.addEventListener("keydown",e=>{if(e.key==="Escape")closeModal()});
 document.addEventListener("submit",async e=>{
   if(e.target.id==="lcform"){e.preventDefault();const i=$("#lcinput");const v=i.value;i.value="";if(!(await sendLive(v)))i.value=v;i.focus();return}const fm=e.target.closest(".cmform");if(!fm)return;e.preventDefault();const btn=fm.querySelector('button[type="submit"]');btn.disabled=true;const ok=await postComment(fm.dataset.cparent,fm.querySelector("textarea").value);if(!ok&&document.body.contains(btn))btn.disabled=false});
 document.addEventListener("keydown",e=>{if(e.key==="Enter"&&(e.ctrlKey||e.metaKey)&&e.target.closest(".cmform")){e.preventDefault();e.target.closest(".cmform").requestSubmit()}});
-$("#sform").onsubmit=e=>{e.preventDefault();go({view:"home",feed:"home",q:$("#q").value.trim()})};
+$("#sform").onsubmit=e=>{e.preventDefault();const q=$("#q").value.trim();go({view:"home",feed:"home",q});
+  // count what people search for (only the words, never who); admins' own searches are left out
+  if(q.length>=2&&sb&&!isMod){let n=0;try{n=feedList().length+CATS.filter(c=>c.name.toLowerCase().includes(q.toLowerCase())).length}catch(x){}sb.rpc("add_search",{p_q:q.slice(0,60),p_zero:n===0}).then(()=>{},()=>{})}};
 $("#q").oninput=e=>{if(!e.target.value&&state.q)go({q:""})};
 let rt;addEventListener("resize",()=>{clearTimeout(rt);rt=setTimeout(()=>paintAll(),150)});
 Object.assign(state,parsePath());if(state.q)$("#q").value=state.q;

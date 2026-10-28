@@ -169,3 +169,19 @@ alter table public.docs drop constraint if exists docs_known_col;
 alter table public.docs add constraint docs_known_col check (
   col in ('ratings','submissions','votes','tips','comments','commentlikes','requests','upvotes','claims','playlists','follows','showdown','showdowns')
   or col like 'data/users/%');
+
+-- 10. What visitors search for (admins see it on the admin page). Only the words and counts are kept, never who searched.
+create table if not exists public.search_log (
+  q text primary key,
+  n bigint not null default 0,
+  zero bigint not null default 0,
+  last_at timestamptz not null default now()
+);
+alter table public.search_log enable row level security;
+create or replace function public.add_search(p_q text, p_zero boolean) returns void
+language sql security definer set search_path = public as $$
+  insert into public.search_log (q, n, zero) values (left(lower(btrim(p_q)), 60), 1, case when p_zero then 1 else 0 end)
+  on conflict (q) do update set n = public.search_log.n + 1, zero = public.search_log.zero + (case when p_zero then 1 else 0 end), last_at = now();
+$$;
+revoke all on function public.add_search(text, boolean) from public;
+grant execute on function public.add_search(text, boolean) to anon, authenticated;
