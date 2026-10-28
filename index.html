@@ -485,6 +485,8 @@ img.cav.uimg{object-fit:cover;background:var(--chip);display:block}
 .ratebox.spbig button{font-size:30px}
 @keyframes sheetin{from{transform:translateY(100%)}to{transform:none}}
 body.spfs{overflow:hidden}
+/* black behind the full-screen short, so the page never shows through while swiping to the next one */
+body.spfs::after{content:"";position:fixed;inset:0;background:#000;z-index:59}
 body.spfs .shorts-view .sp{position:fixed;inset:0;width:100vw;max-width:none;height:100vh;height:100dvh;border-radius:0;z-index:60;aspect-ratio:auto}
 body.spfs .tabbar,body.spfs .toast{z-index:61}
 body.spfs .tabbar{display:none}
@@ -2129,7 +2131,6 @@ function renderShorts(){
   if(spSlide){const sp=$(".sp");if(sp){sp.classList.add(spSlide>0?"slideup":"slidedown")}spSlide=0}
   if(!keepFrame){spPaused=false;spState=null}{const sp=$(".sp");if(sp){
     if(sp.querySelector("iframe"))sp.insertAdjacentHTML("beforeend",'<div class="spcatch" aria-hidden="true"></div><div class="spicon" aria-hidden="true"></div>');
-    if(f.yt&&sp.querySelector("iframe"))sp.insertAdjacentHTML("beforeend",`<a class="spyt" href="${esc(f.url||"https://www.youtube.com/watch?v="+f.yt)}" target="_blank" rel="noopener">${f.age?"<b>18+</b>":""}Watch on YouTube ↗</a>`);
     const nC=filmComments(f.id).length,full=document.body.classList.contains("spfs");
     sp.insertAdjacentHTML("beforeend",`<div class="sprail">
       <button data-spsheet="rate" aria-label="Rate"><span class="spb ${mine?"on":""}"><svg viewBox="0 0 24 24"><path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/></svg></span><small>${s.n?s.avg.toFixed(1):"Rate"}</small></button>
