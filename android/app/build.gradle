@@ -14,8 +14,9 @@ android {
         minSdk 23
         targetSdk 36
         // Every build from GitHub Actions gets a higher number automatically (Google Play needs that for each upload)
-        versionCode (System.getenv("VERSION_CODE") ?: "1").toInteger()
-        versionName "1.0." + (System.getenv("VERSION_CODE") ?: "1")
+        def vc = (System.getenv("VERSION_CODE") ?: "1").toInteger()
+        versionCode = vc
+        versionName = "1.0." + vc
 
         manifestPlaceholders = [
             hostName       : HOST,
