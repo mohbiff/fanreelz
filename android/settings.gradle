@@ -1,0 +1,18 @@
+// Fanreelz for Android: a Trusted Web Activity that opens fanreelz.com full screen, without a browser bar.
+// Built by GitHub Actions (.github/workflows/android.yml); no Android Studio needed.
+pluginManagement {
+    repositories {
+        google()
+        mavenCentral()
+        gradlePluginPortal()
+    }
+}
+dependencyResolutionManagement {
+    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+    repositories {
+        google()
+        mavenCentral()
+    }
+}
+rootProject.name = "Fanreelz"
+include ":app"

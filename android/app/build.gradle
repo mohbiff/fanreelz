@@ -1,0 +1,58 @@
+plugins {
+    id "com.android.application"
+}
+
+// The address the app opens. Change HOST only if the site moves to another domain.
+def HOST = "fanreelz.com"
+
+android {
+    namespace "com.fanreelz.app"
+    compileSdk 36
+
+    defaultConfig {
+        applicationId "com.fanreelz.app"
+        minSdk 23
+        targetSdk 36
+        // Every build from GitHub Actions gets a higher number automatically (Google Play needs that for each upload)
+        versionCode (System.getenv("VERSION_CODE") ?: "1").toInteger()
+        versionName "1.0." + (System.getenv("VERSION_CODE") ?: "1")
+
+        manifestPlaceholders = [
+            hostName       : HOST,
+            launchUrl      : "https://" + HOST + "/?source=android"
+        ]
+        resValue "string", "app_name", "Fanreelz"
+        // Digital Asset Links: tells Android that this app and fanreelz.com belong together, so no browser bar is shown
+        // (quotes are escaped because Android drops plain quotes in string resources)
+        resValue "string", "asset_statements", ('[{ "relation": ["delegate_permission/common.handle_all_urls"], "target": {"namespace": "web", "site": "https://' + HOST + '"}}]').replace('"', '\\"')
+    }
+
+    signingConfigs {
+        release {
+            // The upload key comes from GitHub secrets; without them the build is unsigned (for testing only)
+            def ks = System.getenv("KEYSTORE_FILE")
+            if (ks) {
+                storeFile file(ks)
+                storePassword System.getenv("KEYSTORE_PASSWORD")
+                keyAlias System.getenv("KEY_ALIAS") ?: "fanreelz"
+                keyPassword System.getenv("KEY_PASSWORD") ?: System.getenv("KEYSTORE_PASSWORD")
+            }
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            if (System.getenv("KEYSTORE_FILE")) signingConfig signingConfigs.release
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}
+
+dependencies {
+    implementation "com.google.androidbrowserhelper:androidbrowserhelper:2.5.0"
+}

@@ -25,6 +25,16 @@ const ROUTES = {
 // Schedules (see wrangler.jsonc): the importer every 10 minutes (it searches YouTube about once an hour), the showdown judge every hour at :41
 const CRONS = { "*/10 * * * *": importYoutube, "41 * * * *": showdown };
 
+// Digital Asset Links: proves that the Android app (Google Play) and fanreelz.com belong together, so the app shows no browser bar.
+// The first fingerprint is the upload key; add Google Play's "App signing key" SHA-256 from Play Console → Test and release → App integrity,
+// here or as ASSETLINKS_SHA256 in the Cloudflare dashboard (several can be given, separated by commas).
+const ANDROID_FINGERPRINTS = ["36:8C:F0:16:D1:F0:1E:25:15:FB:C2:F5:2D:5D:EB:25:2A:6A:52:17:0A:FD:83:FC:EB:6C:48:B5:F4:EA:D2:B9"];
+function assetLinks(env) {
+  const fps = [...ANDROID_FINGERPRINTS, ...String(env.ASSETLINKS_SHA256 || "").split(",").map((s) => s.trim().toUpperCase()).filter(Boolean)];
+  const body = [{ relation: ["delegate_permission/common.handle_all_urls"], target: { namespace: "android_app", package_name: "com.fanreelz.app", sha256_cert_fingerprints: [...new Set(fps)] } }];
+  return new Response(JSON.stringify(body, null, 2), { headers: { "Content-Type": "application/json", "Cache-Control": "public, max-age=3600", "Access-Control-Allow-Origin": "*" } });
+}
+
 const useEnv = (env) => { globalThis.Netlify = { env: { get: (k) => (env[k] == null ? undefined : String(env[k])) } }; };
 
 // How long Cloudflare may keep a function's answer, read from the same headers Netlify's CDN uses
@@ -45,6 +55,7 @@ export default {
       if (!job) return new Response("unknown job", { status: 404 });
       useEnv(env); return job(req);
     }
+    if (url.pathname === "/.well-known/assetlinks.json") return assetLinks(env);
     if (url.pathname === "/sitemap.xml") {
       const hit = await caches.default.match(req); if (hit) return hit;
       const res = await sitemap(env, ctx); ctx.waitUntil(caches.default.put(req, res.clone())); return res;

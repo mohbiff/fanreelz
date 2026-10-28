@@ -7,5 +7,6 @@ supabase
 worker
 wrangler.jsonc
 node_modules
+android
 *.md
 .wrangler
