@@ -176,6 +176,11 @@ main{min-width:0;padding-right:max(16px,env(safe-area-inset-right,0px));padding-
 /* phones: a see-through layer over the picture takes the finger before YouTube does — tap = play/pause, swipe down = miniplayer, up = full screen */
 .fpcatch{display:none;position:absolute;left:0;right:0;top:0;bottom:var(--fpbarh,72px);z-index:4;touch-action:none;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none}
 .fpzone{z-index:6}
+.fpcenter{display:none;position:absolute;left:50%;top:calc((100% - var(--fpbarh,72px))/2);transform:translate(-50%,-50%);z-index:6;width:68px;height:68px;border:0;border-radius:50%;background:rgba(0,0,0,.45);color:#fff;align-items:center;justify-content:center;padding:0;cursor:pointer;opacity:0;pointer-events:none;transition:opacity .2s}
+.fpcenter svg{width:34px;height:34px;fill:#fff;stroke:none}
+@media (max-width:860px){.player.hasbar:not(.ytctrl) .fpcenter{display:flex}}
+body.fsmode .player.hasbar:not(.ytctrl) .fpcenter,body.wfs .player.hasbar:not(.ytctrl) .fpcenter{display:flex}
+.player.fpctl .fpcenter,.player.fppaused .fpcenter{opacity:1;pointer-events:auto}.player.ended .fpcenter{display:none!important}
 .dragzone{display:none;position:absolute;left:0;width:56px;top:0;height:52px;z-index:7;touch-action:none}
 .dragzone button{position:absolute;left:6px;top:6px;width:40px;height:40px;border:0;border-radius:50%;background:rgba(0,0,0,.35);color:#fff;display:flex;align-items:center;justify-content:center;padding:0;cursor:pointer}
 .dragzone svg,#mini svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
@@ -2646,7 +2651,7 @@ const fpFrame=()=>document.querySelector(".player iframe");
 function fpCmd(func,args=[]){try{fpFrame().contentWindow.postMessage(JSON.stringify({event:"command",func,args}),"*")}catch(e){}}
 function fpMount(f){const pl=$(".player");if(!pl||pl.querySelector(".fpbar"))return;
   if(fp.film!==f.id){Object.assign(fp,{film:f.id,st:-1,t:0,dur:/^\d+:\d\d$/.test(f.len||"")?secs(f.len):0,drag:false,cc:false})}
-  const later=myLater.some(x=>x.id===f.id);pl.classList.add("hasbar");if(!pl.querySelector(".edgegrab"))pl.insertAdjacentHTML("afterbegin",'<div class="edgegrab" aria-hidden="true"></div>');pl.classList.toggle("ytctrl",ytCtrl());if(!pl.querySelector(".fpcatch"))pl.insertAdjacentHTML("afterbegin",'<div class="fpcatch" aria-hidden="true"></div>');if(!pl.querySelector(".dragzone"))pl.insertAdjacentHTML("afterbegin",'<div class="dragzone"><button data-minimize="" aria-label="Minimize"><svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></button></div>');
+  const later=myLater.some(x=>x.id===f.id);pl.classList.add("hasbar");if(!pl.querySelector(".edgegrab"))pl.insertAdjacentHTML("afterbegin",'<div class="edgegrab" aria-hidden="true"></div>');pl.classList.toggle("ytctrl",ytCtrl());if(!pl.querySelector(".fpcatch"))pl.insertAdjacentHTML("afterbegin",'<div class="fpcatch" aria-hidden="true"></div><button class="fpcenter" data-fpplay="" aria-label="Play or pause"></button>');if(!pl.querySelector(".dragzone"))pl.insertAdjacentHTML("afterbegin",'<div class="dragzone"><button data-minimize="" aria-label="Minimize"><svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></button></div>');
   pl.insertAdjacentHTML("beforeend",`<div class="fpbar"><div class="fptip" hidden><b></b></div><input class="fpseek" type="range" min="0" max="1000" value="0" aria-label="Seek">
     <div class="fprow"><button class="fpb" data-fpskip="-10" aria-label="Back 10 seconds"><svg viewBox="0 0 24 24"><path d="M4 12a8 8 0 1 0 2.4-5.7"/><path d="M4 4v4h4"/><text x="12" y="15.5" text-anchor="middle" font-size="7.5" font-weight="700" fill="currentColor" stroke="none">10</text></svg></button><button class="fpb" data-fpplay="" aria-label="Play or pause"></button><button class="fpb" data-fpskip="10" aria-label="Forward 10 seconds"><svg viewBox="0 0 24 24"><path d="M20 12a8 8 0 1 1-2.4-5.7"/><path d="M20 4v4h-4"/><text x="12" y="15.5" text-anchor="middle" font-size="7.5" font-weight="700" fill="currentColor" stroke="none">10</text></svg></button><span class="fpvolwrap"><button class="fpb" data-fpmute="" aria-label="Mute"></button><input class="fpvol" type="range" min="0" max="100" step="1" value="100" aria-label="Volume"></span><span class="fptime"></span><span class="fpsp"></span><button class="fpb fpscroll" data-fpscroll="" aria-label="Scroll down for details and comments"><svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg><span class="lbl">Comments &amp; more</span></button><span class="fpsp"></span>
     <button class="fpb" data-fpset="" aria-label="Settings"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>
@@ -2674,6 +2679,10 @@ function mdReset(){const el=md.el;md.el=null;document.body.classList.remove("mdr
 function mdEnd(){if(!md.el)return;const el=md.el,go2=md.p>.3||md.v>.5;
   el.style.transition="transform .22s cubic-bezier(.2,.8,.2,1),border-radius .22s";mdSet(go2?1:0);
   setTimeout(()=>{if(go2){minimize(true);mdReset()}else mdReset()},230)}
+// the big play/pause button in the middle: shows for 3 s after a tap (and stays while paused), like YouTube
+let fpCenterT=null;
+function fpCenter(){const pl=document.querySelector(".player");if(!pl)return;pl.classList.add("fpctl");clearTimeout(fpCenterT);fpCenterT=setTimeout(()=>pl.classList.remove("fpctl"),3000)}
+document.addEventListener("click",e=>{if(!e.target.closest?.(".fpcenter"))return;e.preventDefault();e.stopPropagation();fpToggle();fpCenter()},true);
 /* gestures on the picture (phones) */
 (()=>{let g=null;
   document.addEventListener("touchstart",e=>{g=null;if(!e.target.closest?.(".fpcatch")||e.touches.length>1)return;const t=e.touches[0];g={x:t.clientX,y:t.clientY,at:Date.now(),moved:false}},{passive:true});
@@ -2683,7 +2692,7 @@ function mdEnd(){if(!md.el)return;const el=md.el,go2=md.p>.3||md.v>.5;
       if(down&&!fpIsFs()){const pl=$(".player");if(pl){g.drag=true;g.y=t.clientY;mdStart(pl);return}}
       if(Math.abs(dy)<45)return;g=null;if(fpIsFs()){if(down)fpFull()}else fpFull()}},{passive:true});
   // a tap only shows the controls; pausing is the pause button's job
-  document.addEventListener("touchend",e=>{if(!g)return;if(g.drag){g=null;mdEnd();return}const tap=!g.moved&&Date.now()-g.at<400;g=null;if(tap){e.preventDefault?.();fpShow()}});
+  document.addEventListener("touchend",e=>{if(!g)return;if(g.drag){g=null;mdEnd();return}const tap=!g.moved&&Date.now()-g.at<400;g=null;if(tap){e.preventDefault?.();fpShow();fpCenter()}});
   document.addEventListener("touchcancel",()=>{if(g&&g.drag)mdEnd();g=null},{passive:true});
 })();
 const fpIsFs=()=>document.body.classList.contains("fsmode")||document.body.classList.contains("wfs");
@@ -2769,7 +2778,8 @@ function fpFsChange(){const on=!!(document.fullscreenElement||document.webkitFul
   if(on)window.scrollTo({top:0});else{try{screen.orientation?.unlock?.()}catch(e){}document.querySelector(".fpbar")?.classList.remove("fshide")}fpPaint();if(on)fpShow()}
 document.addEventListener("fullscreenchange",fpFsChange);document.addEventListener("webkitfullscreenchange",fpFsChange);
 function fpPaint(){const o=document.querySelector(".fpbar");if(!o)return;const playing=fpPlaying();
-  o.querySelectorAll("[data-fpplay]").forEach(b=>b.innerHTML=playing?FPI.pause:FPI.play);
+  document.querySelectorAll(".player [data-fpplay]").forEach(b=>b.innerHTML=playing?FPI.pause:FPI.play);
+  document.querySelector(".player")?.classList.toggle("fppaused",!playing);
   const m=o.querySelector("[data-fpmute]");if(m)m.innerHTML=fp.muted||!fp.vol?FPI.mute:FPI.vol;
   const vs=o.querySelector(".fpvol");if(vs&&!fp.volDrag){vs.value=fp.muted?0:fp.vol;vs.style.setProperty("--v",(fp.muted?0:fp.vol)+"%")}
   const tm=o.querySelector(".fptime");if(tm)tm.textContent=fpTime(fp.t)+(fp.dur?" / "+fpTime(fp.dur):"");
