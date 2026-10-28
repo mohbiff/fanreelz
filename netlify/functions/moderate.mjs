@@ -113,9 +113,12 @@ export default async (req) => {
     const range = { startAt, endAt };
     // a number from either version of Umami ({value, prev} in v2, plain numbers in v3)
     const num = (x) => (x && typeof x === "object" ? +x.value || 0 : +x || 0);
+    // optional filter for one country, device, browser or system ("which pages did visitors from Sweden open?")
+    const flt = {};
+    for (const [k, v] of Object.entries(body.filter || {})) if (["country", "device", "browser", "os"].includes(k) && /^[\w .()-]{1,40}$/.test(String(v))) flt[k] = String(v);
     const metric = async (types, limit = 10) => {
       for (const type of types) {
-        try { const d = await get("/metrics", { ...range, type, limit, timezone: tz }); if (Array.isArray(d)) return d.map((x) => ({ x: x.x ?? x.name ?? "", y: +x.y || +x.value || 0 })); } catch (e) {}
+        try { const d = await get("/metrics", { ...range, type, limit, timezone: tz, ...flt }); if (Array.isArray(d)) return d.map((x) => ({ x: x.x ?? x.name ?? "", y: +x.y || +x.value || 0 })); } catch (e) {}
       }
       return [];
     };
