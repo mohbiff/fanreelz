@@ -1519,6 +1519,15 @@ function affRow(f){const a=affPick(f);if(!a)return "";let host="";try{host=new U
   return `<a class="affrow" href="${esc(a.url)}" target="_blank" rel="sponsored noopener" data-umami-event="affiliate-click" data-umami-event-target="${esc(a.target)}"><span style="display:flex;flex-direction:column"><b>${esc(a.label)}</b><small class="vmeta" style="font-size:12px">${esc(host)}</small></span><em>Open ↗</em></a><p class="affnote">Affiliate link: Fanreelz may earn a commission.</p>`}
 /* Admin: what visitors search for */
 let admSearch=null,admSearchAt=0,admUmQ=null,admUmD={};
+/* searches grouped by country (from Umami's page views of /search?q=…, all time) */
+let admByCC=null;
+async function loadSearchByCC(){admByCC={loading:true};
+  try{const c=await modCall({action:"umami",range:"all",metric:"countries"});const ccs=(c.rows||[]).map(x=>x.x).filter(x=>/^[A-Z]{2}$/.test(x||"")).slice(0,15);
+    const out=await Promise.all(ccs.map(async cc=>{const r=await modCall({action:"umami",range:"all",metric:"queries",filter:{country:cc}});const m={};
+      for(const x of r.rows||[]){let q="";try{q=new URLSearchParams(String(x.x||"").replace(/^\?/,"")).get("q")||""}catch(e){}q=q.trim().toLowerCase();if(q)m[q]=(m[q]||0)+(+x.y||0)}
+      const items=Object.entries(m).sort((a,b)=>b[1]-a[1]);return {cc,items,total:items.reduce((a,x)=>a+x[1],0)}}));
+    admByCC={rows:out.filter(x=>x.total).sort((a,b)=>b.total-a.total)}}catch(e){admByCC={rows:[],error:String(e.message||e)}}
+  if(state.view==="admin"&&state.adminSec==="searches")render()}
 /* an earlier search's countries and devices, read from Umami (all time) */
 async function loadUmQDetail(q){const row=admUmQ?.rows?.find(x=>x.q===q);if(!row)return;admUmD[q]={loading:true};render();
   const add=(o,rows)=>{for(const x of rows||[])o[x.x||"Unknown"]=(o[x.x||"Unknown"]||0)+(+x.y||0)};const C={},D={};
@@ -1536,9 +1545,14 @@ function renderAdminSearches(){
   if(!admUmQ){admUmQ={loading:true};modCall({action:"umami",range:"all",metric:"queries"}).then(r=>{const m={};const raw={};for(const x of r.rows||[]){let q="";try{q=new URLSearchParams(String(x.x||"").replace(/^\?/,"")).get("q")||""}catch(e){}q=q.trim().toLowerCase();if(q){m[q]=(m[q]||0)+(+x.y||0);(raw[q]||(raw[q]=[])).push(String(x.x))}}
     admUmQ={rows:Object.entries(m).map(([q,n])=>({q,n,raw:raw[q]})).sort((a,b)=>b.n-a.n),error:r.error};if(state.view==="admin"&&state.adminSec==="searches")render()}).catch(e=>{admUmQ={rows:[],error:String(e)}})}
   const tot=(S.top||[]).reduce((a,x)=>a+(+x.n||0),0),max=Math.max(1,...(S.top||[]).map(x=>+x.n||0));
+  if(!admByCC)loadSearchByCC();
+  let cnB=null;try{cnB=new Intl.DisplayNames(["en"],{type:"region"})}catch(e){}const flagB=c=>String.fromCodePoint(...[...c].map(ch=>127397+ch.charCodeAt(0)));
+  const byCC=`<h2 class="sect-h" style="font-size:17px;margin:4px 0 10px">Searches by country <small class="vmeta" style="font-weight:500">all time, from Umami · includes your own</small></h2>`+
+    (admByCC?.loading?`<p class="vmeta">Loading…</p>`:admByCC?.rows?.length?`<div class="umgrid" style="margin-bottom:18px">${admByCC.rows.map(r=>`<div class="umbox"><h3>${flagB(r.cc)} ${esc(cnB?.of(r.cc)||r.cc)} <small class="vmeta" style="font-weight:500">${r.total} search${r.total===1?"":"es"}</small></h3>${r.items.slice(0,12).map(([q,n])=>`<div class="umrow" data-admq="${esc(q)}" role="button" style="cursor:pointer"><span class="umname">${esc(q)}</span><b>${n}</b></div>`).join("")}${r.items.length>12?`<p class="vmeta" style="font-size:12px">+${r.items.length-12} more</p>`:""}</div>`).join("")}</div>`:`<p class="vmeta" style="margin-bottom:18px">${esc(admByCC?.error||"No searches with a country yet.")}</p>`);
   const row=(x,v,extra="")=>`<div class="umrow" data-admq="${esc(x.q)}" role="button" style="cursor:pointer" title="Search this on Fanreelz"><span class="umbar" style="width:${v/max*100}%"></span><span class="umname">${esc(x.q)}</span><b>${(+v).toLocaleString("sv-SE")}</b><small>${extra}</small></div>`;
   $("#main").innerHTML=`${admSecTabs()}<h1 class="sect-h" style="font-size:22px">${icon("list")} Searches</h1>
   <p class="vmeta" style="margin:0 0 14px">What visitors type in the search box (only the words, never who). Your own searches aren't counted. · ${tot.toLocaleString("sv-SE")} searches in total</p>
+  ${byCC}<h2 class="sect-h" style="font-size:17px;margin:4px 0 10px">All countries</h2>
   <div class="umgrid">
    <div class="umbox"><h3>Most searched</h3>${(S.top||[]).slice(0,50).map(x=>row(x,x.n,x.zero>0?`<span style="color:#ff6b6b">${x.zero} no results</span>`:"")).join("")||`<p class="vmeta">No searches yet.</p>`}</div>
    <div class="umbox"><h3>Searched, but nothing found <small class="vmeta" style="font-weight:500">ideas for new categories</small></h3>${(S.missing||[]).slice(0,50).map(x=>row(x,x.zero,"times")).join("")||`<p class="vmeta">Every search found something.</p>`}</div>
