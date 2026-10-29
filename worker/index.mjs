@@ -13,6 +13,7 @@ import peak from "../netlify/functions/peak.mjs";
 import thumb from "../netlify/functions/thumb.mjs";
 import ytViews from "../netlify/functions/yt-views.mjs";
 import affiliates from "../netlify/functions/affiliates.mjs";
+import discordDaily from "../netlify/functions/discord-daily.mjs";
 import { withSeo, sitemap } from "./seo.mjs";
 
 const ROUTES = {
@@ -27,9 +28,9 @@ const ROUTES = {
   "/api/yt-views": ytViews,
   "/api/affiliates": affiliates,
 };
-// Schedules (see wrangler.jsonc): the importer every 10 minutes (it searches YouTube about once an hour), the showdown judge every hour at :41,
+// Schedules (see wrangler.jsonc): the Discord "AI video of the day" at 16:00 UTC, the importer every 10 minutes (it searches YouTube about once an hour), the showdown judge every hour at :41,
 // and every minute a look at how many are online (for the "most online at once" record)
-const CRONS = { "*/10 * * * *": importYoutube, "41 * * * *": showdown, "* * * * *": peak };
+const CRONS = { "*/10 * * * *": importYoutube, "41 * * * *": showdown, "* * * * *": peak, "0 16 * * *": discordDaily };
 
 // Digital Asset Links: proves that the Android app (Google Play) and fanreelz.com belong together, so the app shows no browser bar.
 // The first fingerprint is the upload key; add Google Play's "App signing key" SHA-256 from Play Console → Test and release → App integrity,
@@ -80,7 +81,7 @@ export default {
     // Scheduled jobs can also be started by hand: /api/run/showdown?key=RUN_KEY (like Netlify's "Run now")
     if (url.pathname.startsWith("/api/run/")) {
       if (!env.RUN_KEY || url.searchParams.get("key") !== env.RUN_KEY) return new Response("not allowed", { status: 403 });
-      const job = { showdown, "import-youtube": importYoutube }[url.pathname.slice(9)];
+      const job = { showdown, "import-youtube": importYoutube, "discord-daily": discordDaily }[url.pathname.slice(9)];
       if (!job) return new Response("unknown job", { status: 404 });
       useEnv(env); return job(req);
     }

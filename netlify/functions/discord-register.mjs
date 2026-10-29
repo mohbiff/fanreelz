@@ -8,6 +8,9 @@ const COMMANDS = [
   { name: "random", description: "A random AI fan film to watch", options: [cat("Game, anime, book or series")], ...everywhere },
   { name: "search", description: "Find AI fan films", options: [{ type: 3, name: "query", description: "What to look for, e.g. Arthas", required: true }], ...everywhere },
   { name: "showdown", description: "Who would win? The hottest Character Showdown", ...everywhere },
+  { name: "today", description: "Today's AI video of the day", ...everywhere },
+  { name: "daily", description: "Post a popular AI video in this channel every day", default_member_permissions: "32", integration_types: [0], contexts: [0],
+    options: [{ type: 3, name: "mode", description: "Turn it on (default) or off", required: false, choices: [{ name: "on", value: "on" }, { name: "off", value: "off" }] }] },
   { name: "fanreelz", description: "What the Fanreelz bot can do", ...everywhere },
 ];
 
@@ -18,6 +21,6 @@ export default async () => {
     method: "PUT", headers: { Authorization: "Bot " + token, "Content-Type": "application/json" }, body: JSON.stringify(COMMANDS),
   });
   const text = await r.text();
-  return new Response(r.ok ? `Done: ${COMMANDS.length} commands registered (/top, /random, /search, /showdown, /fanreelz). They can take a minute to show up in Discord.` : `Discord said ${r.status}: ${text.slice(0, 400)}`, { status: r.ok ? 200 : 500, headers: { "Content-Type": "text/plain; charset=utf-8" } });
+  return new Response(r.ok ? `Done: ${COMMANDS.length} commands registered (/top, /random, /search, /showdown, /today, /daily, /fanreelz). They can take a minute to show up in Discord.` : `Discord said ${r.status}: ${text.slice(0, 400)}`, { status: r.ok ? 200 : 500, headers: { "Content-Type": "text/plain; charset=utf-8" } });
 };
 export const config = { path: "/api/discord-register" };

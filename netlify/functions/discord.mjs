@@ -1,7 +1,8 @@
 // Fanreelz bot for Discord. Discord sends each slash command here (Interactions Endpoint URL = https://fanreelz.com/api/discord),
-// so no always-on server is needed. Commands: /top, /random, /search, /showdown, /fanreelz.
+// so no always-on server is needed. Commands: /top, /random, /search, /showdown, /today, /daily, /fanreelz.
 // Needs in Netlify: DISCORD_PUBLIC_KEY (from the Discord app's General Information page), SUPABASE_URL, SUPABASE_ANON_KEY.
 import CATS from "./lib/catmap.mjs";
+import { loadState, saveState, todaysPick, dailyMessage, postTo } from "./discord-daily.mjs";
 
 const SITE = "https://fanreelz.com";
 const COLOR = 0xffd23f;
@@ -61,11 +62,39 @@ async function showdown() {
   const bar = d.verdict ? `\n**${d.a} ${d.verdict.pa}%** vs **${d.verdict.pb}% ${d.b}**\n${d.verdict.summary || ""}` : "\nNo verdict yet: it goes live after 10 votes.";
   return reply({ embeds: [{ color: COLOR, title: `⚔️ ${d.a} vs ${d.b}`, url, description: `Who wins? Vote and tell everyone why.${bar}`, footer: { text: "Fanreelz Character Showdown" } }] });
 }
+// /today: today's AI video for anyone; /daily on|off: a server admin turns the daily post on in this channel (or off)
+async function today() {
+  const s = await loadState(), f = await todaysPick(s);
+  if (!f) return reply({ content: "No video today, try again later.", flags: 64 });
+  await saveState(s);
+  return reply(dailyMessage(f));
+}
+async function daily(i) {
+  if (!i.guild_id) return reply({ content: "Use /daily in a server channel. In private messages, try /today.", flags: 64 });
+  const perms = BigInt(i.member?.permissions || "0");
+  if (!(perms & 0x20n) && !(perms & 0x8n)) return reply({ content: "Only people who can manage this server can turn the daily video on or off.", flags: 64 });
+  const mode = opt(i, "mode") || "on", s = await loadState();
+  if (mode === "off") {
+    const had = !!s.channels[i.guild_id];
+    delete s.channels[i.guild_id]; await saveState(s);
+    return reply({ content: had ? "Daily AI video turned off for this server." : "The daily AI video wasn't on in this server.", flags: 64 });
+  }
+  // post today's film right away: that proves the bot can write in this channel
+  const f = await todaysPick(s);
+  if (!f) return reply({ content: "Couldn't find a video right now. Try again in a moment.", flags: 64 });
+  const res = await postTo(i.channel_id, f);
+  if (!res.ok) return reply({ content: `I can't post in this channel yet. Add the Fanreelz bot to the server (${SITE}/discord) and let it send messages here, then try /daily again.`, flags: 64 });
+  s.channels[i.guild_id] = { channel: i.channel_id, at: new Date().toISOString() };
+  await saveState(s);
+  return reply({ content: "✅ Daily AI video is on! A popular AI fan film will be posted in this channel every day at 16:00 UTC. Turn it off with `/daily mode:off`.", flags: 64 });
+}
 const help = () => reply({ embeds: [{ color: COLOR, title: "Fanreelz bot", url: SITE, description: [
   "`/top [category]` the 5 most watched AI fan films",
   "`/random [category]` a random AI fan film to watch",
   "`/search <words>` find AI fan films",
   "`/showdown` who would win? The hottest Character Showdown",
+  "`/today` today's AI video of the day",
+  "`/daily` (server admins) post a popular AI video in this channel every day",
 ].join("\n") }] });
 
 export default async (req) => {
@@ -86,6 +115,8 @@ export default async (req) => {
       case "random": return await random(i);
       case "search": return await search(i);
       case "showdown": return await showdown();
+      case "today": return await today();
+      case "daily": return await daily(i);
       default: return help();
     }
   } catch (e) {
