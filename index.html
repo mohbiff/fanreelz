@@ -3183,6 +3183,8 @@ document.addEventListener("click",e=>{if(e.target.closest("[data-ytfs]")){e.prev
 document.addEventListener("keydown",e=>{if(e.key==="Escape"&&document.body.classList.contains("wfs"))closeWfs()});
 window.addEventListener("popstate",e=>{
   if(ignorePop){ignorePop=false;return}
+  // Android's back with the keyboard open: close the keyboard and stay on the page
+  {const a=document.activeElement;if(a&&a.matches?.("input:not([type=range]):not([type=checkbox]),textarea")&&phone()){a.blur();ignorePop=true;history.forward();return}}
   if(document.body.classList.contains("appfs")){appFsOff(true);return}
   if(document.body.classList.contains("wfs")){closeWfs(true);return}
   if($("#shell").classList.contains("open")&&phone()){closeMenu(true);return}
@@ -3376,7 +3378,7 @@ document.addEventListener("keydown",e=>{if(e.key==="Escape")closeModal()});
 document.addEventListener("submit",async e=>{
   if(e.target.id==="lcform"){e.preventDefault();const i=$("#lcinput");const v=i.value;i.value="";if(!(await sendLive(v)))i.value=v;i.focus();return}const fm=e.target.closest(".cmform");if(!fm)return;e.preventDefault();const btn=fm.querySelector('button[type="submit"]');btn.disabled=true;const ok=await postComment(fm.dataset.cparent,fm.querySelector("textarea").value);if(!ok&&document.body.contains(btn))btn.disabled=false});
 document.addEventListener("keydown",e=>{if(e.key==="Enter"&&(e.ctrlKey||e.metaKey)&&e.target.closest(".cmform")){e.preventDefault();e.target.closest(".cmform").requestSubmit()}});
-$("#sform").onsubmit=e=>{e.preventDefault();const q=$("#q").value.trim();go({view:"home",feed:"home",q});
+$("#sform").onsubmit=e=>{e.preventDefault();const q=$("#q").value.trim();$("#q").blur();go({view:"home",feed:"home",q});
   // count what people search for (only the words, never who); admins' own searches are left out
   if(q.length>=2&&sb&&!isMod){let n=0;try{n=feedList().length+CATS.filter(c=>c.name.toLowerCase().includes(q.toLowerCase())).length}catch(x){}const cc=document.querySelector('meta[name="fr-cc"]')?.content||"",ua=navigator.userAgent,dev=/iPad|Tablet/i.test(ua)?"tablet":/Mobi|Android|iPhone/i.test(ua)?"mobile":"desktop";
     sb.rpc("add_search",{p_q:q.slice(0,60),p_zero:n===0,p_cc:cc,p_device:dev}).then(r=>{if(r?.error)sb.rpc("add_search",{p_q:q.slice(0,60),p_zero:n===0}).then(()=>{},()=>{})},()=>{})}};
