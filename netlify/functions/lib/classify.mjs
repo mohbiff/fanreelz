@@ -113,11 +113,39 @@ const ALIASES = {
   shrek: ["shrek", "dreamworks", "kung fu panda", "madagascar movie", "how to train your dragon"],
   eurocomics: ["tintin", "asterix", "obelix", "smurfs", "lucky luke", "gaston lagaffe"],
   scooby: ["scooby-doo", "scooby doo", "flintstones", "jetsons", "hanna-barbera"],
+  ghibli: ["ghibli", "totoro", "spirited away", "princess mononoke", "howl's moving castle", "kiki's delivery"],
+  sailormoon: ["sailor moon"],
+  aot: ["attack on titan", "shingeki no kyojin", "eren yeager", "levi ackerman"],
+  demonslayer: ["demon slayer", "kimetsu no yaiba", "tanjiro", "nezuko"],
+  jjk: ["jujutsu kaisen", "gojo satoru", "satoru gojo", "sukuna"],
+  deathnote: ["death note", "ryuk"],
+  doraemon: ["doraemon", "nobita", "دورايمون"],
+  tsubasa: ["captain tsubasa", "kapten tsubasa", "كابتن ماجد", "كابتن ماجد", "captain majed", "oliver and benji", "oliver y benji"],
+  grendizer: ["grendizer", "goldorak", "جريندايزر", "غرندايزر", "mazinger"],
+  pinkpanther: ["pink panther", "inspector clouseau", "النمر الوردي"],
+  classictoons: ["popeye", "woody woodpecker", "betty boop", "pinky and the brain", "alvin and the chipmunks", "chipmunks", "casper the friendly ghost"],
+  garfield: ["garfield", "snoopy", "charlie brown"],
+  kidsclassics: ["pippi", "bamse", "moomin", "mumin", "barbapapa", "pingu", "teletubbies", "thomas the tank engine", "paw patrol", "peppa pig", "bluey"],
+  heman: ["he-man", "he man", "skeletor", "she-ra", "masters of the universe"],
+  transformers: ["transformers", "optimus prime", "megatron"],
+  tmnt: ["ninja turtles", "tmnt", "shredder", "teenage mutant"],
+  powerrangers: ["power rangers", "megazord"],
+  thundercats: ["thundercats", "thunder cats", "mumm-ra"],
+  captainplanet: ["captain planet", "planeteers"],
+  ducktales: ["ducktales", "duck tales", "scrooge mcduck", "darkwing duck", "chip 'n dale", "gummi bears"],
+  gadget: ["inspector gadget"],
+  ghostbusters: ["ghostbusters", "ghost busters", "stay puft"],
+  carebears: ["care bears", "my little pony", "strawberry shortcake"],
+  godzilla: ["godzilla", "king kong", "kaiju", "monsterverse", "ゴジラ"],
+  legends: ["robin hood", "king arthur", "excalibur", "camelot", "zorro", "tarzan", "sinbad", "1001 nights", "arabian nights", "ali baba", "السندباد", "سندباد", "علي بابا", "ألف ليلة"],
+  comicheroes: ["spawn", "hellboy", "judge dredd", "conan the barbarian", "fantomen", "the phantom ghost who walks", "the phantom 1"],
+  comedyclassics: ["monty python", "austin powers", "borat", "ace ventura", "jim carrey", "the mask"],
+  familyclassics: ["willy wonka", "chocolate factory", "e.t. the extra", "e.t. ", "gremlins", "forrest gump", "the goonies", "the neverending story"],
   whatif: ["rick and morty", "lego", "barbie"],
 };
 const WHATIF_CHAR = [["rick and morty", "Rick and Morty"]];
 // Categories that must not swallow a more specific one (gta vs gta6, wc3 vs wow).
-const ORDER = ["marvelrivals", "mrbean", "chaplin", "godfather", "scarface", "breakingbad", "starwars", "harrypotter", "disney", "simpsons", "tomjerry", "spongebob", "shrek", "gta6", "wow", "arcane", "whfantasy", "witchertv", "gow", "assassins", "kingdomhearts", "halflife", "residentevil", "marvelrivals", "wukong"];
+const ORDER = ["ducktales", "pinkpanther", "tsubasa", "grendizer", "ghibli", "marvelrivals", "mrbean", "chaplin", "godfather", "scarface", "breakingbad", "starwars", "harrypotter", "disney", "simpsons", "tomjerry", "spongebob", "shrek", "gta6", "wow", "arcane", "whfantasy", "witchertv", "gow", "assassins", "kingdomhearts", "halflife", "residentevil", "marvelrivals", "wukong"];
 
 const norm = (t) => " " + String(t || "").toLowerCase().replace(/[’']/g, "'") + " ";
 const RULES = CATS.filter((c) => !["top", "trending", "all", "aiseries", "original"].includes(c.id) && !/^fx\d/.test(c.id))

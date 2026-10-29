@@ -42,6 +42,12 @@ const WORLD = [
 ];
 // Topics added later are searched first, once each, before the normal rotation continues
 const NEW_TOPICS = [
+  "pink panther AI", "popeye live action AI", "garfield live action AI", "snoopy AI", "pippi longstocking AI", "bamse AI", "moomin AI", "pingu AI", "teletubbies AI horror",
+  "he-man AI movie", "transformers AI trailer", "ninja turtles AI live action", "power rangers AI trailer", "thundercats AI live action", "ducktales live action AI", "inspector gadget AI", "ghostbusters AI trailer", "care bears AI",
+  "godzilla AI movie", "king kong AI", "robin hood AI film", "king arthur AI film", "zorro AI", "tarzan AI", "sinbad AI", "1001 nights AI film", "hellboy AI", "spawn AI", "judge dredd AI", "conan the barbarian AI",
+  "monty python AI", "austin powers AI", "willy wonka AI", "gremlins AI", "forrest gump AI", "studio ghibli live action AI", "sailor moon live action AI", "attack on titan live action AI",
+  "demon slayer live action AI", "jujutsu kaisen live action AI", "death note AI", "doraemon live action AI", "captain tsubasa AI", "كابتن ماجد ذكاء اصطناعي", "grendizer AI", "جريندايزر ذكاء اصطناعي",
+  "flintstones live action AI", "wizard of oz AI", "pinocchio AI film",
   "mr bean AI movie", "mr bean AI series", "mr bean AI short", "charlie chaplin AI film", "charlie chaplin AI short", "the godfather AI trailer", "the godfather 1950s panavision",
   "scarface AI movie", "scarface 80s dark fantasy", "breaking bad AI trailer", "star wars AI trailer", "star wars 1950s panavision", "harry potter AI trailer", "harry potter 1950s panavision",
   "marvel AI movie trailer", "batman AI movie", "james bond AI trailer", "terminator AI trailer", "the matrix AI film", "back to the future AI", "jurassic park AI", "indiana jones AI trailer",
