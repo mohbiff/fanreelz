@@ -141,6 +141,10 @@ main{min-width:0;padding-right:max(16px,env(safe-area-inset-right,0px));padding-
 .adm-card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:2px}
 .adm-card b{font-size:26px;line-height:1.1}.adm-card span{color:var(--muted);font-size:13px}
 .adm-list{display:flex;flex-direction:column;gap:6px}
+.instbar{position:fixed;left:10px;right:10px;bottom:calc(66px + env(safe-area-inset-bottom,0px));z-index:45;display:flex;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:10px 10px 10px 12px;box-shadow:0 8px 24px rgba(0,0,0,.35)}
+.instbar span:nth-child(2){display:flex;flex-direction:column;flex:1;min-width:0}.instbar small{color:var(--muted);font-size:12px}.instbar .btn{padding:8px 14px}
+.instic{width:34px;height:34px;border-radius:9px;background:#8b5cf6 url("/icons/icon-192.png?v=2") center/cover;flex-shrink:0}
+.instx{background:none;border:0;color:var(--muted);font-size:16px;width:32px;height:32px;cursor:pointer}
 .admtbl{width:100%;border-collapse:collapse;font-size:13px}.admtbl th{text-align:left;color:var(--muted);font-weight:600;padding:6px 8px;border-bottom:1px solid var(--line)}.admtbl td{padding:7px 8px;border-bottom:1px solid var(--line);white-space:nowrap}.admtbl tr:hover td{background:var(--hover)}
 .affrow{display:flex;align-items:center;gap:12px;margin-top:12px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:11px 14px;color:var(--fg);text-decoration:none}
 .affrow:hover{background:var(--hover)}.affrow b{font-size:14px}.affrow em{font-style:normal;margin-left:auto;font-weight:700;color:var(--accent);white-space:nowrap}
@@ -3104,7 +3108,7 @@ function renderInner(){
   renderWho();renderGuide();
   clearInterval(ticker);ticker=null;tvNow=null;
   ({watch:renderWatch,browse:renderBrowse,live:renderLive,liveplay:renderLivePlay,premieres:renderPremieres,tv:renderTV,battles:renderBattles,showdown:renderShowdown,top10:renderTop10,admin:renderAdmin,requests:renderRequests,contest:renderContest,playlists:renderPlaylists,creator:renderCreator,discord:renderDiscord,about:renderAbout,user:renderUser,you:renderYou,history:renderYouList,later:renderYouList,liked:renderYouList,yourvideos:renderYouList,shorts:renderShorts,series:renderSeries}[state.view]||renderHomeF)();
-  paintAll();armMore();
+  paintAll();armMore();try{instBar()}catch(e){}
   document.querySelectorAll(".cmform").forEach(fm=>{const k=fm.dataset.cparent;const ta=fm.querySelector("textarea");if(drafts[k])ta.value=drafts[k];if(focusKey===k){ta.focus();ta.setSelectionRange(ta.value.length,ta.value.length)}});
   if(state.view==="premieres")ticker=setInterval(tickPremieres,1000);
   if(state.view==="tv")ticker=setInterval(tickTV,1000);
@@ -3386,7 +3390,18 @@ try{history.replaceState({fr:navSnap(),y:0},"",signinInUrl()||pendingLink?locati
 loadLive();setInterval(()=>{if(!document.hidden)loadLive()},120000);
 /* Installable app: register the service worker, and offer an Install button where the browser supports it */
 if("serviceWorker" in navigator&&location.protocol==="https:")navigator.serviceWorker.register("/sw.js").catch(()=>{});
-var installPrompt=null;addEventListener("beforeinstallprompt",e=>{e.preventDefault();installPrompt=e;renderGuide()});
+var installPrompt=null;addEventListener("beforeinstallprompt",e=>{e.preventDefault();installPrompt=e;renderGuide();instBar()});
+/* A small "Install the app" bar on Android (web app, no warnings): from the second visit, never on a film or in Shorts,
+   and after "Not now" it stays away for two weeks */
+let instVisits=0;try{instVisits=+localStorage.getItem("fr_visits")||0;if(!sessionStorage.getItem("fr_v")){sessionStorage.setItem("fr_v","1");localStorage.setItem("fr_visits",++instVisits)}}catch(e){}
+function instBar(){const old=$("#instbar");
+  let off=false;try{off=Date.now()-(+localStorage.getItem("fr_inst_off")||0)<14*864e5}catch(e){}
+  const show=installPrompt&&!IN_APP&&!APP&&instVisits>=2&&!off&&phone()&&!["watch","shorts","admin"].includes(state.view);
+  if(!show){old?.remove();return}if(old)return;
+  document.body.insertAdjacentHTML("beforeend",`<div id="instbar" class="instbar" role="region" aria-label="Install the app"><span class="instic" aria-hidden="true"></span><span><b>Fanreelz app</b><small>Free, no app store needed</small></span><button class="btn" data-instgo="">Install</button><button class="instx" data-instoff="" aria-label="Not now">✕</button></div>`)}
+document.addEventListener("click",e=>{
+  if(e.target.closest("[data-instgo]")){e.preventDefault();$("#instbar")?.remove();if(installPrompt){installPrompt.prompt();installPrompt.userChoice.finally(()=>{installPrompt=null;renderGuide()})}return}
+  if(e.target.closest("[data-instoff]")){e.preventDefault();try{localStorage.setItem("fr_inst_off",Date.now())}catch(x){}$("#instbar")?.remove()}});
 let apkAsked=false;
 async function installApp(){
   if($("#shell").classList.contains("open"))closeMenu();
