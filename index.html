@@ -1614,15 +1614,16 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-admvidfmt]
   if(e.target.closest("[data-admcleanup]")){e.preventDefault();if(!confirm("Hide every video whose title the current filters reject (gameplay, voice changers, trolling…)?"))return;toast("Cleaning up…");
     modCall({action:"cleanup"}).then(r=>{if(r.ok){toast(`Hid ${r.hidden} videos`);catLoaded="";loadCatalog().then(render).catch(()=>{})}else toast("Couldn't clean up: "+(r.error||"error"))})}});
 const admSecTabs=()=>`<div class="fmtbar" style="margin:8px 0 14px">${[["accounts","Accounts"],["videos","New videos"],["searches","Searches"],["stats","Statistics"],["aff","Affiliate"]].map(([k,l])=>`<button class="${(state.adminSec||"accounts")===k?"on":""}" data-adminsec="${k}">${l}</button>`).join("")}</div>`;
-const umami={},umamiAll={};let umamiRange="7d",umamiMore=null,umamiQ="",umamiFlt=null,umBase={};
-const umFkey=()=>umamiFlt?"|"+umamiFlt.k+"="+umamiFlt.v:"";
-async function loadUmamiAll(k,r){const key=k+"|"+r+umFkey();umamiAll[key]={loading:true};try{umamiAll[key]={...(await modCall({action:"umami",range:r,metric:k,filter:umamiFlt?{[umamiFlt.k]:umamiFlt.v}:undefined})),at:Date.now()}}catch(e){umamiAll[key]={error:String(e.message||e)}}if(state.view==="admin"&&state.adminSec==="stats")render()}
+const umami={},umamiAll={};let umamiRange="7d",umamiMore=null,umamiQ="",umamiFlt=null,umBase={},umOnWin="5m";
+const UMWIN=[["5m","Now","last 5 minutes"],["6h","6 hours","last 6 hours"],["24h","24 hours","last 24 hours"],["7d","7 days","last 7 days"],["30d","1 month","last month"],["180d","6 months","last 6 months"]];
+const umFkey=()=>(umamiFlt?"|"+umamiFlt.k+"="+umamiFlt.v:"")+(umamiMore==="online"?"|w="+umOnWin:"");
+async function loadUmamiAll(k,r){const key=k+"|"+r+umFkey();umamiAll[key]={loading:true};try{umamiAll[key]={...(await modCall({action:"umami",range:r,metric:k,win:k==="online"?umOnWin:undefined,filter:umamiFlt?{[umamiFlt.k]:umamiFlt.v}:undefined})),at:Date.now()}}catch(e){umamiAll[key]={error:String(e.message||e)}}if(state.view==="admin"&&state.adminSec==="stats")render()}
 async function loadUmami(r){umami[r]={loading:true};try{umami[r]={...(await modCall({action:"umami",range:r})),at:Date.now()}}catch(e){umami[r]={error:String(e.message||e),at:Date.now()}}if(state.view==="admin"&&state.adminSec==="stats")render()}
 function renderUmami(){
   const r=umamiRange,U=umami[r];if(!U||(!U.loading&&Date.now()-(U.at||0)>60e3))loadUmami(r);
   const nf=n=>Math.round(n).toLocaleString("sv-SE"),dur=s=>{s=Math.round(s);return s>=60?Math.floor(s/60)+" min "+(s%60)+" s":s+" s"};
   const chips=`<div class="chips" style="margin:0 0 14px">${[["24h","24 hours"],["7d","7 days"],["30d","30 days"],["90d","90 days"],["365d","1 year"],["all","All time"]].map(([k,l])=>`<button class="chip ${r===k?"on":""}" data-umrange="${k}">${l}</button>`).join("")}<button class="chip" data-umreload="">Refresh</button></div>`;
-  const head=admSecTabs()+`<h1 class="sect-h" style="font-size:22px">${icon("trend")} Statistics <small class="vmeta" style="font-weight:500">from Umami</small></h1>`+chips;
+  const head=admSecTabs()+`<h1 class="sect-h" style="font-size:22px">${icon("trend")} Statistics <small class="vmeta" style="font-weight:500">from Umami</small></h1>`+(umamiMore==="online"?"":chips);
   if(!U||U.loading&&!U.stats){$("#main").innerHTML=head+`<div class="empty">Loading statistics…</div>`;return}
   if(U.error==="no-key"){$("#main").innerHTML=head+`<div class="about" style="padding:0"><p class="lede">Connect Umami once and the statistics show up here:</p><ol class="lede" style="line-height:1.7">
     <li>Log in at <a href="https://cloud.umami.is" target="_blank" rel="noopener">cloud.umami.is</a> → profile → <b>Settings</b> → <b>API keys</b> → <b>Create key</b>, and copy it.</li>
@@ -1630,16 +1631,16 @@ function renderUmami(){
     <li>Come back here and press Refresh.</li></ol></div>`;return}
   if(U.error){$("#main").innerHTML=head+`<p class="vmeta" style="color:#ff6b6b">Couldn't read Umami: ${esc(U.error)}</p>`;return}
   if(umamiMore){const k=umamiMore,key=k+"|"+r+umFkey(),A=umamiAll[key];if(!A||(!A.loading&&Date.now()-(A.at||0)>60e3))loadUmamiAll(k,r);
-    const titles={online:"Online now, by country",pages:"Pages",entries:"Entry pages",referrers:"Where visitors come from",countries:"Countries",devices:"Devices",browsers:"Browsers",os:"Operating systems",events:"Events"};
+    const titles={online:umOnWin==="5m"?"Online now, by country":"Visitors by country",pages:"Pages",entries:"Entry pages",referrers:"Where visitors come from",countries:"Countries",devices:"Devices",browsers:"Browsers",os:"Operating systems",events:"Events"};
     let cn2=null;try{cn2=new Intl.DisplayNames(["en"],{type:"region"})}catch(e){}
     const nm=x=>k==="countries"||k==="online"?(x?(cn2?.of(x)||x):"Unknown"):k==="referrers"?(x||"Direct / none"):(x||"Unknown");
     const rows=(A?.rows||[]).map(x=>({...x,n:String(nm(x.x))})),q=umamiQ.trim().toLowerCase(),shown=q?rows.filter(x=>x.n.toLowerCase().includes(q)):rows;
     const top=Math.max(1,...rows.map(x=>x.y)),tot=rows.reduce((a,x)=>a+x.y,0);
-    $("#main").innerHTML=head+`<button class="btn ghost" data-umback="">← All statistics</button>
-      <div class="umbox" style="margin-top:12px"><h3>${umamiFlt?`Pages visited ${umamiFlt.k==="country"?"from":"on"} ${esc(umamiFlt.label)}`:titles[k]} <small class="vmeta" style="font-weight:500">${k==="online"?`${rows.length.toLocaleString("sv-SE")} ${rows.length===1?"country":"countries"} · last 5 minutes`:rows.length.toLocaleString("sv-SE")+" in total"}</small></h3>
+    $("#main").innerHTML=head+`<button class="btn ghost" data-umback="">← All statistics</button>${k==="online"?`<div class="chips" style="margin:12px 0 0">${UMWIN.map(([w,l])=>`<button class="chip ${umOnWin===w?"on":""}" data-umwin="${w}">${l}</button>`).join("")}</div>`:""}
+      <div class="umbox" style="margin-top:12px"><h3>${umamiFlt?`Pages visited ${umamiFlt.k==="country"?"from":"on"} ${esc(umamiFlt.label)}`:titles[k]} <small class="vmeta" style="font-weight:500">${k==="online"?`${rows.length.toLocaleString("sv-SE")} ${rows.length===1?"country":"countries"} · ${UMWIN.find(w=>w[0]===umOnWin)[2]}`:rows.length.toLocaleString("sv-SE")+" in total"}</small></h3>
       <input class="umsearch" type="search" placeholder="Search ${k==="online"?"countries":esc(titles[k].toLowerCase())}…" value="${esc(umamiQ)}" data-umq="" aria-label="Search">
       ${!A||A.loading&&!A.rows?`<p class="vmeta">Loading…</p>`:A.error?`<p class="vmeta" style="color:#ff6b6b">${esc(A.error)}</p>`:
-        (shown.slice(0,state.umLimit||100).map((x,i)=>`<div class="umrow"${!umamiFlt&&(k==="countries"||k==="devices")&&x.x?` data-umdrill="${k==="countries"?"country":"device"}|${esc(x.x)}|${esc(x.n)}" role="button" style="cursor:pointer" title="Show the pages visited"`:""}><span class="umbar" style="width:${x.y/top*100}%"></span><span class="umrank">${rows.indexOf(x)+1}</span><span class="umname" title="${esc(x.n)}">${esc(x.n)}</span><b>${nf(x.y)}</b><small>${tot?Math.round(x.y/tot*100):0}%</small></div>`).join("")||`<p class="vmeta">${k==="online"&&!rows.length?"Nobody is online right now.":"Nothing matches."}</p>`)+
+        (shown.slice(0,state.umLimit||100).map((x,i)=>`<div class="umrow"${!umamiFlt&&(k==="countries"||k==="devices")&&x.x?` data-umdrill="${k==="countries"?"country":"device"}|${esc(x.x)}|${esc(x.n)}" role="button" style="cursor:pointer" title="Show the pages visited"`:""}><span class="umbar" style="width:${x.y/top*100}%"></span><span class="umrank">${rows.indexOf(x)+1}</span><span class="umname" title="${esc(x.n)}">${esc(x.n)}</span><b>${nf(x.y)}</b><small>${tot?Math.round(x.y/tot*100):0}%</small></div>`).join("")||`<p class="vmeta">${k==="online"&&!rows.length?(umOnWin==="5m"?"Nobody is online right now.":"No visitors in this period."):"Nothing matches."}</p>`)+
         (shown.length>(state.umLimit||100)?`<button class="btn ghost" data-ummorerows="" style="margin-top:10px">Show more (${(shown.length-(state.umLimit||100)).toLocaleString("sv-SE")} left)</button>`:"")}</div>`;
     const inp=$("[data-umq]");if(inp&&umamiQFocus){inp.focus();inp.setSelectionRange(inp.value.length,inp.value.length)}
     return}
@@ -1679,7 +1680,8 @@ document.addEventListener("click",e=>{
   if(e.target.closest("[data-umreload]")){e.preventDefault();loadUmami(umamiRange);if(umamiMore)loadUmamiAll(umamiMore,umamiRange);return}
   const um=e.target.closest("[data-ummore]");if(um){e.preventDefault();umamiMore=um.dataset.ummore;umamiFlt=null;umamiQ="";state.umLimit=100;render();scrollTo(0,0);return}
   const ud=e.target.closest("[data-umdrill]");if(ud){e.preventDefault();const [k,v,...l]=ud.dataset.umdrill.split("|");umamiFlt={k,v,label:l.join("|")||v};umamiMore="pages";umamiQ="";state.umLimit=100;render();scrollTo(0,0);return}
-  if(e.target.closest("[data-umback]")){e.preventDefault();umamiMore=null;umamiFlt=null;umamiQ="";render();return}
+  const uw=e.target.closest("[data-umwin]");if(uw){e.preventDefault();umOnWin=uw.dataset.umwin;umamiQ="";state.umLimit=100;render();return}
+  if(e.target.closest("[data-umback]")){e.preventDefault();umOnWin="5m";umamiMore=null;umamiFlt=null;umamiQ="";render();return}
   if(e.target.closest("[data-ummorerows]")){e.preventDefault();state.umLimit=(state.umLimit||100)+200;render();return}});
 let umamiQFocus=false;
 document.addEventListener("input",e=>{if(!e.target.matches?.("[data-umq]"))return;umamiQ=e.target.value;state.umLimit=100;umamiQFocus=true;render();umamiQFocus=false});

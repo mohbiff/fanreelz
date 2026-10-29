@@ -129,12 +129,13 @@ export default async (req) => {
     };
     // "See all" for one list: just that metric, up to 1,000 rows
     const ONE = { queries: ["query"], pages: ["path", "url"], entries: ["entry"], referrers: ["referrer"], countries: ["country"], devices: ["device"], browsers: ["browser"], os: ["os"], events: ["event"] };
-    // "online now" by country: the visitors Umami saw in the last 5 minutes (the same window as /active)
+    // visitors by country for a recent window: "5m" is "online now" (the same window as /active), then 6 h, 24 h, 7 d, 30 d, 180 d
     if (body.metric === "online") {
-      const t = Date.now();
+      const WIN = { "5m": 5 * 60e3, "6h": 6 * 36e5, "24h": 864e5, "7d": 7 * 864e5, "30d": 30 * 864e5, "180d": 180 * 864e5 };
+      const t = Date.now(), span = WIN[body.win] || WIN["5m"];
       let rows = [];
-      try { const d = await get("/metrics", { startAt: t - 5 * 60e3, endAt: t, type: "country", limit: 100, timezone: tz }); if (Array.isArray(d)) rows = d.map((x) => ({ x: x.x ?? x.name ?? "", y: +x.y || +x.value || 0 })).filter((x) => x.y > 0); } catch (e) {}
-      return json({ metric: "online", rows, from: t - 5 * 60e3 });
+      try { const d = await get("/metrics", { startAt: t - span, endAt: t, type: "country", limit: 250, timezone: tz }); if (Array.isArray(d)) rows = d.map((x) => ({ x: x.x ?? x.name ?? "", y: +x.y || +x.value || 0 })).filter((x) => x.y > 0); } catch (e) {}
+      return json({ metric: "online", rows, from: t - span });
     }
     if (body.metric && ONE[body.metric]) return json({ metric: body.metric, rows: await metric(ONE[body.metric], 1000), from: startAt });
     try {
