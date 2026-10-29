@@ -1105,7 +1105,7 @@ function renderGuide(){renderTabbar();
     `<button class="gi ${state.view==="live"?"on":""}" data-view="live">${icon("live")}<span>Live now</span>${LIVE.length?`<span class="livecount">${LIVE.length}</span>`:""}</button>`+[["premieres","Premieres","prem"],["tv","Fanreelz TV","tv"]].map(([v,l,ic])=>`<button class="gi ${state.view===v?"on":""}" data-view="${v}">${icon(ic)}<span>${l}</span></button>`).join("")+
     `<hr><h4>Community</h4>`+[["top10","Top 10 this month","top"],["battles","Fan Battles","battle"],["requests","Requests","req"],["showdown","Character Showdown","trophy"],["playlists","Playlists","list"],["discord","Discord bot","bot"]].map(([v,l,ic])=>`<button class="gi ${state.view===v?"on":""}" data-view="${v}">${icon(ic)}<span>${l}</span></button>`).join("")+
     `<button class="gi ${state.view==="about"?"on":""}" data-view="about">${icon("info")}<span>About us</span></button>`+
-    (matchMedia("(display-mode: standalone)").matches||navigator.standalone?"":`<button class="gi" data-install="">${icon("save")}<span>Install app</span></button>`)+
+    (matchMedia("(display-mode: standalone)").matches||matchMedia("(display-mode: fullscreen)").matches||navigator.standalone||window.FanreelzApp||/FanreelzApp\//.test(navigator.userAgent)?"":`<button class="gi" data-install="">${icon("save")}<span>Install app</span></button>`)+
     `<button class="gi" data-theme-next="">${icon("info")}<span>Appearance: ${({dark:"Dark",light:"Light",system:"Device theme"})[document.documentElement.dataset.theme]||"Dark"}</span></button>`+
     GROUPS.map(g=>{const top=T[g.name].slice(0,3).map(x=>x.c);
       if(state.cat&&g.cats.some(c=>c.id===state.cat)&&!top.some(c=>c.id===state.cat))top.push(CATS.find(c=>c.id===state.cat));
