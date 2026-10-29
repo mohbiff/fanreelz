@@ -21,9 +21,14 @@ export async function notePeak(n, prev) {
   const now = Date.now(), today = day(now);
   const p = prev === undefined ? await readPeak() : prev;
   const v = { n: p?.n || 0, at: p?.at || null, day: p?.day === today ? p.day : today, dn: p?.day === today ? p.dn || 0 : 0, dat: p?.day === today ? p.dat || null : null };
+  // highest per day, the last 90 days ({"2026-10-29": 4, …})
+  v.hist = { ...(p?.hist || {}) };
   let ch = !p || p.day !== today;
   if (n > v.n) { v.n = n; v.at = new Date(now).toISOString(); ch = true; }
   if (n > v.dn) { v.dn = n; v.dat = new Date(now).toISOString(); ch = true; }
+  if ((v.hist[today] || 0) < v.dn) { v.hist[today] = v.dn; ch = true; }
+  const keys = Object.keys(v.hist).sort();
+  for (const k of keys.slice(0, Math.max(0, keys.length - 90))) delete v.hist[k];
   if (ch) {
     const { url, h } = sb();
     await fetch(url, { method: "POST", headers: { ...h, Prefer: "resolution=merge-duplicates,return=minimal" }, body: JSON.stringify([{ key: "peak_online", value: v }]) }).catch(() => {});
