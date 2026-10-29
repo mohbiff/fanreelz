@@ -185,6 +185,12 @@ main{min-width:0;padding-right:max(16px,env(safe-area-inset-right,0px));padding-
 .umrow{position:relative;display:flex;align-items:center;gap:8px;padding:6px 8px;font-size:13.5px;border-radius:6px;overflow:hidden}
 .umbar{position:absolute;left:0;top:0;bottom:0;background:var(--accent);opacity:.14;border-radius:6px}
 .umname{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;position:relative}.umrow b,.umrow small{position:relative}.umrow small{color:var(--muted,#999);width:34px;text-align:right}
+/* turned player (browsers that can't turn the screen) */
+body.fsrot{overflow:hidden}
+body.fsrot .player.hasbar{position:fixed!important;top:0;left:0;z-index:9500;width:100vh!important;width:100dvh!important;height:100vw!important;max-width:none!important;margin:0!important;border-radius:0;
+  transform-origin:top left;transform:rotate(90deg) translateY(-100%);padding:0!important}
+body.fsrot .player.hasbar iframe{width:calc(100% - 112px)!important}
+body.fsrot .edgegrab,body.fsrot .dragzone{display:none!important}
 .edgegrab{display:none;position:absolute;left:0;top:0;bottom:64px;width:64px;z-index:6;touch-action:pan-y}
 /* Miniplayer: swipe the video down (or tap ⌄) and it keeps playing in a small bar while you browse, like YouTube */
 /* phones: a see-through layer over the picture takes the finger before YouTube does — tap = play/pause, swipe down = miniplayer, up = full screen */
@@ -2870,7 +2876,9 @@ document.addEventListener("click",e=>{if(!e.target.closest?.(".fpcenter"))return
 /* gestures on the picture (phones) */
 (()=>{let g=null;
   document.addEventListener("touchstart",e=>{g=null;if(!e.target.closest?.(".fpcatch")||e.touches.length>1)return;const t=e.touches[0];g={x:t.clientX,y:t.clientY,at:Date.now(),moved:false}},{passive:true});
-  document.addEventListener("touchmove",e=>{if(!g)return;const t=e.touches[0],dx=t.clientX-g.x,dy=t.clientY-g.y;if(Math.abs(dx)>10||Math.abs(dy)>10)g.moved=true;
+  document.addEventListener("touchmove",e=>{if(!g)return;const t=e.touches[0],rot=document.body.classList.contains("fsrot");
+    // turned player: the picture's "down" is the screen's "left"
+    const dx=rot?t.clientY-g.y:t.clientX-g.x,dy=rot?g.x-t.clientX:t.clientY-g.y;if(Math.abs(dx)>10||Math.abs(dy)>10)g.moved=true;
     if(g.drag){mdMove(t.clientY,dy);return}
     if(Math.abs(dy)>14&&Math.abs(dy)>Math.abs(dx)*1.3){const down=dy>0;
       if(down&&!fpIsFs()){const pl=$(".player");if(pl){g.drag=true;g.y=t.clientY;mdStart(pl);return}}
@@ -2964,6 +2972,13 @@ function appFsOff(fromBack){if(!document.body.classList.contains("appfs"))return
   appCall("bars",true);appCall("orient","auto");document.querySelector(".fpbar")?.classList.remove("fshide");
   if(appFsPushed&&!fromBack){appFsPushed=false;ignorePop=true;history.back()}appFsPushed=false;fpAuto="";fpPaint()}
 window.fanreelzExitFull=()=>{if(document.body.classList.contains("appfs"))appFsOff();else if(document.body.classList.contains("wfs"))closeWfs();fpAuto="";fpPaint()};
+/* Browsers that can't turn the screen (Facebook's and Instagram's in-app browsers lock it upright): in full screen the
+   player itself is turned 90°, so a landscape film fills the screen when you hold the phone sideways, like YouTube. */
+const IAB=/FBAN|FBAV|FB_IAB|FBIOS|Instagram|Snapchat|Line\/|Twitter|TikTok|musical_ly|Bytedance|LinkedInApp/i.test(navigator.userAgent);
+function fsRotate(){const pl=$(".player");if(!pl||pl.classList.contains("vert")||matchMedia("(pointer:fine)").matches)return;
+  setTimeout(()=>{if(!fpIsFs())return;if(innerHeight>innerWidth){document.body.classList.add("fsrot");fpShow()}},350)}
+function fsUnrotate(){document.body.classList.remove("fsrot")}
+addEventListener("resize",()=>{if(document.body.classList.contains("fsrot")&&innerWidth>innerHeight)fsUnrotate()});
 function fpFull(){const pl=$(".player");if(!pl)return;
   if(document.body.classList.contains("appfs")){appFsOff();return}
   if(document.fullscreenElement||document.webkitFullscreenElement){try{screen.orientation?.unlock?.()}catch(e){}(document.exitFullscreen||document.webkitExitFullscreen).call(document)?.catch?.(()=>{});return}
@@ -2971,13 +2986,15 @@ function fpFull(){const pl=$(".player");if(!pl)return;
   if(APP&&!matchMedia("(pointer:fine)").matches){appFsOn(pl.classList.contains("vert"));return}
   // the web app installed from the site (no app bridge): the browser's real full screen, so the phone's bars hide and the screen turns
   const de=document.documentElement,req=de.requestFullscreen||de.webkitRequestFullscreen;
-  if(req){Promise.resolve(req.call(de,{navigationUI:"hide"})).then(()=>{if(!matchMedia("(pointer:fine)").matches)screen.orientation?.lock?.(pl.classList.contains("vert")?"portrait":"landscape").catch(()=>{})}).catch(()=>{openWfs();fpPaint();fpShow()})}
-  else{openWfs();fpPaint();fpShow()}}
+  if(req){Promise.resolve(req.call(de,{navigationUI:"hide"})).then(()=>{if(matchMedia("(pointer:fine)").matches)return;
+      const lk=screen.orientation?.lock;if(IAB||!lk){fsRotate();return}
+      lk.call(screen.orientation,pl.classList.contains("vert")?"portrait":"landscape").catch(()=>fsRotate())}).catch(()=>{openWfs();fpPaint();fpShow();fsRotate()})}
+  else{openWfs();fpPaint();fpShow();fsRotate()}}
 // in full screen the page must not zoom on a double tap (YouTube's own double-tap ±10 s works on the picture)
 function fpNoZoom(on){const m=document.querySelector('meta[name="viewport"]');if(!m)return;
   m.setAttribute("content",on?"width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover":"width=device-width,initial-scale=1,viewport-fit=cover")}
 function fpFsChange(){const on=!!(document.fullscreenElement||document.webkitFullscreenElement)&&state.view==="watch";document.body.classList.toggle("fsmode",on);document.documentElement.classList.toggle("fsmode",on);fpNoZoom(on||document.body.classList.contains("wfs"));
-  if(on)window.scrollTo({top:0});else{try{screen.orientation?.unlock?.()}catch(e){}document.querySelector(".fpbar")?.classList.remove("fshide")}fpPaint();if(on)fpShow()}
+  if(on)window.scrollTo({top:0});else{fsUnrotate();try{screen.orientation?.unlock?.()}catch(e){}document.querySelector(".fpbar")?.classList.remove("fshide")}fpPaint();if(on)fpShow()}
 document.addEventListener("fullscreenchange",fpFsChange);document.addEventListener("webkitfullscreenchange",fpFsChange);
 function fpPaint(){const o=document.querySelector(".fpbar");if(!o)return;const playing=fpPlaying();
   document.querySelectorAll(".player [data-fpplay]").forEach(b=>b.innerHTML=playing?FPI.pause:FPI.play);
@@ -3265,7 +3282,7 @@ function go(patch){if(patch.view==="admin"&&typeof umBase!=="undefined")umBase={
 let wfsPushed=false;
 function openWfs(){if(document.body.classList.contains("wfs"))return;document.body.classList.add("wfs");fpNoZoom(true);appCall("bars",false);
   try{history.pushState({...(history.state||{}),overlay:"wfs"},"",location.href);wfsPushed=true}catch(e){}}
-function closeWfs(fromBack){if(!document.body.classList.contains("wfs"))return;document.body.classList.remove("wfs");appCall("bars",true);appCall("orient","auto");fpNoZoom(document.body.classList.contains("fsmode"));$("#wfsClose")?.remove();$("#wfsShare")?.remove();
+function closeWfs(fromBack){if(!document.body.classList.contains("wfs"))return;document.body.classList.remove("wfs");fsUnrotate();appCall("bars",true);appCall("orient","auto");fpNoZoom(document.body.classList.contains("fsmode"));$("#wfsClose")?.remove();$("#wfsShare")?.remove();
   if(wfsPushed&&!fromBack){wfsPushed=false;ignorePop=true;history.back()}wfsPushed=false}
 document.addEventListener("click",e=>{if(e.target.closest("[data-ytfs]")){e.preventDefault();fpFull();return}if(e.target.closest("[data-wfs]")){e.preventDefault();openWfs()}else if(e.target.closest("#wfsClose")){e.preventDefault();closeWfs()}});
 document.addEventListener("keydown",e=>{if(e.key==="Escape"&&document.body.classList.contains("wfs"))closeWfs()});
