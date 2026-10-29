@@ -3411,7 +3411,8 @@ var installPrompt=null;addEventListener("beforeinstallprompt",e=>{e.preventDefau
    which hands it to the installed Fanreelz app (or keeps it in Chrome) */
 (()=>{const ua=navigator.userAgent;if(!/android/i.test(ua)||!/FBAN|FBAV|FB_IAB|Instagram|Messenger/i.test(ua))return;
   const show=()=>{if($("#iabbar"))return;const u=location.href.replace(/^https?:\/\//,""),fb=encodeURIComponent(location.href);
-    document.body.insertAdjacentHTML("beforeend",`<a id="iabbar" class="instbar iab" href="intent://${u}#Intent;scheme=https;package=com.android.chrome;S.browser_fallback_url=${fb};end" data-umami-event="open-in-app"><span class="instic" aria-hidden="true"></span><span><b>Open in the Fanreelz app</b><small>Full screen, faster, your ratings saved</small></span><span class="btn">Open</span></a>`)};
+    document.body.insertAdjacentHTML("beforeend",`<a id="iabbar" class="instbar iab" href="intent://${u}#Intent;scheme=https;package=com.android.chrome;S.browser_fallback_url=${fb};end" data-umami-event="open-in-app"><span class="instic" aria-hidden="true"></span><span><b>Open in the Fanreelz app</b><small>Full screen, faster, your ratings saved</small></span><span class="btn">Open</span><button class="instx" data-iabx="" aria-label="Close">✕</button></a>`)};
+  document.addEventListener("click",e=>{if(e.target.closest("[data-iabx]")){e.preventDefault();e.stopPropagation();$("#iabbar")?.remove()}},true);
   setTimeout(show,1500)})();
 /* "Get the app" card at the top of the screen: Android (one-tap install) and iPhone Safari (shows the steps).
    Comes 4 s after the page opens, never on a film or in Shorts; "Not now" keeps it away for two weeks. */
