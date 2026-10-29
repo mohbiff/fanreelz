@@ -1266,12 +1266,13 @@ function renderBrowse(){
   html+=groups.map(g=>{const ranked=T[g.name];const cats=[...g.cats].sort((a,b)=>a.name.localeCompare(b.name));
     return `<section class="dir"><h2 class="sect-h">${esc(g.name)} <span class="vmeta" style="font-size:14px;font-weight:500">${g.cats.length} categories</span></h2><div class="dirgrid">${cats.map(c=>{const n=allFilms().filter(f=>f.cat===c.id).length,r=ranked.findIndex(x=>x.c.id===c.id);
       return `<div class="dircard"><button class="dirhead" data-cat="${c.id}">${cav(c.name,40)}<span><b>${esc(c.name)}</b><small>${isMod?n+" films":esc(groupOf(c.id)?.name||"")}${r<3?` · <span class="hot">Trending #${r+1}</span>`:""}</small></span></button><div class="dirchars">${c.chars.map(ch=>`<button data-cat="${c.id}" data-char-go="${esc(ch)}">${esc(ch)}</button>`).join("")}</div></div>`;}).join("")}</div></section>`;}).join("");
-  const films=allFilms().filter(f=>gsel==="All"||groupOf(f.cat)?.name===gsel).sort((a,b)=>a.title.localeCompare(b.title));
-  const shown=films.slice(0,state.azLimit);let last="";
-  html+=`<section class="dir"><h2 class="sect-h">All films A–Z ${isMod?`<span class="vmeta" style="font-size:14px;font-weight:500">${films.length} films</span>`:""}</h2><div class="azlist">`+shown.map(f=>{
-    const L=((f.title.match(/[A-Za-z0-9]/)||["#"])[0]).toUpperCase();const head=L!==last?`<div class="azletter">${esc(L)}</div>`:"";last=L;const s=stats(f);
-    return head+`<button class="azrow" data-open="${esc(f.id)}"><span class="aztitle">${esc(f.title)}</span><span class="azcat">${esc(catName(f.cat))} · ${esc(f.char)}</span><span class="azscore">${s.n?"★ "+s.avg.toFixed(1):"–"}</span></button>`;}).join("")+
-    `</div>${films.length>shown.length?`<button class="btn ghost morebtn" data-more="1">Show more (${films.length-shown.length} left)</button>`:""}</section>`;
+  // instead of a long A–Z list: what's trending, best rated and most watched in this tab
+  const films=allFilms().filter(f=>f.format!=="short"&&(gsel==="All"||groupOf(f.cat)?.name===gsel)),where=gsel==="All"?"":" in "+esc(gsel);
+  const shelf=(ic,t,l,sort)=>l.length>=3?`<section class="shelf"><h2>${icon(ic)} ${t}${where}<button class="seeall" data-browsesort="${sort}">See all</button></h2><div class="shelfrow">${l.map(f=>card(f)).join("")}</div></section>`:"";
+  html=html.replace('<section class="dir">',
+    shelf("trend","Trending",[...films].sort((a,b)=>filmTrend(b)-filmTrend(a)).slice(0,12),"")+
+    shelf("heart","Popular",[...films].sort((a,b)=>(stats(b).n?stats(b).bayes*1e6:0)+viewsOf(b)-((stats(a).n?stats(a).bayes*1e6:0)+viewsOf(a))).slice(0,12),"top")+
+    shelf("top","Most watched",[...films].filter(f=>f.ytViews).sort((a,b)=>b.ytViews-a.ytViews).slice(0,12),"views")+'<section class="dir">');
   $("#main").innerHTML=html;
 }
 /* ---- Live now, Premieres, Fanreelz TV (examples) ---- */
@@ -3427,6 +3428,7 @@ document.addEventListener("click",async e=>{
   if(A("[data-news]")){toggleNewsletter();return}
   if(x=A("[data-lore]")){state.lore=x.dataset.lore;render();return}
   if(x=A("[data-sort]")){state.sort=x.dataset.sort;render();return}
+  if(x=A("[data-browsesort]")){const g=state.bgroup;go({view:"home",feed:"home",cat:null,char:null,q:"",group:g&&g!=="All"?g:"All",format:"film",sort:x.dataset.browsesort});return}
   if(x=A("[data-gcats]")){gcatsOpen=!gcatsOpen;render();return}
   if(x=A("[data-lore-go]")){go({view:"home",feed:"home",cat:x.dataset.cat,char:null,lore:x.dataset.loreGo});return}
   if(x=A("[data-bpool]")){battle.pool=x.dataset.bpool;battle.pair=null;render();return}
