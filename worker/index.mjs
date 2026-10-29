@@ -83,6 +83,8 @@ export default {
       useEnv(env); return job(req);
     }
     if (url.pathname === "/.well-known/assetlinks.json") return assetLinks(env);
+    // the newest Android app, published by the "Android app" GitHub workflow
+    if (url.pathname === "/android.apk") return Response.redirect("https://github.com/mohbiff/fanreelz/releases/download/app/fanreelz.apk", 302);
     if (url.pathname === "/app-auth") return appAuth(url);
     if (url.pathname === "/sitemap.xml") {
       const hit = await caches.default.match(req); if (hit) return hit;
