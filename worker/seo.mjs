@@ -9,7 +9,7 @@ const SITE = "https://fanreelz.com";
 const DEFAULT = {
   title: "Fanreelz – Where AI fan films find their fans",
   description: "The home of AI fan films. Discover, rate and support the best AI-made films about the games, books, anime and series you love.",
-  image: SITE + "/icons/icon-512.png",
+  image: SITE + "/og.png",
 };
 const STATIC = {
   "/top10": ["Top 10 AI fan films this month", "The most-watched AI fan films of the month across YouTube, TikTok and Vimeo, plus the top 5 in fantasy, anime, sci-fi and more."],
@@ -67,12 +67,12 @@ async function pageInfo(url, env, ctx) {
   }
   if (a === "c" && b && catOf(b)) {
     const c = catOf(b), ch = url.searchParams.get("char");
-    const rows = (await db(env, `catalog?select=id,title,views,char&cat=eq.${c.id}&hidden=eq.false&age_restricted=eq.false&order=views.desc&limit=200`, ctx)) || [];
+    const rows = (await db(env, `catalog?select=id,title,views,char,video_id&cat=eq.${c.id}&hidden=eq.false&age_restricted=eq.false&order=views.desc&limit=200`, ctx)) || [];
     const list = (ch ? rows.filter((r) => r.char === ch) : rows).slice(0, 30);
     const topic = ch ? `${ch} (${c.name})` : c.name;
     const desc = `The best AI fan films about ${topic}, rated by fans: ${rows.length ? rows.length + " films, " : ""}live-action remakes, cinematic trailers and what-if stories made with AI.`;
     return {
-      title: `Best ${topic} AI fan films, rated by fans`, description: desc, image: list[0] ? null : null,
+      title: `Best ${topic} AI fan films, rated by fans`, description: desc, image: list[0]?.video_id ? `https://i.ytimg.com/vi/${list[0].video_id}/hqdefault.jpg` : null,
       ld: { "@context": "https://schema.org", "@type": "CollectionPage", name: `${topic} AI fan films`, description: desc, url: `${SITE}/c/${c.id}${ch ? "?char=" + encodeURIComponent(ch) : ""}` },
       body: `<h1>${esc(topic)} AI fan films</h1><p>${esc(desc)}</p>${c.chars.length ? `<p>Characters: ${c.chars.map((x) => `<a href="/c/${c.id}?char=${esc(encodeURIComponent(x))}">${esc(x)}</a>`).join(", ")}</p>` : ""}<ol>${list.map(filmLink).join("")}</ol>`,
     };
@@ -118,7 +118,7 @@ export async function withSeo(req, res, env, ctx) {
       .on('meta[property="og:url"]', setAttr("content", canonical))
       .on('meta[property="og:image"]', setAttr("content", image))
       .on('meta[property="og:type"]', setAttr("content", info.type || "website"))
-      .on('meta[name="twitter:card"]', setAttr("content", info.image ? "summary_large_image" : "summary"))
+      .on('meta[name="twitter:card"]', setAttr("content", "summary_large_image"))
       .on("head", { element(e) { e.append(head, { html: true }); } })
       .on("main#main", { element(e) { if (info.body) e.setInnerContent(`<div class="ssr">${info.body}</div>`, { html: true }); } })
       .transform(res);
