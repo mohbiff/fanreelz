@@ -89,11 +89,35 @@ const ALIASES = {
   tomsawyer: ["tom sawyer", "huckleberry finn", "huck finn", "توم سوير", "توم سوير", "トム・ソーヤー", "トムソーヤ", "톰 소여"],
   patmat: ["pat and mat", "pat & mat", "pat a mat", "pat und mat", "بات ومات", "بات و مات", "pat i mat"],
   myth: ["mythology", "zeus", "odin", "thor ", "anubis", "olympus", "valhalla", "greek gods", "norse gods"],
-  whatif: ["harry potter", "hogwarts", "rick and morty", "simpsons", "star wars", "jedi", "darth", "marvel", "avengers", "batman", "spider-man", "spiderman", "lego", "barbie", "shrek", "toy story", "disney", "pixar"],
+  mrbean: ["mr bean", "mr. bean", "mister bean", "rowan atkinson", "مستر بين", "ミスター・ビーン"],
+  chaplin: ["chaplin", "the tramp", "شارلي شابلن", "شابلن"],
+  laurelhardy: ["laurel and hardy", "laurel & hardy", "buster keaton", "three stooges", "silent comedy"],
+  godfather: ["godfather", "corleone", "العراب"],
+  scarface: ["scarface", "tony montana"],
+  gangster: ["goodfellas", "pulp fiction", "sopranos", "peaky blinders", "thomas shelby", "tarantino", "taxi driver", "the irishman", "al capone"],
+  breakingbad: ["breaking bad", "walter white", "heisenberg", "jesse pinkman", "better call saul", "saul goodman"],
+  starwars: ["star wars", "jedi", "darth", "sith lord", "mandalorian", "skywalker", "yoda", "obi-wan", "stormtrooper", "grogu"],
+  marvel: ["marvel", "avengers", "spider-man", "spiderman", "spider man", "iron man", "thanos", "x-men", "wolverine", "deadpool", "captain america", "hulk"],
+  dc: ["batman", "superman", "the joker", "joker movie", "gotham", "justice league", "wonder woman", "the dark knight", " dc "],
+  harrypotter: ["harry potter", "hogwarts", "voldemort", "hermione", "dumbledore", "wizarding world"],
+  bond: ["james bond", "007"],
+  scificlassics: ["terminator", "the matrix", "matrix", "xenomorph", "alien vs predator", "back to the future", "jurassic park", "jurassic world", "blade runner", "robocop", "predator"],
+  adventure: ["indiana jones", "pirates of the caribbean", "jack sparrow", "titanic", "rocky balboa", "home alone", "kevin mccallister"],
+  horrorclassics: ["dracula", "frankenstein", "freddy krueger", "nightmare on elm street", "friday the 13th", "jason voorhees", "pennywise", "michael myers", "the shining"],
+  sitcoms: ["friends sitcom", "central perk", "seinfeld", "the office", "stranger things", "squid game", "sherlock holmes", "mr. robot", "twin peaks", "the twilight zone"],
+  disney: ["disney", "pixar", "toy story", "frozen", "lion king", "aladdin", "mickey mouse", "little mermaid", "moana", "snow white", "cinderella", "beauty and the beast", "pinocchio", "winnie the pooh", "ديزني"],
+  simpsons: ["simpsons", "homer simpson", "bart simpson", "springfield"],
+  tomjerry: ["tom and jerry", "tom & jerry", "توم وجيري", "توم و جيري"],
+  looney: ["looney tunes", "bugs bunny", "daffy duck", "road runner", "tweety"],
+  spongebob: ["spongebob", "sponge bob", "bikini bottom", "سبونج بوب"],
+  shrek: ["shrek", "dreamworks", "kung fu panda", "madagascar movie", "how to train your dragon"],
+  eurocomics: ["tintin", "asterix", "obelix", "smurfs", "lucky luke", "gaston lagaffe"],
+  scooby: ["scooby-doo", "scooby doo", "flintstones", "jetsons", "hanna-barbera"],
+  whatif: ["rick and morty", "lego", "barbie"],
 };
-const WHATIF_CHAR = [["harry potter", "Harry Potter"], ["hogwarts", "Harry Potter"], ["rick and morty", "Rick and Morty"]];
+const WHATIF_CHAR = [["rick and morty", "Rick and Morty"]];
 // Categories that must not swallow a more specific one (gta vs gta6, wc3 vs wow).
-const ORDER = ["gta6", "wow", "arcane", "whfantasy", "witchertv", "gow", "assassins", "kingdomhearts", "halflife", "residentevil", "marvelrivals", "wukong"];
+const ORDER = ["marvelrivals", "mrbean", "chaplin", "godfather", "scarface", "breakingbad", "starwars", "harrypotter", "disney", "simpsons", "tomjerry", "spongebob", "shrek", "gta6", "wow", "arcane", "whfantasy", "witchertv", "gow", "assassins", "kingdomhearts", "halflife", "residentevil", "marvelrivals", "wukong"];
 
 const norm = (t) => " " + String(t || "").toLowerCase().replace(/[’']/g, "'") + " ";
 const RULES = CATS.filter((c) => !["top", "trending", "all", "aiseries", "original"].includes(c.id) && !/^fx\d/.test(c.id))

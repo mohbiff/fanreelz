@@ -42,6 +42,12 @@ const WORLD = [
 ];
 // Topics added later are searched first, once each, before the normal rotation continues
 const NEW_TOPICS = [
+  "mr bean AI movie", "mr bean AI series", "mr bean AI short", "charlie chaplin AI film", "charlie chaplin AI short", "the godfather AI trailer", "the godfather 1950s panavision",
+  "scarface AI movie", "scarface 80s dark fantasy", "breaking bad AI trailer", "star wars AI trailer", "star wars 1950s panavision", "harry potter AI trailer", "harry potter 1950s panavision",
+  "marvel AI movie trailer", "batman AI movie", "james bond AI trailer", "terminator AI trailer", "the matrix AI film", "back to the future AI", "jurassic park AI", "indiana jones AI trailer",
+  "titanic AI movie", "home alone AI", "peaky blinders AI", "pulp fiction AI", "sopranos AI", "laurel and hardy AI", "dracula AI film", "stranger things AI", "squid game AI",
+  "disney live action AI", "disney pixar AI trailer", "simpsons live action AI", "tom and jerry live action AI", "looney tunes AI", "spongebob live action AI", "shrek live action AI",
+  "tintin AI film", "asterix AI", "scooby doo live action AI", "flintstones live action AI",
   "Pat and Mat AI", "Pat a Mat AI", "Pat & Mat AI live action", "بات ومات ذكاء اصطناعي",
   "وتين وكنان ذكاء اصطناعي", "قصص اطفال كرتون بالذكاء الاصطناعي", "مسلسل كرتون عربي ai", "حكايات كرتون ذكاء اصطناعي", "كرتون اسلامي بالذكاء الاصطناعي", "كرتون خليجي بالذكاء الاصطناعي",
   "Tom Sawyer AI live action", "Tom Sawyer AI film", "توم سوير بالذكاء الاصطناعي", "مغامرات توم سوير ذكاء اصطناعي", "トム・ソーヤー AI実写",

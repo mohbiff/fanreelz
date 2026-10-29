@@ -3,7 +3,7 @@
 // {action:"remove", owner:"<user id>", id:"<comment id>"} removes that comment and its replies; {action:"hide", id:"yt-…"} hides a film.
 // Needs: ADMIN_EMAILS (comma-separated sign-in emails of the admins), SUPABASE_URL, SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY (secret).
 import importYoutube, { searchNow, addByLinks } from "./import-youtube.mjs";
-import { BLOCK_RE } from "./lib/classify.mjs";
+import { BLOCK_RE, classify } from "./lib/classify.mjs";
 import { readAffiliates } from "./affiliates.mjs";
 import showdown from "./showdown.mjs";
 const json = (o, status = 200) => new Response(JSON.stringify(o), { status, headers: { "Content-Type": "application/json", "Cache-Control": "no-store" } });
@@ -214,6 +214,30 @@ export default async (req) => {
     if (!key.startsWith("sb_secret_")) h.Authorization = "Bearer " + key;
     const r = await fetch(Netlify.env.get("SUPABASE_URL") + "/rest/v1/import_state", { method: "POST", headers: h, body: JSON.stringify([{ key: "affiliates", value: { list, at: new Date().toISOString() } }]) });
     return r.ok ? json({ ok: true, list }) : json({ error: "save failed " + r.status }, 500);
+  }
+  if (body.action === "recat") {
+    // move films filed under a catch-all shelf (Original worlds, What if, AI series) into a named world the classifier now knows
+    const key = Netlify.env.get("SUPABASE_SERVICE_ROLE_KEY"), base = Netlify.env.get("SUPABASE_URL") + "/rest/v1/";
+    const h = { apikey: key, "Content-Type": "application/json", Prefer: "return=minimal" };
+    if (!key.startsWith("sb_secret_")) h.Authorization = "Bearer " + key;
+    const LOOSE = ["original", "whatif", "aiseries"], groups = {};
+    for (let from = 0; from < 300000; from += 1000) {
+      const r = await fetch(base + `catalog?select=id,title,cat&cat=in.(${LOOSE.join(",")})&hidden=eq.false&order=id&offset=${from}&limit=1000`, { headers: h });
+      if (!r.ok) return json({ error: "Supabase " + r.status }, 500);
+      const rows = await r.json();
+      for (const x of rows) { const c = classify(x.title || "", "", true); if (c && !LOOSE.includes(c.cat)) (groups[c.cat + "|" + c.char + "|" + c.lore] ||= []).push(x.id); }
+      if (rows.length < 1000) break;
+    }
+    let moved = 0; const by = {};
+    for (const [k, ids] of Object.entries(groups)) {
+      const [cat, char, lore] = k.split("|");
+      for (let i = 0; i < ids.length; i += 300) {
+        const list = ids.slice(i, i + 300).map((x) => '"' + x.replace(/"/g, "") + '"').join(",");
+        const r = await fetch(base + "catalog?id=in.(" + encodeURIComponent(list) + ")", { method: "PATCH", headers: h, body: JSON.stringify({ cat, char, lore }) });
+        if (r.ok) { moved += Math.min(300, ids.length - i); by[cat] = (by[cat] || 0) + Math.min(300, ids.length - i); }
+      }
+    }
+    return json({ ok: true, moved, by });
   }
   if (body.action === "hidechannel" || body.action === "cleanup") {
     const key = Netlify.env.get("SUPABASE_SERVICE_ROLE_KEY"), base = Netlify.env.get("SUPABASE_URL") + "/rest/v1/";
