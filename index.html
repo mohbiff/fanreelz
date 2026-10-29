@@ -577,9 +577,16 @@ body.spfs .spback{display:flex}
 .sprail{transition:opacity .3s}.sp.uihide .sprail{opacity:0;pointer-events:none}
 /* shorts: YouTube's own controls are off (they doubled our pause button and never showed on a tap), so the short has its own time bar */
 .spbar{position:absolute;left:0;right:0;bottom:0;z-index:5;padding:14px 12px calc(10px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:2px;background:linear-gradient(transparent,rgba(0,0,0,.5));transition:background .3s}
-.spseek{width:100%;margin:0;height:22px;accent-color:#ff2d55;cursor:pointer;touch-action:none}
+.spseek{width:100%;margin:0;height:18px;cursor:pointer;touch-action:none;-webkit-appearance:none;appearance:none;background:transparent}
+/* slim, YouTube-style: a 3px line (red where it has played) and a small dot that grows while you drag */
+.spseek::-webkit-slider-runnable-track{height:3px;border-radius:2px;background:linear-gradient(90deg,#ff2d55 var(--p,0%),rgba(255,255,255,.35) var(--p,0%))}
+.spseek::-webkit-slider-thumb{-webkit-appearance:none;width:11px;height:11px;margin-top:-4px;border-radius:50%;background:#ff2d55;border:0;transition:transform .15s}
+.spseek:active::-webkit-slider-thumb{transform:scale(1.35)}
+.spseek::-moz-range-track{height:3px;border-radius:2px;background:rgba(255,255,255,.35)}.spseek::-moz-range-progress{height:3px;border-radius:2px;background:#ff2d55}
+.spseek::-moz-range-thumb{width:11px;height:11px;border-radius:50%;background:#ff2d55;border:0}
+.spposter{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:2;pointer-events:none;transition:opacity .25s;background:#000}.spposter.off{opacity:0}
 .sptime{color:#fff;font-size:12px;font-weight:600;text-shadow:0 1px 3px #000;transition:opacity .3s}
-.sp.uihide .spbar{background:none}.sp.uihide .sptime{opacity:0}.sp.uihide .spseek{opacity:.55}
+.sp.uihide .spbar{background:none}.sp.uihide .sptime{opacity:0}.sp.uihide .spseek{opacity:.6}.sp.uihide .spseek::-webkit-slider-thumb{transform:scale(0)}
 /* YouTube keeps its own logo and link row at the very bottom of the player even without controls: never cover it */
 .sp .spbar{bottom:64px;padding:6px 12px 4px;background:none}
 .sp:has(.spbar) .sprail{bottom:126px}
@@ -2639,6 +2646,10 @@ function renderShorts(){
     else sp.insertAdjacentHTML("afterbegin",f.tt?ttFrame(f.tt).replace("?music_info=1","?fullscreen_button=0&music_info=1"):ytFrame(f.yt).replace("&enablejsapi=1","&enablejsapi=1&fs=0&controls=0"))}
   if(spSlide){const sp=$(".sp");if(sp){sp.classList.add(spSlide>0?"slideup":"slidedown")}spSlide=0}
   if(!keepFrame||fromPre){spPaused=false;spState=null;spDur=0;spCur=0}if(fromPre){spWake();setTimeout(spWake,400)}
+  // the short's own picture covers YouTube's loading screen and its big play/pause button until the video really plays
+  if(f.yt&&(!keepFrame||fromPre)){const sp=$(".sp");if(sp&&!sp.querySelector(".spposter")){const fr=sp.querySelector("iframe");
+    const im=`<img class="spposter" alt="" src="https://i.ytimg.com/vi/${esc(f.yt)}/oardefault.jpg" onerror="this.onerror=null;this.src='https://i.ytimg.com/vi/${esc(f.yt)}/hqdefault.jpg'">`;
+    if(fr)fr.insertAdjacentHTML("afterend",im);setTimeout(spPosterOff,5000)}}
     spPreload(nx);setTimeout(()=>spShowCtl(spPaused),0);{const sp=$(".sp");if(sp){
     if(sp.querySelector("iframe"))sp.insertAdjacentHTML("beforeend",'<div class="spcatch" aria-hidden="true"></div><div class="spicon" aria-hidden="true"></div>');
     if(f.yt&&sp.querySelector("iframe"))sp.insertAdjacentHTML("beforeend",'<div class="spbar"><input class="spseek" type="range" min="0" max="1000" step="1" value="0" aria-label="Seek"><span class="sptime">0:00 / 0:00</span></div>');
@@ -2822,8 +2833,9 @@ function spToggle(){
   spShowCtl();
 }
 let spCtlT=null,spDur=0,spCur=0,spDrag=false;
+function spPosterOff(){const p=document.querySelector(".sp .spposter");if(!p||p.classList.contains("off"))return;p.classList.add("off");setTimeout(()=>p.remove(),260)}
 function spPaintBar(){const r=document.querySelector(".spseek"),t=document.querySelector(".sptime");if(!r||!t)return;
-  if(!spDrag&&spDur)r.value=Math.round(spCur/spDur*1000);t.textContent=hms((spDrag?r.value/1000*spDur:spCur)*1000)+" / "+hms(spDur*1000)}
+  if(!spDrag&&spDur)r.value=Math.round(spCur/spDur*1000);r.style.setProperty("--p",(r.value/10)+"%");t.textContent=hms((spDrag?r.value/1000*spDur:spCur)*1000)+" / "+hms(spDur*1000)}
 document.addEventListener("input",e=>{if(!e.target.matches?.(".spseek"))return;spDrag=true;spShowCtl(false);spPaintBar()});
 document.addEventListener("change",e=>{if(!e.target.matches?.(".spseek"))return;const fr=document.querySelector(".sp iframe");spCur=e.target.value/1000*spDur;spDrag=false;
   try{fr.contentWindow.postMessage(JSON.stringify({event:"command",func:"seekTo",args:[spCur,true]}),"*")}catch(x){}spPaintBar()});
@@ -3175,7 +3187,8 @@ addEventListener("message",e=>{
   const fr=[...document.querySelectorAll(".player iframe, .sp iframe")].find(i=>i.contentWindow===e.source);if(!fr)return;
   if(playing&&fr.closest(".player")&&!document.querySelector(".endnext.early"))hideEnd();
   if(fr.closest(".player"))fpInfo(d);
-  if(fr.closest(".sp")){const ps=d.event==="onStateChange"?d.info:d.event==="infoDelivery"&&d.info?d.info.playerState:undefined;if(typeof ps==="number")spState=ps}
+  if(fr.closest(".sp")){const ps=d.event==="onStateChange"?d.info:d.event==="infoDelivery"&&d.info?d.info.playerState:undefined;if(typeof ps==="number")spState=ps;
+    if(ps===1||(d.event==="infoDelivery"&&d.info&&+d.info.currentTime>0.15))spPosterOff()}
   if(fr.closest(".sp")&&d.event==="infoDelivery"&&d.info){if(typeof d.info.duration==="number"&&d.info.duration>0)spDur=d.info.duration;if(typeof d.info.currentTime==="number")spCur=d.info.currentTime;spPaintBar()}
   if(!ended)return;
   if(fr.closest(".sp")){if(state.view==="shorts"&&!spPaused)stepShort(1);return}
