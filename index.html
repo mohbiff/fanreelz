@@ -2501,11 +2501,6 @@ function renderHomeF(){
   const srt=l=>state.sort==="views"?[...l].sort((a,b)=>(b.ytViews||0)-(a.ytViews||0)):state.sort==="new"?[...l].sort((a,b)=>(a.days??1e9)-(b.days??1e9)):state.sort==="top"?[...l].sort((a,b)=>stats(b).bayes-stats(a).bayes):l;
   const base=srt(feedList()),films=base.filter(f=>f.format!=="short"),shorts=base.filter(f=>f.format==="short"),series=seriesList();
   let html=(!c&&!state.q&&state.feed==="home"&&state.format==="all"&&state.group==="All"?`<p class="hometag">All the best AI fan films in one place, sorted by game, anime, book and series. <button class="hometag-l" data-view="about">Learn more →</button></p>`:"")+`<div class="chips">${chips.join("")}</div>`;
-  // a group tab (Anime, Cartoons…): a button that lists every category in it
-  {const g=!c&&!state.q&&GROUPS.find(x=>x.name===state.group);
-   if(g){const n={};allFilms().forEach(f=>n[f.cat]=(n[f.cat]||0)+1);const cs=g.cats.filter(x=>isMod||n[x.id]).sort((a,b)=>a.name.localeCompare(b.name));
-    html+=`<button class="btn ghost gcatbtn" data-gcats="" aria-expanded="${gcatsOpen}">${icon("list")} All ${cs.length} categories in ${esc(g.name)} <span aria-hidden="true">${gcatsOpen?"▴":"▾"}</span></button>`;
-    if(gcatsOpen)html+=`<div class="dirgrid gcatgrid">${cs.map(x=>`<button class="dircard dirhead" data-cat="${x.id}">${cav(x.name,40)}<span><b>${esc(x.name)}</b>${isMod?`<small>${n[x.id]||0} films</small>`:""}</span></button>`).join("")}</div>`}}
   if(state.family)html+=`<div class="familybar">${icon("shield")} Family-friendly mode is on. Only films suited for younger viewers are shown.<button data-family="">Turn off</button></div>`;
   if(!c&&!state.q&&state.group===FOR_YOU){$("#main").innerHTML=html+forYouHtml();return}
   if(c)html+=`<h1 class="sect-h" style="font-size:24px;margin-top:4px">${cav(c.name,48)} ${esc(c.name)}${isMod?`<span class="vmeta" style="font-size:14px;font-weight:500">${films.length} films · ${shorts.length} shorts · ${series.length} series</span>`:""}</h1>`;
@@ -2538,6 +2533,12 @@ function renderHomeF(){
       const top=[...films].sort((a,b)=>filmTrend(b)-filmTrend(a)).slice(0,5);const ids=new Set(top.map(f=>f.id));rest=films.filter(f=>!ids.has(f.id)).sort((a,b)=>(langTier(b)-langTier(a))||(a.days-b.days));
       html+=`<section class="shelf"><h2>${icon("trend")} Trending films ${c?"in "+esc(state.char||c.name):state.group==="All"?"":"in "+esc(state.group)}</h2><div class="shelfrow">${top.map((f,i)=>card(f,i+1)).join("")}</div></section>`;
     }
+    // a group or category: also its best-rated and most-watched films
+    if(shelves&&(c||state.group!=="All")&&films.length>=6){const ttl=c?esc(state.char||c.name):esc(state.group);
+      const pop=[...films].sort((a,b)=>(stats(b).n?stats(b).bayes*1e6:0)+viewsOf(b)-((stats(a).n?stats(a).bayes*1e6:0)+viewsOf(a))).slice(0,12);
+      const mw=[...films].filter(f=>f.ytViews).sort((a,b)=>b.ytViews-a.ytViews).slice(0,12);
+      if(pop.length>=3)html+=`<section class="shelf"><h2>${icon("heart")} Popular in ${ttl}<button class="seeall" data-sort="top">See all</button></h2><div class="shelfrow">${pop.map(f=>card(f)).join("")}</div></section>`;
+      if(mw.length>=3)html+=`<section class="shelf"><h2>${icon("top")} Most watched in ${ttl}<button class="seeall" data-sort="views">See all</button></h2><div class="shelfrow">${mw.map(f=>card(f)).join("")}</div></section>`;}
     // Full-length films (20 min or more): something to sit down and watch like a real movie
     if(shelves){const lf=films.filter(f=>secs(f.len)>=1200).sort((a,b)=>filmTrend(b)-filmTrend(a));
       if(lf.length>=3)html+=`<section class="shelf"><h2>${icon("film")} Full-length films ${c?"":"<small class=\"vmeta\" style=\"font-weight:500;font-size:13px\">20+ min</small>"}<button class="seeall" data-longfilms="">See all${isMod?" "+lf.length:""}</button></h2><div class="shelfrow">${lf.slice(0,8).map(f=>card(f)).join("")}</div></section>`}
@@ -2548,7 +2549,9 @@ function renderHomeF(){
     if(shorts.length){const sl=shelves?[...shorts].sort((a,b)=>filmTrend(b)-filmTrend(a)):shorts;
       html+=`<section class="shelf"><h2>${icon("short")} Shorts<button class="seeall" data-fmt="short">See all${isMod?" "+shorts.length:""}</button></h2><div class="shortrow">${sl.slice(0,12).map(shortCard).join("")}</div></section>`;}
     if(series.length)html+=`<section class="shelf"><h2>${icon("series")} Series<button class="seeall" data-fmt="series">See all${isMod?" "+series.length:""}</button></h2><div class="shelfrow">${series.slice(0,8).map(seriesCard).join("")}</div></section>`;
-    if(rest.length)html+=`<h2 class="sect-h">${icon("film")} ${shelves?"Latest films":"Films"}</h2>`+moreGrid("grid",rest,f=>card(f));
+    // group tabs show only the shelves; the full list is one tap away
+    if(shelves&&!c&&state.group!=="All"&&state.group!==FOR_YOU&&films.length>=6)html+=`<p style="text-align:center;margin:18px 0"><button class="btn ghost" data-sort="new">${icon("film")} Browse all ${esc(state.group)} films</button></p>`;
+    else if(rest.length)html+=`<h2 class="sect-h">${icon("film")} ${shelves?"Latest films":"Films"}</h2>`+moreGrid("grid",rest,f=>card(f));
     if(!films.length&&!shorts.length&&!series.length)html+=empty;
   }
   html+=`<p class="note">The films are real AI fan films from YouTube, TikTok and Vimeo, picked by Fanreelz. Premieres and some Community pages still show examples.</p>`;
