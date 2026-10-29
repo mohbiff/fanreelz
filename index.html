@@ -1253,7 +1253,8 @@ function renderWatch(){
   // Fanreelz share button on top of YouTube's own share icon (top right of the player), so sharing gives a fanreelz.com link
   // the control bar goes in right away (not a moment later), so a page refresh never shows the player without it for a frame
   if(f.yt){try{fpMount(f)}catch(e){setTimeout(()=>fpMount(f),0)}}
-  if(f.ig||f.vm||f.dm||f.tt||f.yt)setTimeout(()=>{const pl=$(".player");if(pl&&pl.querySelector("iframe")&&!$(".pbar"))pl.insertAdjacentHTML("afterend",`<div class="pbar"><button class="btn ghost" data-theater="" aria-pressed="${theater}"><svg class="i" viewBox="0 0 24 24">${theater?'<rect x="5" y="7" width="14" height="10" rx="1.5"/>':'<rect x="2" y="6" width="20" height="12" rx="1.5"/>'}</svg>${theater?"Default view":"Theater mode"}</button></div>`)},0);
+  // the Theater mode row is added in the same frame (a later timer let the page jump up for a moment on every refresh)
+  if(f.ig||f.vm||f.dm||f.tt||f.yt){const addPbar=()=>{const pl=$(".player");if(pl&&pl.querySelector("iframe")&&!$(".pbar"))pl.insertAdjacentHTML("afterend",`<div class="pbar"><button class="btn ghost" data-theater="" aria-pressed="${theater}"><svg class="i" viewBox="0 0 24 24">${theater?'<rect x="5" y="7" width="14" height="10" rx="1.5"/>':'<rect x="2" y="6" width="20" height="12" rx="1.5"/>'}</svg>${theater?"Default view":"Theater mode"}</button></div>`)};addPbar();if(!$(".pbar"))setTimeout(addPbar,0)}
   if(f.ig||f.vm||f.dm)$(".player").innerHTML=extFrame(f);
 }
 function renderBrowse(){
