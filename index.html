@@ -68,6 +68,8 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
 button,input,select{font:inherit;color:inherit}
 button{cursor:pointer}
 :focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+/* no blue tap flash on Android (the browser default); keyboard focus still shows the outline above */
+html{-webkit-tap-highlight-color:transparent}*{-webkit-tap-highlight-color:transparent}:focus:not(:focus-visible){outline:none}
 svg.i{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:none}
 
 /* top bar */
