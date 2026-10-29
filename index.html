@@ -924,7 +924,7 @@ function guestNudge(){if(acct.online)return;const n=guestCount(),today=new Date(
 const EARLY_UNTIL=Date.parse("2027-01-01T00:00:00Z");
 const earlyFan=uid=>{const t=uid===acct.uid?Date.parse(acct.me?.joined||joined[uid]||""):Date.parse(joined[uid]||"");return t&&t<EARLY_UNTIL};
 const earlyBadge=uid=>earlyFan(uid)?`<span class="earlyfan" title="Joined Fanreelz during the beta">⭐ Early fan</span>`:"";
-const state={format:"all",dur:"any",shortList:null,shortI:0,series:null,season:1,ctab:"film",family:store.get("fr_family",false),lore:"all",creator:null,tv:"top",view:"home",feed:"home",group:"All",cat:null,char:null,q:"",film:null,bgroup:"All",azLimit:60};
+const state={sort:"",format:"all",dur:"any",shortList:null,shortI:0,series:null,season:1,ctab:"film",family:store.get("fr_family",false),lore:"all",creator:null,tv:"top",view:"home",feed:"home",group:"All",cat:null,char:null,q:"",film:null,bgroup:"All",azLimit:60};
 const $=s=>document.querySelector(s);
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const rawFilms=()=>[...sharedSubs.filter(f=>f.format!=="episode"),...FILMS];
@@ -2439,7 +2439,9 @@ function renderHomeF(){
   const c=CATS.find(x=>x.id===state.cat);
   const chips=c?[`<button class="chip ${!state.char?"on":""}" data-char="">All</button>`,...c.chars.map(ch=>`<button class="chip ${state.char===ch?"on":""}" data-char="${esc(ch)}">${esc(ch)}</button>`)]
     :["All",...GROUPS.map(g=>g.name)].map(g=>`<button class="chip ${state.group===g||(g==="All"&&state.group===FOR_YOU)?"on":""}" data-group="${esc(g)}">${esc(g)}</button>`);
-  const base=feedList(),films=base.filter(f=>f.format!=="short"),shorts=base.filter(f=>f.format==="short"),series=seriesList();
+  // optional sort chosen by the viewer: most viewed on YouTube, newest, top rated
+  const srt=l=>state.sort==="views"?[...l].sort((a,b)=>(b.ytViews||0)-(a.ytViews||0)):state.sort==="new"?[...l].sort((a,b)=>(a.days??1e9)-(b.days??1e9)):state.sort==="top"?[...l].sort((a,b)=>stats(b).bayes-stats(a).bayes):l;
+  const base=srt(feedList()),films=base.filter(f=>f.format!=="short"),shorts=base.filter(f=>f.format==="short"),series=seriesList();
   let html=(!c&&!state.q&&state.feed==="home"&&state.format==="all"&&state.group==="All"?`<p class="hometag">All the best AI fan films in one place, sorted by game, anime, book and series. <button class="hometag-l" data-view="about">Learn more →</button></p>`:"")+`<div class="chips">${chips.join("")}</div>`;
   if(state.family)html+=`<div class="familybar">${icon("shield")} Family-friendly mode is on. Only films suited for younger viewers are shown.<button data-family="">Turn off</button></div>`;
   if(!c&&!state.q&&state.group===FOR_YOU){$("#main").innerHTML=html+forYouHtml();return}
@@ -2452,6 +2454,7 @@ function renderHomeF(){
   if(state.feed==="new"&&!c)html+=`<h2 class="sect-h">${icon("fresh")} Newest</h2>`;
   if(state.feed==="mine"&&!c)html+=`<h2 class="sect-h">${icon("mine")} Your ratings</h2>`;
   html+=fmtTabs(films.length+shorts.length,films.length,shorts.length,series.length);
+  if(state.format!=="series")html+=`<div class="lorebar sortbar" role="group" aria-label="Sort" style="flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none">${[["","Recommended"],["views","Most viewed"],["new","Newest"],["top","Top rated"]].map(([k,l])=>`<button style="flex-shrink:0" class="${(state.sort||"")===k?"on":""}" data-sort="${k}">${l}</button>`).join("")}</div>`;
   const sub=c&&state.format!=="short"&&state.format!=="series"?`<div class="lorebar">${[["all","All films"],["lore","Lore-accurate"],["whatif","What if"]].map(([k,l])=>`<button class="${state.lore===k?"on":""}" data-lore="${k}">${l}</button>`).join("")}</div>`:"";
   const empty=`<div class="empty">${state.feed==="mine"?(acct.online?"You haven't rated anything here yet.":"Sign in to see what you've rated."):c&&!state.q?`<b style="display:block;color:var(--fg);font-size:17px;margin-bottom:6px">No ${esc(c.name)} films yet</b>Fanreelz searches YouTube every hour and adds new AI fan films here automatically.<br>Know a good one? <button class="btn" data-submitcat="" style="margin-top:14px">Submit a film</button>`:"Nothing here yet. Submit the first one."}</div>`;
   if(state.format==="film"){
@@ -2464,7 +2467,7 @@ function renderHomeF(){
     html+=series.length?moreGrid("grid",series,seriesCard):empty;
   }else{
     html+=sub;
-    const shelves=state.feed==="home"&&!state.q;
+    const shelves=state.feed==="home"&&!state.q&&!state.sort;
     let rest=films;
     if(shelves&&!c&&state.group==="All"&&interests().n>=2){const fy=forYouList("film").slice(0,8);
       if(fy.length>=3)html+=`<section class="shelf"><h2>✨ For you<button class="seeall" data-group="${FOR_YOU}">See all</button></h2><div class="shelfrow">${fy.map(f=>card(f)).join("")}</div></section>`}
@@ -2478,6 +2481,7 @@ function renderHomeF(){
     if(shelves&&!c&&state.group==="All")GROUPS.forEach(g=>{const ids=new Set(g.cats.map(x=>x.id));const all=films.filter(f=>ids.has(f.cat));
       const row=[...all].sort((a,b)=>filmTrend(b)-filmTrend(a)).slice(0,8);if(row.length<3)return;
       html+=`<section class="shelf"><h2><button class="shelfh" data-group="${esc(g.name)}">${esc(g.name)} <span aria-hidden="true">›</span></button><button class="seeall" data-group="${esc(g.name)}">See all${isMod?" "+all.length:""}</button></h2><div class="shelfrow">${row.map(f=>card(f)).join("")}</div></section>`});
+    if(state.sort&&rest.length){html+=`<h2 class="sect-h">${icon("film")} Films</h2>`+moreGrid("grid",rest,f=>card(f));rest=[]}
     if(shorts.length){const sl=shelves?[...shorts].sort((a,b)=>filmTrend(b)-filmTrend(a)):shorts;
       html+=`<section class="shelf"><h2>${icon("short")} Shorts<button class="seeall" data-fmt="short">See all${isMod?" "+shorts.length:""}</button></h2><div class="shortrow">${sl.slice(0,12).map(shortCard).join("")}</div></section>`;}
     if(series.length)html+=`<section class="shelf"><h2>${icon("series")} Series<button class="seeall" data-fmt="series">See all${isMod?" "+series.length:""}</button></h2><div class="shelfrow">${series.slice(0,8).map(seriesCard).join("")}</div></section>`;
@@ -3133,7 +3137,7 @@ function renderInner(){
   document.title=pageTitle();
   if(state.view==="contest")ticker=setInterval(()=>{const el=$("#cEnd");if(el)el.textContent=until(contestNow().end-Date.now())},1000);
 }
-const NAVKEYS=["user","utab","view","feed","group","cat","char","q","film","format","dur","series","season","creator","shortList","shortI","bgroup","ctab","tv","lore"];
+const NAVKEYS=["sort","user","utab","view","feed","group","cat","char","q","film","format","dur","series","season","creator","shortList","shortI","bgroup","ctab","tv","lore"];
 const navSnap=()=>JSON.parse(JSON.stringify(Object.fromEntries(NAVKEYS.map(k=>[k,state[k]]))));
 /* Every page gets its own address (fanreelz.com/film/…, /shorts/…, /about …) so links can be shared and reloaded. */
 const PAGES=["admin","top10","showdown","you","history","later","liked","yourvideos","about","live","premieres","tv","battles","requests","contest","playlists","discord","browse"];
@@ -3355,6 +3359,7 @@ document.addEventListener("click",async e=>{
   if(A("[data-family-info]")){toast("Marked as suitable for younger viewers");return}
   if(A("[data-news]")){toggleNewsletter();return}
   if(x=A("[data-lore]")){state.lore=x.dataset.lore;render();return}
+  if(x=A("[data-sort]")){state.sort=x.dataset.sort;render();return}
   if(x=A("[data-lore-go]")){go({view:"home",feed:"home",cat:x.dataset.cat,char:null,lore:x.dataset.loreGo});return}
   if(x=A("[data-bpool]")){battle.pool=x.dataset.bpool;battle.pair=null;render();return}
   if(x=A("[data-vote]")){castVote(x.dataset.vote);return}
