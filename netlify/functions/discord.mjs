@@ -40,10 +40,13 @@ async function top(i) {
 }
 async function random(i) {
   const c = findCat(opt(i, "category"));
-  const rows = await sb(`catalog?select=id,title,views,video_id,channel&hidden=eq.false&age_restricted=eq.false${c ? "&cat=eq." + c.id : ""}&order=views.desc&limit=200`);
+  const rows = await sb(`catalog?select=id,title,views,video_id,channel,cat,format&hidden=eq.false&age_restricted=eq.false${c ? "&cat=eq." + c.id : ""}&order=views.desc&limit=200`);
   if (!rows.length) return reply({ content: "No films found.", flags: 64 });
   const r = rows[Math.floor(Math.random() * rows.length)];
-  return reply({ content: `🎬 **${r.title}**${r.channel ? ` by ${r.channel}` : ""}\nRate it on Fanreelz: <${filmUrl(r)}>\nhttps://www.youtube.com/watch?v=${r.video_id}` });
+  // the same Fanreelz card as the daily video: everything opens the film on Fanreelz
+  const m = dailyMessage({ ...r, format: r.format }, {});
+  m.content = "🎲 **Random AI fan film**";
+  return reply(m);
 }
 async function search(i) {
   const q = String(opt(i, "query") || "").replace(/[%*,()]/g, " ").trim().slice(0, 60);

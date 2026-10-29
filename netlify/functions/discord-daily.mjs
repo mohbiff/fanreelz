@@ -63,8 +63,17 @@ export async function todaysPick(s, topic = {}) {
   return film;
 }
 
+// a card whose title, picture and button all open the film on Fanreelz (not YouTube), so people watch and rate it there
+export const filmLink = (f) => `${SITE}/${f.format === "short" ? "shorts" : "film"}/${encodeURIComponent(f.id)}`;
 export const dailyMessage = (f, topic = {}) => ({
-  content: `🎬 **AI video of the day**${topic.cat || topic.char ? ` · ${topicName(topic)}` : ""}\n**${f.title.replace(/[*_~`]/g, "")}**${f.channel ? ` by ${f.channel}` : ""}${f.views ? ` · ${fmt(f.views)} views` : ""}\nRate it on Fanreelz: <${SITE}/${f.format === "short" ? "shorts" : "film"}/${encodeURIComponent(f.id)}>\nhttps://www.youtube.com/watch?v=${f.video_id}`,
+  content: `🎬 **AI video of the day**${topic.cat || topic.char ? ` · ${topicName(topic)}` : ""}`,
+  embeds: [{
+    color: 0xffd23f, title: f.title.slice(0, 250), url: filmLink(f),
+    description: [f.channel ? `by ${f.channel}` : "", f.views ? `${fmt(f.views)} views` : "", f.cat ? catName(f.cat) : ""].filter(Boolean).join(" · ") + `\n\n▶️ **[Watch and rate it on Fanreelz](${filmLink(f)})**`,
+    image: f.video_id ? { url: `https://i.ytimg.com/vi/${f.video_id}/hqdefault.jpg` } : undefined,
+    footer: { text: "Fanreelz · the home of AI fan films" },
+  }],
+  components: [{ type: 1, components: [{ type: 2, style: 5, label: "Watch on Fanreelz", url: filmLink(f) }] }],
   allowed_mentions: { parse: [] },
 });
 
