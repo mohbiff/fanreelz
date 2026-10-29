@@ -2,7 +2,7 @@
 // so no always-on server is needed. Commands: /top, /random, /search, /showdown, /today, /daily, /fanreelz.
 // Needs in Netlify: DISCORD_PUBLIC_KEY (from the Discord app's General Information page), SUPABASE_URL, SUPABASE_ANON_KEY.
 import CATS from "./lib/catmap.mjs";
-import { loadState, saveState, todaysPick, dailyMessage, postTo } from "./discord-daily.mjs";
+import { loadState, saveState, todaysPick, dailyMessage, postTo, cleanChar, topicName } from "./discord-daily.mjs";
 
 const SITE = "https://fanreelz.com";
 const COLOR = 0xffd23f;
@@ -62,39 +62,48 @@ async function showdown() {
   const bar = d.verdict ? `\n**${d.a} ${d.verdict.pa}%** vs **${d.verdict.pb}% ${d.b}**\n${d.verdict.summary || ""}` : "\nNo verdict yet: it goes live after 10 votes.";
   return reply({ embeds: [{ color: COLOR, title: `⚔️ ${d.a} vs ${d.b}`, url, description: `Who wins? Vote and tell everyone why.${bar}`, footer: { text: "Fanreelz Character Showdown" } }] });
 }
-// /today: today's AI video for anyone; /daily on|off: a server admin turns the daily post on in this channel (or off)
-async function today() {
-  const s = await loadState(), f = await todaysPick(s);
-  if (!f) return reply({ content: "No video today, try again later.", flags: 64 });
-  await saveState(s);
-  return reply(dailyMessage(f));
+// /today and /daily take the same choices: nothing (all AI fan films), a world (game, series, movie, anime, cartoon…) and/or a character
+function topicOf(i) {
+  const raw = opt(i, "category"), c = findCat(raw), ch = cleanChar(opt(i, "character"));
+  if (raw && !c) return { error: `I don't know "${raw}". Start typing and pick a game, series, movie, anime or cartoon from the list.` };
+  return { cat: c?.id || "", char: ch };
 }
+// /today: today's AI video for anyone
+async function today(i) {
+  const t = topicOf(i); if (t.error) return reply({ content: t.error, flags: 64 });
+  const s = await loadState(), f = await todaysPick(s, t);
+  if (!f) return reply({ content: `No AI fan films found for ${topicName(t)} yet. Try another name.`, flags: 64 });
+  await saveState(s);
+  return reply(dailyMessage(f, t));
+}
+// /daily: a server admin turns the daily post on in this channel (with an optional world and/or character), or off
 async function daily(i) {
   if (!i.guild_id) return reply({ content: "Use /daily in a server channel. In private messages, try /today.", flags: 64 });
   const perms = BigInt(i.member?.permissions || "0");
   if (!(perms & 0x20n) && !(perms & 0x8n)) return reply({ content: "Only people who can manage this server can turn the daily video on or off.", flags: 64 });
-  const mode = opt(i, "mode") || "on", s = await loadState();
-  if (mode === "off") {
-    const had = !!s.channels[i.guild_id];
-    delete s.channels[i.guild_id]; await saveState(s);
-    return reply({ content: had ? "Daily AI video turned off for this server." : "The daily AI video wasn't on in this server.", flags: 64 });
+  const s = await loadState(), id = i.guild_id + ":" + i.channel_id;
+  if (opt(i, "mode") === "off") {
+    const had = !!s.channels[id];
+    delete s.channels[id]; await saveState(s);
+    return reply({ content: had ? "Daily AI video turned off in this channel." : "The daily AI video wasn't on in this channel.", flags: 64 });
   }
-  // post today's film right away: that proves the bot can write in this channel
-  const f = await todaysPick(s);
-  if (!f) return reply({ content: "Couldn't find a video right now. Try again in a moment.", flags: 64 });
-  const res = await postTo(i.channel_id, f);
+  const t = topicOf(i); if (t.error) return reply({ content: t.error, flags: 64 });
+  // post today's film right away: that shows the choice works and proves the bot can write in this channel
+  const f = await todaysPick(s, t);
+  if (!f) return reply({ content: `No AI fan films found for ${topicName(t)} yet. Try another name, or leave it empty for all films.`, flags: 64 });
+  const res = await postTo(i.channel_id, f, t);
   if (!res.ok) return reply({ content: `I can't post in this channel yet. Add the Fanreelz bot to the server (${SITE}/discord) and let it send messages here, then try /daily again.`, flags: 64 });
-  s.channels[i.guild_id] = { channel: i.channel_id, at: new Date().toISOString() };
+  s.channels[id] = { channel: i.channel_id, cat: t.cat, char: t.char, at: new Date().toISOString() };
   await saveState(s);
-  return reply({ content: "✅ Daily AI video is on! A popular AI fan film will be posted in this channel every day at 16:00 UTC. Turn it off with `/daily mode:off`.", flags: 64 });
+  return reply({ content: `✅ Daily AI video is on in this channel: **${topicName(t)}**, every day at 16:00 UTC. Run /daily again to change it, or \`/daily mode:off\` to stop.`, flags: 64 });
 }
 const help = () => reply({ embeds: [{ color: COLOR, title: "Fanreelz bot", url: SITE, description: [
   "`/top [category]` the 5 most watched AI fan films",
   "`/random [category]` a random AI fan film to watch",
   "`/search <words>` find AI fan films",
   "`/showdown` who would win? The hottest Character Showdown",
-  "`/today` today's AI video of the day",
-  "`/daily` (server admins) post a popular AI video in this channel every day",
+  "`/today [category] [character]` today's AI video of the day",
+  "`/daily [category] [character]` (server admins) post a popular AI video in this channel every day; `mode:off` stops it",
 ].join("\n") }] });
 
 export default async (req) => {
@@ -104,7 +113,13 @@ export default async (req) => {
   const i = JSON.parse(body);
   if (i.type === 1) return json({ type: 1 }); // Discord checking the endpoint
   if (i.type === 4) { // autocomplete for the category option
-    const t = String((i.data.options || []).find((o) => o.focused)?.value || "").toLowerCase();
+    const foc = (i.data.options || []).find((o) => o.focused), t = String(foc?.value || "").toLowerCase();
+    if (foc?.name === "character") { // characters Fanreelz knows, from the chosen world first; anything else typed still works
+      const c = findCat(opt(i, "category")), names = [...new Set([...(c?.chars || []), ...CATS.flatMap((x) => x.chars || [])])];
+      const hit = names.filter((n) => !t || n.toLowerCase().includes(t)).slice(0, 25);
+      const typed = cleanChar(foc.value);
+      return json({ type: 8, data: { choices: (typed && !hit.some((n) => n.toLowerCase() === typed.toLowerCase()) ? [typed, ...hit].slice(0, 25) : hit).map((n) => ({ name: n, value: n })) } });
+    }
     const list = CHOOSABLE.filter((c) => !t || c.name.toLowerCase().includes(t) || c.id.includes(t)).slice(0, 25);
     return json({ type: 8, data: { choices: list.map((c) => ({ name: c.name, value: c.id })) } });
   }
@@ -115,7 +130,7 @@ export default async (req) => {
       case "random": return await random(i);
       case "search": return await search(i);
       case "showdown": return await showdown();
-      case "today": return await today();
+      case "today": return await today(i);
       case "daily": return await daily(i);
       default: return help();
     }
