@@ -90,7 +90,11 @@ export default {
       // count the download (people, not search engines or link previews), in the same counter table as film views
       const ua = req.headers.get("User-Agent") || "";
       if (req.method === "GET" && !/bot|crawl|spider|preview|facebookexternalhit|discord|slack|whatsapp|telegram/i.test(ua) && env.SUPABASE_URL && env.SUPABASE_ANON_KEY)
-        ctx.waitUntil(fetch(env.SUPABASE_URL + "/rest/v1/rpc/add_view", { method: "POST", headers: { apikey: env.SUPABASE_ANON_KEY, Authorization: "Bearer " + env.SUPABASE_ANON_KEY, "Content-Type": "application/json" }, body: JSON.stringify({ p_id: "app:download" }) }).catch(() => null));
+      {
+        const add = (id) => fetch(env.SUPABASE_URL + "/rest/v1/rpc/add_view", { method: "POST", headers: { apikey: env.SUPABASE_ANON_KEY, Authorization: "Bearer " + env.SUPABASE_ANON_KEY, "Content-Type": "application/json" }, body: JSON.stringify({ p_id: id }) }).catch(() => null);
+        const cc = String(req.cf?.country || "").toUpperCase();
+        ctx.waitUntil(Promise.all([add("app:download"), /^[A-Z]{2}$/.test(cc) ? add("app:dlc:" + cc) : null]));
+      }
       return Response.redirect("https://github.com/mohbiff/fanreelz/releases/download/app/fanreelz.apk", 302);
     }
     if (url.pathname === "/app-auth") return appAuth(url);

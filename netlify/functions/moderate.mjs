@@ -100,6 +100,7 @@ export default async (req) => {
     const flt = {};
     for (const [k, v] of Object.entries(body.filter || {})) {
       if (["country", "device", "browser", "os"].includes(k) && /^[\w .()-]{1,40}$/.test(String(v))) flt[k] = String(v);
+      if (k === "event" && /^[\w-]{1,40}$/.test(String(v))) flt.event = String(v);
       if (k === "query" && String(v).length <= 120 && !/[\s<>"]/.test(String(v))) flt.query = String(v);
     }
     const metric = async (types, limit = 10) => {
