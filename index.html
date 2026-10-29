@@ -3184,7 +3184,9 @@ document.addEventListener("keydown",e=>{if(e.key==="Escape"&&document.body.class
 window.addEventListener("popstate",e=>{
   if(ignorePop){ignorePop=false;return}
   // Android's back with the keyboard open: close the keyboard and stay on the page
-  {const a=document.activeElement;if(a&&a.matches?.("input:not([type=range]):not([type=checkbox]),textarea")&&phone()){a.blur();ignorePop=true;history.forward();return}}
+  // (only when the keyboard is really on screen: the visible area is much shorter than the screen)
+  {const a=document.activeElement,vh=(window.visualViewport?.height||innerHeight);
+   if(a&&a.matches?.("input:not([type=range]):not([type=checkbox]),textarea")&&phone()&&vh<screen.height*0.62){a.blur();ignorePop=true;history.forward();return}}
   if(document.body.classList.contains("appfs")){appFsOff(true);return}
   if(document.body.classList.contains("wfs")){closeWfs(true);return}
   if($("#shell").classList.contains("open")&&phone()){closeMenu(true);return}
