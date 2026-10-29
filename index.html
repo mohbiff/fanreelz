@@ -3390,6 +3390,14 @@ let rt;addEventListener("resize",()=>{clearTimeout(rt);rt=setTimeout(()=>paintAl
 Object.assign(state,parsePath());if(state.q)$("#q").value=state.q;
 /* A link to a film the page hasn't loaded yet (catalogue and member films arrive a moment later): keep the address and open it once it exists */
 var pendingLink=(()=>{const m=location.pathname.match(/^\/(film|shorts)\/([^/]+)/);if(!m)return null;let id=m[2];try{id=decodeURIComponent(id)}catch(e){}return findFilm(id)?null:{kind:m[1],id}})();
+/* A shared YouTube film link opens at once: the server already put the film's title in the page, so the player starts
+   right away while the full catalogue (thousands of films) is still loading; the real entry replaces this one when it arrives */
+if(pendingLink&&/^yt-[\w-]{11}$/.test(pendingLink.id)){
+  const og=(document.querySelector('meta[property="og:title"]')?.content||"").replace(/\s*\|\s*Fanreelz\s*$/,"");
+  const parts=og.split(/\s+[–-]\s+/),title=parts[0]||"AI fan film",about=(parts[1]||"").replace(/\s*AI fan film\s*$/i,"").toLowerCase();
+  const cat=(about&&CATS.find(c=>c.name.toLowerCase()===about))||CATS.find(c=>c.id==="original")||CATS[0],short=pendingLink.kind==="shorts",v=pendingLink.id.slice(3);
+  FILMS.push({id:pendingLink.id,yt:v,title,cat:cat.id,char:"",src:"YouTube",tool:"AI tools",by:"",len:"",days:null,counts:[0,0,0,0,0],hue:0,format:short?"short":"film",lore:"whatif",boost:0,url:"https://www.youtube.com/watch?v="+v,db:true,stub:true});
+  filmIdx.k="";Object.assign(state,short?{view:"shorts",film:pendingLink.id,shortList:null,shortI:0}:{view:"watch",film:pendingLink.id});pendingLink=null}
 render();
 function signinInUrl(){return /[?&#](code|error|access_token)=/.test(location.search+location.hash)}
 try{history.replaceState({fr:navSnap(),y:0},"",signinInUrl()||pendingLink?location.href:pathFor(state))}catch(e){}
@@ -3523,7 +3531,7 @@ const catSig=rows=>(rows[0]?.added_at?"a|":"")+rows.length+"|"+rows.map(r=>r.id)
 let catLoaded="";
 function useCatalog(rows){
   const sig=catSig(rows);if(sig===catLoaded)return 0;catLoaded=sig;
-  const keep=FILMS.filter(f=>!f.db);FILMS.length=0;for(const f of keep)FILMS.push(f);
+  const rowIds=new Set(rows.map(r=>r.id)),keep=FILMS.filter(f=>!f.db||(f.stub&&!rowIds.has(f.id)));FILMS.length=0;for(const f of keep)FILMS.push(f);
   const have=new Set(FILMS.map(f=>f.id)),known=new Set(CATS.map(c=>c.id));let n=0;
   const byId=new Map(FILMS.map(f=>[f.id,f]));
   rows.forEach((r,k)=>{
