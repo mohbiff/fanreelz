@@ -24,7 +24,10 @@ export async function notePeak(n, prev) {
   // highest per day, the last 90 days ({"2026-10-29": 4, …})
   v.hist = { ...(p?.hist || {}) };
   let ch = !p || p.day !== today;
-  if (n > v.n) { v.n = n; v.at = new Date(now).toISOString(); ch = true; }
+  // every new all-time record is kept: [{n, at}], newest last (the first sample counts as the first record)
+  v.records = [...(p?.records || (p?.n ? [{ n: p.n, at: p.at }] : []))];
+  if (n > v.n) { v.n = n; v.at = new Date(now).toISOString(); v.records.push({ n, at: v.at }); ch = true; }
+  v.records = v.records.slice(-200);
   if (n > v.dn) { v.dn = n; v.dat = new Date(now).toISOString(); ch = true; }
   if ((v.hist[today] || 0) < v.dn) { v.hist[today] = v.dn; ch = true; }
   const keys = Object.keys(v.hist).sort();

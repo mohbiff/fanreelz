@@ -1729,7 +1729,7 @@ function renderUmami(){
   if(!umBase[r]){let seen={};try{seen=JSON.parse(localStorage.getItem("fr_umseen")||"{}")}catch(e){}umBase[r]=seen[r]||snap();
     seen[r]=snap();try{localStorage.setItem("fr_umseen",JSON.stringify(seen))}catch(e){}}
   const plus=k=>{const d=(S[k]||0)-(umBase[r][k]||0);return d>0?`<em class="umplus">+${nf(d)}</em>`:""};
-  const cards=[[nf(U.active||0),"online now ›","",` data-ummore="online" role="button" tabindex="0" style="cursor:pointer" title="See which countries they are in"`],[nf(U.peak?.n||U.active||0),"most online at once",U.peak?.at?`<small class="vmeta">${new Date(U.peak.at).toLocaleString("sv-SE",{dateStyle:"short",timeStyle:"short"})}</small>`:""],
+  const cards=[[nf(U.active||0),"online now ›","",` data-ummore="online" role="button" tabindex="0" style="cursor:pointer" title="See which countries they are in"`],[nf(U.peak?.n||U.active||0),"most online at once ›",U.peak?.at?`<small class="vmeta">${new Date(U.peak.at).toLocaleString("sv-SE",{dateStyle:"short",timeStyle:"short"})}</small>`:"",` data-umpeak="" role="button" tabindex="0" style="cursor:pointer" title="See the records and every day's highest"`],
     [nf(U.peak?.dn||U.active||0),"most online at once today",(()=>{const h=U.peak?.hist||{},y=new Date(Date.now()-864e5).toLocaleDateString("sv-SE",{timeZone:"Europe/Stockholm"});
       return `<small class="vmeta">${U.peak?.dat?"at "+new Date(U.peak.dat).toLocaleTimeString("sv-SE",{hour:"2-digit",minute:"2-digit"}):""}${h[y]!=null?" · yesterday "+nf(h[y]):""}</small>`})(),Object.keys(U.peak?.hist||{}).length?` title="${esc(Object.entries(U.peak.hist).sort().reverse().slice(0,14).map(([d,n])=>d+": "+n).join("\n"))}"`:""],[nf(S.visitors)+plus("visitors"),"unique visitors",delta(S.visitors,P?.visitors)],[nf(S.visits)+plus("visits"),"visits (sessions)",delta(S.visits,P?.visits)],[nf(S.pageviews)+plus("pageviews"),"page views",delta(S.pageviews,P?.pageviews)],[bounce.toFixed(0)+"%","bounce rate",""],[dur(avg),"avg. visit",""]];
   // page views per hour/day as bars, visitors as a line
@@ -1747,7 +1747,7 @@ function renderUmami(){
   const rowPlus=(k,x)=>{const b=umBase[r]?.lists?.[k];if(!b)return "";const d=x.y-(b[x.x]||0);return d>0?`<em class="umplus">+${nf(d)}</em>`:""};
   const list=(k,title)=>{const a=U[k]||[];if(!a.length)return "";const top=Math.max(...a.map(x=>x.y),1),tot=a.reduce((s,x)=>s+x.y,0);
     return `<div class="umbox"><h3>${title}${a.length>=10?`<button class="seeall" data-ummore="${k}">See all</button>`:""}</h3>${(k==="countries"||k==="devices")?`<p class="vmeta" style="font-size:12px;margin:-4px 0 6px">Tap one to see which pages they visited</p>`:""}${a.slice(0,10).map(x=>`<div class="umrow"${umPathAttr(k,x.x)}${(k==="countries"||k==="devices")&&x.x?` data-umdrill="${k==="countries"?"country":"device"}|${esc(x.x)}|${esc(String(name[k](x.x)))}" role="button" style="cursor:pointer"`:""}><span class="umbar" style="width:${x.y/top*100}%"></span><span class="umname">${(k==="pages"||k==="entries")?umPathLabel(x.x):esc(String(name[k](x.x)||"–"))}</span>${rowPlus(k,x)}<b>${nf(x.y)}</b><small>${tot?Math.round(x.y/tot*100):0}%</small></div>`).join("")}</div>`};
-  $("#main").innerHTML=head+`<div class="adm-cards">${cards.map(([n,l,d,a])=>`<div class="adm-card"${a||""}><b>${n}</b><span>${l} ${d}</span></div>`).join("")}</div>
+  $("#main").innerHTML=head+`<div class="adm-cards">${cards.map(([n,l,d,a])=>`<div class="adm-card"${a||""}><b>${n}</b><span>${l} ${d}</span></div>`).join("")}</div>${umPeakOpen?peakHtml(U.peak):""}
     <div class="umbox" style="margin-top:14px">${chart}</div>
     <div class="umgrid">${list("pages","Pages")}${list("entries","Entry pages")}${list("referrers","Where visitors come from")}${list("countries","Countries")}${list("devices","Devices")}${list("browsers","Browsers")}${list("os","Operating systems")}${list("events","Events")}</div>
     <p class="vmeta" style="margin-top:12px;font-size:12px">${r==="all"?`All time since ${U.from?new Date(U.from).toLocaleDateString("sv-SE"):"the start"}`:`Compared with the previous ${({"24h":"24 hours","7d":"7 days","30d":"30 days","90d":"90 days","365d":"year"})[r]}`} · updated ${new Date(U.at).toLocaleTimeString("sv-SE")} · <a href="https://cloud.umami.is" target="_blank" rel="noopener">Open Umami ↗</a></p>`;
@@ -2707,7 +2707,14 @@ async function postComment(parent,text){
   if(await writeOwn("comments",{items:next})){commentDocs[acct.uid]={items:next};const fm=document.querySelector(`.cmform[data-cparent="${CSS.escape(parent||"")}"] textarea`);if(fm)fm.value="";replyTo=null;render();toast(parent?"Reply posted":"Comment posted");return true}
   return false;
 }
-var gcatsOpen=false;
+var gcatsOpen=false,umPeakOpen=false;
+// "most online at once": every record as it was beaten, and the highest of each day
+function peakHtml(P){const fmt=t=>new Date(t).toLocaleString("sv-SE",{dateStyle:"medium",timeStyle:"short"});
+  const rec=[...(P?.records||[])].reverse(),days=Object.entries(P?.hist||{}).sort().reverse();
+  return `<div class="umbox" style="margin:14px 0"><h3>${icon("trophy")} Records: most online at once<button class="seeall" data-umpeak="">Close</button></h3>
+    ${rec.length?rec.map((r,i)=>`<div class="umrow" style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--line)"><span>${i===0?"🏆 ":""}${fmt(r.at)}</span><b>${r.n.toLocaleString("sv-SE")}</b></div>`).join(""):`<p class="vmeta">No records yet. They are saved from now on, every time more people are online at once.</p>`}
+    <h3 style="margin-top:16px">Highest each day</h3>
+    ${days.length?days.map(([d,n])=>`<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--line)"><span>${new Date(d+"T12:00:00").toLocaleDateString("sv-SE",{weekday:"short",day:"numeric",month:"short"})}</span><b>${n.toLocaleString("sv-SE")}</b></div>`).join(""):`<p class="vmeta">Nothing yet.</p>`}</div>`}
 var isMod=false,adminMsg="",adminBusy=false,adminQ=null;
 document.addEventListener("input",e=>{if(e.target.closest&&e.target.closest("#adminForm"))adminQ=e.target.value});
 /* Admin bar (only for ADMIN_EMAILS): search YouTube now and add the AI films it finds, or start the hourly jobs by hand */
@@ -3449,6 +3456,7 @@ document.addEventListener("click",async e=>{
   if(x=A("[data-sort]")){state.sort=x.dataset.sort;render();return}
   if(x=A("[data-browsesort]")){const g=state.bgroup;go({view:"home",feed:"home",cat:null,char:null,q:"",group:g&&g!=="All"?g:"All",format:"film",sort:x.dataset.browsesort});return}
   if(x=A("[data-gcats]")){gcatsOpen=!gcatsOpen;render();return}
+  if(x=A("[data-umpeak]")){umPeakOpen=!umPeakOpen;render();return}
   if(x=A("[data-lore-go]")){go({view:"home",feed:"home",cat:x.dataset.cat,char:null,lore:x.dataset.loreGo});return}
   if(x=A("[data-bpool]")){battle.pool=x.dataset.bpool;battle.pair=null;render();return}
   if(x=A("[data-vote]")){castVote(x.dataset.vote);return}
