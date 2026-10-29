@@ -494,7 +494,7 @@ html:has(.player.hasbar),html:has(.player.hasbar) body{overscroll-behavior-y:non
 .sside-t{font-size:16px;line-height:1.35}
 .ratebox.pulse{animation:rbpulse .9s ease}@keyframes rbpulse{30%{box-shadow:0 0 0 4px var(--accent)}}
 @media (min-width:861px){
-  body:not(.spfs) .shorts-view{grid-template-columns:auto auto 56px minmax(300px,420px);gap:18px;--sph:min(calc(100vh - 140px),820px);align-items:center;padding-top:12px}
+  body:not(.spfs) .shorts-view{grid-template-columns:auto auto 56px minmax(320px,460px);gap:18px;--sph:calc(100vh - var(--sptop,88px));align-items:center;padding-top:6px}
   body:not(.spfs) .shorts-view .spnext{display:none}
   body:not(.spfs) .shorts-view .spcol{height:auto}
   body:not(.spfs) .shorts-view .sp .sprail{display:none}
@@ -508,7 +508,7 @@ html:has(.player.hasbar),html:has(.player.hasbar) body{overscroll-behavior-y:non
   .sparrow{width:52px;height:52px;border-radius:50%;border:0;background:var(--chip);color:var(--fg);display:grid;place-items:center;cursor:pointer}
   .sparrow:hover{background:var(--hover)}.sparrow:disabled{opacity:.35;cursor:default}
   .sparrow svg{width:26px;height:26px;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
-  body:not(.spfs) .shorts-view .sside{align-self:stretch;height:calc(100vh - 90px);overflow:auto;padding:8px 6px 20px 0;border-left:1px solid var(--line);padding-left:18px}
+  body:not(.spfs) .shorts-view .sside{align-self:stretch;height:calc(100vh - var(--sptop,88px) + 6px);overflow:auto;padding:8px 6px 20px 0;border-left:1px solid var(--line);padding-left:18px}
 }
 @media (max-width:860px){.shorts-view{grid-template-columns:minmax(0,1fr);justify-items:center}.shorts-view{--sph:calc(100svh - 56px - 54px - 24px - env(safe-area-inset-bottom,0px));padding-top:8px;gap:16px}.spcol{height:auto;overflow:visible;width:100%;justify-self:stretch}.spnext{display:none}.shorts-view .sp{width:100%;max-width:100%;aspect-ratio:auto;border-radius:12px}.spcatch{inset:120px 0 120px 0}.sside{width:100%}.sside .comments{max-height:none;overflow:visible}.ep{grid-template-columns:28px 120px minmax(0,1fr)}.ep .azscore{display:none}}
 .tipamts{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
@@ -2736,7 +2736,9 @@ function renderShorts(){
      <div class="row" style="gap:10px;flex-wrap:wrap"><div class="ratebox" role="group" aria-label="Rate this short"><span>${mine?"Your rating":"Rate"}</span>${[1,2,3,4,5].map(k=>`<button data-rate="${k}" class="${k<=mine?"on":""}" aria-label="${k} stars">★</button>`).join("")}</div>
        <button class="chip" data-open-full="${esc(f.id)}">${icon("film")}Details</button>${f.real||f.yt||f.tt||f.ig||f.vm||f.dm?"":`<button class="chip" data-tip="${esc(f.byId||f.by)}" data-tipfilm="${esc(f.id)}">${icon("heart")}Tip</button>`}${isMod&&f.yt?`<button class="chip" data-adminhide="${esc(f.id)}">${icon("shield")}Hide</button>`:""}</div>
      <div class="sptabs" role="tablist"><button role="tab" class="${spTab==="comments"?"on":""}" data-sptab="comments">Comments <small>${filmComments(f.id).length}</small></button><button role="tab" class="${spTab==="like"?"on":""}" data-sptab="like">You may like</button></div>
-     <div class="sptabbody">${spTab==="comments"?commentsHtml(f):spLikeGrid(list)}</div></div></div>`;
+     <div class="sptabbody">${spTab==="comments"?commentsHtml(f):spLikeGrid()}</div></div></div>`;
+  // computers: the short fills the height left under the header (and the beta bar, when it shows)
+  {const m=$("#main");if(m)document.documentElement.style.setProperty("--sptop",Math.round(m.getBoundingClientRect().top+scrollY+34)+"px")}
   if(f.ig||f.vm||f.dm){const sp=$(".sp");sp.querySelector("canvas")?.remove();sp.querySelector(".play")?.remove();sp.insertAdjacentHTML("afterbegin",f.ig?extFrame(f):extFrame(f).replace("inset:0","inset:0;top:25%;height:50%"))}
   if(f.tt||f.yt){const sp=$(".sp");sp.querySelector("canvas")?.remove();sp.querySelector(".play")?.remove();
     if(keepFrame){try{sp.moveBefore(keepFrame,sp.firstChild)}catch(e){sp.insertBefore(keepFrame,sp.firstChild)}}
@@ -2774,14 +2776,22 @@ function spRailOut(f,s,mine){const liked=(likeDocs[acct.uid]?.ids||{})["film-"+f
     <button data-save="${esc(f.id)}" aria-label="Save"><span class="spb"><svg viewBox="0 0 24 24"><path d="M6 3h12v18l-6-4-6 4z"/></svg></span><small>Save</small></button>
     <button data-share="${esc(f.id)}" data-share-short="1" aria-label="Share"><span class="spb"><svg viewBox="0 0 24 24"><path d="M14 4l7 7-7 7v-4c-6 0-9 2-11 6 1-7 4-11 11-12z"/></svg></span><small>Share</small></button>
     <button data-spfull="" aria-label="Full screen"><span class="spb"><svg viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></span><small>Full</small></button></div>`}
-function spLikeGrid(list){let L=state.shortList||list;if(L.length<state.shortI+13){const more=shuffledShorts(L.slice(-4));if(more.length)L=state.shortList=[...L,...more]}
-  const items=L.slice(state.shortI+1,state.shortI+13).map((id,k)=>({f:findFilm(id),i:state.shortI+1+k})).filter(x=>x.f);
-  return items.length?`<div class="splike">${items.map(({f,i})=>`<button class="splikec" data-spjump="${i}"><span class="thumb vert"><canvas data-f="${esc(f.id)}"></canvas></span><b>${esc(f.title)}</b><small class="vmeta">${esc(byName(f)||"YouTube creator")}</small><small class="vmeta">${f.ytViews?"▶ "+fmtN(f.ytViews)+" · ":""}${f.days==null?"":ago(f.days)}</small></button>`).join("")}</div>`:`<p class="vmeta">No more shorts right now.</p>`}
+// "You may like": shorts like this one first (same character, then the same world, then the same kind of world), in the viewer's language more often
+const spLikeMemo={};
+function spSimilar(f){if(spLikeMemo[f.id])return spLikeMemo[f.id];
+  const grp=g=>GROUPS.find(x=>x.cats.some(c=>c.id===g))?.name||"",myG=grp(f.cat),ch=String(f.char||"").toLowerCase();
+  const out=allFilms().filter(x=>x.format==="short"&&x.id!==f.id).map(x=>{let k=0;
+    if(ch&&String(x.char||"").toLowerCase()===ch)k+=100;if(x.cat===f.cat)k+=50;else if(myG&&grp(x.cat)===myG)k+=12;
+    k+=Math.log10((x.ytViews||0)+10)*2;k*=langMult(x);return {x,k:k+Math.random()*6}}).sort((a,b)=>b.k-a.k).slice(0,12).map(o=>o.x);
+  return spLikeMemo[f.id]=out}
+function spLikeGrid(){const f=findFilm((state.shortList||[])[state.shortI]);if(!f)return "";const items=spSimilar(f);
+  return items.length?`<div class="splike">${items.map(x=>`<button class="splikec" data-spjump="${esc(x.id)}"><span class="thumb vert"><canvas data-f="${esc(x.id)}"></canvas></span><b>${esc(x.title)}</b><small class="vmeta">${esc(byName(x)||"YouTube creator")}${x.cat===f.cat?"":" · "+esc(catName(x.cat))}</small><small class="vmeta">${x.ytViews?"▶ "+fmtN(x.ytViews)+" · ":""}${x.days==null?"":ago(x.days)}</small></button>`).join("")}</div>`:`<p class="vmeta">No similar shorts yet.</p>`}
 document.addEventListener("click",e=>{
   const t=e.target.closest("[data-sptab]");if(t){e.preventDefault();const v=t.dataset.sptab;
     if(v==="rate"){const rb=document.querySelector(".sside .ratebox");if(rb){rb.classList.remove("pulse");void rb.offsetWidth;rb.classList.add("pulse")}return}
     spTab=v;render();return}
-  const j=e.target.closest("[data-spjump]");if(j){e.preventDefault();stepShort(+j.dataset.spjump-state.shortI)}});
+  const j=e.target.closest("[data-spjump]");if(j){e.preventDefault();const id=j.dataset.spjump,L=state.shortList||[];
+    state.shortList=[...L.slice(0,state.shortI+1),id,...L.slice(state.shortI+1).filter(x=>x!==id)];stepShort(1)}});
 // random order, but weighted: shorts in the visitor's language come up far more often, other languages rarely
 function shuffledShorts(skip){return allFilms().filter(x=>x.format==="short"&&!skip.includes(x.id)).map(x=>({id:x.id,k:Math.pow(Math.random(),1/langMult(x))})).sort((a,b)=>b.k-a.k).map(x=>x.id)}
 function stepShort(d){
