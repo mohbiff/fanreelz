@@ -2283,9 +2283,20 @@ async function shareFilm(id,short){
     <div class="sharegrid">${links.map(([n,h])=>`<a class="sharebtn" href="${esc(h)}" target="_blank" rel="noopener">${n}</a>`).join("")}<button class="sharebtn" data-copylink="${esc(url)}" data-discord="1">Discord</button><button class="sharebtn" data-copylink="${esc(url)}" data-insta="1">Instagram</button></div>
     <div class="row"><button class="btn ghost" data-close>Close</button></div></div>`,
     async e=>{const c=e.target.closest("[data-copylink]");if(!c)return;
+      // Instagram: everything must start during the tap itself, or the phone/browser blocks opening another app
+      if(c.dataset.insta){const link=c.dataset.copylink,phoneish=matchMedia("(pointer:coarse)").matches;
+        // the phone's share sheet lists Instagram (Chats/Direct and Stories): the link goes straight into a DM
+        if(APP&&APP.share){closeModal();appCall("share",f.title,text,link);return}
+        if(phoneish&&navigator.share){navigator.share({title:f.title,text,url:link}).catch(()=>{});return}
+        try{navigator.clipboard.writeText(link).catch(()=>{})}catch(x){}
+        try{const i=$(".shareinp");i.select();document.execCommand("copy")}catch(x){}
+        if(phoneish){toast("Link copied – opening Instagram. Paste it in a chat.");
+          // the Instagram app's messages; if it isn't installed the page is still here after a moment, so open the website
+          const t0=Date.now();location.href="instagram://direct-inbox";
+          setTimeout(()=>{if(!document.hidden&&Date.now()-t0<2500)location.href="https://www.instagram.com/direct/inbox/"},1500)}
+        else{window.open("https://www.instagram.com/direct/inbox/","_blank","noopener");toast("Link copied – paste it in a chat on Instagram")}
+        return}
       try{await navigator.clipboard.writeText(c.dataset.copylink)}catch(x){const i=$(".shareinp");i.select();document.execCommand("copy")}
-      // Instagram has no share link for websites: copy the link and open Instagram's messages, where it can be pasted (or into a Story)
-      if(c.dataset.insta){toast("Link copied – paste it in a message or Story on Instagram");setTimeout(()=>{window.open("https://www.instagram.com/direct/inbox/","_blank","noopener")},700);return}
       toast(c.dataset.discord?"Link copied – paste it in Discord":"Link copied")});
   setTimeout(()=>$(".shareinp")?.select(),50);
 }
