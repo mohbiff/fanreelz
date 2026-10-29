@@ -1731,7 +1731,8 @@ function renderUmami(){
   const plus=k=>{const d=(S[k]||0)-(umBase[r][k]||0);return d>0?`<em class="umplus">+${nf(d)}</em>`:""};
   const cards=[[nf(U.active||0),"online now ›","",` data-ummore="online" role="button" tabindex="0" style="cursor:pointer" title="See which countries they are in"`],[nf(U.peak?.n||U.active||0),"most online at once ›",U.peak?.at?`<small class="vmeta">${new Date(U.peak.at).toLocaleString("sv-SE",{dateStyle:"short",timeStyle:"short"})}</small>`:"",` data-umpeak="" role="button" tabindex="0" style="cursor:pointer" title="See the records and every day's highest"`],
     [nf(U.peak?.dn||U.active||0),"most online at once today",(()=>{const h=U.peak?.hist||{},y=new Date(Date.now()-864e5).toLocaleDateString("sv-SE",{timeZone:"Europe/Stockholm"});
-      return `<small class="vmeta">${U.peak?.dat?"at "+new Date(U.peak.dat).toLocaleTimeString("sv-SE",{hour:"2-digit",minute:"2-digit"}):""}${h[y]!=null?" · yesterday "+nf(h[y]):""}</small>`})(),Object.keys(U.peak?.hist||{}).length?` title="${esc(Object.entries(U.peak.hist).sort().reverse().slice(0,14).map(([d,n])=>d+": "+n).join("\n"))}"`:""],[nf(S.visitors)+plus("visitors"),"unique visitors",delta(S.visitors,P?.visitors)],[nf(S.visits)+plus("visits"),"visits (sessions)",delta(S.visits,P?.visits)],[nf(S.pageviews)+plus("pageviews"),"page views",delta(S.pageviews,P?.pageviews)],[bounce.toFixed(0)+"%","bounce rate",""],[dur(avg),"avg. visit",""]];
+      return `<small class="vmeta">${U.peak?.dat?"at "+new Date(U.peak.dat).toLocaleTimeString("sv-SE",{hour:"2-digit",minute:"2-digit"}):""}${h[y]!=null?" · yesterday "+nf(h[y]):""}</small>`})(),Object.keys(U.peak?.hist||{}).length?` title="${esc(Object.entries(U.peak.hist).sort().reverse().slice(0,14).map(([d,n])=>d+": "+n).join("\n"))}"`:""],(()=>{const ev=k=>+((U.events||[]).find(x=>x.x===k)?.y||0),r=ev("returning-visitor"),nw=ev("new-visitor");
+      return [nf(r),"returning visitors",r+nw?`<small class="vmeta">${Math.round(r*100/(r+nw))}% of visitors · ${nf(nw)} new</small>`:`<small class="vmeta">counted from 29 Oct</small>`,` title="A visitor who comes back on another day. Counted once a day per browser, so over several days one person can count more than once."`]})(),[nf(S.visitors)+plus("visitors"),"unique visitors",delta(S.visitors,P?.visitors)],[nf(S.visits)+plus("visits"),"visits (sessions)",delta(S.visits,P?.visits)],[nf(S.pageviews)+plus("pageviews"),"page views",delta(S.pageviews,P?.pageviews)],[bounce.toFixed(0)+"%","bounce rate",""],[dur(avg),"avg. visit",""]];
   // page views per hour/day as bars, visitors as a line
   const pv=U.series?.pageviews||[],vs=U.series?.visitors||[],max=Math.max(1,...pv.map(x=>x.n),...vs.map(x=>x.n)),W=640,H=180,bw=pv.length?W/pv.length:W;
   const lbl=t=>{const d=new Date(t);return U.unit==="hour"?d.toLocaleTimeString("sv-SE",{hour:"2-digit"}):U.unit==="month"?d.toLocaleDateString("sv-SE",{month:"short",year:"2-digit"}):d.toLocaleDateString("sv-SE",{day:"numeric",month:"short"})};
@@ -3523,6 +3524,12 @@ render();
 function signinInUrl(){return /[?&#](code|error|access_token)=/.test(location.search+location.hash)}
 try{history.replaceState({fr:navSnap(),y:0},"",signinInUrl()||pendingLink?location.href:pathFor(state))}catch(e){}
 loadLive();setInterval(()=>{if(!document.hidden)loadLive()},120000);
+/* Returning visitors: once a day each browser tells Umami whether it is new or has been here on an earlier day (admins are not counted) */
+setTimeout(()=>{try{if(isMod)return;const d=new Date().toLocaleDateString("sv-SE"),first=localStorage.getItem("fr_first"),last=localStorage.getItem("fr_lastday");
+  if(last===d)return;localStorage.setItem("fr_lastday",d);if(!first)localStorage.setItem("fr_first",d);
+  const days=first?Math.round((Date.parse(d)-Date.parse(first))/864e5):0;
+  const ev=first?["returning-visitor",{since:days<=1?"1 day":days<=7?"2-7 days":days<=30?"8-30 days":"30+ days"}]:["new-visitor",{}];
+  let n=0;(function send(){if(window.umami?.track){window.umami.track(ev[0],ev[1]);return}if(n++<20)setTimeout(send,1000)})()}catch(e){}},6000);
 /* Installable app: register the service worker, and offer an Install button where the browser supports it */
 if("serviceWorker" in navigator&&location.protocol==="https:")navigator.serviceWorker.register("/sw.js").catch(()=>{});
 var installPrompt=null;addEventListener("beforeinstallprompt",e=>{e.preventDefault();installPrompt=e;renderGuide();instBar()});
