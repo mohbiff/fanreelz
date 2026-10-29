@@ -145,7 +145,7 @@ main{min-width:0;padding-right:max(16px,env(safe-area-inset-right,0px));padding-
 .instbar span:nth-child(2){display:flex;flex-direction:column;flex:1;min-width:0}.instbar small{color:var(--muted);font-size:12px}.instbar .btn{padding:8px 14px}
 .instic{width:34px;height:34px;border-radius:9px;background:#8b5cf6 url("/icons/icon-192.png?v=2") center/cover;flex-shrink:0}
 @keyframes instin{from{transform:translateY(-130%);opacity:0}to{transform:none;opacity:1}}
-.instbar.iab{text-decoration:none;color:var(--fg)}
+.instbar.iab{text-decoration:none;color:var(--fg);position:relative;left:auto;right:auto;top:auto;z-index:auto;animation:none;border-radius:0;border-width:0 0 1px;box-shadow:none;padding-top:calc(10px + env(safe-area-inset-top,0px))}
 .instx{background:none;border:0;color:var(--muted);font-size:16px;width:32px;height:32px;cursor:pointer}
 .admtbl{width:100%;border-collapse:collapse;font-size:13px}.admtbl th{text-align:left;color:var(--muted);font-weight:600;padding:6px 8px;border-bottom:1px solid var(--line)}.admtbl td{padding:7px 8px;border-bottom:1px solid var(--line);white-space:nowrap}.admtbl tr:hover td{background:var(--hover)}
 .affrow{display:flex;align-items:center;gap:12px;margin-top:12px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:11px 14px;color:var(--fg);text-decoration:none}
@@ -236,7 +236,7 @@ body.fsmode .fpscroll svg{animation:fpbounce 1.4s ease-in-out infinite}
 body.fsmode .fpbar,body.wfs .fpbar{transition:opacity .25s,max-height .25s,padding .25s;max-height:120px;overflow:hidden}
 body.fsmode .fpbar.fshide,body.wfs .fpbar.fshide{max-height:0;padding-top:0;padding-bottom:0;opacity:0}
 html.fsmode{scrollbar-width:none}html.fsmode::-webkit-scrollbar,body.fsmode::-webkit-scrollbar{display:none}
-body.fsmode #betabar,body.fsmode header.top,body.fsmode #guide,body.fsmode .tabbar,body.fsmode .pbar{display:none!important}
+body.fsmode #betabar,body.fsmode #iabbar,body.fsmode header.top,body.fsmode #guide,body.fsmode .tabbar,body.fsmode .pbar{display:none!important}
 body.fsmode .shell{display:block}body.fsmode main{padding:0 0 40px}
 body.fsmode .theater{margin:0;padding:0}body.fsmode .watch{display:block;padding-top:0;max-width:none}
 body.fsmode .player.hasbar{width:100vw;height:100vh;height:100dvh;max-width:none;border-radius:0;display:flex;flex-direction:column;justify-content:center;background:#000;margin:0}
@@ -3411,9 +3411,9 @@ var installPrompt=null;addEventListener("beforeinstallprompt",e=>{e.preventDefau
    which hands it to the installed Fanreelz app (or keeps it in Chrome) */
 (()=>{const ua=navigator.userAgent;if(!/android/i.test(ua)||!/FBAN|FBAV|FB_IAB|Instagram|Messenger/i.test(ua))return;
   const show=()=>{if($("#iabbar"))return;const u=location.href.replace(/^https?:\/\//,""),fb=encodeURIComponent(location.href);
-    document.body.insertAdjacentHTML("beforeend",`<a id="iabbar" class="instbar iab" href="intent://${u}#Intent;scheme=https;package=com.android.chrome;S.browser_fallback_url=${fb};end" data-umami-event="open-in-app"><span class="instic" aria-hidden="true"></span><span><b>Open in the Fanreelz app</b><small>Full screen, faster, your ratings saved</small></span><span class="btn">Open</span><button class="instx" data-iabx="" aria-label="Close">✕</button></a>`)};
+    document.body.insertAdjacentHTML("afterbegin",`<a id="iabbar" class="instbar iab" href="intent://${u}#Intent;scheme=https;package=com.android.chrome;S.browser_fallback_url=${fb};end" data-umami-event="open-in-app"><span class="instic" aria-hidden="true"></span><span><b>Open in the Fanreelz app</b><small>Full screen, faster, your ratings saved</small></span><span class="btn">Open</span><button class="instx" data-iabx="" aria-label="Close">✕</button></a>`)};
   document.addEventListener("click",e=>{if(e.target.closest("[data-iabx]")){e.preventDefault();e.stopPropagation();$("#iabbar")?.remove()}},true);
-  setTimeout(show,1500)})();
+  show()})();
 /* "Get the app" card at the top of the screen: Android (one-tap install) and iPhone Safari (shows the steps).
    Comes 4 s after the page opens, never on a film or in Shorts; "Not now" keeps it away for two weeks. */
 let instVisits=0;try{instVisits=+localStorage.getItem("fr_visits")||0;if(!sessionStorage.getItem("fr_v")){sessionStorage.setItem("fr_v","1");localStorage.setItem("fr_visits",++instVisits)}}catch(e){}
