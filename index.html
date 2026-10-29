@@ -1192,7 +1192,8 @@ function renderWatch(){
   if(f.yt){if(keepYt){const pl=$(".player");pl.innerHTML="";try{pl.moveBefore(keepYt,null)}catch(e){pl.appendChild(keepYt)}if(keepEnd)pl.appendChild(keepEnd);ytListen(keepYt)}else $(".player").innerHTML=ytFrame(f.yt).replace("&enablejsapi=1",ytCtrl()?"&enablejsapi=1":"&enablejsapi=1&controls=0&fs=0&disablekb=1");if(f.age)$(".player").insertAdjacentHTML("afterend",`<div class="ythelp"><b>18+</b>Age-restricted on YouTube, so it may only play there: <a href="${esc(f.url||"https://www.youtube.com/watch?v="+f.yt)}" target="_blank" rel="noopener">watch on YouTube ↗</a></div>`)}
   if(f.tt)$(".player").innerHTML=ttFrame(f.tt);
   // Fanreelz share button on top of YouTube's own share icon (top right of the player), so sharing gives a fanreelz.com link
-  if(f.yt)setTimeout(()=>fpMount(f),0);
+  // the control bar goes in right away (not a moment later), so a page refresh never shows the player without it for a frame
+  if(f.yt){try{fpMount(f)}catch(e){setTimeout(()=>fpMount(f),0)}}
   if(f.ig||f.vm||f.dm||f.tt||f.yt)setTimeout(()=>{const pl=$(".player");if(pl&&pl.querySelector("iframe")&&!$(".pbar"))pl.insertAdjacentHTML("afterend",`<div class="pbar"><button class="btn ghost" data-theater="" aria-pressed="${theater}"><svg class="i" viewBox="0 0 24 24">${theater?'<rect x="5" y="7" width="14" height="10" rx="1.5"/>':'<rect x="2" y="6" width="20" height="12" rx="1.5"/>'}</svg>${theater?"Default view":"Theater mode"}</button></div>`)},0);
   if(f.ig||f.vm||f.dm)$(".player").innerHTML=extFrame(f);
 }
