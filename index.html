@@ -158,6 +158,7 @@ main{min-width:0;padding-right:max(16px,env(safe-area-inset-right,0px));padding-
 .umrow .umplus{position:relative;font-size:12px;margin:0 2px 0 0;vertical-align:baseline}
 .adm-link{font-size:12.5px;color:var(--accent);text-decoration:none;overflow-wrap:anywhere;margin-top:2px}.adm-link:hover{text-decoration:underline}
 .adm-row[data-adminuser]{cursor:pointer}.adm-row[data-adminuser]:hover{border-color:var(--accent)}
+.igbox textarea,.igbox input,#igq{background:var(--bg);color:var(--fg);border:1px solid var(--line);border-radius:10px;padding:10px 12px;font:14px/1.45 var(--body);resize:vertical}.igbox a.chip,.igst{display:inline-flex;align-items:center;text-decoration:none;color:var(--fg)}
 .adm-row{display:flex;align-items:center;gap:12px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 12px;flex-wrap:wrap}
 .adm-row img{width:36px;height:36px;border-radius:50%;object-fit:cover}
 .adm-who{display:flex;flex-direction:column;min-width:0;flex:1 1 200px}.adm-who span{color:var(--muted);font-size:13px;overflow-wrap:anywhere}
@@ -1561,6 +1562,7 @@ function renderAdmin(){
   if(!isMod){$("#main").innerHTML=`<div class="empty">This page is only for Fanreelz admins.</div>`;return}
   if(state.adminSec==="videos"){renderAdminVideos();return}
   if(state.adminSec==="aff"){renderAdminAff();return}
+  if(state.adminSec==="insta"){renderAdminInsta();return}
   if(state.adminSec==="searches"){renderAdminSearches();return}
   if(!adminUsers&&!adminUsersErr){$("#main").innerHTML=`<div class="empty">Loading accounts…</div>`;if(Date.now()-adminUsersAt>3000)loadAdminUsers();return}
   const U=adminUsers||[],day=864e5,now=Date.now(),since=d=>U.filter(u=>now-Date.parse(u.created)<d*day).length,by=p=>U.filter(u=>u.provider===p).length;
@@ -1667,6 +1669,68 @@ document.addEventListener("click",e=>{
   const d=e.target.closest("[data-affdel]");if(d){e.preventDefault();affEdit.splice(+d.dataset.affdel,1);affMsg="";render();return}
   if(e.target.closest("[data-affsave]")){e.preventDefault();affMsg="Saving…";render();
     modCall({action:"affset",list:affEdit}).then(r=>{if(r.ok){affEdit=r.list.map(x=>({...x}));AFF=r.list;affMsg=`Saved ${r.list.length} link${r.list.length===1?"":"s"} (rows without text or an https link are left out). Live within 5 minutes.`}else affMsg="Couldn't save: "+(r.error||"error");render()})}});
+/* Admin: Instagram kit. For each film a ready caption (credits the creator), a tracked link and a message asking the creator for permission.
+   The status (asked / yes / posted / no) is kept in this browser only. */
+const IG_ACCOUNT="@fanreelz";
+let igSort="popular",igFmt="all",igQ="",igStF="all",igOpen=null,igSt={},igHandle={};
+try{igSt=JSON.parse(localStorage.getItem("fr_igst")||"{}");igHandle=JSON.parse(localStorage.getItem("fr_igh")||"{}")}catch(e){}
+const igSave=()=>{try{localStorage.setItem("fr_igst",JSON.stringify(igSt));localStorage.setItem("fr_igh",JSON.stringify(igHandle))}catch(e){}};
+const IG_ST=[["","Not asked","var(--muted)"],["asked","Asked","#f5c542"],["yes","Allowed","#4ade80"],["posted","Posted","#60a5fa"],["no","Said no","#ff6b6b"]];
+const igTag=x=>"#"+String(x||"").normalize("NFD").replace(/[^\p{L}\p{N}]/gu,"").toLowerCase();
+const igLink=f=>shareUrl(f,f.format==="short")+"?utm_source=instagram&utm_medium=social&utm_campaign=reels";
+function igCaption(f){const by=byName(f)||"the creator",h=(igHandle[f.id]||"").trim().replace(/^@?/,"@"),world=catName(f.cat);
+  const tags=[...new Set([igTag(world),f.char?igTag(f.char):"","#aifilm","#aifanfilm","#fanfilm","#aivideo"].filter(t=>t.length>2))].slice(0,6).join(" ");
+  return `${f.title} 🎬\n\nAI fan film by ${h.length>1?h:by}${h.length>1?"":" (YouTube)"} – watch the full film free on Fanreelz, link in bio 🔗\n\n${world} fans: would you watch this as a real movie? 👇\n\n${tags}`}
+function igDM(f){const by=byName(f)||"there";
+  return `Hi ${by}! I run Fanreelz (fanreelz.com), a site that collects the best AI fan films – your film "${f.title}" is featured there.\n\nWe'd love to share a short clip of it on our Instagram ${IG_ACCOUNT}, fully credited and tagged, with a link to your full film. Would that be OK with you?\n\nIf you have an Instagram account we should tag, just let me know. Thanks, and great work!`}
+function renderAdminInsta(){
+  const now=Date.now(),score=f=>(f.ytViews||0)+stats(f).n*500+viewsOf(f)*50,q=igQ.trim().toLowerCase();
+  let list=rawFilms().filter(f=>(f.yt||f.tt||f.vm)&&!f.age&&f.format!=="episode");
+  if(igFmt!=="all")list=list.filter(f=>igFmt==="short"?f.format==="short":f.format!=="short");
+  if(igStF!=="all")list=list.filter(f=>(igSt[f.id]||"")===(igStF==="none"?"":igStF));
+  if(q)list=list.filter(f=>[f.title,byName(f),catName(f.cat),f.char].join(" ").toLowerCase().includes(q));
+  const srt={popular:(a,b)=>score(b)-score(a),week:(a,b)=>((b.days??999)<=7)-((a.days??999)<=7)||score(b)-score(a),new:(a,b)=>(b.added||0)-(a.added||0),rated:(a,b)=>(stats(b).n?stats(b).avg:0)-(stats(a).n?stats(a).avg:0)||stats(b).n-stats(a).n};
+  list.sort(srt[igSort]);
+  const cnt=k=>Object.values(igSt).filter(v=>v===k).length;
+  const stChip=f=>{const s=IG_ST.find(x=>x[0]===(igSt[f.id]||""));return `<span class="chip igst" style="color:${s[2]};border-color:${s[2]}">${s[1]}</span>`};
+  const panel=f=>`<div class="umbox igbox" style="flex:1 1 100%;margin-top:6px">
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">${IG_ST.map(([k,l])=>`<button class="chip ${(igSt[f.id]||"")===k?"on":""}" data-igst="${k}" data-igid="${esc(f.id)}">${l}</button>`).join("")}</div>
+    <label class="vmeta" style="display:block;font-size:12px;margin-bottom:4px">1 · Ask the creator first (YouTube: their channel → About, or a comment)</label>
+    <textarea readonly rows="6" style="width:100%;box-sizing:border-box" data-igtxt="dm">${esc(igDM(f))}</textarea>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin:6px 0 14px"><button class="chip" data-igcopy="dm">Copy message</button>${f.yt?`<a class="chip" href="https://www.youtube.com/watch?v=${esc(f.yt)}" target="_blank" rel="noopener">Open on YouTube</a>`:""}</div>
+    <label class="vmeta" style="display:block;font-size:12px;margin-bottom:4px">2 · Their Instagram (if they have one), so the caption tags them</label>
+    <input data-ighandle="${esc(f.id)}" value="${esc(igHandle[f.id]||"")}" placeholder="@their_instagram" style="width:100%;max-width:320px;box-sizing:border-box;margin-bottom:14px">
+    <label class="vmeta" style="display:block;font-size:12px;margin-bottom:4px">3 · Caption for the reel</label>
+    <textarea readonly rows="8" style="width:100%;box-sizing:border-box" data-igtxt="cap">${esc(igCaption(f))}</textarea>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin:6px 0 14px"><button class="chip" data-igcopy="cap">Copy caption</button></div>
+    <label class="vmeta" style="display:block;font-size:12px;margin-bottom:4px">4 · Link for your bio or a Story link sticker (visits show under Statistics as source "instagram")</label>
+    <input readonly value="${esc(igLink(f))}" data-igtxt="link" style="width:100%;box-sizing:border-box">
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px"><button class="chip" data-igcopy="link">Copy link</button></div></div>`;
+  const row=f=>`<div class="adm-row">${f.yt?`<img src="https://i.ytimg.com/vi/${esc(f.yt)}/mqdefault.jpg" alt="" loading="lazy" style="width:96px;height:54px;border-radius:8px;object-fit:cover">`:""}
+    <div class="adm-who" data-open="${esc(f.id)}" role="button" tabindex="0" style="cursor:pointer"><b>${esc(f.title)}</b><span>${esc([catName(f.cat),f.format==="short"?"Short":"Film",f.len].filter(Boolean).join(" · "))} · ${esc(byName(f)||"YouTube creator")}${f.ytViews?" · "+fmtN(f.ytViews)+" YouTube views":""}${stats(f).n?` · ★ ${stats(f).avg.toFixed(1)}`:""}</span></div>
+    <div class="adm-meta">${stChip(f)}<button class="chip ${igOpen===f.id?"on":""}" data-igprep="${esc(f.id)}">${igOpen===f.id?"Close":"Prepare post"}</button></div>${igOpen===f.id?panel(f):""}</div>`;
+  const opened=igOpen&&findFilm(igOpen);if(opened&&!list.includes(opened))list.unshift(opened);
+  const card=(n,l)=>`<div class="adm-card"><b>${n}</b><span>${l}</span></div>`;
+  const ch=(v,cur,attr)=>v.map(([k,l])=>`<button class="chip ${cur===k?"on":""}" ${attr}="${k}">${l}</button>`).join("");
+  $("#main").innerHTML=`${admSecTabs()}<h1 class="sect-h" style="font-size:22px">${icon("share")} Instagram</h1>
+  <p class="vmeta" style="margin:0 0 14px;max-width:760px">Pick a film, ask the creator, then post with credit. Only post clips the creator has allowed, and add Instagram's "AI info" label. Statuses are saved in this browser.</p>
+  <div class="adm-cards">${card(cnt("asked"),"asked")}${card(cnt("yes"),"allowed")}${card(cnt("posted"),"posted")}${card(cnt("no"),"said no")}</div>
+  <input id="igq" value="${esc(igQ)}" placeholder="Search title, creator or world" style="width:100%;max-width:420px;box-sizing:border-box;margin:16px 0 8px">
+  <div class="chips" style="margin:0 0 6px">${ch([["popular","Most popular"],["week","New this week"],["rated","Top rated"],["new","Newest added"]],igSort,"data-igsort")}</div>
+  <div class="chips" style="margin:0 0 6px">${ch([["all","All"],["film","Films"],["short","Shorts"]],igFmt,"data-igfmt")}</div>
+  <div class="chips" style="margin:0 0 12px">${ch([["all","Any status"],["none","Not asked"],["asked","Asked"],["yes","Allowed"],["posted","Posted"],["no","Said no"]],igStF,"data-igstf")}</div>
+  ${list.length?moreGrid("adm-list",list,row,30):`<div class="empty">No films match.</div>`}`}
+document.addEventListener("click",e=>{
+  let b=e.target.closest("[data-igsort]");if(b){e.preventDefault();igSort=b.dataset.igsort;render();return}
+  b=e.target.closest("[data-igfmt]");if(b){e.preventDefault();igFmt=b.dataset.igfmt;render();return}
+  b=e.target.closest("[data-igstf]");if(b){e.preventDefault();igStF=b.dataset.igstf;render();return}
+  b=e.target.closest("[data-igprep]");if(b){e.preventDefault();igOpen=igOpen===b.dataset.igprep?null:b.dataset.igprep;render();return}
+  b=e.target.closest("[data-igst]");if(b){e.preventDefault();const id=b.dataset.igid;if(b.dataset.igst)igSt[id]=b.dataset.igst;else delete igSt[id];igSave();render();return}
+  b=e.target.closest("[data-igcopy]");if(b){e.preventDefault();const box=b.closest(".umbox"),el=box&&box.querySelector(`[data-igtxt="${b.dataset.igcopy}"]`);if(!el)return;
+    const t=el.value;(navigator.clipboard?navigator.clipboard.writeText(t):Promise.reject()).then(()=>toast("Copied"),()=>{el.select();try{document.execCommand("copy");toast("Copied")}catch(x){}})}});
+document.addEventListener("input",e=>{
+  if(e.target.id==="igq"){igQ=e.target.value;clearTimeout(window.igT);window.igT=setTimeout(()=>{render();const i=$("#igq");if(i){i.focus();i.setSelectionRange(i.value.length,i.value.length)}},300);return}
+  const h=e.target.closest?.("[data-ighandle]");if(h){igHandle[h.dataset.ighandle]=h.value.trim();igSave();const f=findFilm(h.dataset.ighandle),c=h.closest(".umbox")?.querySelector('[data-igtxt="cap"]');if(f&&c)c.value=igCaption(f)}});
 /* Admin: every video Fanreelz has added (importer, links, members), newest first */
 let admVidFmt="all";
 function renderAdminVideos(){
@@ -1687,7 +1751,7 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-admvidfmt]
     modCall({action:"hidechannel",channel:ch}).then(r=>{if(r.ok){for(let i=FILMS.length-1;i>=0;i--)if(FILMS[i].db&&FILMS[i].by===ch)FILMS.splice(i,1);filmIdx.k="";autoCache.k="";toast(`Hid ${r.hidden} videos from ${ch}`);render()}else toast("Couldn't hide: "+(r.error||"error"))});return}
   if(e.target.closest("[data-admcleanup]")){e.preventDefault();if(!confirm("Hide every video whose title the current filters reject (gameplay, voice changers, trolling…)?"))return;toast("Cleaning up…");
     modCall({action:"cleanup"}).then(r=>{if(r.ok){toast(`Hid ${r.hidden} videos`);catLoaded="";loadCatalog().then(render).catch(()=>{})}else toast("Couldn't clean up: "+(r.error||"error"))})}});
-const admSecTabs=()=>`<div class="fmtbar" style="margin:8px 0 14px">${[["accounts","Accounts"],["videos","New videos"],["searches","Searches"],["stats","Statistics"],["aff","Affiliate"]].map(([k,l])=>`<button class="${(state.adminSec||"accounts")===k?"on":""}" data-adminsec="${k}">${l}</button>`).join("")}</div>`;
+const admSecTabs=()=>`<div class="fmtbar" style="margin:8px 0 14px">${[["accounts","Accounts"],["videos","New videos"],["searches","Searches"],["stats","Statistics"],["aff","Affiliate"],["insta","Instagram"]].map(([k,l])=>`<button class="${(state.adminSec||"accounts")===k?"on":""}" data-adminsec="${k}">${l}</button>`).join("")}</div>`;
 let appUm={};const umami={},umamiAll={};let umamiRange="7d",umamiMore=null,umamiQ="",umamiFlt=null,umBase={},umOnWin="5m";
 const UMWIN=[["5m","Now","last 5 minutes"],["6h","6 hours","last 6 hours"],["24h","24 hours","last 24 hours"],["7d","7 days","last 7 days"],["30d","1 month","last month"],["180d","6 months","last 6 months"]];
 const umFkey=()=>(umamiFlt?"|"+umamiFlt.k+"="+umamiFlt.v:"")+(umamiMore==="online"?"|w="+umOnWin:"");
