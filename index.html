@@ -171,7 +171,7 @@ main{min-width:0;padding-right:max(16px,env(safe-area-inset-right,0px));padding-
 /* Fanreelz controls for YouTube films sit UNDER the video (YouTube's rules: nothing on top of its player). YouTube's own controls are off (controls=0) */
 .player.hasbar{aspect-ratio:auto;overflow:hidden}
 .player.hasbar iframe{position:relative!important;inset:auto!important;display:block;width:100%!important;height:auto!important;aspect-ratio:16/9;border:0}
-.fpbar{position:relative;padding:6px 10px 8px;background:rgba(18,14,26,.45);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);user-select:none;-webkit-user-select:none}
+.fpbar{position:relative;padding:6px 10px 8px;background:#15121d;user-select:none;-webkit-user-select:none;will-change:opacity}body.wfs .fpbar,:fullscreen .fpbar{background:rgba(18,14,26,.45);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
 .player.hasbar:fullscreen,body.wfs .player.hasbar{display:flex;flex-direction:column;justify-content:center;background:#000}
 .player.hasbar:fullscreen{width:100vw;height:100vh;border-radius:0}
 /* full screen: YouTube's player fills the screen except two 56px strips at the sides, which are Fanreelz's own ±10 s buttons (not on top of the video) */
