@@ -2876,7 +2876,7 @@ function fpFull(){const pl=$(".player");if(!pl)return;
   if(document.fullscreenElement||document.webkitFullscreenElement){try{screen.orientation?.unlock?.()}catch(e){}(document.exitFullscreen||document.webkitExitFullscreen).call(document)?.catch?.(()=>{});return}
   if(document.body.classList.contains("wfs")){closeWfs();fpPaint();return}
   if(APP&&!matchMedia("(pointer:fine)").matches){appFsOn(pl.classList.contains("vert"));return}
-  if(IN_APP&&!matchMedia("(pointer:fine)").matches){openWfs();fpPaint();fpShow();return}
+  // the web app installed from the site (no app bridge): the browser's real full screen, so the phone's bars hide and the screen turns
   const de=document.documentElement,req=de.requestFullscreen||de.webkitRequestFullscreen;
   if(req){Promise.resolve(req.call(de,{navigationUI:"hide"})).then(()=>{if(!matchMedia("(pointer:fine)").matches)screen.orientation?.lock?.(pl.classList.contains("vert")?"portrait":"landscape").catch(()=>{})}).catch(()=>{openWfs();fpPaint();fpShow()})}
   else{openWfs();fpPaint();fpShow()}}
