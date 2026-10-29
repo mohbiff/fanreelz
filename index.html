@@ -3393,10 +3393,12 @@ async function installApp(){
   // Android: offer the real Android app first (downloaded straight from the site), the web app second
   if(!apkAsked&&!APP&&/android/i.test(navigator.userAgent)&&!/FBAN|FBAV|FB_IAB|Messenger|Instagram|Line\/|Snapchat|TikTok|musical_ly|Twitter/i.test(navigator.userAgent)){
     openModal(`<div class="dlg" role="dialog" aria-modal="true" aria-label="Get the Fanreelz app"><h2>Get the Fanreelz app</h2>
-      <p class="vmeta" style="margin:0 0 14px">The Android app plays films in real full screen and turns with your phone. It's coming to Google Play soon; until then you can install it from here.</p>
-      <a class="btn" href="/android.apk" download="fanreelz.apk" data-apkdl="" data-umami-event="apk-download" style="display:block;text-align:center;margin-bottom:14px">Download for Android</a>
-      <ol class="lede" style="margin:0 0 14px;padding-left:20px;line-height:1.7;font-size:14px"><li>Open the downloaded <b>fanreelz.apk</b></li><li>If asked, allow <b>Install unknown apps</b> for your browser</li><li>Tap <b>Install</b></li></ol>
-      <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn ghost" data-pwa="">Add to home screen instead</button><button class="btn ghost" data-close="">Close</button></div></div>`,
+      <p class="vmeta" style="margin:0 0 14px">Add Fanreelz to your home screen in one tap. The full Android app is coming to Google Play soon.</p>
+      <button class="btn" data-pwa="" style="display:block;width:100%;margin-bottom:16px">Add to home screen</button>
+      <details style="font-size:13px;color:var(--muted)"><summary style="cursor:pointer">Can't wait? Install the test version of the Android app</summary>
+        <p style="margin:8px 0">It plays films in real full screen. Android will warn you because it isn't from Google Play yet, and asks you to allow <b>Install unknown apps</b> for your browser.</p>
+        <a class="btn ghost" href="/android.apk" download="fanreelz.apk" data-umami-event="apk-download" style="display:inline-block">Download the Android app</a></details>
+      <div style="margin-top:14px"><button class="btn ghost" data-close="">Close</button></div></div>`,
       e=>{if(e.target.closest("[data-pwa]")){closeModal();apkAsked=true;installApp()}});
     return}
   if(installPrompt){installPrompt.prompt();await installPrompt.userChoice.catch(()=>{});installPrompt=null;renderGuide();return}
