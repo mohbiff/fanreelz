@@ -8,7 +8,7 @@ import SEEDS from "../netlify/functions/lib/showdowns.mjs";
 const SITE = "https://fanreelz.com";
 const DEFAULT = {
   title: "Fanreelz – Where AI fan films find their fans",
-  description: "The home of AI fan films. Discover, rate and support the best AI-made films about the games, books, anime and series you love.",
+  description: "The home of AI fan films. Watch, discover and rate the best AI-made films about the games, books, anime and series you love.",
   image: SITE + "/og.png",
 };
 const STATIC = {

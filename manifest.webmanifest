@@ -2,7 +2,7 @@
   "name": "Fanreelz – AI fan films",
   "version": "2",
   "short_name": "Fanreelz",
-  "description": "The home of AI fan films. Discover, rate and support AI-made films about the games, books, anime and series you love.",
+  "description": "The home of AI fan films. Watch, discover and rate AI-made films about the games, books, anime and series you love.",
   "id": "/",
   "start_url": "/?source=app",
   "scope": "/",
