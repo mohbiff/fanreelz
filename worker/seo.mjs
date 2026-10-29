@@ -42,6 +42,18 @@ async function db(env, path, ctx, ttl = 3600) {
   ctx.waitUntil(caches.default.put(key, new Response(JSON.stringify(data), { headers: { "Content-Type": "application/json", "Cache-Control": `public, s-maxage=${ttl}` } })));
   return data;
 }
+// Title and channel straight from YouTube, cached for a day
+async function oembed(vid, ctx) {
+  const key = new Request("https://cache.fanreelz/oembed/" + vid);
+  try {
+    const hit = await caches.default.match(key); if (hit) return hit.json();
+    const r = await fetch(`https://www.youtube.com/oembed?format=json&url=${encodeURIComponent("https://www.youtube.com/watch?v=" + vid)}`);
+    if (!r.ok) return null;
+    const data = await r.json();
+    ctx.waitUntil(caches.default.put(key, new Response(JSON.stringify(data), { headers: { "Content-Type": "application/json", "Cache-Control": "public, s-maxage=86400" } })));
+    return data;
+  } catch { return null; }
+}
 const filmLink = (r) => `<li><a href="/film/${esc(encodeURIComponent(r.id))}">${esc(r.title)}</a>${r.views ? ` · ${fmt(r.views)} views` : ""}</li>`;
 
 // What a page is about: title, description, image, structured data and a short summary
@@ -50,7 +62,15 @@ async function pageInfo(url, env, ctx) {
   const [a, b] = parts;
   if ((a === "film" || a === "shorts") && b) {
     const row = (await db(env, `catalog?select=id,title,channel,cat,char,duration,published_at,video_id,views&id=eq.${encodeURIComponent(b)}&hidden=eq.false&limit=1`, ctx))?.[0];
-    if (!row) return null;
+    if (!row) {
+      // Not in the catalogue (built-in film, or just added): still give link previews the film's own title and thumbnail
+      const vid = (/^yt-([\w-]{11})$/.exec(b) || [])[1];
+      if (!vid) return null;
+      const o = await oembed(vid, ctx);
+      const t = o?.title || "AI fan film";
+      const desc = clip(`${t}${o?.author_name ? ` by ${o.author_name}` : ""}. An AI fan film on Fanreelz. Watch it and rate it with other fans.`, 300);
+      return { title: clip(`${t} – AI fan film`, 110), description: desc, image: `https://i.ytimg.com/vi/${vid}/hqdefault.jpg`, type: "video.other" };
+    }
     const c = catOf(row.cat), world = c ? c.name : "AI fan film";
     const desc = clip(`${row.title}${row.channel ? ` by ${row.channel}` : ""}. An AI fan film${c ? ` about ${world}${row.char && row.char !== world ? " (" + row.char + ")" : ""}` : ""}. Watch it and rate it on Fanreelz${row.views ? ` · ${fmt(row.views)} views on YouTube` : ""}.`, 300);
     const image = `https://i.ytimg.com/vi/${row.video_id}/hqdefault.jpg`;
@@ -104,7 +124,8 @@ export async function withSeo(req, res, env, ctx) {
   if (/\.(html?)$/.test(url.pathname) && url.pathname !== "/index.html") return res; // privacy.html, terms.html keep their own
   try {
     const info = await pageInfo(url, env, ctx);
-    if (!info) return res;
+    // Unknown page: keep the default preview but point og:url at the link itself, so Facebook does not swap it for the home page
+    if (!info) return new HTMLRewriter().on('meta[property="og:url"]', { element(e) { e.setAttribute("content", SITE + url.pathname); } }).transform(res);
     const full = info.title === DEFAULT.title ? info.title : `${info.title} | Fanreelz`;
     const canonical = SITE + url.pathname + (url.pathname.startsWith("/c/") && url.searchParams.get("char") ? "?char=" + encodeURIComponent(url.searchParams.get("char")) : "");
     const image = info.image || DEFAULT.image;
