@@ -110,6 +110,10 @@ export default async (req) => {
       return [];
     };
     // "See all" for one list: just that metric, up to 1,000 rows
+    // Umami left visits without a referrer out of the referrer list: add them back from its "channel" metric, as "Direct / none"
+    const withDirect = (refs, ch) => { const d = (ch || []).find((c) => c.x === "direct"); return d && d.y > 0 && !refs.some((r) => !r.x) ? [...refs, { x: "", y: d.y }].sort((a, b) => b.y - a.y) : refs; };
+    // visitors per campaign tag (?utm_source=instagram), read from the page addresses' query strings
+    const campaigns = (rows) => { const m = {}; for (const r of rows || []) { let src = ""; try { src = (new URLSearchParams(String(r.x || "").replace(/^\?/, "")).get("utm_source") || "").trim().toLowerCase(); } catch (e) {} if (src) m[src] = (m[src] || 0) + r.y; } return Object.entries(m).map(([x, y]) => ({ x, y })).sort((a, b) => b.y - a.y); };
     const ONE = { queries: ["query"], pages: ["path", "url"], entries: ["entry"], referrers: ["referrer"], countries: ["country"], devices: ["device"], browsers: ["browser"], os: ["os"], events: ["event"] };
     // visitors by country for a recent window: "5m" is "online now" (the same window as /active), then 6 h, 24 h, 7 d, 30 d, 180 d
     if (body.metric === "online") {
@@ -119,15 +123,19 @@ export default async (req) => {
       try { const d = await get("/metrics", { startAt: t - span, endAt: t, type: "country", limit: 250, timezone: tz }); if (Array.isArray(d)) rows = d.map((x) => ({ x: x.x ?? x.name ?? "", y: +x.y || +x.value || 0 })).filter((x) => x.y > 0); } catch (e) {}
       return json({ metric: "online", rows, from: t - span });
     }
+    if (body.metric === "referrers") { const [refs, ch] = await Promise.all([metric(["referrer"], 1000), metric(["channel"], 20)]); return json({ metric: "referrers", rows: withDirect(refs, ch), from: startAt }); }
+    if (body.metric === "campaigns") return json({ metric: "campaigns", rows: campaigns(await metric(["query"], 1000)), from: startAt });
+    if (body.metric === "channels") return json({ metric: "channels", rows: await metric(["channel"], 20), from: startAt });
     if (body.metric && ONE[body.metric]) return json({ metric: body.metric, rows: await metric(ONE[body.metric], 1000), from: startAt });
     try {
-      const [stats, prev, active, series, pages, referrers, countries, devices, browsers, os, events, entries] = await Promise.all([
+      const [stats, prev, active, series, pages, refs, countries, devices, browsers, os, events, entries, channels, queryRows] = await Promise.all([
         get("/stats", range),
         get("/stats", { startAt: prevStart, endAt: startAt }).catch(() => null),
         get("/active").catch(() => null),
         get("/pageviews", { ...range, unit, timezone: tz }).catch(() => null),
-        metric(["path", "url"], 15), metric(["referrer"]), metric(["country"]), metric(["device"]), metric(["browser"]), metric(["os"]), metric(["event"]), metric(["entry"]),
+        metric(["path", "url"], 15), metric(["referrer"]), metric(["country"]), metric(["device"]), metric(["browser"]), metric(["os"]), metric(["event"]), metric(["entry"]), metric(["channel"], 20), metric(["query"], 1000),
       ]);
+      const referrers = withDirect(refs, channels).slice(0, 10), campaignRows = campaigns(queryRows);
       const pick = (o) => ({ pageviews: num(o?.pageviews), visitors: num(o?.visitors), visits: num(o?.visits), bounces: num(o?.bounces), totaltime: num(o?.totaltime) });
       const pts = (a) => (Array.isArray(a) ? a.map((p) => ({ t: p.x ?? p.t, n: +p.y || 0 })) : []);
       return json({
@@ -136,7 +144,7 @@ export default async (req) => {
         active: num(active?.visitors ?? active?.x ?? (Array.isArray(active) ? active[0]?.x : active)),
         peak: await notePeak(num(active?.visitors ?? active?.x ?? (Array.isArray(active) ? active[0]?.x : active))).catch(() => null),
         series: { pageviews: pts(series?.pageviews), visitors: pts(series?.sessions ?? series?.visitors) },
-        pages, referrers, countries, devices, browsers, os, events, entries,
+        pages, referrers, countries, devices, browsers, os, events, entries, channels, campaigns: campaignRows,
       });
     } catch (e) {
       return json({ error: String(e.message || e) });
