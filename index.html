@@ -215,6 +215,8 @@ body.fsmode .player.vert .fpzone,body.wfs .player.vert .fpzone,.player.vert:full
 .fpzone{display:none;flex-direction:column;gap:6px;position:absolute;top:0;bottom:82px;width:56px;color:rgba(255,255,255,.9);font:700 12px/1 inherit;transition:opacity .4s;cursor:pointer;user-select:none;align-items:center;justify-content:center;z-index:2;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
 .fpzone.l{left:0}.fpzone.r{right:0}
 body.wfs .fpzone,.player.hasbar:fullscreen .fpzone,body.fsmode .fpzone{display:flex}
+/* standing phone: the film uses the whole width; the ±10 s strips are only for a phone on its side */
+@media (orientation:portrait){body.wfs .fpzone,.player.hasbar:fullscreen .fpzone,body.fsmode .fpzone{display:none}.player.hasbar:fullscreen iframe,body.wfs .player.hasbar iframe,body.fsmode .player.hasbar iframe{width:100%!important}}
 .fpzone i{font-style:normal;font-size:24px;width:42px;height:42px;display:grid;place-items:center;border-radius:50%;background:rgba(255,255,255,.16)}.fpzone:active i{background:rgba(255,255,255,.3)}
 .fpbar.fshide~.fpzone{opacity:0}.fpbar.fshide~.fpzone.flash{opacity:1}
 
