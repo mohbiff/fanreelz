@@ -129,6 +129,13 @@ export default async (req) => {
     };
     // "See all" for one list: just that metric, up to 1,000 rows
     const ONE = { queries: ["query"], pages: ["path", "url"], entries: ["entry"], referrers: ["referrer"], countries: ["country"], devices: ["device"], browsers: ["browser"], os: ["os"], events: ["event"] };
+    // "online now" by country: the visitors Umami saw in the last 5 minutes (the same window as /active)
+    if (body.metric === "online") {
+      const t = Date.now();
+      let rows = [];
+      try { const d = await get("/metrics", { startAt: t - 5 * 60e3, endAt: t, type: "country", limit: 100, timezone: tz }); if (Array.isArray(d)) rows = d.map((x) => ({ x: x.x ?? x.name ?? "", y: +x.y || +x.value || 0 })).filter((x) => x.y > 0); } catch (e) {}
+      return json({ metric: "online", rows, from: t - 5 * 60e3 });
+    }
     if (body.metric && ONE[body.metric]) return json({ metric: body.metric, rows: await metric(ONE[body.metric], 1000), from: startAt });
     try {
       const [stats, prev, active, series, pages, referrers, countries, devices, browsers, os, events, entries] = await Promise.all([
