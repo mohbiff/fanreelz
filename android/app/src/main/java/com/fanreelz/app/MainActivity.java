@@ -260,6 +260,19 @@ public class MainActivity extends ComponentActivity {
 
     /** Called by the page (window.FanreelzApp). Only fanreelz.com pages get this bridge. */
     private class Bridge {
+        /** The phone's own share sheet (Instagram, WhatsApp, Messenger, Snapchat…) for a fanreelz.com link. */
+        @JavascriptInterface
+        public void share(String title, String text, String url) {
+            runOnUiThread(() -> {
+                if (!isOurPage() || url == null || !url.startsWith("https://" + HOST + "/")) return;
+                Intent send = new Intent(Intent.ACTION_SEND);
+                send.setType("text/plain");
+                send.putExtra(Intent.EXTRA_SUBJECT, title == null ? "" : title);
+                send.putExtra(Intent.EXTRA_TEXT, (text == null || text.isEmpty() ? "" : text + " ") + url);
+                try { startActivity(Intent.createChooser(send, "Share")); } catch (Exception e) { /* no app can share */ }
+            });
+        }
+
         @JavascriptInterface
         public void bars(boolean show) {
             runOnUiThread(() -> {

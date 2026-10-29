@@ -2269,6 +2269,8 @@ function renderYouList(){
 function shareUrl(f,short){return "https://fanreelz.com"+(short?"/shorts/":"/film/")+encodeURIComponent(f.id)}
 async function shareFilm(id,short){
   const f=findFilm(id);if(!f)return;const url=shareUrl(f,short),text=`${f.title} – AI fan film on Fanreelz`;
+  // phones: the phone's own share sheet first (it includes Instagram Stories and DMs); the app has its own, the browser navigator.share
+  if(APP&&APP.share){appCall("share",f.title,text,url);return}
   if(navigator.share&&matchMedia("(pointer:coarse)").matches){try{await navigator.share({title:f.title,text,url});return}catch(e){if(e&&e.name==="AbortError")return}}
   const u=encodeURIComponent(url),t=encodeURIComponent(text);
   const links=[["X","https://x.com/intent/post?text="+t+"&url="+u],["Reddit","https://www.reddit.com/submit?url="+u+"&title="+encodeURIComponent(f.title)],
@@ -2277,10 +2279,12 @@ async function shareFilm(id,short){
   openModal(`<div class="dlg" role="dialog" aria-modal="true" aria-label="Share"><h2>Share this film</h2>
     <p class="vmeta" style="margin:0">${esc(f.title)}</p>
     <div class="sharerow"><input class="shareinp" readonly value="${esc(url)}" aria-label="Link"><button class="btn" data-copylink="${esc(url)}">Copy link</button></div>
-    <div class="sharegrid">${links.map(([n,h])=>`<a class="sharebtn" href="${esc(h)}" target="_blank" rel="noopener">${n}</a>`).join("")}<button class="sharebtn" data-copylink="${esc(url)}" data-discord="1">Discord</button></div>
+    <div class="sharegrid">${links.map(([n,h])=>`<a class="sharebtn" href="${esc(h)}" target="_blank" rel="noopener">${n}</a>`).join("")}<button class="sharebtn" data-copylink="${esc(url)}" data-discord="1">Discord</button><button class="sharebtn" data-copylink="${esc(url)}" data-insta="1">Instagram</button></div>
     <div class="row"><button class="btn ghost" data-close>Close</button></div></div>`,
     async e=>{const c=e.target.closest("[data-copylink]");if(!c)return;
       try{await navigator.clipboard.writeText(c.dataset.copylink)}catch(x){const i=$(".shareinp");i.select();document.execCommand("copy")}
+      // Instagram has no share link for websites: copy the link and open Instagram's messages, where it can be pasted (or into a Story)
+      if(c.dataset.insta){toast("Link copied – paste it in a message or Story on Instagram");setTimeout(()=>{window.open("https://www.instagram.com/direct/inbox/","_blank","noopener")},700);return}
       toast(c.dataset.discord?"Link copied – paste it in Discord":"Link copied")});
   setTimeout(()=>$(".shareinp")?.select(),50);
 }
