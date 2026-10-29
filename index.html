@@ -141,9 +141,10 @@ main{min-width:0;padding-right:max(16px,env(safe-area-inset-right,0px));padding-
 .adm-card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:2px}
 .adm-card b{font-size:26px;line-height:1.1}.adm-card span{color:var(--muted);font-size:13px}
 .adm-list{display:flex;flex-direction:column;gap:6px}
-.instbar{position:fixed;left:10px;right:10px;bottom:calc(66px + env(safe-area-inset-bottom,0px));z-index:45;display:flex;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:10px 10px 10px 12px;box-shadow:0 8px 24px rgba(0,0,0,.35)}
+.instbar{position:fixed;left:10px;right:10px;top:calc(10px + env(safe-area-inset-top,0px));z-index:150;animation:instin .35s ease-out;display:flex;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:10px 10px 10px 12px;box-shadow:0 8px 24px rgba(0,0,0,.35)}
 .instbar span:nth-child(2){display:flex;flex-direction:column;flex:1;min-width:0}.instbar small{color:var(--muted);font-size:12px}.instbar .btn{padding:8px 14px}
 .instic{width:34px;height:34px;border-radius:9px;background:#8b5cf6 url("/icons/icon-192.png?v=2") center/cover;flex-shrink:0}
+@keyframes instin{from{transform:translateY(-130%);opacity:0}to{transform:none;opacity:1}}
 .instx{background:none;border:0;color:var(--muted);font-size:16px;width:32px;height:32px;cursor:pointer}
 .admtbl{width:100%;border-collapse:collapse;font-size:13px}.admtbl th{text-align:left;color:var(--muted);font-weight:600;padding:6px 8px;border-bottom:1px solid var(--line)}.admtbl td{padding:7px 8px;border-bottom:1px solid var(--line);white-space:nowrap}.admtbl tr:hover td{background:var(--hover)}
 .affrow{display:flex;align-items:center;gap:12px;margin-top:12px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:11px 14px;color:var(--fg);text-decoration:none}
@@ -3396,16 +3397,19 @@ loadLive();setInterval(()=>{if(!document.hidden)loadLive()},120000);
 /* Installable app: register the service worker, and offer an Install button where the browser supports it */
 if("serviceWorker" in navigator&&location.protocol==="https:")navigator.serviceWorker.register("/sw.js").catch(()=>{});
 var installPrompt=null;addEventListener("beforeinstallprompt",e=>{e.preventDefault();installPrompt=e;renderGuide();instBar()});
-/* A small "Install the app" bar on Android (web app, no warnings): from the second visit, never on a film or in Shorts,
-   and after "Not now" it stays away for two weeks */
+/* "Get the app" card at the top of the screen: Android (one-tap install) and iPhone Safari (shows the steps).
+   Comes 4 s after the page opens, never on a film or in Shorts; "Not now" keeps it away for two weeks. */
 let instVisits=0;try{instVisits=+localStorage.getItem("fr_visits")||0;if(!sessionStorage.getItem("fr_v")){sessionStorage.setItem("fr_v","1");localStorage.setItem("fr_visits",++instVisits)}}catch(e){}
-function instBar(){const old=$("#instbar");
+let instReady=false;setTimeout(()=>{instReady=true;try{instBar()}catch(e){}},4000);
+function instBar(){const old=$("#instbar"),ua=navigator.userAgent;
   let off=false;try{off=Date.now()-(+localStorage.getItem("fr_inst_off")||0)<14*864e5}catch(e){}
-  const show=installPrompt&&!IN_APP&&!APP&&instVisits>=2&&!off&&phone()&&!["watch","shorts","admin"].includes(state.view);
+  const standalone=matchMedia("(display-mode: standalone)").matches||matchMedia("(display-mode: fullscreen)").matches||navigator.standalone;
+  const iosSafari=/iphone|ipad|ipod/i.test(ua)&&!/CriOS|FxiOS|EdgiOS|FBAN|FBAV|Instagram|Snapchat|TikTok/i.test(ua);
+  const show=instReady&&(installPrompt||iosSafari)&&!standalone&&!IN_APP&&!APP&&!off&&phone()&&!["watch","shorts","admin"].includes(state.view)&&$("#scrim").hidden;
   if(!show){old?.remove();return}if(old)return;
-  document.body.insertAdjacentHTML("beforeend",`<div id="instbar" class="instbar" role="region" aria-label="Install the app"><span class="instic" aria-hidden="true"></span><span><b>Fanreelz app</b><small>Free, no app store needed</small></span><button class="btn" data-instgo="">Install</button><button class="instx" data-instoff="" aria-label="Not now">✕</button></div>`)}
+  document.body.insertAdjacentHTML("beforeend",`<div id="instbar" class="instbar" role="region" aria-label="Get the app"><span class="instic" aria-hidden="true"></span><span><b>Get the Fanreelz app</b><small>Free · installs in one tap</small></span><button class="btn" data-instgo="">Install</button><button class="instx" data-instoff="" aria-label="Not now">✕</button></div>`)}
 document.addEventListener("click",e=>{
-  if(e.target.closest("[data-instgo]")){e.preventDefault();$("#instbar")?.remove();if(installPrompt){installPrompt.prompt();installPrompt.userChoice.finally(()=>{installPrompt=null;renderGuide()})}return}
+  if(e.target.closest("[data-instgo]")){e.preventDefault();$("#instbar")?.remove();try{localStorage.setItem("fr_inst_off",Date.now())}catch(x){}installApp();return}
   if(e.target.closest("[data-instoff]")){e.preventDefault();try{localStorage.setItem("fr_inst_off",Date.now())}catch(x){}$("#instbar")?.remove()}});
 async function installApp(){
   if($("#shell").classList.contains("open"))closeMenu();
