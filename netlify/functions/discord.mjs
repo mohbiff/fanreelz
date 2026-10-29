@@ -64,9 +64,14 @@ async function showdown() {
 }
 // /today and /daily take the same choices: nothing (all AI fan films), a world (game, series, movie, anime, cartoon…) and/or a character
 function topicOf(i) {
-  const raw = opt(i, "category"), c = findCat(raw), ch = cleanChar(opt(i, "character"));
-  if (raw && !c) return { error: `I don't know "${raw}". Start typing and pick a game, series, movie, anime or cartoon from the list.` };
-  return { cat: c?.id || "", char: ch };
+  const ids = [];
+  for (const n of ["category", "category2", "category3"]) {
+    const raw = opt(i, n); if (!raw) continue;
+    const c = findCat(raw);
+    if (!c) return { error: `I don't know "${raw}". Start typing and pick a game, series, movie, anime or cartoon from the list.` };
+    if (!ids.includes(c.id)) ids.push(c.id);
+  }
+  return { cat: ids.sort().join(","), char: cleanChar(opt(i, "character")) };
 }
 // /today: today's AI video for anyone
 async function today(i) {
@@ -95,7 +100,7 @@ async function daily(i) {
   if (!res.ok) return reply({ content: `I can't post in this channel yet. Add the Fanreelz bot to the server (${SITE}/discord) and let it send messages here, then try /daily again.`, flags: 64 });
   s.channels[id] = { channel: i.channel_id, cat: t.cat, char: t.char, at: new Date().toISOString() };
   await saveState(s);
-  return reply({ content: `✅ Daily AI video is on in this channel: **${topicName(t)}**, every day at 16:00 UTC. Run /daily again to change it, or \`/daily mode:off\` to stop.`, flags: 64 });
+  return reply({ content: `✅ Daily AI video is on in this channel: **${topicName(t)}**, every day at 16:00 UTC.${t.cat.includes(",") ? " Each day one of these worlds is picked at random." : ""} Run /daily again to change it, or \`/daily mode:off\` to stop.`, flags: 64 });
 }
 const help = () => reply({ embeds: [{ color: COLOR, title: "Fanreelz bot", url: SITE, description: [
   "`/top [category]` the 5 most watched AI fan films",
@@ -103,7 +108,7 @@ const help = () => reply({ embeds: [{ color: COLOR, title: "Fanreelz bot", url: 
   "`/search <words>` find AI fan films",
   "`/showdown` who would win? The hottest Character Showdown",
   "`/today [category] [character]` today's AI video of the day",
-  "`/daily [category] [character]` (server admins) post a popular AI video in this channel every day; `mode:off` stops it",
+  "`/daily [category] [category2] [category3] [character]` (server admins) post a popular AI video in this channel every day, from one world or a random one of up to three; `mode:off` stops it",
 ].join("\n") }] });
 
 export default async (req) => {

@@ -12,7 +12,7 @@ const COMMANDS = [
   { name: "showdown", description: "Who would win? The hottest Character Showdown", ...everywhere },
   { name: "today", description: "Today's AI video of the day", options: [topic[0], topic[1]], ...everywhere },
   { name: "daily", description: "Post a popular AI video in this channel every day", default_member_permissions: "32", integration_types: [0], contexts: [0],
-    options: [topic[0], topic[1], { type: 3, name: "mode", description: "Turn it on (default) or off in this channel", required: false, choices: [{ name: "on", value: "on" }, { name: "off", value: "off" }] }] },
+    options: [topic[0], { ...cat("Another world: each day one of them is picked at random"), name: "category2" }, { ...cat("A third world, also picked at random"), name: "category3" }, topic[1], { type: 3, name: "mode", description: "Turn it on (default) or off in this channel", required: false, choices: [{ name: "on", value: "on" }, { name: "off", value: "off" }] }] },
   { name: "fanreelz", description: "What the Fanreelz bot can do", ...everywhere },
 ];
 

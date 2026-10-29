@@ -15,7 +15,9 @@ const catName = (id) => CATS.find((c) => c.id === id)?.name || id;
 export const cleanChar = (t) => String(t || "").replace(/[^\p{L}\p{N} '.-]/gu, " ").replace(/\s+/g, " ").trim().slice(0, 40);
 // what a channel asked for: everything, one world, one character, or a character within a world
 export const topicKey = (t) => `${t?.cat || "*"}|${(t?.char || "").toLowerCase() || "*"}`;
-export const topicName = (t) => [t?.char, t?.cat ? catName(t.cat) : ""].filter(Boolean).join(" · ") || "all AI fan films";
+// t.cat can hold several worlds ("cs,aoe2"): each day one of them is picked at random
+const cats = (t) => String(t?.cat || "").split(",").filter(Boolean);
+export const topicName = (t) => [t?.char, cats(t).map(catName).join(" / ")].filter(Boolean).join(" · ") || "all AI fan films";
 
 export async function loadState() {
   const r = await fetch(env("SUPABASE_URL") + `/rest/v1/import_state?key=eq.${KEY}&select=value`, { headers: head() });
@@ -35,14 +37,17 @@ export async function todaysPick(s, topic = {}) {
   if (s.today?.date !== date) s.today = { date, picks: {} };
   if (s.today.picks[k]) return s.today.picks[k];
   let q = "catalog?select=id,title,views,video_id,channel,cat,char,duration,format&hidden=eq.false&age_restricted=eq.false&platform=eq.YouTube&order=views.desc&limit=400";
-  if (topic.cat) q += "&cat=eq." + encodeURIComponent(topic.cat);
+  // several worlds: today's world is one of them at random (one with films about the chosen character, if there is a character)
+  const list = cats(topic).sort(() => Math.random() - 0.5);
+  if (list.length) q += "&cat=in.(" + list.map(encodeURIComponent).join(",") + ")";
   if (topic.char) { const c = encodeURIComponent(`*${topic.char}*`); q += `&or=(char.ilike.${c},title.ilike.${c})`; }
   // the whole catalogue: only properly popular films; a world or character: whatever there is
   if (!topic.cat && !topic.char) q += "&views=gte.20000";
   const r = await fetch(env("SUPABASE_URL") + "/rest/v1/" + q, { headers: head() });
   if (!r.ok) throw new Error("db " + r.status);
   // under 30 minutes, so talks and podcasts that mention AI don't get picked
-  const all = (await r.json()).filter((f) => !f.duration || f.duration <= 1800);
+  let all = (await r.json()).filter((f) => !f.duration || f.duration <= 1800);
+  if (list.length > 1) { const world = list.find((c) => all.some((f) => f.cat === c)); all = all.filter((f) => f.cat === world); }
   if (!all.length) return null;
   const seen = new Set(s.sent[k] || []);
   let pool = all.filter((f) => !seen.has(f.id));
