@@ -141,6 +141,7 @@ main{min-width:0;padding-right:max(16px,env(safe-area-inset-right,0px));padding-
 .adm-card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:2px}
 .adm-card b{font-size:26px;line-height:1.1}.adm-card span{color:var(--muted);font-size:13px}
 .adm-list{display:flex;flex-direction:column;gap:6px}
+.admtbl{width:100%;border-collapse:collapse;font-size:13px}.admtbl th{text-align:left;color:var(--muted);font-weight:600;padding:6px 8px;border-bottom:1px solid var(--line)}.admtbl td{padding:7px 8px;border-bottom:1px solid var(--line);white-space:nowrap}.admtbl tr:hover td{background:var(--hover)}
 .affrow{display:flex;align-items:center;gap:12px;margin-top:12px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:11px 14px;color:var(--fg);text-decoration:none}
 .affrow:hover{background:var(--hover)}.affrow b{font-size:14px}.affrow em{font-style:normal;margin-left:auto;font-weight:700;color:var(--accent);white-space:nowrap}
 .affnote{font-size:11px;color:var(--muted);margin:4px 2px 0}
@@ -1534,7 +1535,9 @@ function renderAdminSearches(){
    <div class="umbox"><h3>Most searched</h3>${(S.top||[]).slice(0,50).map(x=>row(x,x.n,x.zero>0?`<span style="color:#ff6b6b">${x.zero} no results</span>`:"")).join("")||`<p class="vmeta">No searches yet.</p>`}</div>
    <div class="umbox"><h3>Searched, but nothing found <small class="vmeta" style="font-weight:500">ideas for new categories</small></h3>${(S.missing||[]).slice(0,50).map(x=>row(x,x.zero,"times")).join("")||`<p class="vmeta">Every search found something.</p>`}</div>
    <div class="umbox"><h3>Earlier searches <small class="vmeta" style="font-weight:500">from Umami, all time</small></h3>${admUmQ?.loading?`<p class="vmeta">Loading…</p>`:admUmQ?.rows?.length?admUmQ.rows.slice(0,50).map(x=>`<div class="umrow" data-admq="${esc(x.q)}" role="button" style="cursor:pointer"><span class="umname">${esc(x.q)}</span><b>${x.n.toLocaleString("sv-SE")}</b><small>views</small></div>`).join(""):`<p class="vmeta">${esc(admUmQ?.error||"Umami has no searches saved.")}</p>`}</div>
-   <div class="umbox"><h3>Latest searches</h3>${(S.recent||[]).map(x=>`<div class="umrow" data-admq="${esc(x.q)}" role="button" style="cursor:pointer"><span class="umname">${esc(x.q)}</span><small>${admAgo(Date.parse(x.last_at))}</small></div>`).join("")||`<p class="vmeta">No searches yet.</p>`}</div>
+   ${Array.isArray(S.events)?(()=>{let cn=null;try{cn=new Intl.DisplayNames(["en"],{type:"region"})}catch(e){}const flag=c=>/^[A-Z]{2}$/.test(c||"")?String.fromCodePoint(...[...c].map(ch=>127397+ch.charCodeAt(0))):"";
+     return `<div class="umbox" style="grid-column:1/-1"><h3>Every search <small class="vmeta" style="font-weight:500">newest first · country, device and time, never who</small></h3><div style="overflow-x:auto"><table class="admtbl"><thead><tr><th>Search</th><th>Country</th><th>Device</th><th>When</th><th>Found</th></tr></thead><tbody>${S.events.map(x=>`<tr data-admq="${esc(x.q)}" style="cursor:pointer"><td><b>${esc(x.q)}</b></td><td>${flag(x.cc)} ${esc(x.cc?(cn?.of(x.cc)||x.cc):"Unknown")}</td><td>${esc(x.device||"–")}</td><td>${new Date(x.at).toLocaleString("sv-SE",{dateStyle:"short",timeStyle:"short"})}</td><td>${x.zero?'<span style="color:#ff6b6b">nothing</span>':"yes"}</td></tr>`).join("")||`<tr><td colspan="5" class="vmeta">No searches yet.</td></tr>`}</tbody></table></div></div>`})()
+   :`<div class="umbox"><h3>Latest searches</h3>${(S.recent||[]).map(x=>`<div class="umrow" data-admq="${esc(x.q)}" role="button" style="cursor:pointer"><span class="umname">${esc(x.q)}</span><small>${admAgo(Date.parse(x.last_at))}</small></div>`).join("")||`<p class="vmeta">No searches yet.</p>`}<p class="vmeta" style="font-size:12px">Run the "search_events" SQL to see country, device and time for each search.</p></div>`}
   </div>`}
 document.addEventListener("click",e=>{const r=e.target.closest("[data-admq]");if(!r)return;e.preventDefault();const q=r.dataset.admq;$("#q").value=q;go({view:"home",feed:"home",q})});
 /* Admin: affiliate links */
@@ -3345,7 +3348,8 @@ document.addEventListener("submit",async e=>{
 document.addEventListener("keydown",e=>{if(e.key==="Enter"&&(e.ctrlKey||e.metaKey)&&e.target.closest(".cmform")){e.preventDefault();e.target.closest(".cmform").requestSubmit()}});
 $("#sform").onsubmit=e=>{e.preventDefault();const q=$("#q").value.trim();go({view:"home",feed:"home",q});
   // count what people search for (only the words, never who); admins' own searches are left out
-  if(q.length>=2&&sb&&!isMod){let n=0;try{n=feedList().length+CATS.filter(c=>c.name.toLowerCase().includes(q.toLowerCase())).length}catch(x){}sb.rpc("add_search",{p_q:q.slice(0,60),p_zero:n===0}).then(()=>{},()=>{})}};
+  if(q.length>=2&&sb&&!isMod){let n=0;try{n=feedList().length+CATS.filter(c=>c.name.toLowerCase().includes(q.toLowerCase())).length}catch(x){}const cc=document.querySelector('meta[name="fr-cc"]')?.content||"",ua=navigator.userAgent,dev=/iPad|Tablet/i.test(ua)?"tablet":/Mobi|Android|iPhone/i.test(ua)?"mobile":"desktop";
+    sb.rpc("add_search",{p_q:q.slice(0,60),p_zero:n===0,p_cc:cc,p_device:dev}).then(r=>{if(r?.error)sb.rpc("add_search",{p_q:q.slice(0,60),p_zero:n===0}).then(()=>{},()=>{})},()=>{})}};
 $("#q").oninput=e=>{if(!e.target.value&&state.q)go({q:""})};
 let rt;addEventListener("resize",()=>{clearTimeout(rt);rt=setTimeout(()=>paintAll(),150)});
 Object.assign(state,parsePath());if(state.q)$("#q").value=state.q;

@@ -185,3 +185,24 @@ language sql security definer set search_path = public as $$
 $$;
 revoke all on function public.add_search(text, boolean) from public;
 grant execute on function public.add_search(text, boolean) to anon, authenticated;
+
+-- 11. One row per search: the words, the visitor's country (two letters) and device type, and when. Never who.
+create table if not exists public.search_events (
+  id bigint generated always as identity primary key,
+  q text not null,
+  cc text,
+  device text,
+  zero boolean not null default false,
+  at timestamptz not null default now()
+);
+create index if not exists search_events_at on public.search_events (at desc);
+alter table public.search_events enable row level security;
+create or replace function public.add_search(p_q text, p_zero boolean, p_cc text, p_device text) returns void
+language plpgsql security definer set search_path = public as $$
+begin
+  perform public.add_search(p_q, p_zero);
+  insert into public.search_events (q, cc, device, zero)
+  values (left(lower(btrim(p_q)), 60), upper(left(nullif(p_cc, ''), 2)), left(nullif(p_device, ''), 10), coalesce(p_zero, false));
+end $$;
+revoke all on function public.add_search(text, boolean, text, text) from public;
+grant execute on function public.add_search(text, boolean, text, text) to anon, authenticated;

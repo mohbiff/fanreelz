@@ -188,7 +188,9 @@ export default async (req) => {
     const get = async (q) => { const r = await fetch(base + q, { headers: h }); if (!r.ok) throw new Error("Supabase " + r.status + (r.status === 404 ? " (run the search_log SQL first)" : "")); return r.json(); };
     try {
       const [top, missing, recent] = await Promise.all([get("&order=n.desc&limit=200"), get("&zero=gt.0&order=zero.desc&limit=100"), get("&order=last_at.desc&limit=50")]);
-      return json({ top, missing, recent });
+      // single searches with country, device and time (table added later: missing is fine)
+      const ev = await fetch(Netlify.env.get("SUPABASE_URL") + "/rest/v1/search_events?select=q,cc,device,zero,at&order=at.desc&limit=200", { headers: h }).then((r) => (r.ok ? r.json() : null)).catch(() => null);
+      return json({ top, missing, recent, events: ev });
     } catch (e) { return json({ error: String(e.message || e) }); }
   }
   if (body.action === "affget") return json({ list: await readAffiliates().catch(() => []) });
