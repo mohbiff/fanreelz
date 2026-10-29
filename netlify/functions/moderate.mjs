@@ -6,6 +6,7 @@ import importYoutube, { searchNow, addByLinks } from "./import-youtube.mjs";
 import { BLOCK_RE, classify } from "./lib/classify.mjs";
 import { readAffiliates } from "./affiliates.mjs";
 import showdown from "./showdown.mjs";
+import { notePeak } from "./peak.mjs";
 const json = (o, status = 200) => new Response(JSON.stringify(o), { status, headers: { "Content-Type": "application/json", "Cache-Control": "no-store" } });
 
 async function whoIs(req) {
@@ -72,29 +73,9 @@ export default async (req) => {
   if (body.action === "umami") {
     // Umami Cloud statistics for the admin page. The API key stays on the server (setting UMAMI_API_KEY in Cloudflare).
     // Two ways in: an API key (Umami Pro), or the website's share link (free) — the same way Umami's own share page reads the numbers.
-    const apiKey = Netlify.env.get("UMAMI_API_KEY");
-    let site = Netlify.env.get("UMAMI_WEBSITE_ID") || "d8274143-7ceb-4717-aa02-13bfb95bfbf3", base, headers;
-    if (apiKey) {
-      base = (Netlify.env.get("UMAMI_API_URL") || "https://api.umami.is/v1") + "/websites/" + site;
-      headers = { Accept: "application/json", Authorization: "Bearer " + apiKey, "x-umami-api-key": apiKey };
-    } else {
-      const share = String(Netlify.env.get("UMAMI_SHARE") || "gbzu2pDfQWfQ6LZ2").replace(/^.*\/share\//, "").split(/[/?#]/)[0];
-      // Umami Cloud serves its API from another address than the dashboard: try the known ones and keep the one that answers
-      // (EU accounts like Fanreelz's: gateway-eu.umami.is; US accounts: gateway.umami.is)
-      const apis = [Netlify.env.get("UMAMI_API_URL"), "https://gateway-eu.umami.is/api", "https://gateway.umami.is/api", "https://api.umami.is/v1"].filter(Boolean);
-      let sd = null, api = "", tried = [];
-      for (const a of apis) {
-        const sr = await fetch(a + "/share/" + encodeURIComponent(share), { headers: { Accept: "application/json" } }).catch(() => null);
-        if (!sr || !sr.ok) { const why = sr ? (await sr.text().catch(() => "")).replace(/\s+/g, " ").slice(0, 120) : ""; tried.push(a.replace(/^https:\/\//, "") + " " + (sr ? sr.status : "x") + (why && sr.status !== 404 ? " “" + why + "”" : "")); continue; }
-        tried.push(a.replace(/^https:\/\//, "") + " " + sr.status);
-        const j = await sr.json().catch(() => null);
-        if (j?.token) { sd = j; api = a; break; }
-      }
-      if (!sd) return json({ error: "Umami share link not found (" + tried.join(", ") + ")" });
-      site = sd.websiteId || site;
-      base = api + "/websites/" + site;
-      headers = { Accept: "application/json", "x-umami-share-token": sd.token, "x-umami-share-context": "1" };
-    }
+    const conn = await umamiConn();
+    if (conn.error) return json({ error: conn.error });
+    let { site, base, headers } = conn;
     let days = { "24h": 1, "7d": 7, "30d": 30, "90d": 90, "365d": 365 }[body.range] || 7;
     const endAt = Date.now();
     let startAt = endAt - days * 864e5;
@@ -152,6 +133,7 @@ export default async (req) => {
         range: body.range || "7d", unit, site, from: startAt,
         stats: pick(stats), prev: stats?.comparison ? pick(stats.comparison) : prev ? pick(prev) : null,
         active: num(active?.visitors ?? active?.x ?? (Array.isArray(active) ? active[0]?.x : active)),
+        peak: await notePeak(num(active?.visitors ?? active?.x ?? (Array.isArray(active) ? active[0]?.x : active))).catch(() => null),
         series: { pageviews: pts(series?.pageviews), visitors: pts(series?.sessions ?? series?.visitors) },
         pages, referrers, countries, devices, browsers, os, events, entries,
       });
@@ -291,3 +273,31 @@ export default async (req) => {
   return json({ ok: true, removed: items.length - next.length });
 };
 export const config = { path: "/api/moderate" };
+
+// Where to read Umami (an API key, or the free share link) — used by the admin statistics and the online-peak sampler
+export async function umamiConn() {
+    const apiKey = Netlify.env.get("UMAMI_API_KEY");
+    let site = Netlify.env.get("UMAMI_WEBSITE_ID") || "d8274143-7ceb-4717-aa02-13bfb95bfbf3", base, headers;
+    if (apiKey) {
+      base = (Netlify.env.get("UMAMI_API_URL") || "https://api.umami.is/v1") + "/websites/" + site;
+      headers = { Accept: "application/json", Authorization: "Bearer " + apiKey, "x-umami-api-key": apiKey };
+    } else {
+      const share = String(Netlify.env.get("UMAMI_SHARE") || "gbzu2pDfQWfQ6LZ2").replace(/^.*\/share\//, "").split(/[/?#]/)[0];
+      // Umami Cloud serves its API from another address than the dashboard: try the known ones and keep the one that answers
+      // (EU accounts like Fanreelz's: gateway-eu.umami.is; US accounts: gateway.umami.is)
+      const apis = [Netlify.env.get("UMAMI_API_URL"), "https://gateway-eu.umami.is/api", "https://gateway.umami.is/api", "https://api.umami.is/v1"].filter(Boolean);
+      let sd = null, api = "", tried = [];
+      for (const a of apis) {
+        const sr = await fetch(a + "/share/" + encodeURIComponent(share), { headers: { Accept: "application/json" } }).catch(() => null);
+        if (!sr || !sr.ok) { const why = sr ? (await sr.text().catch(() => "")).replace(/\s+/g, " ").slice(0, 120) : ""; tried.push(a.replace(/^https:\/\//, "") + " " + (sr ? sr.status : "x") + (why && sr.status !== 404 ? " “" + why + "”" : "")); continue; }
+        tried.push(a.replace(/^https:\/\//, "") + " " + sr.status);
+        const j = await sr.json().catch(() => null);
+        if (j?.token) { sd = j; api = a; break; }
+      }
+      if (!sd) return { error: "Umami share link not found (" + tried.join(", ") + ")" };
+      site = sd.websiteId || site;
+      base = api + "/websites/" + site;
+      headers = { Accept: "application/json", "x-umami-share-token": sd.token, "x-umami-share-context": "1" };
+    }
+    return { site, base, headers };
+}

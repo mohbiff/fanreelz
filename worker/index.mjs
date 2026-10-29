@@ -9,6 +9,7 @@ import liveYoutube from "../netlify/functions/live-youtube.mjs";
 import live from "../netlify/functions/live.mjs";
 import moderate from "../netlify/functions/moderate.mjs";
 import showdown from "../netlify/functions/showdown.mjs";
+import peak from "../netlify/functions/peak.mjs";
 import thumb from "../netlify/functions/thumb.mjs";
 import ytViews from "../netlify/functions/yt-views.mjs";
 import affiliates from "../netlify/functions/affiliates.mjs";
@@ -26,8 +27,9 @@ const ROUTES = {
   "/api/yt-views": ytViews,
   "/api/affiliates": affiliates,
 };
-// Schedules (see wrangler.jsonc): the importer every 10 minutes (it searches YouTube about once an hour), the showdown judge every hour at :41
-const CRONS = { "*/10 * * * *": importYoutube, "41 * * * *": showdown };
+// Schedules (see wrangler.jsonc): the importer every 10 minutes (it searches YouTube about once an hour), the showdown judge every hour at :41,
+// and every minute a look at how many are online (for the "most online at once" record)
+const CRONS = { "*/10 * * * *": importYoutube, "41 * * * *": showdown, "* * * * *": peak };
 
 // Digital Asset Links: proves that the Android app (Google Play) and fanreelz.com belong together, so the app shows no browser bar.
 // The first fingerprint is the upload key; add Google Play's "App signing key" SHA-256 from Play Console → Test and release → App integrity,
