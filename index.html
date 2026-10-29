@@ -543,6 +543,7 @@ body.spfs{overflow:hidden}
 body.spfs::after{content:"";position:fixed;inset:0;background:#000;z-index:59}
 body.spfs .shorts-view .sp{position:fixed;inset:0;width:100vw;max-width:none;height:100vh;height:100dvh;border-radius:0;z-index:60;aspect-ratio:auto}
 body.spfs .tabbar,body.spfs .toast{z-index:61}
+.toast{z-index:210!important}
 /* phone Shorts: like YouTube, the bottom bar (Home, Shorts…) stays, the video ends just above it, and a back arrow sits top-left */
 body.spfs .shorts-view .sp{bottom:calc(54px + env(safe-area-inset-bottom,0px));height:auto}
 body.spfs .tabbar{background:#000;border-top-color:rgba(255,255,255,.12)}body.spfs .tb{color:#fff}body.spfs .tbplus .i{border-color:#fff}
@@ -683,7 +684,7 @@ body.spfs .spback{display:flex}
 .mini-v .vmeta{font-size:12px}
 
 /* dialogs */
-.scrim{position:fixed;inset:0;background:var(--scrim);z-index:20;display:flex;align-items:center;justify-content:center;
+.scrim{position:fixed;inset:0;background:var(--scrim);z-index:200;display:flex;align-items:center;justify-content:center;
   padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:24px}
 .dlg{background:var(--surface);border-radius:14px;width:min(560px,100%);max-height:100%;overflow:auto;padding:22px;display:flex;flex-direction:column;gap:14px}
 .dlg h2{margin:0;font-size:20px}
