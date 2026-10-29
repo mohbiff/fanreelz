@@ -1748,7 +1748,15 @@ function renderUmami(){
   const rowPlus=(k,x)=>{const b=umBase[r]?.lists?.[k];if(!b)return "";const d=x.y-(b[x.x]||0);return d>0?`<em class="umplus">+${nf(d)}</em>`:""};
   const list=(k,title)=>{const a=U[k]||[];if(!a.length)return "";const top=Math.max(...a.map(x=>x.y),1),tot=a.reduce((s,x)=>s+x.y,0);
     return `<div class="umbox"><h3>${title}${a.length>=10?`<button class="seeall" data-ummore="${k}">See all</button>`:""}</h3>${(k==="countries"||k==="devices")?`<p class="vmeta" style="font-size:12px;margin:-4px 0 6px">Tap one to see which pages they visited</p>`:""}${a.slice(0,10).map(x=>`<div class="umrow"${umPathAttr(k,x.x)}${(k==="countries"||k==="devices")&&x.x?` data-umdrill="${k==="countries"?"country":"device"}|${esc(x.x)}|${esc(String(name[k](x.x)))}" role="button" style="cursor:pointer"`:""}><span class="umbar" style="width:${x.y/top*100}%"></span><span class="umname">${(k==="pages"||k==="entries")?umPathLabel(x.x):esc(String(name[k](x.x)||"–"))}</span>${rowPlus(k,x)}<b>${nf(x.y)}</b><small>${tot?Math.round(x.y/tot*100):0}%</small></div>`).join("")}</div>`};
-  $("#main").innerHTML=head+`<div class="adm-cards">${cards.map(([n,l,d,a])=>`<div class="adm-card"${a||""}><b>${n}</b><span>${l} ${d}</span></div>`).join("")}</div>${umPeakOpen?peakHtml(U.peak):""}
+  // the Android app: downloads of the app file (counted by the server), installs (the app's first start) and people using it per day
+  const appBox=(()=>{const V=VIEWS||{},day=x=>new Date(Date.now()-x*864e5).toLocaleDateString("sv-SE"),dl=V["app:download"]||0,inst=V["app:install"]||0;
+    const today=V["app:day:"+day(0)]||0,week=[0,1,2,3,4,5,6].reduce((a,i)=>a+(V["app:day:"+day(i)]||0),0);
+    const daysUsed=Object.keys(V).filter(k=>k.startsWith("app:day:")).length;
+    return `<div class="umbox" style="margin-top:14px"><h3>📱 Android app <small class="vmeta" style="font-weight:500">since we started counting</small></h3><div class="adm-cards" style="margin:0">
+      <div class="adm-card"><b>${nf(dl)}</b><span>downloads of the app file</span></div><div class="adm-card"><b>${nf(inst)}</b><span>installs (opened the first time)</span></div>
+      <div class="adm-card"><b>${nf(today)}</b><span>used the app today</span></div><div class="adm-card"><b>${nf(week)}</b><span>app uses, last 7 days</span></div></div>
+      <p class="vmeta" style="font-size:12px;margin:8px 0 0">${dl?Math.round(Math.min(inst,dl)/dl*100)+"% of downloads were installed · ":""}${daysUsed?"used on "+daysUsed+" day"+(daysUsed>1?"s":"")+" · ":""}a reinstall counts as a new install</p></div>`})();
+  $("#main").innerHTML=head+`<div class="adm-cards">${cards.map(([n,l,d,a])=>`<div class="adm-card"${a||""}><b>${n}</b><span>${l} ${d}</span></div>`).join("")}</div>${appBox}${umPeakOpen?peakHtml(U.peak):""}
     <div class="umbox" style="margin-top:14px">${chart}</div>
     <div class="umgrid">${list("pages","Pages")}${list("entries","Entry pages")}${list("referrers","Where visitors come from")}${list("countries","Countries")}${list("devices","Devices")}${list("browsers","Browsers")}${list("os","Operating systems")}${list("events","Events")}</div>
     <p class="vmeta" style="margin-top:12px;font-size:12px">${r==="all"?`All time since ${U.from?new Date(U.from).toLocaleDateString("sv-SE"):"the start"}`:`Compared with the previous ${({"24h":"24 hours","7d":"7 days","30d":"30 days","90d":"90 days","365d":"year"})[r]}`} · updated ${new Date(U.at).toLocaleTimeString("sv-SE")} · <a href="https://cloud.umami.is" target="_blank" rel="noopener">Open Umami ↗</a></p>`;
@@ -3535,6 +3543,12 @@ render();
 function signinInUrl(){return /[?&#](code|error|access_token)=/.test(location.search+location.hash)}
 try{history.replaceState({fr:navSnap(),y:0},"",signinInUrl()||pendingLink?location.href:pathFor(state))}catch(e){}
 loadLive();setInterval(()=>{if(!document.hidden)loadLive()},120000);
+/* The Android app: its first start counts as an install, and each day it is used counts once (for the admin's app numbers) */
+setTimeout(()=>{try{if(!(window.FanreelzApp||/FanreelzApp\//.test(navigator.userAgent)))return;
+  const d=new Date().toLocaleDateString("sv-SE"),add=id=>{if(sb)sb.rpc("add_view",{p_id:id}).then(()=>{},()=>{})};
+  const track=(n,x)=>{let k=0;(function send(){if(window.umami?.track){window.umami.track(n,x||{});return}if(k++<20)setTimeout(send,1000)})()};
+  if(!localStorage.getItem("fr_appinst")){localStorage.setItem("fr_appinst",d);add("app:install");track("app-install")}
+  if(localStorage.getItem("fr_appday")!==d){localStorage.setItem("fr_appday",d);add("app:day:"+d);track("app-open")}}catch(e){}},5000);
 /* Returning visitors: once a day each browser tells Umami whether it is new or has been here on an earlier day (admins are not counted) */
 setTimeout(()=>{try{if(isMod)return;const d=new Date().toLocaleDateString("sv-SE"),first=localStorage.getItem("fr_first"),last=localStorage.getItem("fr_lastday");
   if(last===d)return;localStorage.setItem("fr_lastday",d);if(!first)localStorage.setItem("fr_first",d);
