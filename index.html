@@ -111,6 +111,7 @@ svg.i{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stro
 .shell.mini .guide h4,.shell.mini .guide hr,.shell.mini .gi.cat{display:none}
 
 main{min-width:0;padding-right:max(16px,env(safe-area-inset-right,0px));padding-left:12px;padding-bottom:40px}
+.gcatbtn{display:inline-flex;align-items:center;gap:6px;margin:0 0 12px}.gcatgrid{margin-bottom:18px;display:grid!important;grid-template-columns:repeat(auto-fill,minmax(160px,1fr))!important;gap:8px!important}.gcatgrid .dircard{padding:8px 10px;gap:8px}.gcatgrid .dircard b{font-size:13px;line-height:1.25}
 .chips{position:sticky;top:calc(56px + env(safe-area-inset-top,0px));z-index:4;background:var(--bg);display:flex;gap:12px;overflow-x:auto;padding:10px 0 14px;scrollbar-width:none}
 .chips::-webkit-scrollbar{display:none}
 .chip{flex:none;height:32px;padding:0 12px;border-radius:8px;border:0;background:var(--chip);font-weight:600;white-space:nowrap}
@@ -2500,6 +2501,11 @@ function renderHomeF(){
   const srt=l=>state.sort==="views"?[...l].sort((a,b)=>(b.ytViews||0)-(a.ytViews||0)):state.sort==="new"?[...l].sort((a,b)=>(a.days??1e9)-(b.days??1e9)):state.sort==="top"?[...l].sort((a,b)=>stats(b).bayes-stats(a).bayes):l;
   const base=srt(feedList()),films=base.filter(f=>f.format!=="short"),shorts=base.filter(f=>f.format==="short"),series=seriesList();
   let html=(!c&&!state.q&&state.feed==="home"&&state.format==="all"&&state.group==="All"?`<p class="hometag">All the best AI fan films in one place, sorted by game, anime, book and series. <button class="hometag-l" data-view="about">Learn more →</button></p>`:"")+`<div class="chips">${chips.join("")}</div>`;
+  // a group tab (Anime, Cartoons…): a button that lists every category in it
+  {const g=!c&&!state.q&&GROUPS.find(x=>x.name===state.group);
+   if(g){const n={};allFilms().forEach(f=>n[f.cat]=(n[f.cat]||0)+1);const cs=g.cats.filter(x=>isMod||n[x.id]).sort((a,b)=>a.name.localeCompare(b.name));
+    html+=`<button class="btn ghost gcatbtn" data-gcats="" aria-expanded="${gcatsOpen}">${icon("list")} All ${cs.length} categories in ${esc(g.name)} <span aria-hidden="true">${gcatsOpen?"▴":"▾"}</span></button>`;
+    if(gcatsOpen)html+=`<div class="dirgrid gcatgrid">${cs.map(x=>`<button class="dircard dirhead" data-cat="${x.id}">${cav(x.name,40)}<span><b>${esc(x.name)}</b>${isMod?`<small>${n[x.id]||0} films</small>`:""}</span></button>`).join("")}</div>`}}
   if(state.family)html+=`<div class="familybar">${icon("shield")} Family-friendly mode is on. Only films suited for younger viewers are shown.<button data-family="">Turn off</button></div>`;
   if(!c&&!state.q&&state.group===FOR_YOU){$("#main").innerHTML=html+forYouHtml();return}
   if(c)html+=`<h1 class="sect-h" style="font-size:24px;margin-top:4px">${cav(c.name,48)} ${esc(c.name)}${isMod?`<span class="vmeta" style="font-size:14px;font-weight:500">${films.length} films · ${shorts.length} shorts · ${series.length} series</span>`:""}</h1>`;
@@ -2689,6 +2695,7 @@ async function postComment(parent,text){
   if(await writeOwn("comments",{items:next})){commentDocs[acct.uid]={items:next};const fm=document.querySelector(`.cmform[data-cparent="${CSS.escape(parent||"")}"] textarea`);if(fm)fm.value="";replyTo=null;render();toast(parent?"Reply posted":"Comment posted");return true}
   return false;
 }
+var gcatsOpen=false;
 var isMod=false,adminMsg="",adminBusy=false,adminQ=null;
 document.addEventListener("input",e=>{if(e.target.closest&&e.target.closest("#adminForm"))adminQ=e.target.value});
 /* Admin bar (only for ADMIN_EMAILS): search YouTube now and add the AI films it finds, or start the hourly jobs by hand */
@@ -3417,6 +3424,7 @@ document.addEventListener("click",async e=>{
   if(A("[data-news]")){toggleNewsletter();return}
   if(x=A("[data-lore]")){state.lore=x.dataset.lore;render();return}
   if(x=A("[data-sort]")){state.sort=x.dataset.sort;render();return}
+  if(x=A("[data-gcats]")){gcatsOpen=!gcatsOpen;render();return}
   if(x=A("[data-lore-go]")){go({view:"home",feed:"home",cat:x.dataset.cat,char:null,lore:x.dataset.loreGo});return}
   if(x=A("[data-bpool]")){battle.pool=x.dataset.bpool;battle.pair=null;render();return}
   if(x=A("[data-vote]")){castVote(x.dataset.vote);return}
@@ -3446,7 +3454,7 @@ document.addEventListener("click",async e=>{
   if(e.target.closest("[data-more]")){state.azLimit+=60;render();return}
   const fd=e.target.closest("[data-feed]");if(fd){$("#shell").classList.remove("open");const home=fd.dataset.feed==="home";if(home)resetSections();go({view:"home",feed:fd.dataset.feed,cat:null,char:null,format:home?"all":state.format,...(home?{group:"All",q:"",dur:"any",lore:"all"}:{})});return}
   const c=e.target.closest("[data-cat]");if(c){$("#shell").classList.remove("open");go({view:"home",feed:"home",cat:c.dataset.cat,char:c.dataset.charGo||null,lore:"all"});return}
-  const g=e.target.closest("[data-group]");if(g){groupTouched=true;go({group:g.dataset.group});return}
+  const g=e.target.closest("[data-group]");if(g){groupTouched=true;gcatsOpen=false;go({group:g.dataset.group});return}
   const ch=e.target.closest("[data-char]");if(ch){go({char:ch.dataset.char||null});return}
   const r=e.target.closest("[data-rate]");if(r){
     const k=+r.dataset.rate;
