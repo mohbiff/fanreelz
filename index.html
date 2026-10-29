@@ -479,6 +479,37 @@ html:has(.player.hasbar),html:has(.player.hasbar) body{overscroll-behavior-y:non
 .eptext b{font-size:15px}
 .serieslink{background:none;border:0;padding:0;color:var(--accent);font-weight:700;margin-top:12px;display:block}
 .subnote{margin:0;color:var(--muted);font-size:12px}
+
+/* Shorts on a computer (TikTok-style): buttons beside the video, arrows, side panel with tabs */
+.sprailout,.sparrows{display:none}
+.sptabs{display:flex;border-bottom:1px solid var(--line);margin-top:6px;position:sticky;top:0;background:var(--bg);z-index:2}
+.sptabs button{flex:1;background:none;border:0;border-bottom:2px solid transparent;color:var(--muted);font:inherit;font-weight:700;font-size:15px;padding:12px 6px;cursor:pointer}
+.sptabs button.on{color:var(--fg);border-bottom-color:var(--fg)}.sptabs small{color:var(--muted);font-weight:600}
+.sptabbody .comments{max-height:none;overflow:visible;margin-top:10px}
+.splike{display:grid;grid-template-columns:1fr 1fr;gap:14px 10px;padding-top:12px}
+.splikec{all:unset;cursor:pointer;display:flex;flex-direction:column;gap:3px;min-width:0}
+.splikec .thumb{border-radius:10px;overflow:hidden;margin-bottom:4px}.splikec:hover .thumb{outline:2px solid var(--accent)}
+.splikec b{font-size:13px;line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.splikec small{font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sside-t{font-size:16px;line-height:1.35}
+.ratebox.pulse{animation:rbpulse .9s ease}@keyframes rbpulse{30%{box-shadow:0 0 0 4px var(--accent)}}
+@media (min-width:861px){
+  body:not(.spfs) .shorts-view{grid-template-columns:auto auto 56px minmax(300px,420px);gap:18px;--sph:min(calc(100vh - 140px),820px);align-items:center;padding-top:12px}
+  body:not(.spfs) .shorts-view .spnext{display:none}
+  body:not(.spfs) .shorts-view .spcol{height:auto}
+  body:not(.spfs) .shorts-view .sp .sprail{display:none}
+  body:not(.spfs) .sprailout{display:flex;flex-direction:column;align-items:center;gap:14px;align-self:end;padding-bottom:20px}
+  .sprailout button{display:flex;flex-direction:column;align-items:center;gap:4px;background:none;border:0;padding:0;color:var(--fg);font:inherit;font-size:12px;font-weight:700;cursor:pointer}
+  .sprailout .spb{width:48px;height:48px;background:var(--chip);backdrop-filter:none}.sprailout .spb svg{stroke:var(--fg)}
+  .sprailout button:hover .spb{background:var(--hover)}
+  .sprailout .spb.on svg{fill:#fbbf24;stroke:#fbbf24}.sprailout .spb.liked svg{fill:#ff3d5a;stroke:#ff3d5a}
+  .spavatar{margin-bottom:6px}
+  body:not(.spfs) .sparrows{display:flex;flex-direction:column;gap:14px;align-self:center}
+  .sparrow{width:52px;height:52px;border-radius:50%;border:0;background:var(--chip);color:var(--fg);display:grid;place-items:center;cursor:pointer}
+  .sparrow:hover{background:var(--hover)}.sparrow:disabled{opacity:.35;cursor:default}
+  .sparrow svg{width:26px;height:26px;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
+  body:not(.spfs) .shorts-view .sside{align-self:stretch;height:calc(100vh - 90px);overflow:auto;padding:8px 6px 20px 0;border-left:1px solid var(--line);padding-left:18px}
+}
 @media (max-width:860px){.shorts-view{grid-template-columns:minmax(0,1fr);justify-items:center}.shorts-view{--sph:calc(100svh - 56px - 54px - 24px - env(safe-area-inset-bottom,0px));padding-top:8px;gap:16px}.spcol{height:auto;overflow:visible;width:100%;justify-self:stretch}.spnext{display:none}.shorts-view .sp{width:100%;max-width:100%;aspect-ratio:auto;border-radius:12px}.spcatch{inset:120px 0 120px 0}.sside{width:100%}.sside .comments{max-height:none;overflow:visible}.ep{grid-template-columns:28px 120px minmax(0,1fr)}.ep .azscore{display:none}}
 .tipamts{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 .tipamts .chip.on{background:var(--fg);color:var(--bg)}
@@ -2696,15 +2727,16 @@ function renderShorts(){
      <a class="play" href="${esc(url)}" target="_blank" rel="noopener"><span><svg viewBox="0 0 12 12"><path d="M2 1l9 5-9 5z"/></svg>Watch on ${esc(f.src)}</span></a>
      <div class="ov"><span class="vmeta" style="color:#fff;opacity:.85">${[catName(f.cat),f.char,f.len].filter(Boolean).map(esc).join(" · ")}</span><b>${esc(f.title)}</b></div></div>
    ${nx?`<button class="spnext" data-snav="1" aria-label="Next short: ${esc(nx.title)}"><div class="thumb vert"><canvas data-f="${esc(nx.id)}"></canvas></div><span class="spnext-l">↓ Next: ${esc(nx.title)}</span></button>`:""}</div>
+   ${spRailOut(f,s,mine)}
+   <div class="sparrows"><button class="sparrow" data-snav="-1" aria-label="Previous short" ${state.shortI===0?"disabled":""}><svg viewBox="0 0 24 24"><path d="M6 15l6-6 6 6"/></svg></button><button class="sparrow" data-snav="1" aria-label="Next short"><svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></button></div>
    <div class="sside">
-     ${(f.real||f.yt||f.tt||f.ig||f.vm||f.dm)?`<div class="owner">${cav(byName(f),40)}<div><b>${esc(byName(f)||"YouTube creator")}</b></div></div>`:`<button class="owner link" data-creator="${esc(f.byId||f.by)}">${cav(byName(f),40)}<div><b>${esc(byName(f)||"YouTube creator")}</b><small>${fmtN(followerCount(f.byId||f.by))} followers</small></div></button>`}
-     <div class="vmeta">${viewTxt(f)}${s.n?`★ ${s.avg.toFixed(1)} from ${fmtN(s.n)} ratings`:"No ratings yet"} · ${f.days==null?"on "+esc(f.src):ago(f.days)}</div>${datesLine(f)?`<div class="vmeta" style="font-size:12px">${datesLine(f)}</div>`:""}
-     <div class="ratebox" role="group" aria-label="Rate this short" style="align-self:flex-start"><span>${mine?"Your rating":"Rate"}</span>${[1,2,3,4,5].map(k=>`<button data-rate="${k}" class="${k<=mine?"on":""}" aria-label="${k} stars">★</button>`).join("")}</div>
-     <div class="wactions" style="margin-top:0">${f.real||f.yt||f.tt||f.ig||f.vm||f.dm?"":`<button data-tip="${esc(f.byId||f.by)}" data-tipfilm="${esc(f.id)}">${icon("heart")}Tip</button>`}<button data-save="${esc(f.id)}">${icon("save")}Save</button><button data-share="${esc(f.id)}" data-share-short="1">${icon("share")}Share</button><button data-open-full="${esc(f.id)}">${icon("film")}Details</button></div>
-     <div class="snav"><button class="iconbtn navb" data-snav="-1" aria-label="Previous short" ${state.shortI===0?"disabled":""}><svg class="i" viewBox="0 0 24 24"><path d="M6 15l6-6 6 6"/></svg></button>
-       <span class="vmeta">Short ${state.shortI+1}</span>
-       <button class="iconbtn navb" data-snav="1" aria-label="Next short"><svg class="i" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></button></div>
-     <p class="vmeta" style="font-size:12px;margin:0">Scroll, swipe or use the arrow keys for the next short. Click the video to pause.</p>${isMod&&f.yt?`<button class="btn ghost" data-adminhide="${esc(f.id)}">${icon("shield")} Hide from Fanreelz</button>`:""}${commentsHtml(f)}</div></div>`;
+     ${(f.real||f.yt||f.tt||f.ig||f.vm||f.dm)?`<div class="owner">${cav(byName(f),40)}<div><b>${esc(byName(f)||"YouTube creator")}</b><small>${f.days==null?"on "+esc(f.src):ago(f.days)}</small></div></div>`:`<button class="owner link" data-creator="${esc(f.byId||f.by)}">${cav(byName(f),40)}<div><b>${esc(byName(f)||"YouTube creator")}</b><small>${fmtN(followerCount(f.byId||f.by))} followers</small></div></button>`}
+     <b class="sside-t">${esc(f.title)}</b>
+     <div class="vmeta">${viewTxt(f)}${s.n?`★ ${s.avg.toFixed(1)} from ${fmtN(s.n)} ratings`:"No ratings yet"}${[catName(f.cat),f.char].filter(Boolean).map(x=>" · "+esc(x)).join("")}</div>
+     <div class="row" style="gap:10px;flex-wrap:wrap"><div class="ratebox" role="group" aria-label="Rate this short"><span>${mine?"Your rating":"Rate"}</span>${[1,2,3,4,5].map(k=>`<button data-rate="${k}" class="${k<=mine?"on":""}" aria-label="${k} stars">★</button>`).join("")}</div>
+       <button class="chip" data-open-full="${esc(f.id)}">${icon("film")}Details</button>${f.real||f.yt||f.tt||f.ig||f.vm||f.dm?"":`<button class="chip" data-tip="${esc(f.byId||f.by)}" data-tipfilm="${esc(f.id)}">${icon("heart")}Tip</button>`}${isMod&&f.yt?`<button class="chip" data-adminhide="${esc(f.id)}">${icon("shield")}Hide</button>`:""}</div>
+     <div class="sptabs" role="tablist"><button role="tab" class="${spTab==="comments"?"on":""}" data-sptab="comments">Comments <small>${filmComments(f.id).length}</small></button><button role="tab" class="${spTab==="like"?"on":""}" data-sptab="like">You may like</button></div>
+     <div class="sptabbody">${spTab==="comments"?commentsHtml(f):spLikeGrid(list)}</div></div></div>`;
   if(f.ig||f.vm||f.dm){const sp=$(".sp");sp.querySelector("canvas")?.remove();sp.querySelector(".play")?.remove();sp.insertAdjacentHTML("afterbegin",f.ig?extFrame(f):extFrame(f).replace("inset:0","inset:0;top:25%;height:50%"))}
   if(f.tt||f.yt){const sp=$(".sp");sp.querySelector("canvas")?.remove();sp.querySelector(".play")?.remove();
     if(keepFrame){try{sp.moveBefore(keepFrame,sp.firstChild)}catch(e){sp.insertBefore(keepFrame,sp.firstChild)}}
@@ -2730,6 +2762,26 @@ function renderShorts(){
       ${spSheet==="rate"?`<div class="ratebox spbig" role="group" aria-label="Rate this short"><span>${mine?"Your rating":"Rate"}</span>${[1,2,3,4,5].map(k=>`<button data-rate="${k}" class="${k<=mine?"on":""}" aria-label="${k} stars">★</button>`).join("")}</div><p class="vmeta" style="margin:10px 0 0">${s.n?`★ ${s.avg.toFixed(1)} from ${fmtN(s.n)} ratings`:"No ratings yet. Be the first."}</p>`:spSheet==="comments"?commentsHtml(f):""}
     </div>`)}}
 }
+/* Shorts on a computer, like TikTok: the buttons sit beside the video, round up/down arrows, and a side panel with
+   "Comments" and "You may like" (the next shorts, as pictures) */
+let spTab="like";
+function spRailOut(f,s,mine){const liked=(likeDocs[acct.uid]?.ids||{})["film-"+f.id],nL=Object.values(likeDocs).filter(d=>d?.ids?.["film-"+f.id]).length;
+  return `<div class="sprailout">
+    <span class="spavatar" title="${esc(byName(f)||"YouTube creator")}">${cav(byName(f),48)}</span>
+    <button data-splike="${esc(f.id)}" aria-label="Like"><span class="spb ${liked?"liked":""}"><svg viewBox="0 0 24 24"><path d="M12 20s-7-4.4-9-8.6C1.6 8.3 3.5 5 6.8 5c2 0 3.4 1.1 4.2 2.4C11.8 6.1 13.2 5 15.2 5 18.5 5 20.4 8.3 19 11.4 17 15.6 12 20 12 20z"/></svg></span><small>${nL||"Like"}</small></button>
+    <button data-sptab="comments" aria-label="Comments"><span class="spb"><svg viewBox="0 0 24 24"><path d="M4 5h16v11H9l-5 4z"/></svg></span><small>${filmComments(f.id).length}</small></button>
+    <button data-sptab="rate" aria-label="Rate"><span class="spb ${mine?"on":""}"><svg viewBox="0 0 24 24"><path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/></svg></span><small>${s.n?s.avg.toFixed(1):"Rate"}</small></button>
+    <button data-save="${esc(f.id)}" aria-label="Save"><span class="spb"><svg viewBox="0 0 24 24"><path d="M6 3h12v18l-6-4-6 4z"/></svg></span><small>Save</small></button>
+    <button data-share="${esc(f.id)}" data-share-short="1" aria-label="Share"><span class="spb"><svg viewBox="0 0 24 24"><path d="M14 4l7 7-7 7v-4c-6 0-9 2-11 6 1-7 4-11 11-12z"/></svg></span><small>Share</small></button>
+    <button data-spfull="" aria-label="Full screen"><span class="spb"><svg viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></span><small>Full</small></button></div>`}
+function spLikeGrid(list){let L=state.shortList||list;if(L.length<state.shortI+13){const more=shuffledShorts(L.slice(-4));if(more.length)L=state.shortList=[...L,...more]}
+  const items=L.slice(state.shortI+1,state.shortI+13).map((id,k)=>({f:findFilm(id),i:state.shortI+1+k})).filter(x=>x.f);
+  return items.length?`<div class="splike">${items.map(({f,i})=>`<button class="splikec" data-spjump="${i}"><span class="thumb vert"><canvas data-f="${esc(f.id)}"></canvas></span><b>${esc(f.title)}</b><small class="vmeta">${esc(byName(f)||"YouTube creator")}</small><small class="vmeta">${f.ytViews?"▶ "+fmtN(f.ytViews)+" · ":""}${f.days==null?"":ago(f.days)}</small></button>`).join("")}</div>`:`<p class="vmeta">No more shorts right now.</p>`}
+document.addEventListener("click",e=>{
+  const t=e.target.closest("[data-sptab]");if(t){e.preventDefault();const v=t.dataset.sptab;
+    if(v==="rate"){const rb=document.querySelector(".sside .ratebox");if(rb){rb.classList.remove("pulse");void rb.offsetWidth;rb.classList.add("pulse")}return}
+    spTab=v;render();return}
+  const j=e.target.closest("[data-spjump]");if(j){e.preventDefault();stepShort(+j.dataset.spjump-state.shortI)}});
 // random order, but weighted: shorts in the visitor's language come up far more often, other languages rarely
 function shuffledShorts(skip){return allFilms().filter(x=>x.format==="short"&&!skip.includes(x.id)).map(x=>({id:x.id,k:Math.pow(Math.random(),1/langMult(x))})).sort((a,b)=>b.k-a.k).map(x=>x.id)}
 function stepShort(d){
