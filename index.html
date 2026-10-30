@@ -1079,7 +1079,7 @@ function guestNudge(){if(acct.online)return;const n=guestCount(),today=new Date(
 const EARLY_UNTIL=Date.parse("2027-01-01T00:00:00Z");
 const earlyFan=uid=>{const t=uid===acct.uid?Date.parse(acct.me?.joined||joined[uid]||""):Date.parse(joined[uid]||"");return t&&t<EARLY_UNTIL};
 const earlyBadge=uid=>earlyFan(uid)?`<span class="earlyfan" title="Joined Fanreelz during the beta">⭐ Early fan</span>`:"";
-const state={sdur:"any",sort:"",format:"all",dur:"any",shortList:null,shortI:0,series:null,season:1,ctab:"film",family:store.get("fr_family",false),lore:"all",creator:null,tv:"top",view:"home",feed:"home",group:"All",cat:null,char:null,q:"",film:null,bgroup:"All",azLimit:60};
+const state={genre:"all",sdur:"any",sort:"",format:"all",dur:"any",shortList:null,shortI:0,series:null,season:1,ctab:"film",family:store.get("fr_family",false),lore:"all",creator:null,tv:"top",view:"home",feed:"home",group:"All",cat:null,char:null,q:"",film:null,bgroup:"All",azLimit:60};
 const $=s=>document.querySelector(s);
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const rawFilms=()=>[...sharedSubs.filter(f=>f.format!=="episode"),...FILMS];
@@ -2666,6 +2666,25 @@ const DUR=[["any","Any length"],["u5","Under 5 min"],["5to20","5–20 min"],["o2
 const SDUR=[["any","All series"],["u5","Short series (under 5 min)"],["5to20","5–20 min"],["o20","20+ min"]];
 const seriesSecs=x=>{const l=x.episodes.map(e=>secs(e.len||findFilm(e.id)?.len||"")).filter(n=>n>0);return l.length?l.reduce((a,b)=>a+b,0)/l.length:null};
 const sdurOk=(x,k=state.sdur||"any")=>{if(k==="any")return true;const n=seriesSecs(x);if(n==null)return false;return (k==="u5"&&n<300)||(k==="5to20"&&n>=300&&n<=1200)||(k==="o20"&&n>1200)};
+/* Genres: worked out from the title and the category (films have no genre field), so a film can have several */
+const GENRES=[
+ ["action","Action",/\b(action|battle|war|wars|fight|fights|combat|siege|duel|assault|army|soldier|warrior|samurai|ninja|gta|heist|chase|revenge)\b/i,["wh40k","whfantasy","dragonball","naruto","onepiece","gta"]],
+ ["fantasy","Fantasy",/\b(fantasy|dragon|dragons|magic|wizard|witch|elf|elves|kingdom|sword|knight|knights|myth|legend|legends)\b/i,"Fantasy"],
+ ["scifi","Sci-fi",/\b(sci[- ]?fi|cyberpunk|future|futuristic|space|galaxy|alien|aliens|robot|robots|mech|dystopia|planet|star)\b/i,"Sci-fi"],
+ ["horror","Horror",/\b(horror|nightmare|zombie|zombies|creepy|terror|haunted|demon|demons|cursed|evil|undead|scary|monster|monsters)\b/i,["darksouls","berserk","diablo"]],
+ ["comedy","Comedy",/\b(funny|parody|comedy|brainrot|meme|memes|tralalero|tralala|tung|sahur|lol|hilarious)\b/i,null],
+ ["drama","Drama & story",/\b(story|tragedy|tragic|origin|origins|journey|fall of|rise of|last|goodbye|lost|memories|emotional|chapter|episode)\b/i,null],
+ ["retro","Retro & 80s style",/\b(19[5-9]\d'?s?|[5-9]0'?s|panavision|vhs|retro|vintage|technicolor|old[- ]school)\b/i,null],
+ ["live","Live-action",/\b(live[- ]action|realistic|real life|photorealistic|in real life|irl)\b/i,null],
+ ["trailer","Trailers",/\b(trailer|teaser|official trailer)\b/i,null]];
+const genreMemo=new Map();
+function genresOf(f){if(genreMemo.has(f.id))return genreMemo.get(f.id);
+  const t=[f.title,f.char].join(" "),g=groupOf(f.cat)?.name,out=GENRES.filter(([,,re,def])=>re.test(t)||(Array.isArray(def)?def.includes(f.cat):def&&def===g)).map(x=>x[0]);
+  if(typeof isKids==="function"&&isKids(f))out.push("family");genreMemo.set(f.id,out);return out}
+const seriesGenres=x=>{const set=new Set(genresOf({id:"s:"+x.id,title:x.title,char:x.char,cat:x.cat}));x.episodes.forEach(e=>genresOf(findFilm(e.id)||{...e,cat:x.cat}).forEach(g=>set.add(g)));return [...set]};
+const GENRE_LIST=[["all","All genres"],...GENRES.map(([k,l])=>[k,l]),["family","Family"]];
+const genreBar=(list,of)=>`<div class="lorebar genrebar" role="group" aria-label="Genre" style="flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none">${GENRE_LIST.filter(([k])=>k==="all"||list.some(x=>of(x).includes(k))).map(([k,l])=>`<button style="flex-shrink:0" class="${(state.genre||"all")===k?"on":""}" data-genre="${k}">${l}</button>`).join("")}</div>`;
+const genreOk=(x,of)=>!state.genre||state.genre==="all"||of(x).includes(state.genre);
 const durOk=f=>{const s=secs(f.len);return state.dur==="any"||(state.dur==="u5"&&s<300)||(state.dur==="5to20"&&s>=300&&s<=1200)||(state.dur==="o20"&&s>1200)};
 
 function shortCard(f){const s=stats(f);
@@ -2758,13 +2777,14 @@ function renderHomeF(){
   const sub=c&&state.format!=="short"&&state.format!=="series"?`<div class="lorebar">${[["all","All films"],["lore","Lore-accurate"],["whatif","What if"]].map(([k,l])=>`<button class="${state.lore===k?"on":""}" data-lore="${k}">${l}</button>`).join("")}</div>`:"";
   const empty=`<div class="empty">${state.feed==="mine"?(acct.online?"You haven't rated anything here yet.":"Sign in to see what you've rated."):c&&!state.q?`<b style="display:block;color:var(--fg);font-size:17px;margin-bottom:6px">No ${esc(c.name)} films yet</b>Fanreelz searches YouTube every hour and adds new AI fan films here automatically.<br>Know a good one? <button class="btn" data-submitcat="" style="margin-top:14px">Submit a film</button>`:"Nothing here yet. Submit the first one."}</div>`;
   if(state.format==="film"){
-    const fl=films.filter(durOk);
-    html+=sub+`<div class="lorebar">${DUR.map(([k,l])=>`<button class="${state.dur===k?"on":""}" data-dur="${k}">${l}</button>`).join("")}</div>`;
+    const fl=films.filter(durOk).filter(f=>genreOk(f,genresOf));
+    html+=sub+genreBar(films,genresOf)+`<div class="lorebar">${DUR.map(([k,l])=>`<button class="${state.dur===k?"on":""}" data-dur="${k}">${l}</button>`).join("")}</div>`;
     html+=fl.length?moreGrid("grid",fl,f=>card(f)):empty;
   }else if(state.format==="short"){
     html+=shorts.length?moreGrid("shortgrid",shorts,shortCard):empty;
   }else if(state.format==="series"){
-    const sl=series.filter(x=>sdurOk(x));
+    const sl=series.filter(x=>sdurOk(x)&&genreOk(x,seriesGenres));
+    html+=genreBar(series,seriesGenres);
     html+=`<div class="lorebar">${SDUR.map(([k,l])=>{const n=series.filter(x=>sdurOk(x,k)).length;return `<button class="${(state.sdur||"any")===k?"on":""}" data-sdur="${k}">${l}${isMod?` <small style="opacity:.7">${n}</small>`:""}</button>`}).join("")}</div>`;
     html+=sl.length?moreGrid("grid",sl,seriesCard):(series.length?`<div class="empty">No series of this length yet.</div>`:empty);
   }else{
@@ -3507,7 +3527,7 @@ function renderInner(){
   document.title=pageTitle();
   if(state.view==="contest")ticker=setInterval(()=>{const el=$("#cEnd");if(el)el.textContent=until(contestNow().end-Date.now())},1000);
 }
-const NAVKEYS=["sdur","sort","user","utab","view","feed","group","cat","char","q","film","format","dur","series","season","creator","shortList","shortI","bgroup","ctab","tv","lore"];
+const NAVKEYS=["genre","sdur","sort","user","utab","view","feed","group","cat","char","q","film","format","dur","series","season","creator","shortList","shortI","bgroup","ctab","tv","lore"];
 const navSnap=()=>JSON.parse(JSON.stringify(Object.fromEntries(NAVKEYS.map(k=>[k,state[k]]))));
 /* Every page gets its own address (fanreelz.com/film/…, /shorts/…, /about …) so links can be shared and reloaded. */
 const PAGES=["admin","top10","showdown","you","history","later","liked","yourvideos","about","live","premieres","tv","battles","requests","contest","playlists","discord","browse"];
@@ -3527,7 +3547,7 @@ function pathFor(st){
       if(st.q)return "/search?q="+e(st.q);
       if(st.cat)return "/c/"+e(st.cat)+(st.char?"?char="+e(st.char):"");
       if(st.feed&&st.feed!=="home")return "/feed/"+e(st.feed);
-      if(st.format&&st.format!=="all")return "/?f="+e(st.format)+(st.format==="film"&&st.dur&&st.dur!=="any"?"&d="+e(st.dur):"")+(st.format==="series"&&st.sdur&&st.sdur!=="any"?"&d="+e(st.sdur):"");
+      if(st.format&&st.format!=="all")return "/?f="+e(st.format)+(st.format==="film"&&st.dur&&st.dur!=="any"?"&d="+e(st.dur):"")+(st.format==="series"&&st.sdur&&st.sdur!=="any"?"&d="+e(st.sdur):"")+((st.format==="series"||st.format==="film")&&st.genre&&st.genre!=="all"?"&genre="+e(st.genre):"");
       return "/";}
     default:return PAGES.includes(st.view)?"/"+st.view:"/";
   }
@@ -3549,7 +3569,7 @@ function parsePath(){
   if(a==="browse")return {view:"browse",bgroup:q.get("g")||"All"};
   if(a==="admin")return {view:"admin",adminUser:q.get("u")||null};
   if(a&&PAGES.includes(a))return {view:a};
-  if(q.get("f"))return {view:"home",format:q.get("f"),...(q.get("f")==="series"?{sdur:q.get("d")||"any",dur:"any"}:{dur:q.get("d")||"any"})};
+  if(q.get("f"))return {view:"home",format:q.get("f"),genre:q.get("genre")||"all",...(q.get("f")==="series"?{sdur:q.get("d")||"any",dur:"any"}:{dur:q.get("d")||"any"})};
   return {};
 }
 const urlNow=()=>location.pathname+location.search;
@@ -3713,10 +3733,11 @@ document.addEventListener("click",async e=>{
   if(x=A("[data-adminrun]")){adminDo({action:"run",job:x.dataset.adminrun},x.dataset.adminrun==="showdown"?"Running the showdown judge":"Running the importer");return}
   if(A("[data-creport]")){toast("Thanks. A moderator will review this comment.");return}
   if(x=A("[data-longnav]")){$("#shell").classList.remove("open");go({view:"home",feed:"home",cat:null,char:null,q:"",group:"All",format:"film",dur:"o20"});return}
-  if(x=A("[data-fmtnav]")){$("#shell").classList.remove("open");resetSections();go({view:"home",feed:"home",cat:null,char:null,group:"All",q:"",dur:"any",sdur:"any",lore:"all",format:x.dataset.fmtnav});return}
+  if(x=A("[data-fmtnav]")){$("#shell").classList.remove("open");resetSections();go({view:"home",feed:"home",cat:null,char:null,group:"All",q:"",dur:"any",sdur:"any",genre:"all",lore:"all",format:x.dataset.fmtnav});return}
   if(x=A("[data-fmt]")){state.format=x.dataset.fmt;go({});return}
   if(x=A("[data-dur]")){state.dur=x.dataset.dur;render();return}
   if(x=A("[data-sdur]")){go({sdur:x.dataset.sdur});return}
+  if(x=A("[data-genre]")){go({genre:x.dataset.genre});return}
   if(x=A("[data-longfilms]")){state.format="film";state.dur="o20";go({});return}
   if(x=A("[data-short]")){openShorts(x.dataset.short);return}
   if(x=A("[data-series]")){go({view:"series",series:x.dataset.series,season:1});return}
