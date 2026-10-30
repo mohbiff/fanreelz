@@ -1136,6 +1136,14 @@ function detectLang(t){
   return bv>=1.5&&bv>(sc.en||0)?best:"en";
 }
 const langOf=f=>f._lang||(f._lang=detectLang(f.title));
+// a series' language: its own title, or its episodes' when the title gives nothing away
+const seriesLang=x=>{if(x._lang)return x._lang;let l=detectLang(x.title);if(l==="en"){const c={};x.episodes.forEach(e=>{const k=detectLang(e.title||"");c[k]=(c[k]||0)+1});const top=Object.entries(c).sort((a,b)=>b[1]-a[1])[0];if(top&&top[1]>x.episodes.length/2)l=top[0]}return x._lang=l};
+let langNames=null;const langName=l=>{try{langNames=langNames||new Intl.DisplayNames(["en"],{type:"language"});return langNames.of(l)}catch(e){return l}};
+// language tabs above films or series: the languages that list has (3+ titles), most common first; English also covers titles whose language can't be told
+const langBar=(list,of)=>{const n={};list.forEach(x=>{const l=of(x);n[l]=(n[l]||0)+1});const ls=Object.entries(n).filter(([,v])=>v>=3).sort((a,b)=>b[1]-a[1]);
+  if(ls.length<2&&!state.lang)return "";
+  return `<div class="lorebar langbar" role="group" aria-label="Language" style="flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none">${[["","All languages",list.length],...ls.map(([l,v])=>[l,langName(l),v])].map(([k,l,v])=>`<button style="flex-shrink:0" class="${(state.lang||"")===k?"on":""}" data-lang="${k}">${esc(l)}${isMod?` <small style="opacity:.7">${v}</small>`:""}</button>`).join("")}</div>`};
+const langOk=(x,of)=>!state.lang||of(x)===state.lang;
 const CC_LANG={SE:"sv",NO:"no",DK:"da",FI:"fi",IS:"is",DE:"de",AT:"de",CH:"de",LI:"de",FR:"fr",BE:"fr",LU:"fr",MC:"fr",NL:"nl",ES:"es",MX:"es",AR:"es",CO:"es",CL:"es",PE:"es",VE:"es",EC:"es",GT:"es",CU:"es",BO:"es",DO:"es",HN:"es",PY:"es",SV:"es",NI:"es",CR:"es",PA:"es",UY:"es",
   BR:"pt",PT:"pt",AO:"pt",MZ:"pt",IT:"it",PL:"pl",TR:"tr",RU:"ru",BY:"ru",KZ:"ru",UA:"uk",GR:"el",CY:"el",CZ:"cs",RO:"ro",MD:"ro",HU:"hu",IL:"he",IR:"fa",PK:"ur",JP:"ja",KR:"ko",CN:"zh",TW:"zh",HK:"zh",MO:"zh",IN:"hi",BD:"bn",ID:"id",TH:"th",VN:"vi",
   SA:"ar",AE:"ar",EG:"ar",MA:"ar",DZ:"ar",TN:"ar",LY:"ar",IQ:"ar",JO:"ar",LB:"ar",SY:"ar",PS:"ar",KW:"ar",QA:"ar",BH:"ar",OM:"ar",YE:"ar",SD:"ar"};
@@ -2791,14 +2799,14 @@ function renderHomeF(){
   const sub=c&&state.format!=="short"&&state.format!=="series"?`<div class="lorebar">${[["all","All films"],["lore","Lore-accurate"],["whatif","What if"]].map(([k,l])=>`<button class="${state.lore===k?"on":""}" data-lore="${k}">${l}</button>`).join("")}</div>`:"";
   const empty=`<div class="empty">${state.feed==="mine"?(acct.online?"You haven't rated anything here yet.":"Sign in to see what you've rated."):c&&!state.q?`<b style="display:block;color:var(--fg);font-size:17px;margin-bottom:6px">No ${esc(c.name)} films yet</b>Fanreelz searches YouTube every hour and adds new AI fan films here automatically.<br>Know a good one? <button class="btn" data-submitcat="" style="margin-top:14px">Submit a film</button>`:"Nothing here yet. Submit the first one."}</div>`;
   if(state.format==="film"){
-    const fl=films.filter(durOk).filter(f=>genreOk(f,genresOf));
-    html+=sub+genreBar(films,genresOf)+`<div class="lorebar">${DUR.map(([k,l])=>`<button class="${state.dur===k?"on":""}" data-dur="${k}">${l}</button>`).join("")}</div>`;
+    const fl=films.filter(durOk).filter(f=>genreOk(f,genresOf)&&langOk(f,langOf));
+    html+=sub+langBar(films,langOf)+genreBar(films,genresOf)+`<div class="lorebar">${DUR.map(([k,l])=>`<button class="${state.dur===k?"on":""}" data-dur="${k}">${l}</button>`).join("")}</div>`;
     html+=fl.length?moreGrid("grid",fl,f=>card(f)):empty;
   }else if(state.format==="short"){
     html+=shorts.length?moreGrid("shortgrid",shorts,shortCard):empty;
   }else if(state.format==="series"){
-    const sl=series.filter(x=>sdurOk(x)&&genreOk(x,seriesGenres));
-    html+=genreBar(series,seriesGenres);
+    const sl=series.filter(x=>sdurOk(x)&&genreOk(x,seriesGenres)&&langOk(x,seriesLang));
+    html+=langBar(series,seriesLang)+genreBar(series,seriesGenres);
     html+=`<div class="lorebar">${SDUR.map(([k,l])=>{const n=series.filter(x=>sdurOk(x,k)).length;return `<button class="${(state.sdur||"any")===k?"on":""}" data-sdur="${k}">${l}${isMod?` <small style="opacity:.7">${n}</small>`:""}</button>`}).join("")}</div>`;
     html+=sl.length?moreGrid("grid",sl,seriesCard):(series.length?`<div class="empty">No series of this length yet.</div>`:empty);
   }else{
@@ -3828,6 +3836,7 @@ document.addEventListener("click",async e=>{
   if(A("[data-news]")){toggleNewsletter();return}
   if(x=A("[data-lore]")){state.lore=x.dataset.lore;render();return}
   if(x=A("[data-sort]")){state.sort=x.dataset.sort;render();return}
+  if(x=A("[data-lang]")){state.lang=x.dataset.lang;render();return}
   if(x=A("[data-browsesort]")){const g=state.bgroup;go({view:"home",feed:"home",cat:null,char:null,q:"",group:g&&g!=="All"?g:"All",format:"film",sort:x.dataset.browsesort});return}
   if(x=A("[data-gcats]")){gcatsOpen=!gcatsOpen;render();return}
   if(x=A("[data-umpeak]")){umPeakOpen=!umPeakOpen;render();return}
