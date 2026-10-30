@@ -598,6 +598,8 @@ body.spfs .spback{display:flex}
 .sppeek span{position:absolute;left:14px;right:70px;bottom:120px;color:#fff;font-weight:700;font-size:15px;text-shadow:0 1px 4px #000}
 .shorts-view .sp{will-change:transform}
 .spcatch{position:absolute;inset:120px 0 110px 0;z-index:3;cursor:pointer;touch-action:none;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none}
+/* touch screens: the whole short is ours to swipe; YouTube's player only shows the video (its page would otherwise scroll under a finger) */
+@media (pointer:coarse){.sp .spcatch{inset:0!important}.sp iframe{pointer-events:none}}
 /* YouTube shows the short's own title in its player, so ours would sit on top of it */
 /* with a player: our title sits at the bottom left (YouTube's own is at the top) and comes and goes with the side icons */
 .sp:has(iframe) .ov{top:auto;bottom:110px;right:64px;padding:30px 14px 10px;background:none!important;transition:opacity .3s;text-shadow:0 1px 4px rgba(0,0,0,.9),0 0 12px rgba(0,0,0,.6)}
