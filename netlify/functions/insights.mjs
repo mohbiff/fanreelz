@@ -1,8 +1,9 @@
 // Creator Insights (Fanreelz Plus): what fans look for on Fanreelz, counted together, never who.
 // POST /api/insights with the signed-in user's token → {plus, wanted, trending, top, countries, worlds, at}.
-// Plus members (import_state "plus": {ids:[…]}) and admins get everything; others get the first rows only, as a preview.
+// Plus members receive ranked topics; counts remain admin-only. Visitors receive no detailed data.
 // Admins give or take Plus with {action:"plusset", uid, on} and list members with {action:"plusget"}.
 import { whoIs, isAdmin } from "./moderate.mjs";
+import { growthAction, growthData } from "./lib/growth.mjs";
 import CATS from "./lib/catmap.mjs";
 
 const json = (o, status = 200) => new Response(JSON.stringify(o), { status, headers: { "Content-Type": "application/json", "Cache-Control": "no-store" } });
@@ -65,6 +66,12 @@ export default async (req) => {
   }
   const plus = admin || (!!u?.id && (await plusIds()).includes(u.id));
 
+  if (body.action?.startsWith("growth")) {
+    if (!plus || !u?.id) return json({error:"Plus membership required"},403);
+    return growthAction(body,u,admin,sb());
+  }
+  // No aggregate data or counts leave the server for visitors without Plus.
+  if (!plus) return json({plus:false,admin:false});
   // the last 30 days of searches (one row each: words, country, device, whether anything was found)
   const { url, h } = sb(), since = new Date(Date.now() - 30 * 864e5).toISOString();
   const rows = [];
@@ -122,11 +129,11 @@ export default async (req) => {
   for (const a of all) { const c = worldOf(a.q); if (!c) continue; const w = (wd[c.id] ||= { id: c.id, name: c.name, w: 0, pw: 0, n: 0 }); w.w += a.w; w.pw += a.pw; w.n += a.n; }
   const worlds = Object.values(wd).sort((a, b) => b.w - a.w || b.n - a.n).slice(0, 25);
   const total = rows.length;
-  // a preview for everyone else: the first rows, the rest are counted but not shown
-  const cut = (l, k) => (plus ? l : l.slice(0, k));
+  const growth = await growthData(u, sb());
+  const privateRow = ({n,zero,w,pw,...rest}) => rest;
   return json({
-    plus, total, at: new Date().toISOString(),
-    wanted: plus ? wanted : [], trending: plus ? trending : [], top: admin ? top : [], countries: plus ? countries : [], admin, worlds: plus ? worlds : [],
+    growth, sampled: rows.length === 20000, plus, ...(admin ? {total} : {}), at: new Date().toISOString(),
+    wanted: admin ? wanted : wanted.map(privateRow), trending: admin ? trending : trending.map(privateRow), top: admin ? top : [], countries: admin ? countries : countries.map(({n,top,...c})=>({...c,top:top.map(({n,...t})=>t)})), admin, worlds: admin ? worlds : worlds.map(({w,pw,n,...r})=>r),
     hidden: plus ? null : { wanted: 0, trending: 0, top: 0, countries: 0, worlds: 0 },
   });
 };

@@ -1414,19 +1414,20 @@ function renderInsights(){
   const flag=c=>/^[A-Z]{2}$/.test(c||"")?String.fromCodePoint(...[...c].map(ch=>127397+ch.charCodeAt(0))):"";
   const go2=q=>`data-insq="${esc(q)}" role="button" tabindex="0" style="cursor:pointer" title="Search this on Fanreelz"`;
   const lock=n=>n>0?`<div class="inslock">${icon("shield")} <span><b>+${n} more</b> for Plus members</span></div>`:"";
-  const list=(rows,fn,max)=>{const m=Math.max(1,...rows.map(max));return rows.map(r=>`<div class="umrow" ${go2(r.q)}><span class="umbar" style="width:${max(r)/m*100}%"></span><span class="umname">${esc(r.q)}${r.world?` <small class="vmeta">· ${esc(r.world)}</small>`:""}</span><b>${fn(r)}</b></div>`).join("")};
+  const list=(rows,fn,max)=>{const m=Math.max(1,...rows.map(max));return rows.map(r=>`<div class="umrow" ${go2(r.q)}><span class="umbar" style="width:${D.admin?max(r)/m*100:0}%"></span><span class="umname">${esc(r.q)}${r.world?` <small class="vmeta">· ${esc(r.world)}</small>`:""}</span><b>${D.admin?fn(r):""}</b></div>`).join("")};
   const cc=r=>r.cc?.length?" "+r.cc.map(flag).join(""):"";
   let html=`<h1 class="sect-h" style="font-size:24px">${icon("trend")} Creator Insights <small class="plustag">PLUS</small></h1>
-  <p class="vmeta" style="margin:-4px 0 16px;max-width:720px">What fans look for on Fanreelz in the last 30 days, so you know what to make next. Only the words and countries are counted, never who searched.${D.total?` · ${D.total.toLocaleString("en-US")} searches`:""}</p>`;
+  <p class="vmeta" style="margin:-4px 0 16px;max-width:720px">What fans look for on Fanreelz in the last 30 days, so you know what to make next. Only the words and countries are counted, never who searched.${D.admin&&D.total?` · ${D.total.toLocaleString("en-US")} searches`:""}</p>`;
   if(!P&&!D.loading)html+=`<div class="insplus"><b>✦ Fanreelz Plus for creators</b><span>See every wanted topic, what is trending this week, which worlds are growing and what each country searches for. Plus is in a free beta for AI creators: message the Fanreelz team on <a href="/discord" data-view="discord">Discord</a> or Instagram to join.</span></div>`;
   if(D.loading&&!D.wanted)html+=`<p class="vmeta">Loading…</p>`;
   else if(D.error)html+=`<p class="vmeta">Couldn't load: ${esc(D.error)}</p>`;
   else html+=`<div class="umgrid">
     <div class="umbox"><h3>🎯 Wanted, but missing <small class="vmeta" style="font-weight:500">fans searched, found little or nothing: make these</small></h3>${P?(list(D.wanted||[],r=>`${r.zero}×${cc(r)}`,r=>r.zero)||`<p class="vmeta">Nothing yet.</p>`):`<div class="inslock">${icon("shield")} <span>Details available to Plus members</span></div>`}</div>
     <div class="umbox"><h3>📈 Trending this week <small class="vmeta" style="font-weight:500">searched more than last week</small></h3>${P?(list(D.trending||[],r=>`+${r.w-r.pw}`,r=>r.w-r.pw)||`<p class="vmeta">Nothing yet.</p>`):`<div class="inslock">${icon("shield")} <span>Details available to Plus members</span></div>`}</div>
-    <div class="umbox"><h3>🌍 Worlds fans search for <small class="vmeta" style="font-weight:500">this week · last week</small></h3>${P?((D.worlds||[]).map(w=>`<div class="umrow"><span class="umname">${esc(w.name)}</span><b>${w.w}${w.w>w.pw?` <span style="color:#3ecf8e">▲</span>`:w.w<w.pw?` <span style="color:#ff6b6b">▼</span>`:""} <small class="vmeta">${w.pw}</small></b></div>`).join("")||`<p class="vmeta">Nothing yet.</p>`):`<div class="inslock">${icon("shield")} <span>Details available to Plus members</span></div>`}</div>
+    <div class="umbox"><h3>🌍 Worlds fans search for <small class="vmeta" style="font-weight:500">this week · last week</small></h3>${P?((D.worlds||[]).map(w=>`<div class="umrow"><span class="umname">${esc(w.name)}</span><b>${D.admin?w.w:""}${w.w>w.pw?` <span style="color:#3ecf8e">▲</span>`:w.w<w.pw?` <span style="color:#ff6b6b">▼</span>`:""} <small class="vmeta">${D.admin?w.pw:""}</small></b></div>`).join("")||`<p class="vmeta">Nothing yet.</p>`):`<div class="inslock">${icon("shield")} <span>Details available to Plus members</span></div>`}</div>
     ${D.admin?`<div class="umbox"><h3>🔎 Most searched <small class="vmeta" style="font-weight:500">30 days</small></h3>${list(D.top||[],r=>`${r.n}${cc(r)}`,r=>r.n)||`<p class="vmeta">Nothing yet.</p>`}${lock(H.top)}</div>`:""}
-  </div>`+(P&&D.countries?.length?`<h2 class="sect-h" style="font-size:17px;margin:18px 0 10px">By country</h2><div class="umgrid">${D.countries.map(c=>`<div class="umbox"><h3>${flag(c.cc)} ${esc(cn?.of(c.cc)||c.cc)} <small class="vmeta" style="font-weight:500">${c.n} searches</small></h3>${c.top.map(x=>`<div class="umrow" ${go2(x.q)}><span class="umname">${esc(x.q)}</span><b>${x.n}</b></div>`).join("")}</div>`).join("")}</div>`:!P&&H.countries?`<div class="inslock" style="margin-top:14px">${icon("shield")} <span><b>Searches by country (${H.countries} countries)</b> for Plus members</span></div>`:"");
+  </div>`+(P&&D.countries?.length?`<h2 class="sect-h" style="font-size:17px;margin:18px 0 10px">By country</h2><div class="umgrid">${D.countries.map(c=>`<div class="umbox"><h3>${flag(c.cc)} ${esc(cn?.of(c.cc)||c.cc)} <small class="vmeta" style="font-weight:500">${D.admin?c.n+" searches":""}</small></h3>${c.top.map(x=>`<div class="umrow" ${go2(x.q)}><span class="umname">${esc(x.q)}</span><b>${D.admin?x.n:""}</b></div>`).join("")}</div>`).join("")}</div>`:!P&&H.countries?`<div class="inslock" style="margin-top:14px">${icon("shield")} <span><b>Searches by country (${H.countries} countries)</b> for Plus members</span></div>`:"");
+  if(P) html+=renderGrowthCenter(D);
   if(P) html+=`<section class="umbox" style="margin-top:18px;padding:18px">
     <div class="wbar"><h2 class="sect-h" style="font-size:19px;margin:0">${icon("bot")} AI Creator Assistant</h2><small class="plustag">PLUS</small></div>
     <p class="vmeta" style="margin:8px 0 14px">Get practical content ideas and growth advice based on Fanreelz search demand. This uses platform-wide trends, not private creator analytics.</p>
@@ -1461,6 +1462,47 @@ document.addEventListener("submit",async e=>{
   finally{btn.disabled=false;btn.textContent="Ask AI"}
 });
 document.addEventListener("click",e=>{const x=e.target.closest?.("[data-insq]");if(!x)return;e.preventDefault();go({view:"home",feed:"home",q:x.dataset.insq,cat:null,char:null})});
+function renderGrowthCenter(D){
+ const G=D.growth||{},prefs=G.prefs||{plans:[],watch:[]};
+ const topics=rows=>(rows||[]).slice(0,10).map(r=>`<div class="umrow"><span class="umname">${esc(r.q)}</span><button class="chip" data-growth-plan="${esc(r.q)}">Plan</button><button class="chip" data-growth-watch="${esc(r.q)}">Watch</button></div>`).join('')||'<p class="vmeta">No matching search signals in the current sample.</p>';
+ const box=(title,body)=>`<section class="umbox"><h2 style="font-size:18px">${title}</h2>${body}</section>`;
+ const watched=(D.trending||[]).filter(t=>prefs.watch.some(w=>t.q.toLowerCase().includes(w)));
+ return `<h2 class="sect-h">Creator Growth Center</h2><p class="vmeta">Platform search signals: last 30 days, latest 7 days versus the previous 7. Updated ${esc(D.at||'')}.${D.sampled?' Search sample limited to the latest 20,000 events.':''} Search signals are not personal analytics. Search counts remain admin-only.</p><div class="umgrid">`+
+ box('Trending Opportunities','<p class="vmeta">Topics with increasing weekly search activity. Use these as ideas, not predictions.</p>'+topics(D.trending))+
+ box('Personal Performance Dashboard',`<p class="vmeta">${esc(G.personal?.reason||'Personal analytics are not connected.')}</p><p>Connection status: unavailable</p>`)+
+ box('Creator Rankings',`<p class="vmeta">Ranked by the number of visible, non-age-restricted films in the imported Fanreelz catalogue. This measures catalogue presence, not quality, growth or personal performance.${G.catalogSampled?' Limited to the first 20,000 catalogue records.':''}</p>${G.catalogError?`<p>${esc(G.catalogError)}</p>`:(G.rankings||[]).map((c,i)=>`<div class="umrow"><span class="umname">${i+1}. ${esc(c.name)}</span><span>${c.films} films</span></div>`).join('')||'<p>No eligible catalogue channels yet.</p>'}`)+
+ box('Trend Alerts',`<p class="vmeta">In-app alerts on reload when a watched topic appears in the weekly trending list. Email and push delivery are not connected.</p>${topics(watched)}<form id="growthWatchForm"><label>Watch a topic <input name="topic" required maxlength="100"></label><button class="chip">Add</button></form>${prefs.watch.map((w,i)=>`<p>${esc(w)} <button class="chip" data-growth-unwatch="${i}">Remove</button></p>`).join('')}`)+
+ box('Creator Planning Calendar',`<p class="vmeta">Private plans saved to your account. Dates use your selected calendar day. Publishing and external calendar sync are not connected.</p><form id="growthPlanForm"><label>Title <input name="title" required maxlength="160"></label> <label>Date <input name="date" type="date" required></label><button class="chip">Save plan</button></form>${prefs.plans.map((p,i)=>({p,i})).sort((a,b)=>a.p.date.localeCompare(b.p.date)).map(({p,i})=>`<p><time>${esc(p.date)}</time> · ${esc(p.title)} · ${esc(p.status)} <button class="chip" data-growth-done="${i}">${p.status==='published'?'Mark planned':'Mark published'}</button> <button class="chip" data-growth-remove="${i}">Delete</button></p>`).join('')||'<p>No plans yet.</p>'}`)+
+ box('Global Audience Insights',`<p class="vmeta">Countries inferred from platform searches, not the audience of your channel. Unknown locations are excluded.</p>${(D.countries||[]).map(c=>`<p><b>${esc(c.cc)}</b>: ${c.top.map(t=>esc(t.q)).join(', ')}</p>`).join('')||'<p>No country search data yet.</p>'}`)+
+ box('Featured Creator',`${G.featured?`<p><b>${esc(G.featured.name)}</b> · ${G.featured.films} catalogue films</p><p class="vmeta">Selected by Fanreelz administrators; not a performance award.</p>`:'<p>No eligible creator has been selected by the Fanreelz team.</p>'}${D.admin?'<form id="growthFeatureForm"><label>Catalogue channel ID (empty clears selection) <input name="channelId" maxlength="100"></label><button class="chip">Save featured creator</button></form>':''}`)+
+ box('Content Gap Finder','<p class="vmeta">Topics where at least half of recorded searches returned no results. This reflects search matching, not proof that no film exists.</p>'+topics(D.wanted))+
+ `</div>${G.storageError?`<p role="alert">${esc(G.storageError)}</p>`:''}<p id="growthStatus" role="status" aria-live="polite"></p>`;
+}
+let growthSaving=false;
+async function growthRequest(body){
+ const r=await fetch('/api/insights',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+(sbToken||'')},body:JSON.stringify(body)});const data=await r.json();if(!r.ok)throw Error(data.error||'Could not save');return data;
+}
+async function saveGrowth(change){
+ if(growthSaving||!insData?.plus)return;
+ if(insData.growth?.storageError){toast('Reload Insights before saving.');return;}
+ growthSaving=true;
+ try{const prefs=structuredClone(insData.growth.prefs);change(prefs);const data=await growthRequest({action:'growthSave',...prefs});insData.growth.prefs=data.prefs;if(state.view==='insights')render();toast('Saved');}catch(e){toast(e.message)}finally{growthSaving=false}
+}
+document.addEventListener('submit',async e=>{
+ if(!['growthWatchForm','growthPlanForm','growthFeatureForm'].includes(e.target.id))return;e.preventDefault();const f=new FormData(e.target);
+ if(e.target.id==='growthWatchForm')return saveGrowth(p=>p.watch.push(String(f.get('topic')).trim()));
+ if(e.target.id==='growthPlanForm')return saveGrowth(p=>p.plans.push({title:String(f.get('title')),date:String(f.get('date')),status:'planned'}));
+ try{await growthRequest({action:'growthFeature',channelId:f.get('channelId')});await loadInsights();toast('Featured creator saved');}catch(error){toast(error.message)}
+});
+document.addEventListener('click',e=>{
+ const b=e.target.closest?.('[data-growth-plan],[data-growth-watch],[data-growth-unwatch],[data-growth-remove],[data-growth-done]');if(!b||!insData?.plus)return;
+ if(b.hasAttribute('data-growth-plan')){const f=document.getElementById('growthPlanForm');f.elements.title.value=b.dataset.growthPlan;f.scrollIntoView({behavior:'smooth'});f.elements.date.focus();return;}
+ if(b.hasAttribute('data-growth-watch'))return saveGrowth(p=>{if(!p.watch.includes(b.dataset.growthWatch))p.watch.push(b.dataset.growthWatch)});
+ if(b.hasAttribute('data-growth-unwatch'))return saveGrowth(p=>p.watch.splice(Number(b.dataset.growthUnwatch),1));
+ if(b.hasAttribute('data-growth-remove'))return saveGrowth(p=>p.plans.splice(Number(b.dataset.growthRemove),1));
+ if(b.hasAttribute('data-growth-done'))return saveGrowth(p=>{const plan=p.plans[Number(b.dataset.growthDone)];plan.status=plan.status==='planned'?'published':'planned'});
+});
+
 function renderBrowse(){
   const T=trendingByGroup(),gsel=state.bgroup;
   const chips=["All",...GROUPS.map(g=>g.name)].map(g=>`<button class="chip ${gsel===g?"on":""}" data-browse="${esc(g)}">${esc(g)}</button>`).join("");
