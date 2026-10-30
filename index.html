@@ -2870,11 +2870,12 @@ function renderShorts(){
   if(f.yt&&(!keepFrame||fromPre)){const sp=$(".sp");if(sp&&!sp.querySelector(".spposter")){const fr=sp.querySelector("iframe");
     const im=`<img class="spposter" alt="" src="https://i.ytimg.com/vi/${esc(f.yt)}/oardefault.jpg" onerror="this.onerror=null;this.src='https://i.ytimg.com/vi/${esc(f.yt)}/hqdefault.jpg'">`;
     if(fr)fr.insertAdjacentHTML("afterend",im);setTimeout(spPosterOff,5000)}}
-    spPreload(nx);setTimeout(()=>spShowCtl(spPaused),0);{const sp=$(".sp");if(sp){
+    spPreload(nx);setTimeout(()=>spShowCtl(spPaused),0);[300,1200,2500].forEach(t=>setTimeout(spApplyMute,t));{const sp=$(".sp");if(sp){
     if(sp.querySelector("iframe"))sp.insertAdjacentHTML("beforeend",'<div class="spcatch" aria-hidden="true"></div><div class="spicon" aria-hidden="true"></div>');
     if(f.yt&&sp.querySelector("iframe"))sp.insertAdjacentHTML("beforeend",'<div class="spbar"><input class="spseek" type="range" min="0" max="1000" step="1" value="0" aria-label="Seek"><span class="sptime">0:00 / 0:00</span></div>');
     const nC=filmComments(f.id).length,full=document.body.classList.contains("spfs");
     sp.insertAdjacentHTML("beforeend",`<div class="sprail">
+      ${spMuteBtn()}
       <button data-spsheet="rate" aria-label="Rate"><span class="spb ${mine?"on":""}"><svg viewBox="0 0 24 24"><path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/></svg></span><small>${s.n?s.avg.toFixed(1):"Rate"}</small></button>
       <button data-splike="${esc(f.id)}" aria-label="Like"><span class="spb ${(likeDocs[acct.uid]?.ids||{})["film-"+f.id]?"liked":""}"><svg viewBox="0 0 24 24"><path d="M12 20s-7-4.4-9-8.6C1.6 8.3 3.5 5 6.8 5c2 0 3.4 1.1 4.2 2.4C11.8 6.1 13.2 5 15.2 5 18.5 5 20.4 8.3 19 11.4 17 15.6 12 20 12 20z"/></svg></span><small>${Object.values(likeDocs).filter(d=>d?.ids?.["film-"+f.id]).length||"Like"}</small></button>
       <button data-spsheet="comments" aria-label="Comments"><span class="spb"><svg viewBox="0 0 24 24"><path d="M4 5h16v11H9l-5 4z"/></svg></span><small>${nC}</small></button>
@@ -2891,6 +2892,7 @@ let spTab="like";
 function spRailOut(f,s,mine){const liked=(likeDocs[acct.uid]?.ids||{})["film-"+f.id],nL=Object.values(likeDocs).filter(d=>d?.ids?.["film-"+f.id]).length;
   return `<div class="sprailout">
     <span class="spavatar" title="${esc(byName(f)||"YouTube creator")}">${cav(byName(f),48)}</span>
+    ${spMuteBtn()}
     <button data-splike="${esc(f.id)}" aria-label="Like"><span class="spb ${liked?"liked":""}"><svg viewBox="0 0 24 24"><path d="M12 20s-7-4.4-9-8.6C1.6 8.3 3.5 5 6.8 5c2 0 3.4 1.1 4.2 2.4C11.8 6.1 13.2 5 15.2 5 18.5 5 20.4 8.3 19 11.4 17 15.6 12 20 12 20z"/></svg></span><small>${nL||"Like"}</small></button>
     <button data-sptab="comments" aria-label="Comments"><span class="spb"><svg viewBox="0 0 24 24"><path d="M4 5h16v11H9l-5 4z"/></svg></span><small>${filmComments(f.id).length}</small></button>
     <button data-sptab="rate" aria-label="Rate"><span class="spb ${mine?"on":""}"><svg viewBox="0 0 24 24"><path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/></svg></span><small>${s.n?s.avg.toFixed(1):"Rate"}</small></button>
@@ -3117,10 +3119,22 @@ function spPreload(nx){const box=$("#spPre");if(!box)return;
     box.insertAdjacentHTML("beforeend",ytFrame(nx.yt).replace("autoplay=1","autoplay=0").replace("&enablejsapi=1","&enablejsapi=1&fs=0&controls=0"))},1200)}
 /* The short being watched should play with sound. Browsers sometimes start embedded players muted,
    so ask the player to unmute and play once it has loaded. */
+/* Shorts: sound on/off. The choice is remembered, and every next short starts the same way */
+let spMuted=false;try{spMuted=localStorage.getItem("fr_spmute")==="1"}catch(e){}
+const SPVOL='<svg viewBox="0 0 24 24"><path d="M4 9h4l5-4v14l-5-4H4z"/><path d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12"/></svg>',SPMUTE='<svg viewBox="0 0 24 24"><path d="M4 9h4l5-4v14l-5-4H4z"/><path d="M17 9l5 6M22 9l-5 6"/></svg>';
+const spMuteBtn=()=>`<button data-spmute="" aria-label="${spMuted?"Sound on":"Mute"}" aria-pressed="${spMuted}"><span class="spb">${spMuted?SPMUTE:SPVOL}</span><small>${spMuted?"Muted":"Sound"}</small></button>`;
+function spApplyMute(){const fr=document.querySelector(".sp iframe"),f=findFilm(state.film);if(!fr||!f)return;const w=fr.contentWindow;
+  try{if(f.yt)w.postMessage(JSON.stringify({event:"command",func:spMuted?"mute":"unMute",args:[]}),"*");
+    else if(f.tt)w.postMessage({"x-tiktok-player":true,type:spMuted?"mute":"unMute"},"*");
+    else if(f.vm)w.postMessage(JSON.stringify({method:"setVolume",value:spMuted?0:1}),"*")}catch(e){}}
+function spToggleMute(){spMuted=!spMuted;try{localStorage.setItem("fr_spmute",spMuted?"1":"0")}catch(e){}spApplyMute();
+  document.querySelectorAll("[data-spmute]").forEach(b=>b.outerHTML=spMuteBtn());toast(spMuted?"Muted":"Sound on")}
+document.addEventListener("click",e=>{if(e.target.closest("[data-spmute]")){e.preventDefault();e.stopPropagation();spToggleMute()}},true);
+addEventListener("keydown",e=>{if(state.view==="shorts"&&(e.key==="m"||e.key==="M")&&!e.target.closest("input,textarea,select,[contenteditable]")){e.preventDefault();spToggleMute()}});
 function spWake(){
   const fr=document.querySelector(".sp iframe"),f=findFilm(state.film);if(!fr||!f||spPaused)return;const w=fr.contentWindow;
-  if(f.yt){w.postMessage(JSON.stringify({event:"listening",id:"sp"}),"*");w.postMessage(JSON.stringify({event:"command",func:"unMute",args:[]}),"*");w.postMessage(JSON.stringify({event:"command",func:"playVideo",args:[]}),"*")}
-  else if(f.vm){w.postMessage(JSON.stringify({method:"setVolume",value:1}),"*");w.postMessage(JSON.stringify({method:"play"}),"*")}
+  if(f.yt){w.postMessage(JSON.stringify({event:"listening",id:"sp"}),"*");w.postMessage(JSON.stringify({event:"command",func:spMuted?"mute":"unMute",args:[]}),"*");w.postMessage(JSON.stringify({event:"command",func:"playVideo",args:[]}),"*")}
+  else if(f.vm){w.postMessage(JSON.stringify({method:"setVolume",value:spMuted?0:1}),"*");w.postMessage(JSON.stringify({method:"play"}),"*")}
 }
 document.addEventListener("load",e=>{if(e.target.matches?.(".sp iframe")){spWake();setTimeout(spWake,800);setTimeout(spWake,2000)}},true);
 /* When a YouTube film ends, YouTube shows its own suggestions that lead away to youtube.com.
@@ -3464,7 +3478,7 @@ addEventListener("message",e=>{
   const main=[...document.querySelectorAll(".sp iframe, .player iframe")].some(i=>i.contentWindow===e.source);
   // send play a few times: TikTok ignores play until the video data has arrived
   if(hov){send("mute");[0,400,1200,2500].forEach(t=>setTimeout(()=>send("play"),t))}
-  else if(main&&!spPaused){[0,400,1200].forEach(t=>setTimeout(()=>{send("unMute");send("play")},t))}
+  else if(main&&!spPaused){[0,400,1200].forEach(t=>setTimeout(()=>{send(spMuted?"mute":"unMute");send("play")},t))}
 });
 const ageGate=f=>`<a class="agegate" href="${esc(f.url)}" target="_blank" rel="noopener"><img src="https://i.ytimg.com/vi/${esc(f.yt)}/hqdefault.jpg" alt="" referrerpolicy="no-referrer"><span><b>18+</b>This AI film is age-restricted on YouTube, so it can only play there.<em>Watch on YouTube ↗</em></span></a>`;
 const EXT=[{p:"tt",name:"TikTok"},{p:"ig",name:"Instagram"},{p:"vm",name:"Vimeo"},{p:"dm",name:"Dailymotion"}];
