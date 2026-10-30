@@ -14,10 +14,12 @@ const catName = (id) => CATS.find((c) => c.id === id)?.name || id;
 // a short, safe text for a character name ("Arthas", "Goku")
 export const cleanChar = (t) => String(t || "").replace(/[^\p{L}\p{N} '.-]/gu, " ").replace(/\s+/g, " ").trim().slice(0, 40);
 // what a channel asked for: everything, one world, one character, or a character within a world
-export const topicKey = (t) => `${t?.cat || "*"}|${(t?.char || "").toLowerCase() || "*"}`;
+// t.creators: YouTube channel names joined by "|" ("Ya Boi Tyler|SoraVerse"); their videos are mixed together
+const creatorsOf = (t) => String(t?.creators || "").split("|").filter(Boolean);
+export const topicKey = (t) => `${t?.cat || "*"}|${(t?.char || "").toLowerCase() || "*"}` + (creatorsOf(t).length ? "|" + creatorsOf(t).map((x) => x.toLowerCase()).sort().join("+") : "");
 // t.cat can hold several worlds ("cs,aoe2"): each day one of them is picked at random
 const cats = (t) => String(t?.cat || "").split(",").filter(Boolean);
-export const topicName = (t) => [t?.char, cats(t).map(catName).join(" / ")].filter(Boolean).join(" · ") || "all AI fan films";
+export const topicName = (t) => [t?.char, cats(t).map(catName).join(" / "), creatorsOf(t).length ? "by " + creatorsOf(t).join(" + ") : ""].filter(Boolean).join(" · ") || "all AI fan films";
 
 export async function loadState() {
   const r = await fetch(env("SUPABASE_URL") + `/rest/v1/import_state?key=eq.${KEY}&select=value`, { headers: head() });
@@ -41,8 +43,11 @@ export async function todaysPick(s, topic = {}) {
   const list = cats(topic).sort(() => Math.random() - 0.5);
   if (list.length) q += "&cat=in.(" + list.map(encodeURIComponent).join(",") + ")";
   if (topic.char) { const c = encodeURIComponent(`*${topic.char}*`); q += `&or=(char.ilike.${c},title.ilike.${c})`; }
+  // chosen creators: only their videos, all of them mixed together
+  const who = creatorsOf(topic);
+  if (who.length) q += "&channel=in.(" + who.map((x) => encodeURIComponent('"' + x.replace(/"/g, "") + '"')).join(",") + ")";
   // the whole catalogue: only properly popular films; a world or character: whatever there is
-  if (!topic.cat && !topic.char) q += "&views=gte.20000";
+  if (!topic.cat && !topic.char && !who.length) q += "&views=gte.20000";
   const r = await fetch(env("SUPABASE_URL") + "/rest/v1/" + q, { headers: head() });
   if (!r.ok) throw new Error("db " + r.status);
   // under 30 minutes, so talks and podcasts that mention AI don't get picked
@@ -102,3 +107,15 @@ export default async () => {
   return new Response(`posted in ${sent} of ${ids.length} channels`);
 };
 export const config = { schedule: "0 16 * * *" };
+
+// creators Fanreelz has, for typing in /daily and /today: names that contain what was typed, most watched first
+export async function findCreators(text, limit = 25) {
+  const t = String(text || "").replace(/[*,()"]/g, " ").trim().slice(0, 60);
+  let q = "catalog?select=channel,views&hidden=eq.false&order=views.desc&limit=1000";
+  if (t) q += "&channel=ilike." + encodeURIComponent(`*${t}*`);
+  const r = await fetch(env("SUPABASE_URL") + "/rest/v1/" + q, { headers: head() });
+  if (!r.ok) return [];
+  const seen = new Map();
+  for (const x of await r.json()) if (x.channel && !seen.has(x.channel)) seen.set(x.channel, 1);
+  return [...seen.keys()].slice(0, limit);
+}
