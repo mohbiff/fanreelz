@@ -1324,9 +1324,10 @@ function renderHome(){
   $("#main").innerHTML=html;
 }
 /* Theater mode (like YouTube's): the player gets the full width, Up next moves below. Remembered in this browser. */
-let theater=(()=>{try{return localStorage.getItem("fr_theater")==="1"}catch(e){return false}})();
+/* not remembered between visits: every visit starts with Up next beside the video */
+let theater=(()=>{try{localStorage.removeItem("fr_theater");return sessionStorage.getItem("fr_theater")==="1"}catch(e){return false}})();
 document.addEventListener("click",e=>{if(!e.target.closest("[data-theater]"))return;e.preventDefault();theater=!theater;
-  try{localStorage.setItem("fr_theater",theater?"1":"0")}catch(x){}renderHard=true;render();if(theater)window.scrollTo({top:0,behavior:"smooth"})});
+  try{sessionStorage.setItem("fr_theater",theater?"1":"0")}catch(x){}renderHard=true;render();if(theater)window.scrollTo({top:0,behavior:"smooth"})});
 function renderWatch(){
   addHistory(state.film);
   const f=findFilm(state.film);if(!f){state.view="home";return renderHome()}
