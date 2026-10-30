@@ -1421,7 +1421,7 @@ function renderInsights(){
   if(!P&&!D.loading)html+=`<div class="insplus"><b>✦ Fanreelz Plus for creators</b><span>See every wanted topic, what is trending this week, which worlds are growing and what each country searches for. Plus is in a free beta for AI creators: message the Fanreelz team on <a href="/discord" data-view="discord">Discord</a> or Instagram to join.</span></div>`;
   if(D.loading&&!D.wanted)html+=`<p class="vmeta">Loading…</p>`;
   else if(D.error)html+=`<p class="vmeta">Couldn't load: ${esc(D.error)}</p>`;
-  else html+=`<div class="umgrid">
+  else if(P) html+=`<div class="umgrid">
     <div class="umbox"><h3>🎯 Wanted, but missing <small class="vmeta" style="font-weight:500">fans searched, found little or nothing: make these</small></h3>${list(D.wanted||[],r=>`${r.zero}×${cc(r)}`,r=>r.zero)||`<p class="vmeta">Nothing yet.</p>`}${lock(H.wanted)}</div>
     <div class="umbox"><h3>📈 Trending this week <small class="vmeta" style="font-weight:500">searched more than last week</small></h3>${list(D.trending||[],r=>`+${r.w-r.pw}`,r=>r.w-r.pw)||`<p class="vmeta">Nothing yet.</p>`}${lock(H.trending)}</div>
     <div class="umbox"><h3>🌍 Worlds fans search for <small class="vmeta" style="font-weight:500">this week · last week</small></h3>${(D.worlds||[]).map(w=>`<div class="umrow"><span class="umname">${esc(w.name)}</span><b>${w.w}${w.w>w.pw?` <span style="color:#3ecf8e">▲</span>`:w.w<w.pw?` <span style="color:#ff6b6b">▼</span>`:""} <small class="vmeta">${w.pw}</small></b></div>`).join("")||`<p class="vmeta">Nothing yet.</p>`}${lock(H.worlds)}</div>
