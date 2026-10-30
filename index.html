@@ -2483,10 +2483,14 @@ async function shareFilm(id,short){
   openModal(`<div class="dlg" role="dialog" aria-modal="true" aria-label="Share"><h2>Share this film</h2>
     <p class="vmeta" style="margin:0">${esc(f.title)}</p>
     <div class="sharerow"><input class="shareinp" readonly value="${esc(U("link"))}" aria-label="Link"><button class="btn" data-copylink="${esc(U("link"))}">Copy link</button></div>
-    <div class="sharegrid">${links.map(([n,h])=>`<a class="sharebtn" href="${esc(h)}" target="_blank" rel="noopener">${n}</a>`).join("")}<button class="sharebtn" data-copylink="${esc(U("discord"))}" data-discord="1">Discord</button><button class="sharebtn" data-copylink="${esc(U("instagram"))}" data-insta="1">Instagram</button></div>
+    <div class="sharegrid">${links.map(([n,h])=>`<a class="sharebtn" href="${esc(h)}" target="_blank" rel="noopener">${n}</a>`).join("")}<button class="sharebtn" data-copylink="${esc(U("discord"))}" data-discord="1">Discord</button><button class="sharebtn" data-copylink="${esc(U("messenger"))}" data-messenger="1">Messenger</button><button class="sharebtn" data-copylink="${esc(U("instagram"))}" data-insta="1">Instagram</button></div>
     <div class="row"><button class="btn ghost" data-close>Close</button></div></div>`,
     async e=>{const c=e.target.closest("[data-copylink]");if(!c)return;
       // Instagram: everything must start during the tap itself, or the phone/browser blocks opening another app
+      // Messenger: the phone's Messenger app opens with the link ready to send; on a computer the link is copied and messenger.com opens
+      if(c.dataset.messenger){const link=c.dataset.copylink;
+        if(matchMedia("(pointer:coarse)").matches){location.href="fb-messenger://share/?link="+encodeURIComponent(link);return}
+        try{navigator.clipboard.writeText(link).catch(()=>{})}catch(x){}toast("Link copied – paste it in a Messenger chat");window.open("https://www.messenger.com/","_blank","noopener");return}
       if(c.dataset.insta){const link=c.dataset.copylink,phoneish=matchMedia("(pointer:coarse)").matches;
         // the phone's share sheet lists Instagram (Chats/Direct and Stories): the link goes straight into a DM
         if(APP&&APP.share){closeModal();appCall("share",f.title,text,link);return}
@@ -3011,7 +3015,7 @@ async function postComment(parent,text){
 var gcatsOpen=false,umPeakOpen=false;
 // visitors who arrived through a link shared from Fanreelz (WhatsApp, Discord…) or posted by the Discord bot, per server
 let shrData={},guildNames={};
-const SHR={share:"Phone share menu",link:"Copied link",whatsapp:"WhatsApp",discord:"Discord (shared link)",telegram:"Telegram",facebook:"Facebook",x:"X",reddit:"Reddit",email:"Email",instagram:"Instagram"};
+const SHR={messenger:"Messenger",share:"Phone share menu",link:"Copied link",whatsapp:"WhatsApp",discord:"Discord (shared link)",telegram:"Telegram",facebook:"Facebook",x:"X",reddit:"Reddit",email:"Email",instagram:"Instagram"};
 function sharedHtml(){const r=umamiRange,D=shrData[r];
   if(!D||(!D.loading&&Date.now()-D.at>60e3)){shrData[r]={loading:true,at:Date.now(),rows:D?.rows||[]};
     modCall({action:"umami",range:r,metric:"events"}).then(async x=>{const rows=(x.rows||[]).filter(e=>/^via /.test(e.x));

@@ -138,6 +138,9 @@ export async function withSeo(req, res, env, ctx) {
       .on('meta[property="og:description"]', setAttr("content", info.description))
       .on('meta[property="og:url"]', setAttr("content", canonical))
       .on('meta[property="og:image"]', setAttr("content", image))
+      // the real size of the picture (YouTube thumbnails are 480×360); a wrong size can make Messenger skip the picture
+      .on('meta[property="og:image:width"]', setAttr("content", info.image ? "480" : "1200"))
+      .on('meta[property="og:image:height"]', setAttr("content", info.image ? "360" : "630"))
       .on('meta[property="og:type"]', setAttr("content", info.type || "website"))
       .on('meta[name="twitter:card"]', setAttr("content", "summary_large_image"))
       .on("head", { element(e) { e.append(head, { html: true }); } })
