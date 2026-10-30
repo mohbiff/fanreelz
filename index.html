@@ -1097,13 +1097,13 @@ const state={genre:"all",sdur:"any",sort:"",format:"all",dur:"any",shortList:nul
 const $=s=>document.querySelector(s);
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const rawFilms=()=>[...sharedSubs.filter(f=>f.format!=="episode"),...FILMS];
-const allFilms=()=>state.family?rawFilms().filter(f=>!f.age&&isKids(f)):rawFilms();
+const allFilms=()=>rawFilms().filter(f=>safetyFilmVisible(f)&&(!state.family||!f.age&&isKids(f)));
 /* id → film index, rebuilt only when the film lists change (findFilm runs once per card on every page) */
 let filmIdx={k:"",s:null,m:null};
 function findFilm(id){
   const k=FILMS.length+"|"+(FILMS[0]?.id||"")+"|"+(FILMS[FILMS.length-1]?.id||"")+"|"+sharedSubs.length+"|"+EPISODES.length;
   if(filmIdx.k!==k||filmIdx.s!==sharedSubs){const m=new Map();for(const f of rawFilms())if(!m.has(f.id))m.set(f.id,f);for(const e of allEpisodes())if(!m.has(e.id))m.set(e.id,e);filmIdx={k,s:sharedSubs,m}}
-  return filmIdx.m.get(id)||rawFilms().find(f=>f.id===id)||allEpisodes().find(e=>e.id===id);
+  const f=filmIdx.m.get(id)||rawFilms().find(f=>f.id===id)||allEpisodes().find(e=>e.id===id);return f&&safetyFilmVisible(f)?f:undefined;
 }
 const groupOf=catId=>GROUPS.find(g=>g.cats.some(c=>c.id===catId));
 const catName=id=>CATS.find(c=>c.id===id)?.name||id;
@@ -1369,7 +1369,7 @@ function renderWatch(){
     ${theater?"":playerHtml}
     ${f.seriesId&&findSeries(f.seriesId)?`<button class="serieslink" data-series="${esc(f.seriesId)}">${esc(findSeries(f.seriesId)?.title||"Series")} · Season ${f.season}, Episode ${f.ep}</button>`:""}<h1 class="wtitle" ${f.format==="episode"?'style="margin-top:4px"':""}>${esc(f.title)}${f.real?'<span class="pill">Real</span>':""}${isVerified(f)?'<span class="pill">Verified original</span>':""}</h1>
     <div class="wbar"><div class="wowner">${(f.real||f.yt||f.tt||f.ig||f.vm||f.dm)?`<div class="owner">${cav(byName(f),40)}<div><b>${esc(byName(f)||"YouTube creator")}</b><small>${esc(catName(f.cat))} · ${esc(f.char)}</small></div></div>`:`<button class="owner link" data-creator="${esc(f.byId||f.by)}">${cav(byName(f),40)}<div><b>${esc(byName(f)||"YouTube creator")}</b><small>${fmtN(followerCount(f.byId||f.by))} followers · ${esc(catName(f.cat))}</small></div></button>`}${(f.real||f.yt||f.tt||f.ig||f.vm||f.dm)?"":`<button class="wfollow ${myFollows[f.byId||f.by]?"on":""}" data-follow="${esc(f.byId||f.by)}">${myFollows[f.byId||f.by]?"Following":"Follow"}</button>`}</div>
-      <div class="wbtns"><div class="ratebox" role="group" aria-label="Rate this film"><span>${mine?"Your rating":"Rate"}</span>${[1,2,3,4,5].map(k=>`<button data-rate="${k}" class="${k<=mine?"on":""}" aria-label="${k} stars">★</button>`).join("")}</div><button class="wpill" data-share="${esc(f.id)}">${icon("share")}Share</button><button class="wpill" data-save="${esc(f.id)}">${icon("save")}Save</button><div class="wmore"><button class="wpill wdots" data-wmore="" aria-label="More actions" aria-haspopup="menu"><svg class="i" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.3"/><circle cx="12" cy="12" r="1.3"/><circle cx="19" cy="12" r="1.3"/></svg></button><div class="wmenu" role="menu"><button data-later="${esc(f.id)}">${icon("clock")}${myLater.some(x=>x.id===f.id)?"Remove from Watch later":"Watch later"}</button>${f.real||f.yt||f.tt||f.ig||f.vm||f.dm?"":`<button data-tip="${esc(f.byId||f.by)}" data-tipfilm="${esc(f.id)}">${icon("heart")}Tip the creator</button>`}${f.url?`<a class="wmlink" href="${esc(f.url)}" target="_blank" rel="noopener">${icon("film")}Watch on ${esc(f.src)}</a>`:""}${isVerified(f)?"":`<button data-claimorig="${esc(f.id)}">${icon("shield")}Is this yours?</button>`}<button data-report="${esc(f.id)}">${icon("flag")}Report re-upload</button>${isMod&&f.yt?`<button data-adminhide="${esc(f.id)}">${icon("shield")}Hide from Fanreelz</button>`:""}</div></div></div></div>
+      <div class="wbtns"><div class="ratebox" role="group" aria-label="Rate this film"><span>${mine?"Your rating":"Rate"}</span>${[1,2,3,4,5].map(k=>`<button data-rate="${k}" class="${k<=mine?"on":""}" aria-label="${k} stars">★</button>`).join("")}</div><button class="wpill" data-share="${esc(f.id)}">${icon("share")}Share</button><button class="wpill" data-save="${esc(f.id)}">${icon("save")}Save</button><div class="wmore"><button class="wpill wdots" data-wmore="" aria-label="More actions" aria-haspopup="menu"><svg class="i" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.3"/><circle cx="12" cy="12" r="1.3"/><circle cx="19" cy="12" r="1.3"/></svg></button><div class="wmenu" role="menu"><button data-later="${esc(f.id)}">${icon("clock")}${myLater.some(x=>x.id===f.id)?"Remove from Watch later":"Watch later"}</button>${f.real||f.yt||f.tt||f.ig||f.vm||f.dm?"":`<button data-tip="${esc(f.byId||f.by)}" data-tipfilm="${esc(f.id)}">${icon("heart")}Tip the creator</button>`}${f.url?`<a class="wmlink" href="${esc(f.url)}" target="_blank" rel="noopener">${icon("film")}Watch on ${esc(f.src)}</a>`:""}${isVerified(f)?"":`<button data-claimorig="${esc(f.id)}">${icon("shield")}Is this yours?</button>`}<button data-report="${esc(f.id)}">${icon("flag")}Report content</button>${isMod&&f.yt?`<button data-adminhide="${esc(f.id)}">${icon("shield")}Hide from Fanreelz</button>`:""}</div></div></div></div>
     <div class="desc"><div class="top2">${[isMod?viewsOf(f).toLocaleString("en-US")+" views on Fanreelz":"",f.ytViews?f.ytViews.toLocaleString("en-US")+" views on YouTube":""].filter(Boolean).map(x=>x+" · ").join("")}${s.n?`★ ${s.avg.toFixed(1)} from ${s.n.toLocaleString("en-US")} ratings`:"No ratings yet"} · ${f.days==null?"":ago(f.days)+" · "}${esc(f.src)}${f.tool&&f.tool!=="Unknown"?" · made with "+esc(f.tool):""}</div>${datesLine(f)?`<div class="vmeta" style="margin-top:4px">${datesLine(f)}</div>`:""}
       <div class="dist">${[5,4,3,2,1].map(k=>`<span>${k}★</span><span class="bar"><i style="width:${max?s.c[k-1]/max*100:0}%"></i></span><span>${fmtN(s.c[k-1])}</span>`).join("")}</div>
       <div class="tags"><button data-cat="${f.cat}">${esc(catName(f.cat))}</button><button data-cat="${f.cat}" data-char-go="${esc(f.char)}">${esc(f.char)}</button><button data-cat="${f.cat}" data-lore-go="${loreOf(f)}">${loreOf(f)==="lore"?"Lore-accurate":"What if"}</button>${isKids(f)?'<button data-family-info="">Family-friendly</button>':""}</div>
@@ -1594,7 +1594,7 @@ function updateLiveChat(){
   const lb=$("#liveLikeBtn");if(lb){lb.classList.toggle("ghost",!liveLiked());$("#liveLikes").textContent=liveLikeCount()||"Like"}
   const box=$("#lchat");if(!box)return;const atEnd=box.scrollHeight-box.scrollTop-box.clientHeight<60;
   const msgs=liveMessages();
-  box.innerHTML=msgs.length?msgs.map(m=>`<div class="lcmsg"><button class="cmav" data-user="${esc(m.uid)}" aria-label="${esc(cname(m.uid))}">${uav(m.uid,24)}</button><div><button class="cmname" data-user="${esc(m.uid)}" style="color:hsl(${hueOf(cname(m.uid))},70%,${document.documentElement.dataset.theme==="light"?"35%":"68%"})">${esc(cname(m.uid))}</button> <span>${esc(m.text)}</span></div></div>`).join(""):`<p class="vmeta" style="margin:auto;text-align:center;padding:20px">No messages yet. Say hi to the other fans watching!</p>`;
+  box.innerHTML=msgs.length?msgs.map(m=>`<div class="lcmsg"><button class="cmav" data-user="${esc(m.uid)}" aria-label="${esc(cname(m.uid))}">${uav(m.uid,24)}</button><div><button class="cmname" data-user="${esc(m.uid)}" style="color:hsl(${hueOf(cname(m.uid))},70%,${document.documentElement.dataset.theme==="light"?"35%":"68%"})">${esc(cname(m.uid))}</button> <span>${esc(m.text)}</span>${m.uid!==acct.uid?` <button class="chip" data-creport="${esc(m.uid)}|${esc(m.id)}">Report</button><button class="chip" data-safety-block="${esc(m.uid)}">Block</button>`:""}${isMod?` <button class="chip" data-cmod="${esc(m.uid)}|${esc(m.id)}">Hide</button>`:""}</div></div>`).join(""):`<p class="vmeta" style="margin:auto;text-align:center;padding:20px">No messages yet. Say hi to the other fans watching!</p>`;
   if(atEnd||box.dataset.first!=="1"){box.scrollTop=box.scrollHeight;box.dataset.first="1"}
 }
 async function sendLive(text){
@@ -1797,6 +1797,7 @@ async function loadAdminUsers(){try{const r=await modCall({action:"users"});if(r
 function renderAdmin(){
   clearInterval(adminTimer);adminTimer=setInterval(()=>{if(state.view!=="admin"){clearInterval(adminTimer);return}loadAdminUsers()},30000); // live: refreshes every 30 s
   if(!isMod){$("#main").innerHTML=`<div class="empty">This page is only for Fanreelz admins.</div>`;return}
+  if(state.adminSec==="safety"){renderSafetyQueue();return}
   if(state.adminSec==="videos"){renderAdminVideos();return}
   if(state.adminSec==="aff"){renderAdminAff();return}
   if(state.adminSec==="insta"){renderAdminInsta();return}
@@ -1988,7 +1989,7 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-admvidfmt]
     modCall({action:"hidechannel",channel:ch}).then(r=>{if(r.ok){for(let i=FILMS.length-1;i>=0;i--)if(FILMS[i].db&&FILMS[i].by===ch)FILMS.splice(i,1);filmIdx.k="";autoCache.k="";toast(`Hid ${r.hidden} videos from ${ch}`);render()}else toast("Couldn't hide: "+(r.error||"error"))});return}
   if(e.target.closest("[data-admcleanup]")){e.preventDefault();if(!confirm("Hide every video whose title the current filters reject (gameplay, voice changers, trolling…)?"))return;toast("Cleaning up…");
     modCall({action:"cleanup"}).then(r=>{if(r.ok){toast(`Hid ${r.hidden} videos`);catLoaded="";loadCatalog().then(render).catch(()=>{})}else toast("Couldn't clean up: "+(r.error||"error"))})}});
-const admSecTabs=()=>`<div class="fmtbar" style="margin:8px 0 14px">${[["accounts","Accounts"],["videos","New videos"],["searches","Searches"],["stats","Statistics"],["aff","Affiliate"],["insta","Instagram"]].map(([k,l])=>`<button class="${(state.adminSec||"accounts")===k?"on":""}" data-adminsec="${k}">${l}</button>`).join("")}</div>`;
+const admSecTabs=()=>`<div class="fmtbar" style="margin:8px 0 14px">${[["accounts","Accounts"],["safety","Reports"],["videos","New videos"],["searches","Searches"],["stats","Statistics"],["aff","Affiliate"],["insta","Instagram"]].map(([k,l])=>`<button class="${(state.adminSec||"accounts")===k?"on":""}" data-adminsec="${k}">${l}</button>`).join("")}</div>`;
 const CHN={direct:"Direct / none (typed, apps like Instagram & Snapchat)",organicSocial:"Social media",organicSearch:"Search engines",referral:"Other websites",paidSocial:"Paid social",paidSearch:"Paid search",email:"Email",sms:"SMS",organicVideo:"Video sites",paidVideo:"Paid video",organicShopping:"Shopping",paidShopping:"Paid shopping",paidAds:"Ads"};
 let appUm={};const umami={},umamiAll={};let umamiRange="7d",umamiMore=null,umamiQ="",umamiFlt=null,umBase={},umOnWin="5m";
 const UMWIN=[["5m","Now","last 5 minutes"],["6h","6 hours","last 6 hours"],["24h","24 hours","last 24 hours"],["7d","7 days","last 7 days"],["30d","1 month","last month"],["180d","6 months","last 6 months"]];
@@ -2300,7 +2301,7 @@ function resetSections(){openList=null;reqSort="top";battle.pool="all";battle.pa
 function allRequests(){
   const list=REQ_SEED.map(r=>({...r,example:true}));
   for(const [uid,d] of Object.entries(reqDocs))for(const r of (Array.isArray(d.items)?d.items:[])){
-    if(!r||typeof r.title!=="string"||!CATS.some(c=>c.id===r.cat))continue;
+    if(safetyBlocked(uid)||!r||typeof r.title!=="string"||!CATS.some(c=>c.id===r.cat))continue;
     list.push({id:String(r.id),title:r.title.slice(0,140),cat:r.cat,topic:String(r.topic||"").slice(0,60),char:String(r.char||""),note:String(r.note||"").slice(0,300),forCreator:String(r.forCreator||""),votes:0,t:+r.t||Date.now(),claimedBy:[],byId:uid});}
   const up={},cl={};
   for(const [uid,d] of Object.entries(upDocs))for(const id of Object.keys(d.ids||{}))if(d.ids[id])up[id]=(up[id]||0)+1;
@@ -2527,6 +2528,7 @@ function renderDiscord(){
 const isUid=k=>/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(k||""));
 function renderUser(){
   const uid=state.user,me=uid===acct.uid,name=cname(uid);
+  if(safetyBlocked(uid)){$("#main").innerHTML=`<h1>Blocked member</h1><p>This member’s content is hidden from your view.</p>${safetyButtons(uid)}`;return}
   if(!names[uid]&&!me)resolveExtraNames();
   const liked=Object.entries(ratingsBy[uid]||{}).filter(([,r])=>r>=4).map(([id])=>findFilm(id)).filter(Boolean);
   const vids=creatorFilms(uid);
@@ -2545,7 +2547,7 @@ function renderUser(){
   $("#main").innerHTML=`<div class="uhero">${uav(uid,96)}<div><h1>${esc(name)} ${earlyBadge(uid)}</h1>
      <div class="ustats"><span><b>${fmtN(followers.length)}</b> followers</span><span><b>${fmtN(following.length)}</b> following</span><span><b>${liked.length}</b> liked</span><span><b>${nComments}</b> comments</span></div>
      <div class="row" style="margin-top:12px">${me?`<button class="btn ghost" data-you="you">Your library</button>`:`<button class="btn ${iFollow?"ghost":""}" data-follow="${esc(uid)}">${iFollow?"✓ Following":"Follow"}</button>`}
-     <button class="btn ghost" data-copylink="https://fanreelz.com/u/${esc(uid)}">${icon("share")} Share profile</button></div></div></div>
+     ${safetyButtons(uid)}<button class="btn ghost" data-copylink="https://fanreelz.com/u/${esc(uid)}">${icon("share")} Share profile</button></div></div></div>
    <div class="utabs" role="tablist">${tabs.map(([k,l,n])=>`<button role="tab" aria-selected="${tab===k}" class="${tab===k?"on":""}" data-utab="${k}">${l} <span class="vmeta">${n}</span></button>`).join("")}</div>${body}`;
 }
 
@@ -3119,6 +3121,64 @@ function parseVid(u){u=String(u||"");let m;
   return {}}
 const detectFormat=u=>/\/shorts\/|tiktok\.com|instagram\.com\/reel/i.test(u)?"short":/[?&]list=/i.test(u)?"episode":"film";
 
+/* Safety controls shared by film comments, live chat, profiles and admin review. */
+var safetyState={blocked:[],hidden:[]}, safetyTimer=null, safetyQueue=null;
+function safetyBlocked(uid){return !!uid&&safetyState.blocked.includes(uid)}
+function safetyHidden(owner,id){return safetyState.hidden.some(x=>x.owner===(owner||'catalog')&&x.id===String(id))}
+function safetyFilmVisible(f){return !safetyBlocked(f.byId)&&!safetyHidden(f.byId,f.id)}
+async function safetyCall(body){
+  const r=await fetch('/api/safety',{method:body?'POST':'GET',headers:{...(body?{'Content-Type':'application/json'}:{}),...(sbToken?{Authorization:'Bearer '+sbToken}:{})},...(body?{body:JSON.stringify(body)}:{})});
+  const d=await r.json();if(!r.ok||d.error)throw Error(d.error||'Safety service unavailable');return d;
+}
+async function loadSafety(){
+  try{const d=await safetyCall(),next={blocked:(d.blocked||[]).sort(),hidden:(d.hidden||[]).sort((a,b)=>(a.owner+':'+a.id).localeCompare(b.owner+':'+b.id))};if(JSON.stringify(next)!==JSON.stringify(safetyState)){safetyState=next;renderHard=true;render();if(typeof updateLiveChat==='function')updateLiveChat()}return true}
+  catch{return false}
+}
+function startSafety(){clearInterval(safetyTimer);loadSafety();safetyTimer=setInterval(()=>{if(!document.hidden)loadSafety()},30000)}
+function safetyButtons(uid){return uid&&uid!==acct.uid?`<button class="btn ghost" data-safety-block="${esc(uid)}">${safetyBlocked(uid)?'Unblock member':'Block member'}</button><button class="btn ghost" data-safety-user="${esc(uid)}">Report member</button>`:''}
+async function toggleSafetyBlock(uid){
+  if(!needAccount('Sign in to block members.'))return;
+  const blocked=safetyBlocked(uid);
+  if(!blocked&&!confirm('Hide this member’s comments, live messages and submitted films from your view? Public pages remain public. You can unblock them on their profile.'))return;
+  try{await safetyCall({action:blocked?'unblock':'block',target:uid});safetyState.blocked=blocked?safetyState.blocked.filter(x=>x!==uid):[...safetyState.blocked,uid];renderHard=true;render();await loadSafety();toast(blocked?'Member unblocked':'Member blocked')}
+  catch(e){toast(e.message)}
+}
+function openSafetyReport(target){
+  if(!needAccount('Sign in to report content.'))return;
+  const reasons=['Harassment or hate','Sexual content','Violence or dangerous content','Spam or scam','Copyright or re-upload','Other'];
+  openModal(`<div class="dlg" role="dialog" aria-modal="true" aria-labelledby="safety-title"><button class="btn ghost" data-close>Close</button><h2 id="safety-title">Report ${esc(target.kind)}</h2><form id="safety-report-form"><label>Reason<select name="reason" required>${reasons.map(x=>`<option>${esc(x)}</option>`).join('')}</select></label><label>Details (optional)<textarea name="details" maxlength="1000" rows="4"></textarea></label><p>Reports go privately to Fanreelz moderators. For urgent help or a removal request, contact hello@fanreelz.com.</p><p id="safety-error" role="alert"></p><button class="btn" type="submit">Send report</button></form></div>`);
+  document.getElementById('safety-report-form').onsubmit=async e=>{
+    e.preventDefault();const f=e.currentTarget,button=f.querySelector('button[type=submit]');button.disabled=true;
+    try{await safetyCall({action:'report',...target,reason:f.elements.reason.value,details:f.elements.details.value});closeModal();toast('Report sent to Fanreelz moderators')}
+    catch(error){document.getElementById('safety-error').textContent=error.message;button.disabled=false}
+  };
+}
+async function fetchSafetyQueue(){
+  try{safetyQueue=(await safetyCall({action:'queue'})).reports||[];if(state.view==='admin'&&state.adminSec==='safety')render()}
+  catch(e){safetyQueue={error:e.message};if(state.view==='admin'&&state.adminSec==='safety')render()}
+}
+function renderSafetyQueue(){
+  if(!safetyQueue){$('#main').innerHTML=admSecTabs()+'<p>Loading reports…</p>';fetchSafetyQueue();return}
+  const rows=Array.isArray(safetyQueue)?safetyQueue:[];
+  $('#main').innerHTML=admSecTabs()+`<h1>Community reports</h1><button class="btn ghost" data-safety-refresh>Refresh reports</button><p>Review the content before hiding or dismissing a report. Hidden content can be restored. Member reports link to their public profile for review.</p>${safetyQueue.error?`<p role="alert">${esc(safetyQueue.error)}</p>`:''}`+rows.map(r=>`<article class="umbox"><h2>${esc(r.reason)} · ${esc(r.status)}</h2><p>${esc(r.target.text||r.target.id)}</p><p>${esc(r.details)}</p><p class="vmeta">Reported ${esc(r.createdAt)} · ${esc(r.target.kind)}</p><div class="row">${r.target.film?`<button class="btn ghost" data-open="${esc(r.target.film)}">Open film</button>`:r.target.kind==='film'?`<button class="btn ghost" data-open="${esc(r.target.id)}">Open film</button>`:''}${r.target.owner?`<button class="btn ghost" data-user="${esc(r.target.owner)}">Open member</button>`:''}${r.status==='open'?`${r.target.kind!=='user'?`<button class="btn" data-safety-review="hide" data-report-key="${esc(r.key)}">Hide content</button>`:''}<button class="btn ghost" data-safety-review="dismiss" data-report-key="${esc(r.key)}">Dismiss report</button>`:r.status==='hidden'?`<button class="btn ghost" data-safety-review="restore" data-report-key="${esc(r.key)}">Restore content</button>`:''}</div></article>`).join('')+(rows.length?'':'<p>No reports yet.</p>');
+  const hiddenComments=safetyState.hidden.filter(x=>x.owner!=='catalog'&&commentDocs[x.owner]?.items?.some(c=>String(c.id)===x.id));
+  if(hiddenComments.length)$('#main').insertAdjacentHTML('beforeend',`<h2>Hidden comments</h2>`+hiddenComments.map(x=>`<article class="umbox"><p>${esc(commentDocs[x.owner]?.items?.find(c=>String(c.id)===x.id)?.text||x.id)}</p><button class="btn ghost" data-safety-unhide="${esc(x.owner)}|${esc(x.id)}">Restore comment</button></article>`).join(''));
+
+}
+document.addEventListener('click',async e=>{
+  let x=e.target.closest('[data-safety-block]');if(x){await toggleSafetyBlock(x.dataset.safetyBlock);return}
+  x=e.target.closest('[data-safety-unhide]');if(x){const [owner,id]=x.dataset.safetyUnhide.split('|');if(!confirm('Restore this comment for everyone?'))return;try{await safetyCall({action:'restoreComment',owner,id});await loadSafety();renderSafetyQueue();toast('Comment restored')}catch(error){toast(error.message)}return}
+  x=e.target.closest('[data-safety-user]');if(x){openSafetyReport({kind:'user',id:x.dataset.safetyUser});return}
+  x=e.target.closest('[data-safety-refresh]');if(x){await fetchSafetyQueue();return}
+  x=e.target.closest('[data-safety-review]');if(x){
+    const resolution=x.dataset.safetyReview;
+    if(!confirm(resolution==='hide'?'Hide this content from everyone? It can be restored.':resolution==='restore'?'Restore this content for everyone?':'Dismiss this report without hiding the content?'))return;
+    x.disabled=true;
+    try{await safetyCall({action:'resolve',key:x.dataset.reportKey,resolution});await loadSafety();await fetchSafetyQueue();toast('Review saved')}
+    catch(error){x.disabled=false;toast(error.message)}
+  }
+});
+
 /* ---------- Comments ---------- */
 let commentDocs={},likeDocs={},cSort="top",replyTo=null;
 const uav=(uid,size)=>{const a=uid===acct.uid?acct.me?.avatarUrl:avatars[uid];
@@ -3128,7 +3188,7 @@ const agoT=t=>{const m=Math.floor((Date.now()-t)/6e4);return m<1?"just now":m<60
 function filmComments(fid){
   const all=[];
   for(const [uid,d] of Object.entries(commentDocs))for(const c of (Array.isArray(d.items)?d.items:[]))
-    if(c&&c.film===fid&&typeof c.text==="string"&&c.text.trim())all.push({id:String(c.id),text:c.text.slice(0,1000),t:+c.t||0,parent:c.parent?String(c.parent):"",uid});
+    if(c&&!safetyBlocked(uid)&&!safetyHidden(uid,c.id)&&!safetyState.hidden.some(x=>x.id===String(c.parent||""))&&c.film===fid&&typeof c.text==="string"&&c.text.trim())all.push({id:String(c.id),text:c.text.slice(0,1000),t:+c.t||0,parent:c.parent?String(c.parent):"",uid});
   const likes={};for(const d of Object.values(likeDocs))for(const id of Object.keys(d.ids||{}))if(d.ids[id])likes[id]=(likes[id]||0)+1;
   all.forEach(c=>c.likes=likes[c.id]||0);return all;
 }
@@ -3138,7 +3198,7 @@ function commentsHtml(f){
   top.sort(cSort==="new"?(a,b)=>b.t-a.t:(a,b)=>(b.likes-a.likes)||(b.t-a.t));
   const mine=likeDocs[acct.uid]?.ids||{};
   const one=(c,r)=>`<div class="cm ${r?"reply":""}"><button class="cmav" data-user="${esc(c.uid)}" aria-label="Open ${esc(cname(c.uid))}'s profile">${uav(c.uid)}</button><div class="cmbody"><div class="cmhead"><button class="cmname" data-user="${esc(c.uid)}">${esc(cname(c.uid))}</button>${earlyBadge(c.uid)}<span class="vmeta" style="font-size:12px">${agoT(c.t)}</span></div><p>${linkTimes(esc(c.text))}</p>
-    <div class="cmact"><button class="${mine[c.id]?"on":""}" data-clike="${esc(c.id)}" aria-label="Like">${icon("heart")} ${c.likes||""}</button>${r?"":`<button data-creply="${esc(c.id)}">Reply</button>`}${c.uid===acct.uid?`<button data-cdel="${esc(c.id)}">Delete</button>`:isMod?`<button data-cmod="${esc(c.uid)}|${esc(c.id)}">Remove</button>`:`<button data-creport="">Report</button>`}</div>${replyTo===c.id?composer(c.id):""}</div></div>`;
+    <div class="cmact"><button class="${mine[c.id]?"on":""}" data-clike="${esc(c.id)}" aria-label="Like">${icon("heart")} ${c.likes||""}</button>${r?"":`<button data-creply="${esc(c.id)}">Reply</button>`}${c.uid===acct.uid?`<button data-cdel="${esc(c.id)}">Delete</button>`:isMod?`<button data-cmod="${esc(c.uid)}|${esc(c.id)}">Remove</button>`:`<button data-creport="${esc(c.uid)}|${esc(c.id)}">Report</button><button data-safety-block="${esc(c.uid)}">Block member</button>`}</div>${replyTo===c.id?composer(c.id):""}</div></div>`;
   return `<section class="comments" aria-label="Comments"><div class="row" style="justify-content:space-between"><h2 class="sect-h" style="margin:0">${all.length} comment${all.length===1?"":"s"}</h2><div class="row" style="gap:6px">${[["top","Top"],["new","Newest"]].map(([k,l])=>`<button class="chip ${cSort===k?"on":""}" data-csort="${k}">${l}</button>`).join("")}</div></div>
     ${composer("")}
     <div class="cmlist">${top.length?top.map(c=>one(c,false)+kids(c.id).map(x=>one(x,true)).join("")).join(""):`<p class="vmeta" style="margin:0">No comments yet. Start the conversation.</p>`}</div></section>`;
@@ -3191,9 +3251,9 @@ async function adminDo(body,label){if(adminBusy)return;adminBusy=true;adminMsg=l
 async function modCall(body){const r=await fetch("/api/moderate",{method:"POST",headers:{"Content-Type":"application/json",Authorization:"Bearer "+(sbToken||"")},body:JSON.stringify(body)});return r.json().catch(()=>({}))}
 async function checkMod(){if(!sbToken)return;try{const r=await modCall({action:"check"});if(r.admin){isMod=true;try{renderGuide()}catch(e){}renderHard=true;render();loadViews().catch(()=>{})}}catch{}}
 async function modRemove(v){const i=v.indexOf("|"),owner=v.slice(0,i),id=v.slice(i+1);
-  if(!confirm("Remove this comment for everyone?"))return;
-  const r=await modCall({action:"remove",owner,id});
-  if(r.ok){const d=commentDocs[owner];if(d&&Array.isArray(d.items))d.items=d.items.filter(c=>String(c.id)!==id&&String(c.parent||"")!==id);render();toast("Comment removed")}else toast("Couldn't remove: "+(r.error||"error"))}
+  if(!confirm("Hide this comment for everyone? You can restore it in Reports."))return;
+  const r=await safetyCall({action:"moderateComment",owner,id}).catch(e=>({error:e.message}));
+  if(r.ok){await loadSafety();render();toast("Comment hidden")}else toast("Couldn't remove: "+(r.error||"error"))}
 async function deleteComment(id){const next=myComments().filter(c=>c.id!==id&&c.parent!==id);if(await writeOwn("comments",{items:next})){commentDocs[acct.uid]={items:next};render();toast("Comment deleted")}}
 async function likeComment(id){
   if(!needAccount("Sign in to like."))return;
@@ -3955,7 +4015,7 @@ document.addEventListener("click",async e=>{
     modCall({action:"sdremove",owner,key}).then(r=>{if(r.ok){const v=sdVotes[owner]?.a?.[key];if(v)v.x="";renderHard=true;render();toast("Reason removed")}else toast("Couldn't remove: "+(r.error||"error"))});return}
   if(x=A("[data-adminhide]")){const id=x.dataset.adminhide;if(!confirm("Hide this film from Fanreelz for everyone?"))return;modCall({action:"hide",id}).then(r=>{if(r.ok){const i=FILMS.findIndex(f=>f.id===id);if(i>=0)FILMS.splice(i,1);toast("Film hidden");go({view:"home"})}else toast("Couldn't hide: "+(r.error||"error"))});return}
   if(x=A("[data-adminrun]")){adminDo({action:"run",job:x.dataset.adminrun},x.dataset.adminrun==="showdown"?"Running the showdown judge":"Running the importer");return}
-  if(A("[data-creport]")){toast("Thanks. A moderator will review this comment.");return}
+  if(x=A("[data-creport]")){const [owner,id]=x.dataset.creport.split("|");openSafetyReport({kind:"comment",owner,id});return}
   if(x=A("[data-longnav]")){$("#shell").classList.remove("open");go({view:"home",feed:"home",cat:null,char:null,q:"",group:"All",format:"film",dur:"o20"});return}
   if(x=A("[data-fmtnav]")){$("#shell").classList.remove("open");resetSections();go({view:"home",feed:"home",cat:null,char:null,group:"All",q:"",dur:"any",sdur:"any",genre:"all",lore:"all",format:x.dataset.fmtnav});return}
   if(x=A("[data-fmt]")){state.format=x.dataset.fmt;go({});return}
@@ -3994,7 +4054,7 @@ document.addEventListener("click",async e=>{
   if(x=A("[data-commission]")){openRequest(x.dataset.commission);return}
   if(x=A("[data-save]")){openSave(x.dataset.save);return}
   if(x=A("[data-claimorig]")){openClaim(findFilm(x.dataset.claimorig));return}
-  if(A("[data-report]")){toast("Thanks. In the finished site a moderator would review this report.");return}
+  if(x=A("[data-report]")){openSafetyReport({kind:"film",id:x.dataset.report});return}
   if(A("[data-copyprompt]")){const t=$("#promptText")?.textContent||"";try{await navigator.clipboard.writeText(t);toast("Prompt copied")}catch{const r=document.createRange();r.selectNodeContents($("#promptText"));const sel=getSelection();sel.removeAllRanges();sel.addRange(r);toast("Prompt selected, press Ctrl+C to copy")}return}
   if(x=A("[data-soon]")){toast(x.dataset.soon+" is a concept and isn't available yet");return}
   if(A("[data-plnew]")){if(!needAccount("Sign in to make playlists."))return;openModal(`<div class="dlg" role="dialog" aria-modal="true" aria-label="New playlist"><h2>New playlist</h2><form class="form" id="pln"><label for="plnName">Name<input id="plnName" required maxlength="80"></label><div class="row"><button class="btn" type="submit">Create</button><button class="btn ghost" type="button" data-close>Cancel</button></div></form></div>`);$("#pln").onsubmit=async ev=>{ev.preventDefault();const l={id:"pl"+Date.now().toString(36),name:$("#plnName").value.trim(),films:[]};if(await saveLists([l,...myLists()].slice(0,50))){closeModal();openList=l.id;render()}};return}
@@ -4256,7 +4316,7 @@ async function sbSignOut(){if(sb){await sb.auth.signOut();location.reload()}}
     const b=await startSupabase();if(!b)return;({user,db,me}=b);
     try{const back=JSON.parse(localStorage.getItem("fr_back")||"null");localStorage.removeItem("fr_back");if(back&&me){Object.assign(state,back);history.replaceState({fr:navSnap(),y:0},"")}}catch(e){}
   }
-  Object.assign(acct,{user,db,uid:me?.id||null,me:me||null,online:!!me});render();
+  Object.assign(acct,{user,db,uid:me?.id||null,me:me||null,online:!!me});startSafety();render();
   db.collection("ratings").onSnapshot(snap=>{const agg={};
     for(const d of snap.docs){const r=d.data()?.r;if(!r||typeof r!=="object")continue;
       for(const [fid,v] of Object.entries(r)){const k=Math.round(+v);if(k<1||k>5)continue;(agg[fid]||(agg[fid]=[0,0,0,0,0]))[k-1]++}

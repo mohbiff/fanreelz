@@ -8,6 +8,7 @@ import importYoutube from "../netlify/functions/import-youtube.mjs";
 import liveYoutube from "../netlify/functions/live-youtube.mjs";
 import live from "../netlify/functions/live.mjs";
 import moderate from "../netlify/functions/moderate.mjs";
+import safety from "../netlify/functions/safety.mjs";
 import showdown from "../netlify/functions/showdown.mjs";
 import peak from "../netlify/functions/peak.mjs";
 import thumb from "../netlify/functions/thumb.mjs";
@@ -25,6 +26,7 @@ const ROUTES = {
   "/api/live-youtube": liveYoutube,
   "/api/live": live,
   "/api/moderate": moderate,
+  "/api/safety": safety,
   "/api/thumb": thumb,
   "/api/tiktok-thumb": thumb,
   "/api/yt-views": ytViews,
