@@ -9,13 +9,13 @@ import showdown from "./showdown.mjs";
 import { notePeak } from "./peak.mjs";
 const json = (o, status = 200) => new Response(JSON.stringify(o), { status, headers: { "Content-Type": "application/json", "Cache-Control": "no-store" } });
 
-async function whoIs(req) {
+export async function whoIs(req) {
   const tok = (req.headers.get("Authorization") || "").replace(/^Bearer\s+/i, "");
   if (!tok) return null;
   const r = await fetch(Netlify.env.get("SUPABASE_URL") + "/auth/v1/user", { headers: { apikey: Netlify.env.get("SUPABASE_ANON_KEY"), Authorization: "Bearer " + tok } });
   return r.ok ? r.json() : null;
 }
-const isAdmin = (u) => {
+export const isAdmin = (u) => {
   const list = String(Netlify.env.get("ADMIN_EMAILS") || "").toLowerCase().split(",").map((s) => s.trim()).filter(Boolean);
   return !!(u?.email && list.includes(String(u.email).toLowerCase()));
 };

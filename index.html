@@ -113,6 +113,7 @@ svg.i{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stro
 
 main{min-width:0;padding-right:max(16px,env(safe-area-inset-right,0px));padding-left:12px;padding-bottom:40px}
 .gcatbtn{display:inline-flex;align-items:center;gap:6px;margin:0 0 12px}.gcatgrid{margin-bottom:18px;display:grid!important;grid-template-columns:repeat(auto-fill,minmax(160px,1fr))!important;gap:8px!important}.gcatgrid .dircard{padding:8px 10px;gap:8px}.gcatgrid .dircard b{font-size:13px;line-height:1.25}
+.plustag{font-size:10px;font-weight:800;letter-spacing:.06em;background:#ffd23f;color:#1a1405;border-radius:5px;padding:1px 5px;vertical-align:middle;margin-left:4px}.inslock{display:flex;align-items:center;gap:8px;margin-top:10px;padding:10px 12px;border:1px dashed var(--line);border-radius:10px;color:var(--muted);font-size:13px}.insplus{display:flex;flex-direction:column;gap:4px;padding:14px 16px;margin:0 0 16px;border-radius:14px;background:var(--surface);border:1px solid #ffd23f55;max-width:720px}.insplus span{color:var(--muted);font-size:14px}.insplus a{color:#ffd23f}
 .chips{position:sticky;top:calc(56px + env(safe-area-inset-top,0px));z-index:4;background:var(--bg);display:flex;gap:12px;overflow-x:auto;padding:10px 0 14px;scrollbar-width:none}
 .chips::-webkit-scrollbar{display:none}
 .chip{flex:none;height:32px;padding:0 12px;border-radius:8px;border:0;background:var(--chip);font-weight:600;white-space:nowrap}
@@ -1279,7 +1280,8 @@ function renderGuide(){renderTabbar();
   const fnav=(k,label)=>`<button class="gi ${(state.view==="home"&&!state.cat&&state.feed==="home"&&state.format===k)||(k==="short"&&state.view==="shorts")||(k==="series"&&state.view==="series")?"on":""}" data-fmtnav="${k}">${icon(k)}<span>${label}</span></button>`;
   const T=trendingByGroup();
   $("#guide").innerHTML=fi("home","Home","home")+fnav("short","Shorts")+fnav("series","Series")+`<button class="gi ${state.view==="home"&&!state.cat&&state.format==="film"&&state.dur==="o20"?"on":""}" data-longnav="">${icon("film")}<span>Films</span></button>`+fi("top","Top rated","top")+fi("new","New","fresh")+
-    `<button class="gi ${state.view==="browse"?"on":""}" data-browse="All">${icon("list")}<span>Browse all</span></button><hr>`+
+    `<button class="gi ${state.view==="browse"?"on":""}" data-browse="All">${icon("list")}<span>Browse all</span></button>`+
+    `<button class="gi ${state.view==="insights"?"on":""}" data-view="insights">${icon("trend")}<span>Insights <small class="plustag">PLUS</small></span></button><hr>`+
     `<button class="gi youhead ${state.view==="you"?"on":""}" data-view="you"><span>You</span><svg class="i" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></button>`+
     [["channel","Creator page","user"],["history","History","clock"],["playlists","Playlists","list"],["later","Watch later","clock"],["liked","Liked videos","like"],["yourvideos","Your videos","film"]]
       .map(([v,l,ic])=>`<button class="gi ${state.view===v||(v==="channel"&&state.view==="user"&&state.user===acct.uid)?"on":""}" data-you="${v}">${icon(ic)}<span>${l}</span></button>`).join("")+
@@ -1399,6 +1401,34 @@ document.addEventListener("click",e=>{
   if(m)m.parentElement.classList.toggle("open");
 });
 document.addEventListener("keydown",e=>{if(e.key==="Escape")document.querySelectorAll(".wmore.open").forEach(x=>x.classList.remove("open"))});
+/* ---------- Creator Insights (Fanreelz Plus): what fans search for, counted together (never who) ---------- */
+let insData=null,plusIdsAdm=null;
+async function loadInsights(){insData={loading:true};try{const r=await fetch("/api/insights",{method:"POST",headers:{"Content-Type":"application/json",Authorization:"Bearer "+(sbToken||"")},body:"{}"});insData={...(await r.json()),at2:Date.now()}}catch(e){insData={error:String(e.message||e)}}if(state.view==="insights")render()}
+async function loadPlusIds(){try{const r=await fetch("/api/insights",{method:"POST",headers:{"Content-Type":"application/json",Authorization:"Bearer "+(sbToken||"")},body:JSON.stringify({action:"plusget"})}).then(r=>r.json());plusIdsAdm=r.ids||[]}catch(e){plusIdsAdm=[]}if(state.view==="admin")render()}
+document.addEventListener("click",async e=>{const b=e.target.closest?.("[data-plusset]");if(!b)return;e.preventDefault();const uid=b.dataset.plusset,on=!plusIdsAdm?.includes(uid);
+  const r=await fetch("/api/insights",{method:"POST",headers:{"Content-Type":"application/json",Authorization:"Bearer "+(sbToken||"")},body:JSON.stringify({action:"plusset",uid,on})}).then(r=>r.json()).catch(()=>({}));
+  if(r.ids){plusIdsAdm=r.ids;toast(on?"Plus given: they now see all Creator Insights":"Plus removed");render()}else toast("Couldn't change Plus: "+(r.error||"error"))});
+function renderInsights(){
+  if(!insData||(!insData.loading&&Date.now()-(insData.at2||0)>120e3))loadInsights();
+  const D=insData||{},P=!!D.plus,H=D.hidden||{};let cn=null;try{cn=new Intl.DisplayNames(["en"],{type:"region"})}catch(e){}
+  const flag=c=>/^[A-Z]{2}$/.test(c||"")?String.fromCodePoint(...[...c].map(ch=>127397+ch.charCodeAt(0))):"";
+  const go2=q=>`data-insq="${esc(q)}" role="button" tabindex="0" style="cursor:pointer" title="Search this on Fanreelz"`;
+  const lock=n=>n>0?`<div class="inslock">${icon("shield")} <span><b>+${n} more</b> for Plus members</span></div>`:"";
+  const list=(rows,fn,max)=>{const m=Math.max(1,...rows.map(max));return rows.map(r=>`<div class="umrow" ${go2(r.q)}><span class="umbar" style="width:${max(r)/m*100}%"></span><span class="umname">${esc(r.q)}${r.world?` <small class="vmeta">· ${esc(r.world)}</small>`:""}</span><b>${fn(r)}</b></div>`).join("")};
+  const cc=r=>r.cc?.length?" "+r.cc.map(flag).join(""):"";
+  let html=`<h1 class="sect-h" style="font-size:24px">${icon("trend")} Creator Insights <small class="plustag">PLUS</small></h1>
+  <p class="vmeta" style="margin:-4px 0 16px;max-width:720px">What fans look for on Fanreelz in the last 30 days, so you know what to make next. Only the words and countries are counted, never who searched.${D.total?` · ${D.total.toLocaleString("en-US")} searches`:""}</p>`;
+  if(!P&&!D.loading)html+=`<div class="insplus"><b>✦ Fanreelz Plus for creators</b><span>See every wanted topic, what is trending this week, which worlds are growing and what each country searches for. Plus is in a free beta for AI creators: message the Fanreelz team on <a href="/discord" data-view="discord">Discord</a> or Instagram to join.</span></div>`;
+  if(D.loading&&!D.wanted)html+=`<p class="vmeta">Loading…</p>`;
+  else if(D.error)html+=`<p class="vmeta">Couldn't load: ${esc(D.error)}</p>`;
+  else html+=`<div class="umgrid">
+    <div class="umbox"><h3>🎯 Wanted, but missing <small class="vmeta" style="font-weight:500">fans searched, found little or nothing: make these</small></h3>${list(D.wanted||[],r=>`${r.zero}×${cc(r)}`,r=>r.zero)||`<p class="vmeta">Nothing yet.</p>`}${lock(H.wanted)}</div>
+    <div class="umbox"><h3>📈 Trending this week <small class="vmeta" style="font-weight:500">searched more than last week</small></h3>${list(D.trending||[],r=>`+${r.w-r.pw}`,r=>r.w-r.pw)||`<p class="vmeta">Nothing yet.</p>`}${lock(H.trending)}</div>
+    <div class="umbox"><h3>🌍 Worlds fans search for <small class="vmeta" style="font-weight:500">this week · last week</small></h3>${(D.worlds||[]).map(w=>`<div class="umrow"><span class="umname">${esc(w.name)}</span><b>${w.w}${w.w>w.pw?` <span style="color:#3ecf8e">▲</span>`:w.w<w.pw?` <span style="color:#ff6b6b">▼</span>`:""} <small class="vmeta">${w.pw}</small></b></div>`).join("")||`<p class="vmeta">Nothing yet.</p>`}${lock(H.worlds)}</div>
+    <div class="umbox"><h3>🔎 Most searched <small class="vmeta" style="font-weight:500">30 days</small></h3>${list(D.top||[],r=>`${r.n}${cc(r)}`,r=>r.n)||`<p class="vmeta">Nothing yet.</p>`}${lock(H.top)}</div>
+  </div>`+(P&&D.countries?.length?`<h2 class="sect-h" style="font-size:17px;margin:18px 0 10px">By country</h2><div class="umgrid">${D.countries.map(c=>`<div class="umbox"><h3>${flag(c.cc)} ${esc(cn?.of(c.cc)||c.cc)} <small class="vmeta" style="font-weight:500">${c.n} searches</small></h3>${c.top.map(x=>`<div class="umrow" ${go2(x.q)}><span class="umname">${esc(x.q)}</span><b>${x.n}</b></div>`).join("")}</div>`).join("")}</div>`:!P&&H.countries?`<div class="inslock" style="margin-top:14px">${icon("shield")} <span><b>Searches by country (${H.countries} countries)</b> for Plus members</span></div>`:"");
+  $("#main").innerHTML=html}
+document.addEventListener("click",e=>{const x=e.target.closest?.("[data-insq]");if(!x)return;e.preventDefault();go({view:"home",feed:"home",q:x.dataset.insq,cat:null,char:null})});
 function renderBrowse(){
   const T=trendingByGroup(),gsel=state.bgroup;
   const chips=["All",...GROUPS.map(g=>g.name)].map(g=>`<button class="chip ${gsel===g?"on":""}" data-browse="${esc(g)}">${esc(g)}</button>`).join("");
@@ -2028,10 +2058,11 @@ function renderAdminUser(u){const uid=u.id,d=x=>x?new Date(+x||x).toLocaleString
   const filmName=id=>{const f=findFilm(id);return f?f.title:String(id).startsWith("live-")?"Live chat":id};
   const filmLink=id=>{id=String(id||"");const f=findFilm(id);const path=id.startsWith("live-")?"/live/"+encodeURIComponent(id.slice(5)):(f?.format==="short"?"/shorts/":"/film/")+encodeURIComponent(id);
     return `<a class="adm-link" href="${path}" target="_blank" rel="noopener">fanreelz.com${esc(path)}</a>`};
+  if(!plusIdsAdm){plusIdsAdm=[];loadPlusIds()}
   $("#main").innerHTML=`<button class="btn ghost" data-adminback="">← All accounts</button>
   <div class="adm-row" style="margin:12px 0 16px">${u.avatar?`<img src="${esc(u.avatar)}" alt="" referrerpolicy="no-referrer">`:cav(u.name||names[uid]||"?",36)}
     <div class="adm-who"><b>${esc(u.name||names[uid]||"(no name)")} ${earlyBadge(uid)}</b><span>${esc(u.email||"")}</span></div>
-    <div class="adm-meta"><span class="chip">${esc(u.provider||"–")}</span><span><b>Last active ${AC&&AC.last?d(AC.last)+" ("+admAgo(AC.last)+")":u.active?d(u.active):"–"}</b></span><span>Last sign-in ${d(u.last)}</span><span>Joined ${d(u.created)}</span><button class="chip" data-user="${esc(uid)}">Public profile</button></div></div>
+    <div class="adm-meta"><span class="chip">${esc(u.provider||"–")}</span><span><b>Last active ${AC&&AC.last?d(AC.last)+" ("+admAgo(AC.last)+")":u.active?d(u.active):"–"}</b></span><span>Last sign-in ${d(u.last)}</span><span>Joined ${d(u.created)}</span><button class="chip" data-user="${esc(uid)}">Public profile</button>${plusIdsAdm?`<button class="chip ${plusIdsAdm.includes(uid)?"on":""}" data-plusset="${esc(uid)}">${plusIdsAdm.includes(uid)?"✦ Plus member (remove)":"Give Plus"}</button>`:""}</div></div>
   ${admTabs(AC)}
   <div class="adm-cards">${[[comments.length,"comments"],[votes.length,"showdown votes"],[votes.filter(v=>String(v.x||"").trim()).length,"showdown reasons"],[ratings.length,"ratings"],[made.length,"showdowns started"],...(AC?[[AC.hist.length,"films watched"],[AC.liked.length,"films liked"],[AC.later.length,"watch later"],[AC.lists.length,"playlists"],[AC.follows.length,"following"]]:[])].map(([n,l])=>`<div class="adm-card"><b>${n}</b><span>${l}</span></div>`).join("")}</div>
   <h2 class="sect-h" style="font-size:17px">Activity <small class="vmeta" style="font-weight:500">newest first</small></h2>
@@ -3591,6 +3622,7 @@ let ticker=null;
 let renderHard=false;
 /* The browser tab and Google's rendered copy get a title for each page */
 function pageTitle(){const T=t=>t+" | Fanreelz",f=findFilm(state.film);
+  if(state.view==="insights")return T("Creator Insights");
   if(state.view==="watch"&&f)return T(f.title);
   if(state.view==="shorts"&&f)return T(f.title+" (Short)");
   if(state.view==="showdown"){const m=state.sd&&sdList().find(x=>x.key===state.sd);return T(m?m.a+" vs "+m.b+": who would win?":"Character Showdown: who would win?")}
@@ -3630,7 +3662,7 @@ function renderInner(){
   renderWho();renderGuide();
   clearInterval(ticker);ticker=null;tvNow=null;
   if(state.view!=="shorts")document.querySelectorAll(".sppeek").forEach(x=>x.remove());
-  ({watch:renderWatch,browse:renderBrowse,live:renderLive,liveplay:renderLivePlay,premieres:renderPremieres,tv:renderTV,battles:renderBattles,showdown:renderShowdown,top10:renderTop10,admin:renderAdmin,requests:renderRequests,contest:renderContest,playlists:renderPlaylists,creator:renderCreator,discord:renderDiscord,about:renderAbout,user:renderUser,you:renderYou,history:renderYouList,later:renderYouList,liked:renderYouList,yourvideos:renderYouList,shorts:renderShorts,series:renderSeries}[state.view]||renderHomeF)();
+  ({insights:renderInsights,watch:renderWatch,browse:renderBrowse,live:renderLive,liveplay:renderLivePlay,premieres:renderPremieres,tv:renderTV,battles:renderBattles,showdown:renderShowdown,top10:renderTop10,admin:renderAdmin,requests:renderRequests,contest:renderContest,playlists:renderPlaylists,creator:renderCreator,discord:renderDiscord,about:renderAbout,user:renderUser,you:renderYou,history:renderYouList,later:renderYouList,liked:renderYouList,yourvideos:renderYouList,shorts:renderShorts,series:renderSeries}[state.view]||renderHomeF)();
   paintAll();armMore();try{instBar()}catch(e){}
   document.querySelectorAll(".cmform").forEach(fm=>{const k=fm.dataset.cparent;const ta=fm.querySelector("textarea");if(drafts[k])ta.value=drafts[k];if(focusKey===k){ta.focus();ta.setSelectionRange(ta.value.length,ta.value.length)}});
   if(state.view==="premieres")ticker=setInterval(tickPremieres,1000);
@@ -3642,7 +3674,7 @@ function renderInner(){
 const NAVKEYS=["genre","sdur","sort","user","utab","view","feed","group","cat","char","q","film","format","dur","series","season","creator","shortList","shortI","bgroup","ctab","tv","lore"];
 const navSnap=()=>JSON.parse(JSON.stringify(Object.fromEntries(NAVKEYS.map(k=>[k,state[k]]))));
 /* Every page gets its own address (fanreelz.com/film/…, /shorts/…, /about …) so links can be shared and reloaded. */
-const PAGES=["admin","top10","showdown","you","history","later","liked","yourvideos","about","live","premieres","tv","battles","requests","contest","playlists","discord","browse"];
+const PAGES=["insights","admin","top10","showdown","you","history","later","liked","yourvideos","about","live","premieres","tv","battles","requests","contest","playlists","discord","browse"];
 function pathFor(st){
   const e=encodeURIComponent;
   switch(st.view){
