@@ -77,8 +77,10 @@ export const dailyMessage = (f, topic = {}) => ({
   allowed_mentions: { parse: [] },
 });
 
-export async function postTo(channel, f, topic) {
-  const r = await fetch(`https://discord.com/api/v10/channels/${channel}/messages`, { method: "POST", headers: { Authorization: "Bot " + env("DISCORD_BOT_TOKEN"), "Content-Type": "application/json" }, body: JSON.stringify(dailyMessage(f, topic)) });
+// links in Discord messages say which server they were posted in, so Fanreelz's statistics can show "via Discord: <server>"
+export const tagLinks = (text, guild) => String(text).replace(/https:\/\/fanreelz\.com(\/[^\s"<>)\]\\]*)?/g, (u) => u + (u.includes("?") ? "&" : "?") + "via=discord" + (guild ? "&s=" + guild : ""));
+export async function postTo(channel, f, topic, guild) {
+  const r = await fetch(`https://discord.com/api/v10/channels/${channel}/messages`, { method: "POST", headers: { Authorization: "Bot " + env("DISCORD_BOT_TOKEN"), "Content-Type": "application/json" }, body: tagLinks(JSON.stringify(dailyMessage(f, topic)), guild) });
   return { ok: r.ok, status: r.status };
 }
 
@@ -92,7 +94,7 @@ export default async () => {
   for (const id of ids) {
     const c = s.channels[id], f = await todaysPick(s, c);
     if (!f) continue;
-    const res = await postTo(c.channel, f, c);
+    const res = await postTo(c.channel, f, c, id.split(":")[0]);
     if (res.ok) sent++;
     else if ([403, 404].includes(res.status)) delete s.channels[id];
   }

@@ -230,6 +230,17 @@ export default async (req) => {
     }
     return json({ ok: true, moved, by });
   }
+  if (body.action === "guilds") {
+    // names of the Discord servers the bot's links came from (the bot is a member, so Discord tells it the name)
+    const token = Netlify.env.get("DISCORD_BOT_TOKEN"), out = {};
+    const ids = [...new Set((Array.isArray(body.ids) ? body.ids : []).map(String).filter((x) => /^\d{5,22}$/.test(x)))].slice(0, 40);
+    if (token) await Promise.all(ids.map(async (id) => {
+      const r = await fetch("https://discord.com/api/v10/guilds/" + id, { headers: { Authorization: "Bot " + token } }).catch(() => null);
+      const j = r && r.ok ? await r.json().catch(() => null) : null;
+      out[id] = j?.name || null;
+    }));
+    return json({ names: out });
+  }
   if (body.action === "hidechannel" || body.action === "cleanup") {
     const key = Netlify.env.get("SUPABASE_SERVICE_ROLE_KEY"), base = Netlify.env.get("SUPABASE_URL") + "/rest/v1/";
     const h = { apikey: key, "Content-Type": "application/json", Prefer: "return=minimal" };

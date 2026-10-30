@@ -2,7 +2,7 @@
 // so no always-on server is needed. Commands: /top, /random, /search, /showdown, /today, /daily, /fanreelz.
 // Needs in Netlify: DISCORD_PUBLIC_KEY (from the Discord app's General Information page), SUPABASE_URL, SUPABASE_ANON_KEY.
 import CATS from "./lib/catmap.mjs";
-import { loadState, saveState, todaysPick, dailyMessage, postTo, cleanChar, topicName } from "./discord-daily.mjs";
+import { loadState, saveState, todaysPick, dailyMessage, postTo, cleanChar, topicName, tagLinks } from "./discord-daily.mjs";
 
 const SITE = "https://fanreelz.com";
 const COLOR = 0xffd23f;
@@ -99,7 +99,7 @@ async function daily(i) {
   // post today's film right away: that shows the choice works and proves the bot can write in this channel
   const f = await todaysPick(s, t);
   if (!f) return reply({ content: `No AI fan films found for ${topicName(t)} yet. Try another name, or leave it empty for all films.`, flags: 64 });
-  const res = await postTo(i.channel_id, f, t);
+  const res = await postTo(i.channel_id, f, t, i.guild_id);
   if (!res.ok) return reply({ content: `I can't post in this channel yet. Add the Fanreelz bot to the server (${SITE}/discord) and let it send messages here, then try /daily again.`, flags: 64 });
   s.channels[id] = { channel: i.channel_id, cat: t.cat, char: t.char, at: new Date().toISOString() };
   await saveState(s);
@@ -114,7 +114,15 @@ const help = () => reply({ embeds: [{ color: COLOR, title: "Fanreelz bot", url: 
   "`/daily [category] [category2] [category3] [character]` (server admins) post a popular AI video in this channel every day, from one world or a random one of up to three; `mode:off` stops it",
 ].join("\n") }] });
 
+// every answer: links carry "via=discord" and the server, so the statistics show which server sent the visitor
 export default async (req) => {
+  const res = await handle(req.clone());
+  if (req.method !== "POST" || !(res.headers.get("Content-Type") || "").includes("json")) return res;
+  let gid = "";
+  try { gid = JSON.parse(await req.text()).guild_id || ""; } catch {}
+  return new Response(tagLinks(await res.text(), gid), { status: res.status, headers: res.headers });
+};
+async function handle(req) {
   if (req.method !== "POST") return new Response("Fanreelz Discord bot. Add it from https://fanreelz.com/discord", { status: 200 });
   const body = await req.text();
   if (!(await verify(body, req.headers.get("x-signature-ed25519") || "", req.headers.get("x-signature-timestamp") || ""))) return new Response("bad signature", { status: 401 });
@@ -146,5 +154,5 @@ export default async (req) => {
     console.error(e);
     return reply({ content: "Fanreelz couldn't answer right now. Try again in a moment.", flags: 64 });
   }
-};
+}
 export const config = { path: "/api/discord" };

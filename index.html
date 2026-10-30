@@ -1,6 +1,7 @@
 <!doctype html>
 <html lang="en">
 <head>
+<script>window.__q0=location.search</script>
 <script>document.documentElement.classList.add("js")</script>
 <meta charset="utf-8">
 <link rel="preconnect" href="https://www.youtube-nocookie.com"><link rel="preconnect" href="https://i.ytimg.com"><link rel="dns-prefetch" href="https://www.youtube.com">
@@ -1949,7 +1950,7 @@ function renderUmami(){
       <div class="adm-card"><b>${nf(dl)}</b><span>downloads of the app file</span></div><div class="adm-card"><b>${nf(inst)}</b><span>installs (opened the first time)</span></div>
       <div class="adm-card"><b>${nf(today)}</b><span>used the app today</span></div><div class="adm-card"><b>${nf(week)}</b><span>app uses, last 7 days</span></div></div>
       <p class="vmeta" style="font-size:12px;margin:8px 0 0">${dl?Math.round(Math.min(inst,dl)/dl*100)+"% of downloads were installed · ":""}${daysUsed?"used on "+daysUsed+" day"+(daysUsed>1?"s":"")+" · ":""}a reinstall counts as a new install</p>${ctab}<p class="vmeta" style="font-size:12px;margin:6px 0 0">"Earlier clicks" are taps on the download button before this counter started (from Umami).</p></div>`})();
-  $("#main").innerHTML=head+`<div class="adm-cards">${cards.map(([n,l,d,a])=>`<div class="adm-card"${a||""}><b>${n}</b><span>${l} ${d}</span></div>`).join("")}</div>${appBox}${umPeakOpen?peakHtml(U.peak):""}
+  $("#main").innerHTML=head+`<div class="adm-cards">${cards.map(([n,l,d,a])=>`<div class="adm-card"${a||""}><b>${n}</b><span>${l} ${d}</span></div>`).join("")}</div>${appBox}${umPeakOpen?peakHtml(U.peak):""}${sharedHtml()}
     <div class="umbox" style="margin-top:14px">${chart}</div>
     <div class="umgrid">${list("pages","Pages")}${list("entries","Entry pages")}${list("channels","Kinds of sources")}${list("referrers","Where visitors come from")}${(U.campaigns||[]).length?list("campaigns","Campaigns (tagged links)"):`<div class="umbox"><h3>Campaigns (tagged links)</h3><p class="vmeta" style="font-size:13px">No visits from tagged links yet. Links like fanreelz.com/?utm_source=instagram (Admin → Instagram makes them) show up here, even when the app hides where the visitor came from.</p></div>`}${list("countries","Countries")}${list("devices","Devices")}${list("browsers","Browsers")}${list("os","Operating systems")}${list("events","Events")}</div>
     <p class="vmeta" style="margin-top:12px;font-size:12px">${r==="all"?`All time since ${U.from?new Date(U.from).toLocaleDateString("sv-SE"):"the start"}`:`Compared with the previous ${({"24h":"24 hours","7d":"7 days","30d":"30 days","90d":"90 days","365d":"year"})[r]}`} · updated ${new Date(U.at).toLocaleTimeString("sv-SE")} · <a href="https://cloud.umami.is" target="_blank" rel="noopener">Open Umami ↗</a></p>`;
@@ -2049,7 +2050,7 @@ function renderTop10(){
 }
 document.addEventListener("click",e=>{const g=e.target.closest("[data-t10group]");if(g){e.preventDefault();go({view:"home",feed:"home",group:g.dataset.t10group,cat:null,char:null,q:"",format:"all"});window.scrollTo(0,0)}});
 document.addEventListener("click",e=>{if(!e.target.closest("[data-share-page]"))return;e.preventDefault();
-  const url="https://fanreelz.com/top10",text="The top 10 AI fan films this month";
+  const url="https://fanreelz.com/top10?via=share",text="The top 10 AI fan films this month";
   if(navigator.share)navigator.share({title:text,url}).catch(()=>{});else{navigator.clipboard?.writeText(url).then(()=>toast("Link copied"),()=>toast(url))}});
 function renderShowdown(){
   const keep=$("#sdText")?{v:$("#sdText").value,f:document.activeElement===$("#sdText")}:null;
@@ -2468,20 +2469,21 @@ function renderYouList(){
 }
 
 /* ---------- Sharing ---------- */
-function shareUrl(f,short){return "https://fanreelz.com"+(short?"/shorts/":"/film/")+encodeURIComponent(f.id)}
+function shareUrl(f,short,via){return "https://fanreelz.com"+(short?"/shorts/":"/film/")+encodeURIComponent(f.id)+(via?"?via="+via:"")}
 async function shareFilm(id,short){
-  const f=findFilm(id);if(!f)return;const url=shareUrl(f,short),text=`${f.title} – AI fan film on Fanreelz`;
+  const f=findFilm(id);if(!f)return;const url=shareUrl(f,short,"share"),text=`${f.title} – AI fan film on Fanreelz`,U=v=>shareUrl(f,short,v);
   // phones: the phone's own share sheet first (it includes Instagram Stories and DMs); the app has its own, the browser navigator.share
   if(APP&&APP.share){appCall("share",f.title,text,url);return}
   if(navigator.share&&matchMedia("(pointer:coarse)").matches){try{await navigator.share({title:f.title,text,url});return}catch(e){if(e&&e.name==="AbortError")return}}
-  const u=encodeURIComponent(url),t=encodeURIComponent(text);
-  const links=[["X","https://x.com/intent/post?text="+t+"&url="+u],["Reddit","https://www.reddit.com/submit?url="+u+"&title="+encodeURIComponent(f.title)],
-    ["WhatsApp","https://wa.me/?text="+encodeURIComponent(text+" "+url)],["Facebook","https://www.facebook.com/sharer/sharer.php?u="+u],
-    ["Telegram","https://t.me/share/url?url="+u+"&text="+t],["Email","mailto:?subject="+encodeURIComponent(f.title)+"&body="+encodeURIComponent(text+"\n\n"+url)]];
+  const t=encodeURIComponent(text),E=v=>encodeURIComponent(U(v));
+  // each button's link says where it was shared, so the statistics can show "via WhatsApp", "via Discord"…
+  const links=[["X","https://x.com/intent/post?text="+t+"&url="+E("x")],["Reddit","https://www.reddit.com/submit?url="+E("reddit")+"&title="+encodeURIComponent(f.title)],
+    ["WhatsApp","https://wa.me/?text="+encodeURIComponent(text+" "+U("whatsapp"))],["Facebook","https://www.facebook.com/sharer/sharer.php?u="+E("facebook")],
+    ["Telegram","https://t.me/share/url?url="+E("telegram")+"&text="+t],["Email","mailto:?subject="+encodeURIComponent(f.title)+"&body="+encodeURIComponent(text+"\n\n"+U("email"))]];
   openModal(`<div class="dlg" role="dialog" aria-modal="true" aria-label="Share"><h2>Share this film</h2>
     <p class="vmeta" style="margin:0">${esc(f.title)}</p>
-    <div class="sharerow"><input class="shareinp" readonly value="${esc(url)}" aria-label="Link"><button class="btn" data-copylink="${esc(url)}">Copy link</button></div>
-    <div class="sharegrid">${links.map(([n,h])=>`<a class="sharebtn" href="${esc(h)}" target="_blank" rel="noopener">${n}</a>`).join("")}<button class="sharebtn" data-copylink="${esc(url)}" data-discord="1">Discord</button><button class="sharebtn" data-copylink="${esc(url)}" data-insta="1">Instagram</button></div>
+    <div class="sharerow"><input class="shareinp" readonly value="${esc(U("link"))}" aria-label="Link"><button class="btn" data-copylink="${esc(U("link"))}">Copy link</button></div>
+    <div class="sharegrid">${links.map(([n,h])=>`<a class="sharebtn" href="${esc(h)}" target="_blank" rel="noopener">${n}</a>`).join("")}<button class="sharebtn" data-copylink="${esc(U("discord"))}" data-discord="1">Discord</button><button class="sharebtn" data-copylink="${esc(U("instagram"))}" data-insta="1">Instagram</button></div>
     <div class="row"><button class="btn ghost" data-close>Close</button></div></div>`,
     async e=>{const c=e.target.closest("[data-copylink]");if(!c)return;
       // Instagram: everything must start during the tap itself, or the phone/browser blocks opening another app
@@ -3007,6 +3009,20 @@ async function postComment(parent,text){
   return false;
 }
 var gcatsOpen=false,umPeakOpen=false;
+// visitors who arrived through a link shared from Fanreelz (WhatsApp, Discord…) or posted by the Discord bot, per server
+let shrData={},guildNames={};
+const SHR={share:"Phone share menu",link:"Copied link",whatsapp:"WhatsApp",discord:"Discord (shared link)",telegram:"Telegram",facebook:"Facebook",x:"X",reddit:"Reddit",email:"Email",instagram:"Instagram"};
+function sharedHtml(){const r=umamiRange,D=shrData[r];
+  if(!D||(!D.loading&&Date.now()-D.at>60e3)){shrData[r]={loading:true,at:Date.now(),rows:D?.rows||[]};
+    modCall({action:"umami",range:r,metric:"events"}).then(async x=>{const rows=(x.rows||[]).filter(e=>/^via /.test(e.x));
+      const ids=[...new Set(rows.map(e=>(e.x.match(/^via discord:(\d+)/)||[])[1]).filter(id=>id&&!(id in guildNames)))];
+      if(ids.length){const g=await modCall({action:"guilds",ids}).catch(()=>({}));Object.assign(guildNames,g.names||{});ids.forEach(id=>{if(!(id in guildNames))guildNames[id]=null})}
+      shrData[r]={rows,at:Date.now()};if(state.view==="admin")render()}).catch(()=>{shrData[r]={rows:[],at:Date.now()}})}
+  const rows=(shrData[r]?.rows||[]).map(e=>{const m=e.x.match(/^via ([a-z0-9-]+)(?::(\d+))?$/)||[];const k=m[1]||"",id=m[2];
+    const label=k==="discord"&&id?"🤖 Discord bot · "+(guildNames[id]||"server "+id):k==="discord"?"🤖 Discord bot":SHR[k]||k;return {label,n:e.y}}).sort((a,b)=>b.n-a.n);
+  const max=Math.max(1,...rows.map(x=>x.n));
+  return `<div class="umbox" style="margin:14px 0"><h3>${icon("share")} Came through a shared link <small class="vmeta" style="font-weight:500">from 30 Oct · the Discord bot shows its server</small></h3>${
+    rows.length?rows.map(x=>`<div class="umrow"><span class="umbar" style="width:${x.n/max*100}%"></span><span class="umname">${esc(x.label)}</span><b>${x.n.toLocaleString("sv-SE")}</b></div>`).join(""):`<p class="vmeta">${shrData[r]?.loading?"Loading…":"Nobody yet. Links shared from Fanreelz from now on are counted here."}</p>`}</div>`}
 // "most online at once": every record as it was beaten, and the highest of each day
 function peakHtml(P){const fmt=t=>new Date(t).toLocaleString("sv-SE",{dateStyle:"medium",timeStyle:"short"});
   const rec=[...(P?.records||[])].reverse(),days=Object.entries(P?.hist||{}).sort().reverse();
@@ -3878,6 +3894,10 @@ setTimeout(()=>{try{if(!(window.FanreelzApp||/FanreelzApp\//.test(navigator.user
   const cc=(document.querySelector('meta[name="fr-cc"]')?.content||"").toUpperCase();
   if(!localStorage.getItem("fr_appinst")){localStorage.setItem("fr_appinst",d);add("app:install");if(/^[A-Z]{2}$/.test(cc))add("app:instc:"+cc);track("app-install")}
   if(localStorage.getItem("fr_appday")!==d){localStorage.setItem("fr_appday",d);add("app:day:"+d);track("app-open")}}catch(e){}},5000);
+/* Shared links: a link shared from Fanreelz (or posted by the Discord bot) carries ?via=…; tell Umami once, then tidy the address */
+try{const q=new URLSearchParams(window.__q0||location.search),via=(q.get("via")||"").toLowerCase().replace(/[^a-z0-9-]/g,"").slice(0,20);
+  if(via){const sv=(q.get("s")||"").replace(/[^0-9]/g,"").slice(0,22),name="via "+via+(sv?":"+sv:"");let n=0;
+    (function send(){if(window.umami?.track){window.umami.track(name);setTimeout(()=>{try{q.delete("via");q.delete("s");const qs=q.toString();history.replaceState(history.state,"",location.pathname+(qs?"?"+qs:"")+location.hash)}catch(e){}},1500);return}if(n++<20)setTimeout(send,700)})()}}catch(e){}
 /* Returning visitors: once a day each browser tells Umami whether it is new or has been here on an earlier day (admins are not counted) */
 setTimeout(()=>{try{if(isMod)return;const d=new Date().toLocaleDateString("sv-SE"),first=localStorage.getItem("fr_first"),last=localStorage.getItem("fr_lastday");
   if(last===d)return;localStorage.setItem("fr_lastday",d);if(!first)localStorage.setItem("fr_first",d);
