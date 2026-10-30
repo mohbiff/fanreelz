@@ -68,7 +68,7 @@ export default async (req) => {
   const topCc = (a) => Object.entries(a.cc).sort((p, q) => q[1] - p[1]).slice(0, 3).map(([c]) => c);
   const row = (a) => ({ q: a.q, n: a.n, zero: a.zero, w: a.w, pw: a.pw, cc: topCc(a), world: worldOf(a.q)?.name || null });
   // Keep adult/sexual search terms out of Wanted for regular users; admins can still review the full data.
-  const adultTerms = /\\b(?:strip(?:ping)?|sex(?:ual|ually)?|porn(?:ography)?|xxx|nude|nudity|naked|hentai|erotic|blow ?job|hand ?job|escort|fetish|bdsm|onlyfans|topless)\\b/i;
+  const adultTerms = /\b(?:strip(?:ping)?|sex(?:ual|ually)?|porn(?:ography)?|xxx|nude|nudity|naked|hentai|erotic|blow ?job|hand ?job|escort|fetish|bdsm|onlyfans|topless)\b/i;
   const isAdultQuery = (q) => adultTerms.test(String(q || ""));
 // wanted: fans searched, Fanreelz had little or nothing (at least half the searches found nothing)
   const wantedAll = all.filter((a) => a.zero > 0 && a.zero * 2 >= a.n).sort((a, b) => b.zero - a.zero || b.n - a.n).slice(0, 50).map(row);
