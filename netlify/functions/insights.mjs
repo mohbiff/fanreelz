@@ -23,11 +23,8 @@ async function savePlus(ids) {
   return r.ok;
 }
 
-// which world a search is about ("arthas" → Warcraft III), from the category names and their characters
 const WORLD = CATS.flatMap((c) => [c.name, ...(c.chars || [])].filter((k) => k && k.length >= 3).map((k) => [k.toLowerCase(), c]));
 const worldOf = (q) => WORLD.find(([k]) => q.includes(k) || (q.length >= 4 && k.includes(q)))?.[1] || null;
-
-// Normalize spelling/punctuation and group obvious typo variants so one topic does not appear many times.
 const cleanQ = (q) => String(q || "").normalize("NFKD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim().replace(/\s+/g, " ");
 const editDistance = (a, b) => {
   if (a === b) return 0;
@@ -49,6 +46,10 @@ const sameTopic = (a, b) => {
   return d <= Math.max(1, Math.floor(longest * 0.20));
 };
 
+// Explicit/sexual queries remain available to admins for moderation, but never leave the API in member-facing Insights.
+const adultTerms = /\b(?:strip(?:s|ped|per|pers|ping)?|sex(?:ual|ually|y)?|porn(?:o|ography)?|xxx|nude|nudes|nudity|naked|hentai|nsfw|erotic|erotica|blow ?job|hand ?job|escort|fetish|bdsm|onlyfans|topless|boobs|tits|pussy|vagina|penis|dick|cock|cum|orgasm|masturbat(?:e|es|ed|ing|ion)?)\b/i;
+const isAdultQuery = (q) => adultTerms.test(String(q || ""));
+
 export default async (req) => {
   if (req.method !== "POST") return json({ error: "POST only" }, 405);
   const body = await req.json().catch(() => ({}));
@@ -65,14 +66,12 @@ export default async (req) => {
     return json({ ids });
   }
   const plus = admin || (!!u?.id && (await plusIds()).includes(u.id));
-
   if (body.action?.startsWith("growth")) {
     if (!plus || !u?.id) return json({error:"Plus membership required"},403);
     return growthAction(body,u,admin,sb());
   }
-  // No aggregate data or counts leave the server for visitors without Plus.
   if (!plus) return json({plus:false,admin:false});
-  // the last 30 days of searches (one row each: words, country, device, whether anything was found)
+
   const { url, h } = sb(), since = new Date(Date.now() - 30 * 864e5).toISOString();
   const rows = [];
   for (let from = 0; from < 20000; from += 1000) {
@@ -94,7 +93,6 @@ export default async (req) => {
     if (x.cc) a.cc[x.cc] = (a.cc[x.cc] || 0) + 1;
   }
 
-  // Most common spelling wins; for equal counts prefer the fuller spelling ("harry styles" over "hary styls").
   const aliases = {}, merged = [];
   const variants = Object.values(rawAgg).sort((a, b) => b.n - a.n || b.q.length - a.q.length || a.q.localeCompare(b.q));
   for (const a of variants) {
@@ -104,27 +102,24 @@ export default async (req) => {
     m.n += a.n; m.zero += a.zero; m.w += a.w; m.pw += a.pw;
     for (const [c, n] of Object.entries(a.cc)) m.cc[c] = (m.cc[c] || 0) + n;
   }
-  const all = merged;
+  // Admin keeps the complete moderation view. Every non-admin list is built only from safe queries.
+  const all = admin ? merged : merged.filter((a) => !isAdultQuery(a.q));
   const topCc = (a) => Object.entries(a.cc).sort((p, q) => q[1] - p[1]).slice(0, 3).map(([c]) => c);
   const row = (a) => ({ q: a.q, n: a.n, zero: a.zero, w: a.w, pw: a.pw, cc: topCc(a), world: worldOf(a.q)?.name || null });
-  // Keep adult/sexual search terms out of Wanted for regular users; admins can still review the full data.
-  const adultTerms = /\b(?:strip(?:ping)?|sex(?:ual|ually)?|porn(?:ography)?|xxx|nude|nudity|naked|hentai|erotic|blow ?job|hand ?job|escort|fetish|bdsm|onlyfans|topless)\b/i;
-  const isAdultQuery = (q) => adultTerms.test(String(q || ""));
-  // wanted: fans searched, Fanreelz had little or nothing (at least half the searches found nothing)
-  const wantedAll = all.filter((a) => a.zero > 0 && a.zero * 2 >= a.n).sort((a, b) => b.zero - a.zero || b.n - a.n).slice(0, 50).map(row);
-  const wanted = admin ? wantedAll : wantedAll.filter((a) => !isAdultQuery(a.q));
-  // trending: more searches this week than the week before
+
+  const wanted = all.filter((a) => a.zero > 0 && a.zero * 2 >= a.n).sort((a, b) => b.zero - a.zero || b.n - a.n).slice(0, 50).map(row);
   const trending = all.filter((a) => a.w >= 2 && a.w > a.pw).sort((a, b) => (b.w - b.pw) - (a.w - a.pw) || b.w - a.w).slice(0, 30).map(row);
-  const top = all.sort((a, b) => b.n - a.n).slice(0, 30).map(row);
-  // per country: use the same canonical topic names, so typo variants are combined here too
+  const top = all.slice().sort((a, b) => b.n - a.n).slice(0, 30).map(row);
+
   const byCc = {};
   for (const x of rows) if (x.cc) {
     const raw = cleanQ(x.q); if (raw.length < 2) continue;
     const q = aliases[raw] || raw;
+    if (!admin && isAdultQuery(q)) continue;
     ((byCc[x.cc] ||= { cc: x.cc, n: 0, q: {} }).q[q] = (byCc[x.cc].q[q] || 0) + 1); byCc[x.cc].n++;
   }
   const countries = Object.values(byCc).sort((a, b) => b.n - a.n).slice(0, 12).map((c) => ({ cc: c.cc, n: c.n, top: Object.entries(c.q).sort((a, b) => b[1] - a[1]).slice(0, 6).map(([q, n]) => ({ q, n })) }));
-  // worlds: searches per game/series/anime, this week against last week
+
   const wd = {};
   for (const a of all) { const c = worldOf(a.q); if (!c) continue; const w = (wd[c.id] ||= { id: c.id, name: c.name, w: 0, pw: 0, n: 0 }); w.w += a.w; w.pw += a.pw; w.n += a.n; }
   const worlds = Object.values(wd).sort((a, b) => b.w - a.w || b.n - a.n).slice(0, 25);
