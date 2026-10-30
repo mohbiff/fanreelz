@@ -3911,7 +3911,7 @@ function openProfile(){
   const rated=Object.keys(myRatings).filter(id=>findFilm(id));
   openModal(`<div class="dlg" role="dialog" aria-modal="true" aria-label="Your profile"><div class="row"><img class="avatar" id="pAv" alt="" style="width:48px;height:48px"><h2 id="pName"></h2></div>
     <div class="vmeta">${rated.length} films rated · ${mySubs.length} submitted · signed in with ${sb?(acct.me.provider==="discord"?"Discord":acct.me.provider==="google"?"Google":"your account"):"your Claude account"}</div>
-    <div class="row"><button class="btn ghost" data-user="${esc(acct.uid)}">Your profile</button><button class="btn ghost" data-myratings>Your ratings</button>${sb?`<button class="btn ghost" data-switch>Switch account</button><button class="btn ghost" data-signout>Sign out</button>`:""}<button class="btn ghost" data-close>Close</button></div>
+    <div class="row"><button class="btn ghost" data-user="${esc(acct.uid)}">Your profile</button><button class="btn ghost" data-myratings>Your ratings</button>${sb?`<button class="btn ghost" data-switch>Switch account</button><button class="btn ghost" data-signout>Sign out</button><a class="btn ghost" href="/delete-account.html">Delete account or data</a>`:""}<button class="btn ghost" data-close>Close</button></div>
     ${sb?`<div class="switchbox" id="switchBox" hidden><b>Switch to another account</b><p class="vmeta" style="margin:4px 0 10px">You're signed out of this one and can pick any Google or Discord account.</p>
       <div class="row"><button class="btn" data-switchto="google">Google account</button><button class="btn" data-switchto="discord">Discord account</button></div></div>`:""}</div>`,
     e=>{if(e.target.closest("[data-signout]")){sbSignOut();return}
