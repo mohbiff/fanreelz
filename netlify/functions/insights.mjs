@@ -26,6 +26,28 @@ async function savePlus(ids) {
 const WORLD = CATS.flatMap((c) => [c.name, ...(c.chars || [])].filter((k) => k && k.length >= 3).map((k) => [k.toLowerCase(), c]));
 const worldOf = (q) => WORLD.find(([k]) => q.includes(k) || (q.length >= 4 && k.includes(q)))?.[1] || null;
 
+// Normalize spelling/punctuation and group obvious typo variants so one topic does not appear many times.
+const cleanQ = (q) => String(q || "").normalize("NFKD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim().replace(/\s+/g, " ");
+const editDistance = (a, b) => {
+  if (a === b) return 0;
+  if (!a.length) return b.length;
+  if (!b.length) return a.length;
+  let prev = Array.from({ length: b.length + 1 }, (_, i) => i);
+  for (let i = 1; i <= a.length; i++) {
+    const cur = [i];
+    for (let j = 1; j <= b.length; j++) cur[j] = Math.min(cur[j - 1] + 1, prev[j] + 1, prev[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+    prev = cur;
+  }
+  return prev[b.length];
+};
+const sameTopic = (a, b) => {
+  if (a === b) return true;
+  if (a.length < 4 || b.length < 4) return false;
+  if (a.split(" ").length !== b.split(" ").length) return false;
+  const longest = Math.max(a.length, b.length), d = editDistance(a, b);
+  return d <= Math.max(1, Math.floor(longest * 0.20));
+};
+
 export default async (req) => {
   if (req.method !== "POST") return json({ error: "POST only" }, 405);
   const body = await req.json().catch(() => ({}));
@@ -54,35 +76,50 @@ export default async (req) => {
     if (page.length < 1000) break;
   }
   const now = Date.now(), wk = 7 * 864e5;
-  const agg = {};
+  const rawAgg = {};
   for (const x of rows) {
-    const q = String(x.q || "").trim().toLowerCase();
+    const q = cleanQ(x.q);
     if (q.length < 2) continue;
-    const a = (agg[q] ||= { q, n: 0, zero: 0, w: 0, pw: 0, cc: {} });
+    const a = (rawAgg[q] ||= { q, n: 0, zero: 0, w: 0, pw: 0, cc: {} });
     const age = now - Date.parse(x.at);
     a.n++; if (x.zero) a.zero++;
     if (age < wk) a.w++; else if (age < 2 * wk) a.pw++;
     if (x.cc) a.cc[x.cc] = (a.cc[x.cc] || 0) + 1;
   }
-  const all = Object.values(agg);
+
+  // Most common spelling wins; for equal counts prefer the fuller spelling ("harry styles" over "hary styls").
+  const aliases = {}, merged = [];
+  const variants = Object.values(rawAgg).sort((a, b) => b.n - a.n || b.q.length - a.q.length || a.q.localeCompare(b.q));
+  for (const a of variants) {
+    let m = merged.find((x) => sameTopic(x.q, a.q));
+    if (!m) { m = { q: a.q, n: 0, zero: 0, w: 0, pw: 0, cc: {} }; merged.push(m); }
+    aliases[a.q] = m.q;
+    m.n += a.n; m.zero += a.zero; m.w += a.w; m.pw += a.pw;
+    for (const [c, n] of Object.entries(a.cc)) m.cc[c] = (m.cc[c] || 0) + n;
+  }
+  const all = merged;
   const topCc = (a) => Object.entries(a.cc).sort((p, q) => q[1] - p[1]).slice(0, 3).map(([c]) => c);
   const row = (a) => ({ q: a.q, n: a.n, zero: a.zero, w: a.w, pw: a.pw, cc: topCc(a), world: worldOf(a.q)?.name || null });
   // Keep adult/sexual search terms out of Wanted for regular users; admins can still review the full data.
   const adultTerms = /\b(?:strip(?:ping)?|sex(?:ual|ually)?|porn(?:ography)?|xxx|nude|nudity|naked|hentai|erotic|blow ?job|hand ?job|escort|fetish|bdsm|onlyfans|topless)\b/i;
   const isAdultQuery = (q) => adultTerms.test(String(q || ""));
-// wanted: fans searched, Fanreelz had little or nothing (at least half the searches found nothing)
+  // wanted: fans searched, Fanreelz had little or nothing (at least half the searches found nothing)
   const wantedAll = all.filter((a) => a.zero > 0 && a.zero * 2 >= a.n).sort((a, b) => b.zero - a.zero || b.n - a.n).slice(0, 50).map(row);
   const wanted = admin ? wantedAll : wantedAll.filter((a) => !isAdultQuery(a.q));
   // trending: more searches this week than the week before
   const trending = all.filter((a) => a.w >= 2 && a.w > a.pw).sort((a, b) => (b.w - b.pw) - (a.w - a.pw) || b.w - a.w).slice(0, 30).map(row);
   const top = all.sort((a, b) => b.n - a.n).slice(0, 30).map(row);
-  // per country: the most searched words
+  // per country: use the same canonical topic names, so typo variants are combined here too
   const byCc = {};
-  for (const x of rows) if (x.cc) { const q = String(x.q || "").trim().toLowerCase(); if (q.length < 2) continue; ((byCc[x.cc] ||= { cc: x.cc, n: 0, q: {} }).q[q] = (byCc[x.cc].q[q] || 0) + 1); byCc[x.cc].n++; }
+  for (const x of rows) if (x.cc) {
+    const raw = cleanQ(x.q); if (raw.length < 2) continue;
+    const q = aliases[raw] || raw;
+    ((byCc[x.cc] ||= { cc: x.cc, n: 0, q: {} }).q[q] = (byCc[x.cc].q[q] || 0) + 1); byCc[x.cc].n++;
+  }
   const countries = Object.values(byCc).sort((a, b) => b.n - a.n).slice(0, 12).map((c) => ({ cc: c.cc, n: c.n, top: Object.entries(c.q).sort((a, b) => b[1] - a[1]).slice(0, 6).map(([q, n]) => ({ q, n })) }));
   // worlds: searches per game/series/anime, this week against last week
   const wd = {};
-  for (const a of Object.values(agg)) { const c = worldOf(a.q); if (!c) continue; const w = (wd[c.id] ||= { id: c.id, name: c.name, w: 0, pw: 0, n: 0 }); w.w += a.w; w.pw += a.pw; w.n += a.n; }
+  for (const a of all) { const c = worldOf(a.q); if (!c) continue; const w = (wd[c.id] ||= { id: c.id, name: c.name, w: 0, pw: 0, n: 0 }); w.w += a.w; w.pw += a.pw; w.n += a.n; }
   const worlds = Object.values(wd).sort((a, b) => b.w - a.w || b.n - a.n).slice(0, 25);
   const total = rows.length;
   // a preview for everyone else: the first rows, the rest are counted but not shown
