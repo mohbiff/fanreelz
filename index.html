@@ -749,6 +749,19 @@ body.spfs .spback{display:flex}
 .plist li{display:flex;justify-content:space-between;gap:12px;padding:8px 10px;background:var(--chip);border-radius:8px;cursor:pointer}
 .plist li span:first-child{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 
+
+/* computers: the menu is hidden until the menu button opens it (as a drawer over the page), so videos get the whole width */
+@media (min-width:861px){
+  .shell,.shell.mini{grid-template-columns:minmax(0,1fr)}
+  .guide{display:none;position:fixed;left:0;top:0;bottom:0;width:260px;height:auto;padding-top:14px;background:var(--surface);z-index:120;box-shadow:4px 0 24px rgba(0,0,0,.35)}
+  .shell.open .guide{display:block;animation:menuin .2s ease-out}
+  .menuback{display:none}
+  .shell.open .menuback{display:block;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:119;animation:fadein .2s}
+  main{padding-left:max(24px,env(safe-area-inset-left,0px));padding-right:24px}
+  .watch{max-width:1900px;margin:0 auto}
+  @keyframes menuin{from{transform:translateX(-100%)}to{transform:none}}
+  @keyframes fadein{from{opacity:0}to{opacity:1}}
+}
 @media (max-width:1100px){.watch{grid-template-columns:minmax(0,1fr)}}
 @media (max-width:860px){
   .shell,.shell.mini{grid-template-columns:minmax(0,1fr)}
@@ -3475,7 +3488,7 @@ window.addEventListener("popstate",e=>{
    if(a&&a.matches?.("input:not([type=range]):not([type=checkbox]),textarea")&&phone()&&vh<screen.height*0.62){a.blur();ignorePop=true;history.forward();return}}
   if(document.body.classList.contains("appfs")){appFsOff(true);return}
   if(document.body.classList.contains("wfs")){closeWfs(true);return}
-  if($("#shell").classList.contains("open")&&phone()){closeMenu(true);return}
+  if($("#shell").classList.contains("open")){closeMenu(true);return}
   if(!$("#scrim").hidden){closeModal();return}
   const h=e.state;if(!h||!h.fr){Object.assign(state,{view:"home",feed:"home",cat:null,char:null,q:"",format:"all"},parsePath());render();return}Object.assign(state,h.fr);render();requestAnimationFrame(()=>window.scrollTo({top:h.y||0}))});
 
@@ -3571,7 +3584,7 @@ let tt;function toast(m){const t=$("#toast");t.textContent=m;t.hidden=false;clea
 /* events */
 document.addEventListener("click",async e=>{
   if(e.target.closest("#scrim"))return;
-  if(e.target.closest("#menuBtn")){const sh=$("#shell");if(phone()){sh.classList.contains("open")?closeMenu():openMenu()}else sh.classList.toggle("mini");return}
+  if(e.target.closest("#menuBtn")){const sh=$("#shell");sh.classList.contains("open")?closeMenu():openMenu();return}
   if(e.target.closest("#menuBack")){closeMenu();return}
   if(e.target.closest("#homeLogo")){go({view:"home",feed:"home",group:"All",cat:null,char:null,q:"",format:"all"});$("#q").value="";return}
   if(e.target.closest("#signinBtn")){openSignin();return}
@@ -3666,7 +3679,7 @@ document.addEventListener("click",async e=>{
     if(!needAccount("Sign in to rate films. Your ratings count toward the top lists everyone sees."))return;if(await saveRating(state.film,k)){render();toast(`You rated it ${k} out of 5`)}return}
   const o=e.target.closest("[data-open]");if(o){const f=findFilm(o.dataset.open);if(!f)return;if(f.format==="short"||f.vert){openShorts(f.id);return}if(f.format==="episode"||f.seriesId){watched[f.id]=true;store.set("fr_watched",watched)}go({view:"watch",film:f.id})}
 });
-document.addEventListener("keydown",e=>{if(e.key==="Escape")closeModal()});
+document.addEventListener("keydown",e=>{if(e.key==="Escape"){closeModal();if($("#shell").classList.contains("open"))closeMenu()}});
 document.addEventListener("submit",async e=>{
   if(e.target.id==="lcform"){e.preventDefault();const i=$("#lcinput");const v=i.value;i.value="";if(!(await sendLive(v)))i.value=v;i.focus();return}const fm=e.target.closest(".cmform");if(!fm)return;e.preventDefault();const btn=fm.querySelector('button[type="submit"]');btn.disabled=true;const ok=await postComment(fm.dataset.cparent,fm.querySelector("textarea").value);if(!ok&&document.body.contains(btn))btn.disabled=false});
 document.addEventListener("keydown",e=>{if(e.key==="Enter"&&(e.ctrlKey||e.metaKey)&&e.target.closest(".cmform")){e.preventDefault();e.target.closest(".cmform").requestSubmit()}});
