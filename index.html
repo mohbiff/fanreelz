@@ -781,6 +781,44 @@ body.spfs .spback{display:flex}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 /* standing phone: the film uses the whole width; the ±10 s strips are only for a phone on its side */
 @media (orientation:portrait){body.wfs .fpzone,.player.hasbar:fullscreen .fpzone,body.fsmode .fpzone{display:none}.player.hasbar:fullscreen iframe,body.wfs .player.hasbar iframe,body.fsmode .player.hasbar iframe{width:100%!important}}
+
+/* ===== YouTube-style layout ===== */
+@media (min-width:1300px){
+  body:not(.watchpage) .shell{grid-template-columns:240px minmax(0,1fr)}
+  body:not(.watchpage) .shell.mini{grid-template-columns:72px minmax(0,1fr)}
+  body:not(.watchpage) .guide{display:block;position:sticky;top:calc(56px + env(safe-area-inset-top,0px));height:calc(100vh - 56px - env(safe-area-inset-top,0px));width:auto;padding-top:4px;background:var(--bg);box-shadow:none;z-index:auto;animation:none}
+  body:not(.watchpage) .menuback{display:none!important}
+  body:not(.watchpage) main{padding-left:12px}
+}
+.homeshorts{margin:28px 0 32px}
+.shell.mini .guide hr~*:not(.youhead){display:none}.shell.mini .gi span{max-width:100%;text-align:center;padding:0 4px}.shell.mini .gi.youhead{flex-direction:column}
+.wbar{margin-top:2px;row-gap:12px}
+.wowner{display:flex;align-items:center;gap:20px;min-width:0}
+.wfollow{height:36px;padding:0 16px;border-radius:18px;border:0;background:var(--fg);color:var(--bg);font-weight:700;font-size:14px;flex:none}
+.wfollow.on{background:var(--chip);color:var(--fg)}
+.wbtns{display:flex;align-items:center;gap:8px;margin-left:auto}
+.wbtns .ratebox{height:36px}
+.wpill{height:36px;padding:0 16px;border-radius:18px;border:0;background:var(--chip);color:inherit;font-weight:600;font-size:14px;display:inline-flex;align-items:center;gap:6px;flex:none}
+.wpill:hover{background:var(--hover)}
+.wpill svg.i{width:20px;height:20px}
+.wdots{width:36px;padding:0;justify-content:center}
+.wdots svg.i{fill:currentColor}
+.wmore{position:relative}
+.wmenu{display:none;position:absolute;right:0;top:calc(100% + 6px);min-width:240px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:8px 0;box-shadow:0 8px 28px rgba(0,0,0,.35);z-index:20}
+.wmore.open .wmenu{display:block}
+.wmenu button,.wmenu a{display:flex;align-items:center;gap:14px;width:100%;height:40px;padding:0 16px;border:0;background:none;text-align:left;font-size:14px;color:inherit;text-decoration:none;white-space:nowrap}
+.wmenu button:hover,.wmenu a:hover{background:var(--hover)}
+.wmenu svg.i{width:20px;height:20px;flex:none}
+.upnext{gap:10px}
+.upchips{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px}
+.upchips::-webkit-scrollbar{display:none}
+.upchips button{flex:none;height:32px;padding:0 12px;border-radius:8px;border:0;background:var(--chip);color:inherit;font-weight:600;font-size:14px;white-space:nowrap}
+.upchips button:hover{background:var(--hover)}
+.upchips button.on{background:var(--fg);color:var(--bg)}
+.upnl{display:flex;flex-direction:column;gap:8px}
+.mini-v .vtitle{font-weight:600}
+@media (max-width:1100px){.wbtns{margin-left:0}}
+@media (max-width:600px){.wbtns{width:100%;flex-wrap:wrap}.wbtns .ratebox{width:100%;justify-content:center}.wmenu{left:0;right:auto}}
 </style>
 
 <div id="betabar" style="background:var(--accent);color:var(--ink-on-accent);text-align:center;font-weight:700;font-size:13px;padding:7px 16px">Beta: rate, vote and save AI fan films right away. Sign in during the beta to keep it all and get the ⭐ Early fan badge.</div>
@@ -1171,6 +1209,9 @@ function renderTabbar(){
 /* Phone menu: opens with a slide, closes by tapping outside, swiping it left, or the phone's back button */
 let menuPushed=false,ignorePop=false;
 const phone=()=>innerWidth<=860;
+/* wide screens: the side menu stays on the page (like YouTube's home); on the watch page it is a drawer */
+const wideGuide=()=>innerWidth>=1300&&!document.body.classList.contains("watchpage");
+let guideMini=false;try{guideMini=localStorage.getItem("fr_guidemini")==="1"}catch(e){}
 function openMenu(){const sh=$("#shell");if(sh.classList.contains("open"))return;sh.classList.add("open");
   try{history.pushState({...(history.state||{}),overlay:"menu"},"",location.href);menuPushed=true}catch(e){}}
 function closeMenu(fromBack){const sh=$("#shell");if(!sh.classList.contains("open")){return}sh.classList.remove("open");
@@ -1296,15 +1337,14 @@ function renderWatch(){
   $("#main").innerHTML=`${theater?`<div class="theater">${playerHtml}</div>`:""}<div class="watch"><div>
     ${theater?"":playerHtml}
     ${f.seriesId&&findSeries(f.seriesId)?`<button class="serieslink" data-series="${esc(f.seriesId)}">${esc(findSeries(f.seriesId)?.title||"Series")} · Season ${f.season}, Episode ${f.ep}</button>`:""}<h1 class="wtitle" ${f.format==="episode"?'style="margin-top:4px"':""}>${esc(f.title)}${f.real?'<span class="pill">Real</span>':""}${isVerified(f)?'<span class="pill">Verified original</span>':""}</h1>
-    <div class="wbar">${(f.real||f.yt||f.tt||f.ig||f.vm||f.dm)?`<div class="owner">${cav(byName(f),40)}<div><b>${esc(byName(f)||"YouTube creator")}</b><small>${esc(catName(f.cat))} · ${esc(f.char)}</small></div></div>`:`<button class="owner link" data-creator="${esc(f.byId||f.by)}">${cav(byName(f),40)}<div><b>${esc(byName(f)||"YouTube creator")}</b><small>${fmtN(followerCount(f.byId||f.by))} followers · ${esc(catName(f.cat))}</small></div></button>`}
-      <div class="ratebox" role="group" aria-label="Rate this film"><span>${mine?"Your rating":"Rate"}</span>${[1,2,3,4,5].map(k=>`<button data-rate="${k}" class="${k<=mine?"on":""}" aria-label="${k} stars">★</button>`).join("")}</div></div>
+    <div class="wbar"><div class="wowner">${(f.real||f.yt||f.tt||f.ig||f.vm||f.dm)?`<div class="owner">${cav(byName(f),40)}<div><b>${esc(byName(f)||"YouTube creator")}</b><small>${esc(catName(f.cat))} · ${esc(f.char)}</small></div></div>`:`<button class="owner link" data-creator="${esc(f.byId||f.by)}">${cav(byName(f),40)}<div><b>${esc(byName(f)||"YouTube creator")}</b><small>${fmtN(followerCount(f.byId||f.by))} followers · ${esc(catName(f.cat))}</small></div></button>`}${(f.real||f.yt||f.tt||f.ig||f.vm||f.dm)?"":`<button class="wfollow ${myFollows[f.byId||f.by]?"on":""}" data-follow="${esc(f.byId||f.by)}">${myFollows[f.byId||f.by]?"Following":"Follow"}</button>`}</div>
+      <div class="wbtns"><div class="ratebox" role="group" aria-label="Rate this film"><span>${mine?"Your rating":"Rate"}</span>${[1,2,3,4,5].map(k=>`<button data-rate="${k}" class="${k<=mine?"on":""}" aria-label="${k} stars">★</button>`).join("")}</div><button class="wpill" data-share="${esc(f.id)}">${icon("share")}Share</button><button class="wpill" data-save="${esc(f.id)}">${icon("save")}Save</button><div class="wmore"><button class="wpill wdots" data-wmore="" aria-label="More actions" aria-haspopup="menu"><svg class="i" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.3"/><circle cx="12" cy="12" r="1.3"/><circle cx="19" cy="12" r="1.3"/></svg></button><div class="wmenu" role="menu"><button data-later="${esc(f.id)}">${icon("clock")}${myLater.some(x=>x.id===f.id)?"Remove from Watch later":"Watch later"}</button>${f.real||f.yt||f.tt||f.ig||f.vm||f.dm?"":`<button data-tip="${esc(f.byId||f.by)}" data-tipfilm="${esc(f.id)}">${icon("heart")}Tip the creator</button>`}${f.url?`<a class="wmlink" href="${esc(f.url)}" target="_blank" rel="noopener">${icon("film")}Watch on ${esc(f.src)}</a>`:""}${isVerified(f)?"":`<button data-claimorig="${esc(f.id)}">${icon("shield")}Is this yours?</button>`}<button data-report="${esc(f.id)}">${icon("flag")}Report re-upload</button>${isMod&&f.yt?`<button data-adminhide="${esc(f.id)}">${icon("shield")}Hide from Fanreelz</button>`:""}</div></div></div></div>
     <div class="desc"><div class="top2">${[isMod?viewsOf(f).toLocaleString("en-US")+" views on Fanreelz":"",f.ytViews?f.ytViews.toLocaleString("en-US")+" views on YouTube":""].filter(Boolean).map(x=>x+" · ").join("")}${s.n?`★ ${s.avg.toFixed(1)} from ${s.n.toLocaleString("en-US")} ratings`:"No ratings yet"} · ${f.days==null?"":ago(f.days)+" · "}${esc(f.src)}${f.tool&&f.tool!=="Unknown"?" · made with "+esc(f.tool):""}</div>${datesLine(f)?`<div class="vmeta" style="margin-top:4px">${datesLine(f)}</div>`:""}
       <div class="dist">${[5,4,3,2,1].map(k=>`<span>${k}★</span><span class="bar"><i style="width:${max?s.c[k-1]/max*100:0}%"></i></span><span>${fmtN(s.c[k-1])}</span>`).join("")}</div>
       <div class="tags"><button data-cat="${f.cat}">${esc(catName(f.cat))}</button><button data-cat="${f.cat}" data-char-go="${esc(f.char)}">${esc(f.char)}</button><button data-cat="${f.cat}" data-lore-go="${loreOf(f)}">${loreOf(f)==="lore"?"Lore-accurate":"What if"}</button>${isKids(f)?'<button data-family-info="">Family-friendly</button>':""}</div>
       ${f.real||f.yt||f.tt||f.ig||f.vm||f.dm||f.byId?"":`<div class="howmade"><b>How it was made</b><div class="vmeta">Tool: ${esc(f.tool)} · Prompt shared by ${esc(byName(f)||"YouTube creator")}</div><div class="prompt" id="promptText">${esc(promptOf(f))}</div><div class="row"><button class="btn ghost" data-copyprompt="" style="padding:6px 12px">Copy prompt</button></div></div>`}
       <div class="vmeta" style="font-size:12px">The video plays at the source, so the creator gets the views.</div></div>${affRow(f)}
-    <div class="wactions">${f.real||f.yt||f.tt||f.ig||f.vm||f.dm?"":`<button data-tip="${esc(f.byId||f.by)}" data-tipfilm="${esc(f.id)}">${icon("heart")}Tip</button>`}<button data-save="${esc(f.id)}">${icon("save")}Save</button><button data-share="${esc(f.id)}">${icon("share")}Share</button><button data-later="${esc(f.id)}" class="${myLater.some(x=>x.id===f.id)?"on":""}">${icon("clock")}${myLater.some(x=>x.id===f.id)?"Saved":"Watch later"}</button>${isVerified(f)?"":`<button data-claimorig="${esc(f.id)}">${icon("shield")}Is this yours?</button>`}<button data-report="${esc(f.id)}">${icon("flag")}Report re-upload</button>${isMod&&f.yt?`<button data-adminhide="${esc(f.id)}">${icon("shield")}Hide from Fanreelz</button>`:""}</div>
-  </div><aside class="upnext"><h3>${f.seriesId&&findSeries(f.seriesId)?"Next episodes":"Up next"}</h3>${next.map(x=>`<button class="mini-v" data-open="${esc(x.id)}"><div class="thumb"><canvas data-f="${esc(x.id)}"></canvas><span class="len">${esc(x.len)}</span></div><div class="vtext"><h4 class="vtitle">${esc(x.title)}</h4><div class="vmeta">${esc(byName(x)||"YouTube creator")}</div><div class="vmeta">${metaLine(x)}</div></div></button>`).join("")}</aside></div>`;
+  </div><aside class="upnext">${upnextHtml(f,next)}</aside></div>`;
   $(".watch>div").insertAdjacentHTML("beforeend",commentsHtml(f));
   closeMini();
   if(f.yt){if(keepYt){const pl=$(".player");pl.innerHTML="";try{pl.moveBefore(keepYt,null)}catch(e){pl.appendChild(keepYt)}if(keepEnd)pl.appendChild(keepEnd);ytListen(keepYt)}else $(".player").innerHTML=ytFrame(f.yt).replace("&enablejsapi=1",ytCtrl()?"&enablejsapi=1":"&enablejsapi=1&controls=0&fs=0&disablekb=1");if(f.age)$(".player").insertAdjacentHTML("afterend",`<div class="ythelp"><b>18+</b>Age-restricted on YouTube, so it may only play there: <a href="${esc(f.url||"https://www.youtube.com/watch?v="+f.yt)}" target="_blank" rel="noopener">watch on YouTube ↗</a></div>`)}
@@ -1313,9 +1353,29 @@ function renderWatch(){
   // the control bar goes in right away (not a moment later), so a page refresh never shows the player without it for a frame
   if(f.yt){try{fpMount(f)}catch(e){setTimeout(()=>fpMount(f),0)}}
   // the Theater mode row is added in the same frame (a later timer let the page jump up for a moment on every refresh)
-  if(f.ig||f.vm||f.dm||f.tt||f.yt){const addPbar=()=>{const pl=$(".player");if(pl&&pl.querySelector("iframe")&&!$(".pbar"))pl.insertAdjacentHTML("afterend",`<div class="pbar"><button class="btn ghost" data-theater="" aria-pressed="${theater}"><svg class="i" viewBox="0 0 24 24">${theater?'<rect x="5" y="7" width="14" height="10" rx="1.5"/>':'<rect x="2" y="6" width="20" height="12" rx="1.5"/>'}</svg>${theater?"Default view":"Theater mode"}</button></div>`)};addPbar();if(!$(".pbar"))setTimeout(addPbar,0)}
+  if(f.ig||f.vm||f.dm||f.tt){const addPbar=()=>{const pl=$(".player");if(pl&&pl.querySelector("iframe")&&!$(".pbar"))pl.insertAdjacentHTML("afterend",`<div class="pbar"><button class="btn ghost" data-theater="" aria-pressed="${theater}"><svg class="i" viewBox="0 0 24 24">${theater?'<rect x="5" y="7" width="14" height="10" rx="1.5"/>':'<rect x="2" y="6" width="20" height="12" rx="1.5"/>'}</svg>${theater?"Default view":"Theater mode"}</button></div>`)};addPbar();if(!$(".pbar"))setTimeout(addPbar,0)}
   if(f.ig||f.vm||f.dm)$(".player").innerHTML=extFrame(f);
 }
+/* Up next column: chips on top (All · From the creator · the category), like YouTube */
+const miniV=x=>`<button class="mini-v" data-open="${esc(x.id)}"><div class="thumb"><canvas data-f="${esc(x.id)}"></canvas><span class="len">${esc(x.len)}</span></div><div class="vtext"><h4 class="vtitle">${esc(x.title)}</h4><div class="vmeta">${esc(byName(x)||"YouTube creator")}</div><div class="vmeta">${metaLine(x)}</div></div></button>`;
+function upnextHtml(f,next){
+  const ser=f.seriesId&&findSeries(f.seriesId);
+  const tabs=[[ser?"Next episodes":"All",next]];
+  const by=byName(f);
+  if(by){const l=allFilms().filter(x=>x.id!==f.id&&x.format!=="short"&&byName(x)===by).sort((a,b)=>(a.days??1e9)-(b.days??1e9)).slice(0,14);if(l.length)tabs.push(["From "+by,l])}
+  const cl=allFilms().filter(x=>x.id!==f.id&&x.format!=="short"&&x.cat===f.cat).sort((a,b)=>stats(b).bayes-stats(a).bayes).slice(0,14);if(cl.length)tabs.push([catName(f.cat),cl]);
+  const nl=allFilms().filter(x=>x.id!==f.id&&x.format!=="short"&&x.days!=null).sort((a,b)=>a.days-b.days).slice(0,14);if(nl.length)tabs.push(["Recently added",nl]);
+  return `<div class="upchips" role="tablist">${tabs.map(([l],i)=>`<button role="tab" class="${i?"":"on"}" data-upn="${i}">${esc(l)}</button>`).join("")}</div>`+
+    tabs.map(([,l],i)=>`<div class="upnl" data-upnl="${i}"${i?" hidden":""}>${l.map(miniV).join("")}</div>`).join("");
+}
+document.addEventListener("click",e=>{
+  const u=e.target.closest("[data-upn]");
+  if(u){const k=u.dataset.upn,a=u.closest(".upnext");a.querySelectorAll("[data-upn]").forEach(b=>b.classList.toggle("on",b===u));a.querySelectorAll("[data-upnl]").forEach(p=>p.hidden=p.dataset.upnl!==k);return}
+  const m=e.target.closest("[data-wmore]");
+  document.querySelectorAll(".wmore.open").forEach(x=>{if(!m||x!==m.parentElement)x.classList.remove("open")});
+  if(m)m.parentElement.classList.toggle("open");
+});
+document.addEventListener("keydown",e=>{if(e.key==="Escape")document.querySelectorAll(".wmore.open").forEach(x=>x.classList.remove("open"))});
 function renderBrowse(){
   const T=trendingByGroup(),gsel=state.bgroup;
   const chips=["All",...GROUPS.map(g=>g.name)].map(g=>`<button class="chip ${gsel===g?"on":""}" data-browse="${esc(g)}">${esc(g)}</button>`).join("");
@@ -2650,6 +2710,23 @@ function forYouHtml(){
   if(rest.length)html+=`<h2 class="sect-h">${icon("film")} More for you</h2>`+moreGrid("grid",rest,f=>card(f));
   return html;
 }
+/* Home page like YouTube's: one grid of films (for you, trending, then newest), a Shorts row after the first two rows, then the grid goes on */
+function homeCols(){const m=$("#main");if(!m||innerWidth<=860)return 1;const cs=getComputedStyle(m);
+  const w=m.clientWidth-parseFloat(cs.paddingLeft)-parseFloat(cs.paddingRight);return Math.max(1,Math.floor((w+16)/316))}
+function homeFeedHtml(films,shorts,series){
+  const seen=new Set(),order=[],push=f=>{if(f&&!seen.has(f.id)){seen.add(f.id);order.push(f)}};
+  if(interests().n>=2)forYouList("film").filter(f=>f.format!=="short").slice(0,4).forEach(push);
+  [...films].sort((a,b)=>filmTrend(b)-filmTrend(a)).slice(0,6).forEach(push);
+  [...films].sort((a,b)=>(langTier(b)-langTier(a))||((a.days??1e9)-(b.days??1e9))).forEach(push);
+  const n=homeCols()*2;let h=order.length?`<div class="grid">${order.slice(0,n).map(f=>card(f)).join("")}</div>`:"";
+  if(shorts.length){const sl=[...shorts].sort((a,b)=>filmTrend(b)-filmTrend(a));
+    h+=`<section class="shelf homeshorts"><h2>${icon("short")} Shorts<button class="seeall" data-fmt="short">See all</button></h2><div class="shortrow">${sl.slice(0,12).map(shortCard).join("")}</div></section>`}
+  if(order.length>n)h+=moreGrid("grid",order.slice(n,n+homeCols()*2),f=>card(f));
+  if(series.length)h+=`<section class="shelf homeshorts"><h2>${icon("series")} Series<button class="seeall" data-fmt="series">See all</button></h2><div class="shelfrow">${series.slice(0,8).map(seriesCard).join("")}</div></section>`;
+  if(order.length>n+homeCols()*2)h+=moreGrid("grid",order.slice(n+homeCols()*2),f=>card(f));
+  if(!order.length&&!shorts.length&&!series.length)h+=`<div class="empty">Nothing here yet. Submit the first one.</div>`;
+  return h+`<p class="note">The films are real AI fan films from YouTube, TikTok and Vimeo, picked by Fanreelz. Premieres and some Community pages still show examples.</p>`;
+}
 function renderHomeF(){
   const c=CATS.find(x=>x.id===state.cat);
   const chips=c?[`<button class="chip ${!state.char?"on":""}" data-char="">All</button>`,...c.chars.map(ch=>`<button class="chip ${state.char===ch?"on":""}" data-char="${esc(ch)}">${esc(ch)}</button>`)]
@@ -2657,6 +2734,7 @@ function renderHomeF(){
   // optional sort chosen by the viewer: most viewed on YouTube, newest, top rated
   const srt=l=>state.sort==="views"?[...l].sort((a,b)=>(b.ytViews||0)-(a.ytViews||0)):state.sort==="new"?[...l].sort((a,b)=>(a.days??1e9)-(b.days??1e9)):state.sort==="top"?[...l].sort((a,b)=>stats(b).bayes-stats(a).bayes):l;
   const base=srt(feedList()),films=base.filter(f=>f.format!=="short"),shorts=base.filter(f=>f.format==="short"),series=seriesList();
+  const plainHome=!c&&!state.q&&state.feed==="home"&&state.format==="all"&&state.group==="All"&&!state.sort;
   let html=(!c&&!state.q&&state.feed==="home"&&state.format==="all"&&state.group==="All"?`<p class="hometag">All the best AI fan films in one place, sorted by game, anime, book and series. <button class="hometag-l" data-view="about">Learn more →</button></p>`:"")+`<div class="chips">${chips.join("")}</div>`;
   if(state.family)html+=`<div class="familybar">${icon("shield")} Family-friendly mode is on. Only films suited for younger viewers are shown.<button data-family="">Turn off</button></div>`;
   if(!c&&!state.q&&state.group===FOR_YOU){$("#main").innerHTML=html+forYouHtml();return}
@@ -2668,8 +2746,8 @@ function renderHomeF(){
   if(state.feed==="top"&&!c)html+=`<h2 class="sect-h">${icon("top")} Top rated</h2>`;
   if(state.feed==="new"&&!c)html+=`<h2 class="sect-h">${icon("fresh")} Newest</h2>`;
   if(state.feed==="mine"&&!c)html+=`<h2 class="sect-h">${icon("mine")} Your ratings</h2>`;
-  html+=fmtTabs(films.length+shorts.length,films.length,shorts.length,series.length);
-  if(state.format!=="series")html+=`<div class="lorebar sortbar" role="group" aria-label="Sort" style="flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none">${[["","Recommended"],["views","Most viewed"],["new","Newest"],["top","Top rated"]].map(([k,l])=>`<button style="flex-shrink:0" class="${(state.sort||"")===k?"on":""}" data-sort="${k}">${l}</button>`).join("")}</div>`;
+  if(!plainHome)html+=fmtTabs(films.length+shorts.length,films.length,shorts.length,series.length);
+  if(state.format!=="series"&&!plainHome)html+=`<div class="lorebar sortbar" role="group" aria-label="Sort" style="flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none">${[["","Recommended"],["views","Most viewed"],["new","Newest"],["top","Top rated"]].map(([k,l])=>`<button style="flex-shrink:0" class="${(state.sort||"")===k?"on":""}" data-sort="${k}">${l}</button>`).join("")}</div>`;
   const sub=c&&state.format!=="short"&&state.format!=="series"?`<div class="lorebar">${[["all","All films"],["lore","Lore-accurate"],["whatif","What if"]].map(([k,l])=>`<button class="${state.lore===k?"on":""}" data-lore="${k}">${l}</button>`).join("")}</div>`:"";
   const empty=`<div class="empty">${state.feed==="mine"?(acct.online?"You haven't rated anything here yet.":"Sign in to see what you've rated."):c&&!state.q?`<b style="display:block;color:var(--fg);font-size:17px;margin-bottom:6px">No ${esc(c.name)} films yet</b>Fanreelz searches YouTube every hour and adds new AI fan films here automatically.<br>Know a good one? <button class="btn" data-submitcat="" style="margin-top:14px">Submit a film</button>`:"Nothing here yet. Submit the first one."}</div>`;
   if(state.format==="film"){
@@ -2684,6 +2762,7 @@ function renderHomeF(){
     html+=sub;
     const shelves=state.feed==="home"&&!state.q&&!state.sort;
     let rest=films;
+    if(plainHome){$("#main").innerHTML=html+homeFeedHtml(films,shorts,series);return}
     if(shelves&&!c&&state.group==="All"&&interests().n>=2){const fy=forYouList("film").slice(0,8);
       if(fy.length>=3)html+=`<section class="shelf"><h2>✨ For you<button class="seeall" data-group="${FOR_YOU}">See all</button></h2><div class="shelfrow">${fy.map(f=>card(f)).join("")}</div></section>`}
     if(shelves&&films.length>=6){
@@ -3041,6 +3120,7 @@ function fpMount(f){const pl=$(".player");if(!pl||pl.querySelector(".fpbar"))ret
     <button class="fpb${fp.cc?" on":""}" data-fpcc="" aria-label="Subtitles">${FPI.cc}</button>
     <button class="fpb" data-share="${esc(f.id)}" aria-label="Share this film">${FPI.share}<span class="lbl">Share</span></button>
     <button class="fpb${later?" on":""}" data-later="${esc(f.id)}" aria-label="Watch later">${FPI.later}<span class="lbl">${later?"Saved":"Watch later"}</span></button>
+    <button class="fpb" data-theater="" aria-pressed="${theater}" aria-label="${theater?"Default view":"Theater mode"}" title="${theater?"Default view":"Theater mode"}"><svg viewBox="0 0 24 24">${theater?'<rect x="5" y="7" width="14" height="10" rx="1.5"/>':'<rect x="2" y="6" width="20" height="12" rx="1.5"/>'}</svg></button>
     <button class="fpb" data-ytfs="" aria-label="Full screen"></button></div></div><div class="fpzone l" data-fpzone="-10" role="button" aria-label="Back 10 seconds"><b></b><i>↺</i>10 s</div><div class="fpzone r" data-fpzone="10" role="button" aria-label="Forward 10 seconds"><b></b><i>↻</i>10 s</div>`);
   fpPaint();
   // keep the see-through layer exactly over the picture (the control bar's height changes in full screen)
@@ -3402,6 +3482,8 @@ function render(){
   else if(state.view==="shorts"&&phone()&&!document.body.classList.contains("spfs"))document.body.classList.add("spfs");
   renderHard=false;stopPreview();if(state.view!=="shorts"){const b=$("#spPre");if(b&&b.firstChild)b.innerHTML=""}for(const k in MORE)delete MORE[k];statMemo=new Map();trendMemo=new Map();try{renderInner()}finally{statMemo=null;trendMemo=null}}
 function renderInner(){
+  document.body.classList.toggle("watchpage",state.view==="watch"||state.view==="liveplay");
+  $("#shell").classList.toggle("mini",guideMini&&!document.body.classList.contains("watchpage")&&innerWidth>=1300);
   const drafts={};let focusKey=null;
   if(lastFilm===state.film&&state.view==="watch"){document.querySelectorAll(".cmform").forEach(fm=>{const v=fm.querySelector("textarea").value;if(v)drafts[fm.dataset.cparent]=v});focusKey=document.activeElement?.closest?.(".cmform")?.dataset.cparent??null}
   lastFilm=state.view==="watch"?state.film:null;
@@ -3584,6 +3666,7 @@ let tt;function toast(m){const t=$("#toast");t.textContent=m;t.hidden=false;clea
 /* events */
 document.addEventListener("click",async e=>{
   if(e.target.closest("#scrim"))return;
+  if(e.target.closest("#menuBtn")&&wideGuide()){guideMini=!guideMini;try{localStorage.setItem("fr_guidemini",guideMini?"1":"0")}catch(x){}render();return}
   if(e.target.closest("#menuBtn")){const sh=$("#shell");sh.classList.contains("open")?closeMenu():openMenu();return}
   if(e.target.closest("#menuBack")){closeMenu();return}
   if(e.target.closest("#homeLogo")){go({view:"home",feed:"home",group:"All",cat:null,char:null,q:"",format:"all"});$("#q").value="";return}
