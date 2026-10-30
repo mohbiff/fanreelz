@@ -13,7 +13,7 @@ import peak from "../netlify/functions/peak.mjs";
 import thumb from "../netlify/functions/thumb.mjs";
 import ytViews from "../netlify/functions/yt-views.mjs";
 import affiliates from "../netlify/functions/affiliates.mjs";
-import discordDaily from "../netlify/functions/discord-daily.mjs";
+import discordDaily, { runFollows } from "../netlify/functions/discord-daily.mjs";
 import { withSeo, sitemap } from "./seo.mjs";
 
 const ROUTES = {
@@ -30,7 +30,7 @@ const ROUTES = {
 };
 // Schedules (see wrangler.jsonc): the Discord "AI video of the day" at 16:00 UTC, the importer every 10 minutes (it searches YouTube about once an hour), the showdown judge every hour at :41,
 // and every minute a look at how many are online (for the "most online at once" record)
-const CRONS = { "*/10 * * * *": importYoutube, "41 * * * *": showdown, "* * * * *": peak, "0 16 * * *": discordDaily };
+const CRONS = { "*/10 * * * *": importYoutube, "41 * * * *": showdown, "* * * * *": (req) => (new Date().getUTCMinutes() % 10 === 5 ? Promise.all([peak(req), runFollows()]).then(([a]) => a) : peak(req)), "0 16 * * *": discordDaily };
 
 // Digital Asset Links: proves that the Android app (Google Play) and fanreelz.com belong together, so the app shows no browser bar.
 // The first fingerprint is the upload key; add Google Play's "App signing key" SHA-256 from Play Console → Test and release → App integrity,

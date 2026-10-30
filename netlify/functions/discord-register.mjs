@@ -16,6 +16,9 @@ const COMMANDS = [
   { name: "today", description: "Today's AI video of the day", options: [topic[0], topic[1], ...creators], ...everywhere },
   { name: "daily", description: "Post a popular AI video in this channel every day", default_member_permissions: "32", integration_types: [0], contexts: [0],
     options: [topic[0], { ...cat("Another world: each day one of them is picked at random"), name: "category2" }, { ...cat("A third world, also picked at random"), name: "category3" }, topic[1], ...creators, { type: 3, name: "mode", description: "Turn it on (default) or off in this channel", required: false, choices: [{ name: "on", value: "on" }, { name: "off", value: "off" }] }] },
+  { name: "follow", description: "Post every new video from chosen creators in this channel", default_member_permissions: "32", integration_types: [0], contexts: [0],
+    options: [...creators, { type: 3, name: "words", description: "Only videos whose title has one of these words, e.g. warcraft, roblox", required: false, max_length: 120 },
+      { type: 3, name: "mode", description: "Turn it on (default), off, or list what this channel follows", required: false, choices: [{ name: "on", value: "on" }, { name: "off", value: "off" }, { name: "list", value: "list" }] }] },
   { name: "fanreelz", description: "What the Fanreelz bot can do", ...everywhere },
 ];
 
@@ -26,6 +29,6 @@ export default async () => {
     method: "PUT", headers: { Authorization: "Bot " + token, "Content-Type": "application/json" }, body: JSON.stringify(COMMANDS),
   });
   const text = await r.text();
-  return new Response(r.ok ? `Done: ${COMMANDS.length} commands registered (/top, /random, /search, /showdown, /today, /daily, /fanreelz). They can take a minute to show up in Discord.` : `Discord said ${r.status}: ${text.slice(0, 400)}`, { status: r.ok ? 200 : 500, headers: { "Content-Type": "text/plain; charset=utf-8" } });
+  return new Response(r.ok ? `Done: ${COMMANDS.length} commands registered (/top, /random, /search, /showdown, /today, /daily, /follow, /fanreelz). They can take a minute to show up in Discord.` : `Discord said ${r.status}: ${text.slice(0, 400)}`, { status: r.ok ? 200 : 500, headers: { "Content-Type": "text/plain; charset=utf-8" } });
 };
 export const config = { path: "/api/discord-register" };

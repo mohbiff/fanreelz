@@ -2,7 +2,7 @@
 // so no always-on server is needed. Commands: /top, /random, /search, /showdown, /today, /daily, /fanreelz.
 // Needs in Netlify: DISCORD_PUBLIC_KEY (from the Discord app's General Information page), SUPABASE_URL, SUPABASE_ANON_KEY.
 import CATS from "./lib/catmap.mjs";
-import { loadState, saveState, todaysPick, dailyMessage, postTo, cleanChar, topicName, tagLinks, findCreators } from "./discord-daily.mjs";
+import { loadState, saveState, todaysPick, dailyMessage, postTo, cleanChar, topicName, tagLinks, findCreators, followName } from "./discord-daily.mjs";
 
 const SITE = "https://fanreelz.com";
 const COLOR = 0xffd23f;
@@ -93,6 +93,24 @@ async function today(i) {
   await saveState(s);
   return reply(dailyMessage(f, t));
 }
+// /follow: a server admin gets every new video from one or more creators posted here, optionally only with certain words
+async function follow(i) {
+  if (!i.guild_id) return reply({ content: "Use /follow in a server channel.", flags: 64 });
+  const perms = BigInt(i.member?.permissions || "0");
+  if (!(perms & 0x20n) && !(perms & 0x8n)) return reply({ content: "Only people who can manage this server can choose what the bot posts.", flags: 64 });
+  const s = await loadState(), id = i.guild_id + ":" + i.channel_id;
+  if (opt(i, "mode") === "off") {
+    const had = !!s.follows[id]; delete s.follows[id]; await saveState(s);
+    return reply({ content: had ? "New videos are no longer posted in this channel." : "Nothing was being followed in this channel.", flags: 64 });
+  }
+  if (opt(i, "mode") === "list") return reply({ content: s.follows[id] ? `This channel follows: **${followName(s.follows[id])}**` : "This channel doesn't follow any creators. Try `/follow creator:<name>`.", flags: 64 });
+  const t = await topicOf(i); if (t.error) return reply({ content: t.error, flags: 64 });
+  if (!t.creators) return reply({ content: "Pick at least one creator: start typing in `creator` and choose a name from the list.", flags: 64 });
+  const words = String(opt(i, "words") || "").split(",").map((w) => cleanChar(w).toLowerCase()).filter(Boolean).slice(0, 10);
+  s.follows[id] = { channel: i.channel_id, creators: t.creators, words: words.join("|"), at: new Date().toISOString() };
+  await saveState(s);
+  return reply({ content: `✅ This channel now gets every new video from **${followName(s.follows[id])}** as soon as it is on Fanreelz (checked every 10 minutes). \`/follow mode:off\` stops it.` });
+}
 // /daily: a server admin turns the daily post on in this channel (with an optional world and/or character), or off
 async function daily(i) {
   if (!i.guild_id) return reply({ content: "Use /daily in a server channel. In private messages, try /today.", flags: 64 });
@@ -121,6 +139,7 @@ const help = () => reply({ embeds: [{ color: COLOR, title: "Fanreelz bot", url: 
   "`/showdown` who would win? The hottest Character Showdown",
   "`/today [category] [character] [creator]` today's AI video of the day",
   "`/daily [category] [category2] [category3] [character]` (server admins) post a popular AI video in this channel every day, from one world or a random one of up to three; `mode:off` stops it",
+  "`/follow creator:<name> [creator2] [creator3] [words]` (server admins) post every NEW video from these creators here, e.g. `words:warcraft, roblox` for only those; `mode:off` stops it, `mode:list` shows it",
   "`/daily creator:<name>` only videos from one YouTube creator; add `creator2`/`creator3` (or names separated by commas) to mix several creators",
 ].join("\n") }] });
 
@@ -164,6 +183,7 @@ async function handle(req) {
       case "showdown": return await showdown();
       case "today": return await today(i);
       case "daily": return await daily(i);
+      case "follow": return await follow(i);
       default: return help();
     }
   } catch (e) {

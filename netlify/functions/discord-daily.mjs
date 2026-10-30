@@ -25,7 +25,7 @@ export async function loadState() {
   const r = await fetch(env("SUPABASE_URL") + `/rest/v1/import_state?key=eq.${KEY}&select=value`, { headers: head() });
   if (!r.ok) throw new Error("db " + r.status);
   const v = ((await r.json())[0] || {}).value || {};
-  return { channels: v.channels || {}, sent: v.sent && !Array.isArray(v.sent) ? v.sent : {}, today: v.today?.picks ? v.today : null };
+  return { channels: v.channels || {}, sent: v.sent && !Array.isArray(v.sent) ? v.sent : {}, today: v.today?.picks ? v.today : null, follows: v.follows || {} };
 }
 export async function saveState(s) {
   const r = await fetch(env("SUPABASE_URL") + "/rest/v1/import_state", { method: "POST", headers: { ...head(), Prefer: "resolution=merge-duplicates" }, body: JSON.stringify([{ key: KEY, value: s }]) });
@@ -71,7 +71,7 @@ export async function todaysPick(s, topic = {}) {
 // a card whose title, picture and button all open the film on Fanreelz (not YouTube), so people watch and rate it there
 export const filmLink = (f) => `${SITE}/${f.format === "short" ? "shorts" : "film"}/${encodeURIComponent(f.id)}`;
 export const dailyMessage = (f, topic = {}) => ({
-  content: `🎬 **AI video of the day**${topic.cat || topic.char ? ` · ${topicName(topic)}` : ""}`,
+  content: topic.label || `🎬 **AI video of the day**${topic.cat || topic.char || topic.creators ? ` · ${topicName(topic)}` : ""}`,
   embeds: [{
     color: 0xffd23f, title: f.title.slice(0, 250), url: filmLink(f),
     description: [f.channel ? `by ${f.channel}` : "", f.views ? `${fmt(f.views)} views` : "", f.cat ? catName(f.cat) : ""].filter(Boolean).join(" · ") + `\n\n▶️ **[Watch and rate it on Fanreelz](${filmLink(f)})**`,
@@ -118,4 +118,36 @@ export async function findCreators(text, limit = 25) {
   const seen = new Map();
   for (const x of await r.json()) if (x.channel && !seen.has(x.channel)) seen.set(x.channel, 1);
   return [...seen.keys()].slice(0, limit);
+}
+
+// /follow: a channel gets each NEW video from chosen creators as soon as Fanreelz has it, optionally only when the title
+// has one of the chosen words ("warcraft, roblox"). Checked every 10 minutes; keys are "server:channel".
+export const followName = (f) => `${f.creators.split("|").join(" + ")}${f.words ? ` · only with "${f.words.split("|").join('", "')}"` : ""}`;
+export async function runFollows() {
+  const s = await loadState(), ids = Object.keys(s.follows);
+  if (!ids.length) return new Response("no follows");
+  const now = new Date().toISOString();
+  // everything Fanreelz added since the oldest check, from all followed creators at once
+  const since = ids.map((k) => s.follows[k].last || s.follows[k].at).sort()[0];
+  const who = [...new Set(ids.flatMap((k) => s.follows[k].creators.split("|")))];
+  const q = `catalog?select=id,title,views,video_id,channel,cat,char,duration,format,added_at,published_at&hidden=eq.false&age_restricted=eq.false&added_at=gt.${encodeURIComponent(since)}` +
+    "&channel=in.(" + who.map((x) => encodeURIComponent('"' + x.replace(/"/g, "") + '"')).join(",") + ")&order=added_at.asc&limit=100";
+  const r = await fetch(env("SUPABASE_URL") + "/rest/v1/" + q, { headers: head() });
+  if (!r.ok) return new Response("db " + r.status);
+  // only videos that are new on YouTube too (not an old video Fanreelz found late)
+  const rows = (await r.json()).filter((f) => !f.published_at || Date.now() - Date.parse(f.published_at) < 4 * 864e5);
+  let sent = 0;
+  for (const k of ids) {
+    const fo = s.follows[k], from = fo.last || fo.at, names = fo.creators.split("|").map((x) => x.toLowerCase()), words = (fo.words || "").split("|").filter(Boolean).map((w) => w.toLowerCase());
+    const mine = rows.filter((f) => f.added_at > from && names.includes(String(f.channel).toLowerCase()) && (!words.length || words.some((w) => (f.title + " " + (f.char || "") + " " + catName(f.cat)).toLowerCase().includes(w)))).slice(0, 5);
+    for (const f of mine) {
+      if (sent >= 25) break; // Cloudflare allows a limited number of calls per run; the rest go out next time
+      const res = await postTo(fo.channel, f, { label: `🆕 **New video from ${f.channel}**` }, k.split(":")[0]);
+      if (res.ok) { sent++; fo.last = f.added_at; }
+      else if ([403, 404].includes(res.status)) { delete s.follows[k]; break; }
+    }
+    if (s.follows[k] && !mine.length) fo.last = now;
+  }
+  await saveState(s);
+  return new Response(`follows: posted ${sent}`);
 }
