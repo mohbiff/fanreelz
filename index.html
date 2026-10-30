@@ -593,6 +593,10 @@ body.spfs .tabbar{background:#000;border-top-color:rgba(255,255,255,.12)}body.sp
 .spback{display:none;position:absolute;top:calc(8px + env(safe-area-inset-top,0px));left:8px;z-index:7;width:44px;height:44px;border:0;border-radius:50%;background:rgba(0,0,0,.35);color:#fff;cursor:pointer;align-items:center;justify-content:center;padding:0}
 .spback svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
 body.spfs .spback{display:flex}
+.sppeek{position:fixed;z-index:60;overflow:hidden;background:#000;pointer-events:none;will-change:transform}
+.sppeek img{width:100%;height:100%;object-fit:cover;display:block}
+.sppeek span{position:absolute;left:14px;right:70px;bottom:120px;color:#fff;font-weight:700;font-size:15px;text-shadow:0 1px 4px #000}
+.shorts-view .sp{will-change:transform}
 .spcatch{position:absolute;inset:120px 0 110px 0;z-index:3;cursor:pointer;touch-action:none;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none}
 /* YouTube shows the short's own title in its player, so ours would sit on top of it */
 /* with a player: our title sits at the bottom left (YouTube's own is at the top) and comes and goes with the side icons */
@@ -2869,7 +2873,7 @@ function renderShorts(){
   // the short's own picture covers YouTube's loading screen and its big play/pause button until the video really plays
   if(f.yt&&(!keepFrame||fromPre)){const sp=$(".sp");if(sp&&!sp.querySelector(".spposter")){const fr=sp.querySelector("iframe");
     const im=`<img class="spposter" alt="" src="https://i.ytimg.com/vi/${esc(f.yt)}/oardefault.jpg" onerror="this.onerror=null;this.src='https://i.ytimg.com/vi/${esc(f.yt)}/hqdefault.jpg'">`;
-    if(fr)fr.insertAdjacentHTML("afterend",im);setTimeout(spPosterOff,5000)}}
+    if(fr)fr.insertAdjacentHTML("afterend",im);setTimeout(spPosterOff,9000)}}
     spPreload(nx);setTimeout(()=>spShowCtl(spPaused),0);[300,1200,2500].forEach(t=>setTimeout(spApplyMute,t));{const sp=$(".sp");if(sp){
     if(sp.querySelector("iframe"))sp.insertAdjacentHTML("beforeend",'<div class="spcatch" aria-hidden="true"></div><div class="spicon" aria-hidden="true"></div>');
     if(f.yt&&sp.querySelector("iframe"))sp.insertAdjacentHTML("beforeend",'<div class="spbar"><input class="spseek" type="range" min="0" max="1000" step="1" value="0" aria-label="Seek"><span class="sptime">0:00 / 0:00</span></div>');
@@ -2917,10 +2921,10 @@ document.addEventListener("click",e=>{
     state.shortList=[...L.slice(0,state.shortI+1),id,...L.slice(state.shortI+1).filter(x=>x!==id)];stepShort(1)}});
 // random order, but weighted: shorts in the visitor's language come up far more often, other languages rarely
 function shuffledShorts(skip){return allFilms().filter(x=>x.format==="short"&&!skip.includes(x.id)).map(x=>({id:x.id,k:Math.pow(Math.random(),1/langMult(x))})).sort((a,b)=>b.k-a.k).map(x=>x.id)}
-function stepShort(d){
+function stepShort(d,noAnim){
   let list=state.shortList||[];const i=Math.max(0,state.shortI+d);
   if(i>=list.length){const more=shuffledShorts(list.slice(-4));if(!more.length)return;list=state.shortList=[...list,...more]}
-  if(i!==state.shortI){spSlide=d;spSheet="";state.shortI=i;render();try{history.replaceState({fr:navSnap(),y:0},"",pathFor(state))}catch(e){}}
+  if(i!==state.shortI){spSlide=noAnim?0:d;spSheet="";state.shortI=i;render();try{history.replaceState({fr:navSnap(),y:0},"",pathFor(state))}catch(e){}}
 }
 let wheelLock=0;
 addEventListener("wheel",e=>{if(state.view!=="shorts"||!e.target.closest(".shorts-view")||e.target.closest(".sside"))return;e.preventDefault();const t=Date.now();if(t-wheelLock<450)return;wheelLock=t;stepShort(e.deltaY>0?1:-1)},{passive:false});
@@ -3098,15 +3102,32 @@ document.addEventListener("click",e=>{
   if(e.target.closest(".spicon")){e.preventDefault();e.stopPropagation();spToggle();return}
   if(e.target.closest(".spcatch")){e.preventDefault();e.stopPropagation();const ic=document.querySelector(".spicon");
     const sp=document.querySelector(".sp");if(!spPaused&&sp&&!sp.classList.contains("uihide")&&ic?.classList.contains("ctl")){clearTimeout(spCtlT);spHideUi()}else spShowCtl()}},true);
-document.addEventListener("touchstart",e=>{if(e.target.closest(".spcatch"))spTouchY=e.touches[0].clientY},{passive:true});
+/* Swiping between shorts follows the finger, like TikTok: the short moves with it and the next (or previous) one's
+   picture slides in behind it. Let go past a fifth of the screen, or with a quick flick, and it finishes the move;
+   the new short then starts under the same picture, so there is no jump or black gap. */
+let spSw=null;
+const spPosterUrl=f=>f&&f.yt?`https://i.ytimg.com/vi/${f.yt}/oardefault.jpg`:"";
+function spPeek(dir){const sp=document.querySelector(".sp");if(!sp)return null;const L=state.shortList||[],f=findFilm(L[state.shortI+dir]);
+  const r=sp.getBoundingClientRect(),el=document.createElement("div");el.className="sppeek";
+  Object.assign(el.style,{left:r.left+"px",top:(r.top+(dir>0?r.height:-r.height))+"px",width:r.width+"px",height:r.height+"px",borderRadius:getComputedStyle(sp).borderRadius});
+  if(f){const u=spPosterUrl(f);el.innerHTML=(u?`<img alt="" src="${u}" onerror="this.onerror=null;this.src='https://i.ytimg.com/vi/${esc(f.yt)}/hqdefault.jpg'">`:"")+`<span>${esc(f.title)}</span>`}
+  document.body.appendChild(el);return {el,h:r.height,f}}
+document.addEventListener("touchstart",e=>{if(e.target.closest(".spcatch")){spTouchY=e.touches[0].clientY;spSw={t:Date.now(),y:spTouchY,peek:null,dir:0}}},{passive:true});
 document.addEventListener("touchmove",e=>{if(spTouchY==null)return;const sp=document.querySelector(".sp");
-  if(md.el||(state.shortI===0&&phone()&&e.touches[0].clientY-spTouchY>14)){if(!md.el&&sp)mdStart(sp);mdMove(e.touches[0].clientY,e.touches[0].clientY-spTouchY);return}
-  if(sp){sp.style.transition="none";sp.style.transform=`translateY(${Math.max(-140,Math.min(140,(e.touches[0].clientY-spTouchY)*.6))}px)`}},{passive:true});
-document.addEventListener("touchend",e=>{if(spTouchY==null)return;if(md.el){spTouchY=null;mdEnd();return}const dy=spTouchY-e.changedTouches[0].clientY;spTouchY=null;const sp=document.querySelector(".sp");
-  if(Math.abs(dy)>50){if(sp){sp.style.transition="";sp.style.transform=""}
-    // down on the short you opened (nothing before it): minimize and go back, like a film; otherwise the previous short
-    if(dy<0&&state.shortI===0&&phone()){minimize();return}
-    stepShort(dy>0?1:-1)}else if(sp){sp.style.transition="transform .2s";sp.style.transform=""}},{passive:true});
+  if(md.el||(state.shortI===0&&phone()&&e.touches[0].clientY-spTouchY>14)){if(spSw?.peek){spSw.peek.el.remove();spSw.peek=null}if(!md.el&&sp)mdStart(sp);mdMove(e.touches[0].clientY,e.touches[0].clientY-spTouchY);return}
+  if(!sp||!spSw)return;let dy=e.touches[0].clientY-spTouchY;const dir=dy<0?1:-1;
+  if(dir===-1&&state.shortI===0)dy=dy*.3; // nothing above the first short: just a little give
+  else if(!spSw.peek||spSw.dir!==dir){spSw.peek?.el.remove();spSw.peek=spPeek(dir);spSw.dir=dir}
+  sp.style.transition="none";sp.style.transform=`translateY(${dy}px)`;if(spSw.peek){spSw.peek.el.style.transition="none";spSw.peek.el.style.transform=`translateY(${dy}px)`}},{passive:true});
+document.addEventListener("touchend",e=>{if(spTouchY==null)return;if(md.el){spTouchY=null;spSw=null;mdEnd();return}
+  const y=e.changedTouches[0].clientY,dy=spTouchY-y;spTouchY=null;const sp=document.querySelector(".sp"),sw=spSw;spSw=null;
+  const v=sw?Math.abs(dy)/Math.max(1,Date.now()-sw.t):0,h=sw?.peek?.h||sp?.getBoundingClientRect().height||600;
+  const go=sw?.peek&&(Math.abs(dy)>h*.18||(v>.45&&Math.abs(dy)>45));
+  if(!go){if(sp){sp.style.transition="transform .22s ease-out";sp.style.transform=""}if(sw?.peek){const el=sw.peek.el;el.style.transition="transform .22s ease-out";el.style.transform="";setTimeout(()=>el.remove(),240)}
+    if(Math.abs(dy)>50&&dy<0&&state.shortI===0&&phone())minimize();return}
+  const d=dy>0?1:-1,el=sw.peek.el,ms=Math.round(Math.max(120,Math.min(240,(h-Math.abs(dy))/Math.max(v,1.2))));
+  const ease=`transform ${ms}ms cubic-bezier(.2,.7,.3,1)`;sp.style.transition=ease;sp.style.transform=`translateY(${d>0?-h:h}px)`;el.style.transition=ease;el.style.transform=`translateY(${d>0?-h:h}px)`;
+  setTimeout(()=>{stepShort(d,true);setTimeout(()=>el.remove(),160)},ms)},{passive:true});
 /* how much of the screen the keyboard covers, so the full-screen comment box stays visible while typing */
 if(window.visualViewport){const kb=()=>{const v=visualViewport,h=Math.max(0,Math.round(innerHeight-v.height-v.offsetTop));document.documentElement.style.setProperty("--kb",(h>80?h:0)+"px");
     if(h>80&&document.body.classList.contains("spfs")){const a=document.activeElement;if(a?.closest?.(".spsheet"))setTimeout(()=>a.scrollIntoView({block:"nearest"}),50)}};
@@ -3451,7 +3472,7 @@ addEventListener("message",e=>{
   if(playing&&fr.closest(".player")&&!document.querySelector(".endnext.early"))hideEnd();
   if(fr.closest(".player"))fpInfo(d);
   if(fr.closest(".sp")){const ps=d.event==="onStateChange"?d.info:d.event==="infoDelivery"&&d.info?d.info.playerState:undefined;if(typeof ps==="number")spState=ps;
-    if(ps===1||(d.event==="infoDelivery"&&d.info&&+d.info.currentTime>0.15))spPosterOff()}
+    if(d.event==="infoDelivery"&&d.info&&+d.info.currentTime>0.25&&spState===1)spPosterOff()}
   if(fr.closest(".sp")&&d.event==="infoDelivery"&&d.info){if(typeof d.info.duration==="number"&&d.info.duration>0)spDur=d.info.duration;if(typeof d.info.currentTime==="number")spCur=d.info.currentTime;spPaintBar()}
   if(!ended)return;
   if(fr.closest(".sp")){if(state.view==="shorts"&&!spPaused)stepShort(1);return}
