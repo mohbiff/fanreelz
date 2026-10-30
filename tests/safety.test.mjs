@@ -14,7 +14,7 @@ globalThis.fetch=async (url,options={})=>{
   if(table==='docs')return Response.json([{owner:bob,data:{items:[{id:'c1',film:'yt-abc',text:'Stored comment'}]}}]);
   if(table==='catalog')return Response.json([{id:'yt-abc',title:'Stored title'}]);
   assert.equal(table,'import_state');
-  if(options.method==='POST'){const {key,value}=JSON.parse(options.body);records.set(key,value);return new Response(null,{status:204})}
+  if(options.method==='POST'){const {key,value}=JSON.parse(options.body);records.set(key,value);return new Response(null,{status:201})}
   const filter=p.get('key');
   const matches=[...records].filter(([key])=>!filter||(filter.startsWith('eq.')?key===filter.slice(3):key.startsWith(filter.slice(5,-1))));
   if(options.method==='DELETE'){for(const [key]of matches)records.delete(key);return new Response(null,{status:204})}

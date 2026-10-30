@@ -11,7 +11,7 @@ export async function handleSafety(req, user, admin, db) {
   const call = async (path, options={}) => {
     const r=await fetch(db.url+path,{...options,headers:{...db.headers,...options.headers}});
     if(!r.ok) throw Error('Safety storage unavailable');
-    return r.status===204 ? null : r.json();
+    const text=await r.text();return text?JSON.parse(text):null;
   };
   const read = async key => (await call('import_state?key=eq.'+encodeURIComponent(key)+'&select=key,value'))[0]?.value;
   const save = (key,value) => call('import_state',{method:'POST',headers:{Prefer:'resolution=merge-duplicates,return=minimal'},body:JSON.stringify({key,value})});
