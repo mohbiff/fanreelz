@@ -2874,7 +2874,7 @@ function renderShorts(){setTimeout(()=>{if(!spSw)document.querySelectorAll(".spp
   if(!keepFrame||fromPre){spPaused=false;spState=null;spDur=0;spCur=0}if(fromPre){spWake();setTimeout(spWake,400)}
   // the short's own picture covers YouTube's loading screen and its big play/pause button until the video really plays
   if(f.yt&&(!keepFrame||fromPre)){const sp=$(".sp");if(sp&&!sp.querySelector(".spposter")){const fr=sp.querySelector("iframe");
-    const im=`<img class="spposter" alt="" src="https://i.ytimg.com/vi/${esc(f.yt)}/oardefault.jpg" onerror="this.onerror=null;this.src='https://i.ytimg.com/vi/${esc(f.yt)}/hqdefault.jpg'">`;
+    const im=`<img class="spposter" alt="" src="${esc(spPosterUrl(f))}" onerror="this.onerror=null;this.src='https://i.ytimg.com/vi/${esc(f.yt)}/hqdefault.jpg'">`;
     if(fr)fr.insertAdjacentHTML("afterend",im);setTimeout(spPosterOff,9000)}}
     spPreload(nx);setTimeout(()=>spShowCtl(spPaused),0);[300,1200,2500].forEach(t=>setTimeout(spApplyMute,t));{const sp=$(".sp");if(sp){
     if(sp.querySelector("iframe"))sp.insertAdjacentHTML("beforeend",'<div class="spcatch" aria-hidden="true"></div><div class="spicon" aria-hidden="true"></div>');
@@ -3108,7 +3108,13 @@ document.addEventListener("click",e=>{
    picture slides in behind it. Let go past a fifth of the screen, or with a quick flick, and it finishes the move;
    the new short then starts under the same picture, so there is no jump or black gap. */
 let spSw=null;
-const spPosterUrl=f=>f&&f.yt?`https://i.ytimg.com/vi/${f.yt}/oardefault.jpg`:"";
+const spPosterOk={};
+const spPosterUrl=f=>{if(!f)return "";if(spPosterOk[f.id])return spPosterOk[f.id];if(f.yt)return `https://i.ytimg.com/vi/${f.yt}/oardefault.jpg`;
+  const xp=extOf(f);return xp?"/api/thumb?p="+xp.p+"&id="+encodeURIComponent(f[xp.p])+(f.ttUser?"&u="+encodeURIComponent(f.ttUser):""):""};
+// load the pictures of the shorts above and below ahead of time, so a swipe shows them at once instead of black
+function spWarmPosters(){const L=state.shortList||[];[1,-1,2].forEach(d=>{const f=findFilm(L[state.shortI+d]);if(!f||spPosterOk[f.id])return;
+  const u=spPosterUrl(f);if(!u)return;const im=new Image();im.onload=()=>{if(f.yt&&im.naturalWidth<=120){spPosterOk[f.id]=`https://i.ytimg.com/vi/${f.yt}/hqdefault.jpg`;new Image().src=spPosterOk[f.id]}else spPosterOk[f.id]=u};
+  im.onerror=()=>{if(f.yt){spPosterOk[f.id]=`https://i.ytimg.com/vi/${f.yt}/hqdefault.jpg`;new Image().src=spPosterOk[f.id]}};im.src=u})}
 function spPeek(dir){const sp=document.querySelector(".sp");if(!sp)return null;const L=state.shortList||[],f=findFilm(L[state.shortI+dir]);
   const r=sp.getBoundingClientRect(),el=document.createElement("div");el.className="sppeek";
   Object.assign(el.style,{left:r.left+"px",top:(r.top+(dir>0?r.height:-r.height))+"px",width:r.width+"px",height:r.height+"px",borderRadius:getComputedStyle(sp).borderRadius,clipPath:dir>0?`inset(0 0 ${r.height}px 0)`:`inset(${r.height}px 0 0 0)`});
@@ -3144,7 +3150,7 @@ if(window.visualViewport){const kb=()=>{const v=visualViewport,h=Math.max(0,Math
     if(h>80&&document.body.classList.contains("spfs")){const a=document.activeElement;if(a?.closest?.(".spsheet"))setTimeout(()=>a.scrollIntoView({block:"nearest"}),50)}};
   visualViewport.addEventListener("resize",kb);visualViewport.addEventListener("scroll",kb)}
 /* Load the next short's YouTube player off-screen (paused) while this one plays, so swiping to it is instant */
-function spPreload(nx){const box=$("#spPre");if(!box)return;
+function spPreload(nx){try{spWarmPosters()}catch(e){}const box=$("#spPre");if(!box)return;
   if(!document.body.moveBefore||!nx||!nx.yt||state.view!=="shorts"){box.innerHTML="";return}
   const id="yt-"+nx.yt;[...box.querySelectorAll("iframe")].forEach(i=>{if(i.dataset.fid!==id)i.remove()});
   if(!box.querySelector("iframe"))setTimeout(()=>{if(state.view!=="shorts"||box.querySelector("iframe"))return;
