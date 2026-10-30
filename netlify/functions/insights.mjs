@@ -85,7 +85,7 @@ export default async (req) => {
   const cut = (l, k) => (plus ? l : l.slice(0, k));
   return json({
     plus, total, at: new Date().toISOString(),
-    wanted: cut(wanted, 3), trending: cut(trending, 3), top: cut(top, 3), countries: plus ? countries : [], worlds: cut(worlds, 3),
+    wanted: cut(wanted, 3), trending: cut(trending, 3), top: admin ? top : [], countries: plus ? countries : [], admin, worlds: cut(worlds, 3),
     hidden: plus ? null : { wanted: Math.max(0, wanted.length - 3), trending: Math.max(0, trending.length - 3), top: Math.max(0, top.length - 3), countries: countries.length, worlds: Math.max(0, worlds.length - 3) },
   });
 };
