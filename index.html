@@ -1265,7 +1265,7 @@ function renderGuide(){renderTabbar();
   const fi=(k,label,ic)=>`<button class="gi ${state.view==="home"&&!state.cat&&state.feed===k&&(k!=="home"||state.format==="all")?"on":""}" data-feed="${k}">${icon(ic)}<span>${label}</span></button>`;
   const fnav=(k,label)=>`<button class="gi ${(state.view==="home"&&!state.cat&&state.feed==="home"&&state.format===k)||(k==="short"&&state.view==="shorts")||(k==="series"&&state.view==="series")?"on":""}" data-fmtnav="${k}">${icon(k)}<span>${label}</span></button>`;
   const T=trendingByGroup();
-  $("#guide").innerHTML=fi("home","Home","home")+fnav("short","Shorts")+fnav("series","Series")+`<button class="gi ${state.view==="home"&&!state.cat&&state.format==="film"&&state.dur==="o20"?"on":""}" data-longnav="">${icon("film")}<span>Full-length films</span></button>`+fi("top","Top rated","top")+fi("new","New","fresh")+
+  $("#guide").innerHTML=fi("home","Home","home")+fnav("short","Shorts")+fnav("series","Series")+`<button class="gi ${state.view==="home"&&!state.cat&&state.format==="film"&&state.dur==="o20"?"on":""}" data-longnav="">${icon("film")}<span>Films</span></button>`+fi("top","Top rated","top")+fi("new","New","fresh")+
     `<button class="gi ${state.view==="browse"?"on":""}" data-browse="All">${icon("list")}<span>Browse all</span></button><hr>`+
     `<button class="gi youhead ${state.view==="you"?"on":""}" data-view="you"><span>You</span><svg class="i" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></button>`+
     [["channel","Creator page","user"],["history","History","clock"],["playlists","Playlists","list"],["later","Watch later","clock"],["liked","Liked videos","like"],["yourvideos","Your videos","film"]]
@@ -2670,7 +2670,9 @@ function seriesList(){
   let l=allSeries().filter(s=>(!state.cat||s.cat===state.cat)&&(!state.char||s.char===state.char)&&(state.cat||state.group==="All"||groupOf(s.cat)?.name===state.group)&&
     (!q||[s.title,s.char,catName(s.cat),seriesBy(s),...s.episodes.map(e=>e.title)].join(" ").toLowerCase().includes(q)));
   if(state.feed==="mine"&&!state.cat)l=l.filter(s=>s.episodes.some(e=>myRatings[e.id]));
-  const k=state.feed==="new"?s=>seriesDays(s):s=>-seriesStats(s).bayes;
+  // the viewer's sort (Most viewed = all episodes' YouTube views together, Newest = latest episode, Top rated), else the feed's
+  const yv=s=>s.episodes.reduce((a,e)=>a+(findFilm(e.id)?.ytViews||0),0);
+  const k=state.sort==="views"?s=>-yv(s):state.sort==="new"||state.feed==="new"?s=>seriesDays(s)??1e9:s=>-seriesStats(s).bayes;
   return l.sort((a,b)=>k(a)-k(b));
 }
 const DUR=[["any","Any length"],["u5","Under 5 min"],["5to20","5–20 min"],["o20","Full-length (20+ min)"]];
@@ -2785,7 +2787,7 @@ function renderHomeF(){
   if(state.feed==="new"&&!c)html+=`<h2 class="sect-h">${icon("fresh")} Newest</h2>`;
   if(state.feed==="mine"&&!c)html+=`<h2 class="sect-h">${icon("mine")} Your ratings</h2>`;
   if(!plainHome)html+=fmtTabs(films.length+shorts.length,films.length,shorts.length,series.length);
-  if(state.format!=="series"&&!plainHome)html+=`<div class="lorebar sortbar" role="group" aria-label="Sort" style="flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none">${[["","Recommended"],["views","Most viewed"],["new","Newest"],["top","Top rated"]].map(([k,l])=>`<button style="flex-shrink:0" class="${(state.sort||"")===k?"on":""}" data-sort="${k}">${l}</button>`).join("")}</div>`;
+  if(!plainHome||state.format==="series")html+=`<div class="lorebar sortbar" role="group" aria-label="Sort" style="flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none">${[["","Recommended"],["views","Most viewed"],["new","Newest"],["top","Top rated"]].map(([k,l])=>`<button style="flex-shrink:0" class="${(state.sort||"")===k?"on":""}" data-sort="${k}">${l}</button>`).join("")}</div>`;
   const sub=c&&state.format!=="short"&&state.format!=="series"?`<div class="lorebar">${[["all","All films"],["lore","Lore-accurate"],["whatif","What if"]].map(([k,l])=>`<button class="${state.lore===k?"on":""}" data-lore="${k}">${l}</button>`).join("")}</div>`:"";
   const empty=`<div class="empty">${state.feed==="mine"?(acct.online?"You haven't rated anything here yet.":"Sign in to see what you've rated."):c&&!state.q?`<b style="display:block;color:var(--fg);font-size:17px;margin-bottom:6px">No ${esc(c.name)} films yet</b>Fanreelz searches YouTube every hour and adds new AI fan films here automatically.<br>Know a good one? <button class="btn" data-submitcat="" style="margin-top:14px">Submit a film</button>`:"Nothing here yet. Submit the first one."}</div>`;
   if(state.format==="film"){
