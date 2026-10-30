@@ -1,0 +1,50 @@
+name: Filter explicit Creator Insights terms
+
+on:
+  push:
+    paths:
+      - '.github/workflows/filter-insights-explicit.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Hide explicit search terms from non-admin Insights
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('index.html')
+          s=p.read_text()
+          old='''  const lock=n=>n>0?`<div class="inslock">${icon("shield")} <span><b>+${n} more</b> for Plus members</span></div>`:"";
+  const list=(rows,fn,max)=>{const m=Math.max(1,...rows.map(max));return rows.map(r=>`<div class="umrow" ${go2(r.q)}><span class="umbar" style="width:${D.admin?max(r)/m*100:0}%"></span><span class="umname">${esc(r.q)}${r.world?` <small class="vmeta">· ${esc(r.world)}</small>`:""}</span><b>${D.admin?fn(r):""}</b></div>`).join("")};'''
+          new='''  const lock=n=>n>0?`<div class="inslock">${icon("shield")} <span><b>+${n} more</b> for Plus members</span></div>`:"";
+  // Keep explicit/sexual search phrases out of member-facing Creator Insights. Admin retains moderation visibility.
+  const insightSafe=q=>{if(D.admin)return true;const t=String(q||"").toLowerCase().normalize("NFKD").replace(/[^a-z0-9 ]/g," ").replace(/\\s+/g," ").trim();return !/(^| )(strip|strips|stripped|stripper|strippers|stripping|nude|nudes|naked|porn|porno|pornography|xxx|sex|sexual|sexy|hentai|nsfw|fetish|erotic|erotica|boobs|tits|pussy|vagina|penis|dick|cock|blowjob|handjob|cum|orgasm|masturbat|onlyfans)( |$)/.test(t)};
+  const safeRows=rows=>(rows||[]).filter(r=>insightSafe(r.q));
+  const list=(rows,fn,max)=>{rows=safeRows(rows);const m=Math.max(1,...rows.map(max));return rows.map(r=>`<div class="umrow" ${go2(r.q)}><span class="umbar" style="width:${D.admin?max(r)/m*100:0}%"></span><span class="umname">${esc(r.q)}${r.world?` <small class="vmeta">· ${esc(r.world)}</small>`:""}</span><b>${D.admin?fn(r):""}</b></div>`).join("")};'''
+          if old not in s:
+              raise SystemExit('renderInsights list anchor not found; no changes made')
+          s=s.replace(old,new,1)
+          old2='''${c.top.map(x=>`<div class="umrow" ${go2(x.q)}><span class="umname">${esc(x.q)}</span><b>${D.admin?x.n:""}</b></div>`).join("")}'''
+          new2='''${safeRows(c.top).map(x=>`<div class="umrow" ${go2(x.q)}><span class="umname">${esc(x.q)}</span><b>${D.admin?x.n:""}</b></div>`).join("")}'''
+          if old2 not in s:
+              raise SystemExit('country Insights anchor not found; no changes made')
+          s=s.replace(old2,new2,1)
+          p.write_text(s)
+          PY
+      - name: Commit patch
+        run: |
+          if git diff --quiet -- index.html; then
+            echo 'No patch needed'
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html
+          git commit -m 'Hide explicit terms from user Creator Insights'
+          git push
