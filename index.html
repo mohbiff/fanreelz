@@ -3121,11 +3121,15 @@ document.addEventListener("touchmove",e=>{if(spTouchY==null)return;const sp=docu
   sp.style.transition="none";sp.style.transform=`translateY(${dy}px)`;if(spSw.peek){const pk=spSw.peek,a=Math.min(pk.h,Math.abs(dy));pk.el.style.transition="none";pk.el.style.transform=`translateY(${dy}px)`;
     // only the part that has moved into the short's own area shows, never over the header or the tab bar
     pk.el.style.clipPath=dir>0?`inset(0 0 ${pk.h-a}px 0)`:`inset(${pk.h-a}px 0 0 0)`}},{passive:true});
+/* safety net: whenever no finger is on the screen and no swipe is finishing, there is never a sliding picture or a moved short */
+let spEndAt=0;
+setInterval(()=>{if(spTouchY!=null||spSw||Date.now()-spEndAt<700)return;document.querySelectorAll(".sppeek").forEach(x=>x.remove());
+  const sp=document.querySelector(".shorts-view .sp");if(sp&&sp.style.transform&&!md.el){sp.style.transition="transform .2s";sp.style.transform=""}},500);
 /* a swipe the browser cancels (or anything else that leaves a picture behind) never leaves it on screen */
 function spPeekClear(){document.querySelectorAll(".sppeek").forEach(x=>x.remove());spSw=null}
 document.addEventListener("touchcancel",()=>{if(spTouchY==null&&!spSw)return;spTouchY=null;const sp=document.querySelector(".sp");if(sp){sp.style.transition="transform .2s";sp.style.transform=""}spPeekClear();if(md.el)mdEnd()},{passive:true});
 document.addEventListener("touchend",e=>{if(spTouchY==null)return;if(md.el){spTouchY=null;spPeekClear();mdEnd();return}
-  const y=e.changedTouches[0].clientY,dy=spTouchY-y;spTouchY=null;const sp=document.querySelector(".sp"),sw=spSw;spSw=null;
+  spEndAt=Date.now();const y=e.changedTouches[0].clientY,dy=spTouchY-y;spTouchY=null;const sp=document.querySelector(".sp"),sw=spSw;spSw=null;
   const v=sw?Math.abs(dy)/Math.max(1,Date.now()-sw.t):0,h=sw?.peek?.h||sp?.getBoundingClientRect().height||600;
   const go=sw?.peek&&(Math.abs(dy)>h*.18||(v>.45&&Math.abs(dy)>45));
   if(!go){if(sp){sp.style.transition="transform .22s ease-out";sp.style.transform=""}if(sw?.peek){const el=sw.peek.el;el.style.transition="transform .22s ease-out, clip-path .22s ease-out";el.style.transform="";el.style.clipPath=sw.peek&&sw.dir>0?`inset(0 0 ${h}px 0)`:`inset(${h}px 0 0 0)`;setTimeout(()=>el.remove(),240)}
