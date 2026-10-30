@@ -2629,13 +2629,25 @@ function userSeries(){
 }
 /* Real AI series, found automatically: films from the same channel whose titles carry "Episode 3", "Part 2", "S1E4", "Chapter 5"…
    are grouped into a series with seasons and episodes, all playable on Fanreelz. */
+// other languages too: الحلقة 3 / الجزء 2 (Arabic), episodio/capítulo/parte, épisode, Folge/Teil, Bölüm, серия/часть, 第3話, 3화, भाग 2
+const EP_RES_INTL=[[/(?:^|[\s|:\-–—(\[#])(?:ال)?(?:حلقة|حلقه|الحلقة|الحلقه)\s*(?:رقم\s*)?#?\s*(\d{1,3})(?!\d)/,1],[/(?:^|[\s|:\-–—(\[#])(?:ال)?(?:جزء|الجزء)\s*#?\s*(\d{1,3})(?!\d)/,1],
+  [/\b(?:episodio|episódio|épisode|capítulo|capitulo|chapitre|folge|bölüm|bolum|odcinek|aflevering|avsnitt|afsnit|jakso)\s*#?\s*(\d{1,3})\b/i,1],[/\b(?:parte|partie|teil|kısım|część|del)\s*#?\s*(\d{1,3})\b/i,1],
+  [/(?:серия|эпизод|часть)\s*#?\s*(\d{1,3})(?!\d)/i,1],[/第\s*(\d{1,3})\s*[話话集回部]/,1],[/(?:제\s*)?(\d{1,3})\s*(?:화|부|편)(?![가-힯])/,1],[/(?:भाग|एपिसोड|एपिसोड)\s*#?\s*(\d{1,3})(?!\d)/,1],
+  [/(?:^|\s)(\d{1,3})\s*(?:bölüm|серия)/i,1]];
 const EP_RES=[[/\bS(\d{1,2})\s*[|:.\-]?\s*E(\d{1,3})\b/i,2],[/\bseason\s*(\d{1,2})\b[^|]{0,30}?\b(?:episode|ep\.?)\s*#?\s*(\d{1,3})\b/i,2],[/\b(?:episode|ep\.?|eps)\s*#?\s*(\d{1,3})\b/i,1],[/\b(?:part|pt\.|chapter|chap\.)\s*#?\s*(\d{1,3})\b/i,1]];
-const GENERIC_SEG=/^(ai|a\.i\.|ai (short )?film|ai movie|ai series|full (movie|episode)|official trailer|trailer|cinematic|4k|hd|veo ?3|sora|kling|ai generated|ai cinematic)$/i;
+const GENERIC_SEG=/^(ذكاء اصطناعي|بالذكاء الاصطناعي|كرتون بالذكاء الاصطناعي|ai|a\.i\.|ai (short )?film|ai movie|ai series|full (movie|episode)|official trailer|trailer|cinematic|4k|hd|veo ?3|sora|kling|ai generated|ai cinematic)$/i;
 function parseEpisode(title){
-  for(const [re,n] of EP_RES){const m=String(title).match(re);if(!m)continue;
+  // Arabic and Persian digits count as numbers (الحلقة ٣ = episode 3)
+  title=String(title).replace(/[٠-٩]/g,d=>d.charCodeAt(0)-1632).replace(/[۰-۹]/g,d=>d.charCodeAt(0)-1776)
+    // Arabic ordinals: "الحلقة الثانية" = episode 2, "الجزء الأول" = part 1, "الحلقة الأخيرة" = the last one
+    .replace(/((?:ال)?(?:حلقة|حلقه|جزء))\s*(ال)?(أولى|اولى|أول|اول|ثانية|ثانيه|ثاني|ثالثة|ثالثه|ثالث|رابعة|رابعه|رابع|خامسة|خامسه|خامس|سادسة|سادسه|سادس|سابعة|سابعه|سابع|ثامنة|ثامنه|ثامن|تاسعة|تاسعه|تاسع|عاشرة|عاشره|عاشر|أخيرة|اخيرة|أخيره|اخيره|أخير|اخير)(?![\u0600-\u06FF])/g,
+      (m,w,al,o)=>w+" "+({"أولى":1,"اولى":1,"أول":1,"اول":1}[o]||(/^ثاني/.test(o)?2:/^ثالث/.test(o)?3:/^رابع/.test(o)?4:/^خامس/.test(o)?5:/^سادس/.test(o)?6:/^سابع/.test(o)?7:/^ثامن/.test(o)?8:/^تاسع/.test(o)?9:/^عاشر/.test(o)?10:99)))
+    // hashtags are not part of a series' name
+    .replace(/(^|\s)#\S+/g," ");
+  for(const [re,n] of [...EP_RES,...EP_RES_INTL]){const m=String(title).match(re);if(!m)continue;
     const season=n===2?+m[1]:1,ep=+m[n];if(!ep||ep>300)return null;
     const rest=(title.slice(0,m.index)+" "+title.slice(m.index+m[0].length)).replace(/[\[(]\s*[\])]/g," ");
-    const segs=rest.split(/\s*[|:–—]\s*|\s+-\s+/).map(x=>x.replace(/[\s#,.!]+$/,"").replace(/^[\s#,.!]+/,"").trim()).filter(x=>x&&!GENERIC_SEG.test(x));
+    const segs=rest.split(/\s*[|:–—،]\s*|\s+-\s+/).map(x=>x.replace(/[\p{Extended_Pictographic}\u200d\ufe0f]/gu,"").replace(/\s+/g," ").replace(/[\s#,.!]+$/,"").replace(/^[\s#,.!]+/,"").trim()).filter(x=>x&&!GENERIC_SEG.test(x));
     if(!segs.length)return null;
     return {season,ep,name:segs[0],segs}}
   return null}
@@ -2652,7 +2664,7 @@ function autoSeries(){
     eps.sort((a,b)=>a.season-b.season||a.ep-b.ep);
     list.push({id,title:fs.title,cat:"aiseries",char:"",by:eps[0].by,hue:eps[0].hue||330,tool:eps[0].tool,episodes:eps,format:"series",auto:true,real:true})}
   for(const f of films){if(!(f.yt||f.tt||f.ig||f.vm||f.dm)||f.format==="episode"||f.seriesId&&list.some(s=>s.id===f.seriesId))continue;const p=parseEpisode(f.title);if(!p)continue;
-    const key=(f.by||"")+"|"+p.name.toLowerCase().replace(/[^a-z0-9]+/g," ").trim();(groups[key]||(groups[key]={name:p.name,by:f.by,items:[]})).items.push({f,p})}
+    const key=(f.by||"")+"|"+p.name.toLowerCase().replace(/[^\p{L}\p{N}]+/gu," ").trim();(groups[key]||(groups[key]={name:p.name,by:f.by,items:[]})).items.push({f,p})}
   for(const [key,g] of Object.entries(groups)){
     const seen=new Set(),items=g.items.filter(({p})=>{const k2=p.season+"-"+p.ep;if(seen.has(k2))return false;seen.add(k2);return true}).sort((a,b)=>a.p.season-b.p.season||a.p.ep-b.p.ep);
     if(items.length<2)continue;
@@ -2660,7 +2672,9 @@ function autoSeries(){
     let common=items[0].p.segs.length;for(const {p} of items){let i=0;while(i<common&&i<p.segs.length&&p.segs[i].toLowerCase()===items[0].p.segs[i].toLowerCase())i++;common=i}
     common=Math.max(1,Math.min(common,items[0].p.segs.length));
     const name=items[0].p.segs.slice(0,common).join(": ");items.forEach(({p})=>p.epTitle=p.segs.slice(common).join(" · "));
-    const id="as-"+slugify(key).slice(0,60),cats={};items.forEach(({f})=>cats[f.cat]=(cats[f.cat]||0)+1);
+    // non-Latin names leave little for a slug: a short hash keeps every series' id unique
+    let hsh=0;for(const ch of key)hsh=(hsh*31+ch.codePointAt(0))>>>0;
+    const id="as-"+(/[^\x00-\x7f]/.test(key)?slugify(key)+"-"+hsh.toString(36):slugify(key).slice(0,60)),cats={};items.forEach(({f})=>cats[f.cat]=(cats[f.cat]||0)+1);
     const cat=Object.entries(cats).sort((a,b)=>b[1]-a[1])[0][0],first=items[0].f;
     const episodes=items.map(({f,p})=>{f.seriesId=id;f.season=p.season;f.ep=p.ep;f.epTitle=p.epTitle||("Episode "+p.ep);return f});
     list.push({id,title:name,cat,char:first.char,by:g.by||"YouTube creator",hue:first.hue||200,tool:first.tool,episodes,format:"series",auto:true})}
@@ -3437,8 +3451,7 @@ document.addEventListener("click",e=>{const o=e.target.closest(".fpbar");if(!o)r
   const sk=e.target.closest("[data-fpskip]");if(sk){e.preventDefault();fpSeek(fp.t+(+sk.dataset.fpskip));return}
   if(e.target.closest("[data-fpplay]")){e.preventDefault();fpToggle();return}
   if(e.target.closest("[data-fpmute]")){e.preventDefault();fp.muted=!fp.muted;fpCmd(fp.muted?"mute":"unMute");fpPaint();fpShow();return}
-  if(e.target.closest("[data-fpcc]")){e.preventDefault();fp.cc=!fp.cc;fpCmd(fp.cc?"loadModule":"unloadModule",["captions"]);if(fp.cc)fpCmd("setOption",["captions","track",{languageCode:YT_LANG}]);
-    e.target.closest("[data-fpcc]").classList.toggle("on",fp.cc);fpShow();return}
+  if(e.target.closest("[data-fpcc]")){e.preventDefault();fpCaptions(fp.cc?"":ccLang());fpShow();return}
   fpShow()},true);
 /* Seek preview: the time under the finger or mouse (YouTube gives other sites no exact preview frames, so no picture) */
 function fpTip(sk,ratio){const tip=sk.parentElement.querySelector(".fptip");if(!tip||!fp.dur)return;ratio=Math.max(0,Math.min(1,ratio));
@@ -3458,11 +3471,22 @@ document.addEventListener("wheel",e=>{if(!e.target.closest?.(".fpvolwrap"))retur
 /* Settings (gear in the bar): playback speed, and "YouTube controls" for quality and subtitle languages.
    YouTube no longer lets other sites pick the quality, so quality is only in YouTube's own controls. The panel opens under the bar, never over the film. */
 function ytCtrl(){return store.get("fr_ytctrl",false)}
+// subtitle languages offered under the gear (YouTube shows them when the film has subtitles in that language, or auto-translates)
+const CC_LANGS=[["en","English"],["sv","Svenska"],["ar","العربية"],["es","Español"],["fr","Français"],["de","Deutsch"],["pt","Português"],["tr","Türkçe"],["hi","हिन्दी"],["ru","Русский"],["ja","日本語"],["ko","한국어"],["zh","中文"],["it","Italiano"],["pl","Polski"],["id","Indonesia"]];
+const ccLang=()=>store.get("fr_cclang","")||decodeURIComponent(YT_LANG);
+function fpCaptions(l){fp.cc=!!l;document.querySelectorAll("[data-fpcc]").forEach(b=>b.classList.toggle("on",fp.cc));
+  if(!l){fpCmd("unloadModule",["captions"]);return}
+  store.set("fr_cclang",l);fpCmd("loadModule",["captions"]);
+  // the film's own subtitles in that language if it has them, otherwise YouTube's automatic translation of the first track
+  [150,700].forEach(t=>setTimeout(()=>{fpCmd("setOption",["captions","track",{languageCode:l}]);fpCmd("setOption",["captions","translationLanguage",{languageCode:l}])},t))}
 function fpSettings(){const bar=document.querySelector(".fpbar");if(!bar)return;let p=document.querySelector(".fpset");if(p){p.remove();return}
   const rates=[0.5,0.75,1,1.25,1.5,2],cur=fp.rate||1;
   bar.insertAdjacentHTML("afterend",`<div class="fpset"><div class="fpset-row"><b>Speed</b>${rates.map(r=>`<button class="chip ${r===cur?"on":""}" data-fprate="${r}">${r===1?"Normal":r+"×"}</button>`).join("")}</div>
+    <div class="fpset-row"><b>Subtitles</b><button class="chip ${!fp.cc?"on":""}" data-fpcclang="">Off</button>${CC_LANGS.map(([l,n])=>`<button class="chip ${fp.cc&&ccLang()===l?"on":""}" data-fpcclang="${l}">${n}</button>`).join("")}</div>
     <div class="fpset-row"><b>Quality</b><label class="fpset-t"><input type="checkbox" data-fpytctrl="" ${ytCtrl()?"checked":""}> Show YouTube's controls in the player (choose quality and subtitle language there)</label></div></div>`)}
 document.addEventListener("click",e=>{if(e.target.closest("[data-fpset]")){e.preventDefault();fpSettings();return}
+  const cl=e.target.closest("[data-fpcclang]");if(cl){e.preventDefault();fpCaptions(cl.dataset.fpcclang);document.querySelectorAll("[data-fpcclang]").forEach(b=>b.classList.toggle("on",b===cl));
+    toast(cl.dataset.fpcclang?"Subtitles: "+cl.textContent+" (if the film has them)":"Subtitles off");return}
   const r=e.target.closest("[data-fprate]");if(r){e.preventDefault();fp.rate=+r.dataset.fprate;fpCmd("setPlaybackRate",[fp.rate]);document.querySelectorAll("[data-fprate]").forEach(b=>b.classList.toggle("on",b===r));toast("Speed "+(fp.rate===1?"normal":fp.rate+"×"))}});
 document.addEventListener("change",e=>{if(!e.target.matches?.("[data-fpytctrl]"))return;store.set("fr_ytctrl",e.target.checked);
   const f=findFilm(state.film),pl=document.querySelector(".player"),old=pl?.querySelector("iframe");if(!f?.yt||!old)return;
