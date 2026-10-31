@@ -68,7 +68,10 @@ export default async (req) => {
     if (!key.startsWith("sb_secret_")) h.Authorization = "Bearer " + key;
     const r = await fetch(Netlify.env.get("SUPABASE_URL") + `/rest/v1/docs?owner=eq.${uid}&select=col,id,data,updated_at&limit=1000`, { headers: h });
     if (!r.ok) return json({ error: "Supabase " + r.status }, 500);
-    return json({ docs: await r.json() });
+    const docs = await r.json();
+    const audit = await fetch(Netlify.env.get("SUPABASE_URL") + '/rest/v1/import_state?key=like.submission%3A*&value->>submittedBy=eq.' + uid + '&select=value&limit=1000', { headers: h });
+    if (!audit.ok) return json({ error: "Submission audit unavailable" }, 503);
+    return json({ docs, submissions: (await audit.json()).map(x => x.value) });
   }
   if (body.action === "umami") {
     // Umami Cloud statistics for the admin page. The API key stays on the server (setting UMAMI_API_KEY in Cloudflare).

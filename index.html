@@ -1174,7 +1174,7 @@ function stats(f){if(statMemo){const m=statMemo.get(f);if(m)return m;const r=sta
 function statsRaw(f){const c=counts(f);const n=c.reduce((a,b)=>a+b,0);const avg=n?c.reduce((a,v,i)=>a+v*(i+1),0)/n:0;return {n,avg,bayes:(avg*n+3.4*50)/(n+50),c}}
 const fmtN=n=>n>=1000?(n/1000).toFixed(1).replace(/\.0$/,"")+"K":String(n);
 const ago=d=>d==null?"on YouTube":d===0?"today":d===1?"1 day ago":d<7?`${d} days ago`:d<14?"1 week ago":d<60?`${Math.round(d/7)} weeks ago`:d<365?`${Math.round(d/30)} months ago`:"1 year ago";
-const byName=f=>f.byId?(f.byId===acct.uid?"You":(names[f.byId]||"Fanreelz member")):f.by;
+const byName=f=>f.yt?(f.channelTitle||f.by||"YouTube creator"):f.byId?(f.byId===acct.uid?"You":(names[f.byId]||"Fanreelz member")):f.by;
 const hueOf=s=>{let h=0;for(const ch of String(s))h=(h*31+ch.charCodeAt(0))%360;return h};
 const cav=(name0,size,name=name0||"YouTube")=>`<span class="cav" style="background:hsl(${hueOf(name)},45%,42%)${size?`;width:${size}px;height:${size}px`:""}" aria-hidden="true">${esc((String(name).replace(/^@/,"")[0]||"?").toUpperCase())}</span>`;
 const daysSince=t=>Math.max(0,Math.floor((Date.now()-t)/864e5));
@@ -2740,8 +2740,8 @@ const slugify=s=>String(s).toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|
 function userSeries(){
   const map={};
   for(const e of sharedSubs.filter(f=>f.format==="episode")){
-    const id=`us-${e.byId}-${slugify(e.seriesTitle)}`;e.seriesId=id;
-    (map[id]||(map[id]={id,title:e.seriesTitle||"Untitled series",cat:e.cat,char:e.char,byId:e.byId,hue:e.hue,tool:e.tool,episodes:[],format:"series"})).episodes.push(e);}
+    const id=`us-${e.channelId||e.submissionOwner||e.byId}-${slugify(e.seriesTitle)}`;e.seriesId=id;
+    (map[id]||(map[id]={id,title:e.seriesTitle||"Untitled series",cat:e.cat,char:e.char,byId:e.byId,by:byName(e),channelTitle:e.channelTitle,channelId:e.channelId,hue:e.hue,tool:e.tool,episodes:[],format:"series"})).episodes.push(e);}
   for(const s of Object.values(map))s.episodes.sort((a,b)=>a.season-b.season||a.ep-b.ep);
   return Object.values(map);
 }
@@ -3119,13 +3119,15 @@ function parseVid(u){u=String(u||"");let m;
   if(m=u.match(/vimeo\.com\/(?:video\/)?(\d{5,})/i))return {vm:m[1],src:"Vimeo"};
   if(m=u.match(/(?:dailymotion\.com\/video\/|dai\.ly\/)([a-z0-9]+)/i))return {dm:m[1],src:"Dailymotion"};
   return {}}
+// Keep the existing document owner for moderation; never use it as a YouTube creator.
+function submissionCredit(f,owner){return parseVid(f.url).yt?{submissionOwner:owner,channelTitle:String(f.channelTitle||""),channelId:String(f.channelId||""),by:String(f.channelTitle||"YouTube creator")}:{byId:owner}}
 const detectFormat=u=>/\/shorts\/|tiktok\.com|instagram\.com\/reel/i.test(u)?"short":/[?&]list=/i.test(u)?"episode":"film";
 
 /* Safety controls shared by film comments, live chat, profiles and admin review. */
 var safetyState={blocked:[],hidden:[]}, safetyTimer=null, safetyQueue=null;
 function safetyBlocked(uid){return !!uid&&safetyState.blocked.includes(uid)}
 function safetyHidden(owner,id){return safetyState.hidden.some(x=>x.owner===(owner||'catalog')&&x.id===String(id))}
-function safetyFilmVisible(f){return !safetyBlocked(f.byId)&&!safetyHidden(f.byId,f.id)}
+function safetyFilmVisible(f){const owner=f.submissionOwner||f.byId;return !safetyBlocked(owner)&&!safetyHidden(owner,f.id)}
 async function safetyCall(body){
   const r=await fetch('/api/safety',{method:body?'POST':'GET',headers:{...(body?{'Content-Type':'application/json'}:{}),...(sbToken?{Authorization:'Bearer '+sbToken}:{})},...(body?{body:JSON.stringify(body)}:{})});
   const d=await r.json();if(!r.ok||d.error)throw Error(d.error||'Safety service unavailable');return d;
@@ -3941,7 +3943,7 @@ const cleanText=t=>String(t||"").toLowerCase().replace(/[0]/g,"o").replace(/[1!|
 const badText=(...ts)=>ts.some(t=>BAD_RE.test(cleanText(t)));
 const BAD_MSG="That text isn't allowed on Fanreelz. Keep titles and names free of sexual, hateful or illegal content.";
 function openSubmit(){
-  if(!needAccount("Sign in to submit films, so others can see who found them."))return;
+  if(!needAccount("Sign in to submit films. YouTube videos are credited to their original channel."))return;
   openModal(`<div class="dlg" role="dialog" aria-modal="true" aria-label="Submit a film"><h2>Submit an AI film</h2>
    <form class="form" id="sf">
     <label for="sUrl">Video link<input id="sUrl" type="url" required placeholder="https://youtube.com/watch?v=…"></label>
@@ -3965,8 +3967,11 @@ function openSubmit(){
     const src=parseVid(u).src||(/(x\.com|twitter)/.test(u)?"X":/reddit/.test(u)?"Reddit":"YouTube");
     const f={id:"u"+Date.now().toString(36)+Math.random().toString(36).slice(2,6),title:$("#sTitle").value.trim(),cat:cc.cat,char:cc.char,...(cc.topic?{topic:cc.topic}:{}),src,tool:$("#sTool").value,t:Date.now(),hue:Math.floor(Math.random()*360),url:u,format:fmt,...(fmt==="episode"?{seriesTitle:$("#sSer").value.trim(),season:Math.max(1,+$("#sSea").value||1),ep:Math.max(1,+$("#sEp").value||1)}:{})};
     $("#sGo").disabled=true;
-    try{await acct.db.doc("submissions/"+acct.uid).set({films:[f,...mySubs].slice(0,200)});closeModal();toast((fmt==="short"?"Short":fmt==="episode"?"Episode":"Film")+" added to "+(f.topic||catName(f.cat)));go({view:"home",cat:f.cat,char:null,format:fmt==="episode"?"series":fmt})}
-    catch(err){$("#sGo").disabled=false;if(err&&err.code==="invalid_argument"){acct.readonly=true;toast("This page is shared with you as view-only")}else toast("Couldn't submit the film. Try again in a moment.")}
+    try{if(parseVid(u).yt){
+      const r=await fetch('/api/submit-youtube',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+(sbToken||'')},body:JSON.stringify({film:f})});
+      const result=await r.json();if(!r.ok)throw Error(result.error||"Couldn't submit the film");
+    }else await acct.db.doc("submissions/"+acct.uid).set({films:[f,...mySubs].slice(0,200)});closeModal();toast((fmt==="short"?"Short":fmt==="episode"?"Episode":"Film")+" added to "+(f.topic||catName(f.cat)));go({view:"home",cat:f.cat,char:null,format:fmt==="episode"?"series":fmt})}
+    catch(err){$("#sGo").disabled=false;if(err&&err.code==="invalid_argument"){acct.readonly=true;toast("This page is shared with you as view-only")}else toast(err?.message||"Couldn't submit the film. Try again in a moment.")}
   };
 }
 async function saveRating(id,r){
@@ -4329,7 +4334,7 @@ async function sbSignOut(){if(sb){await sb.auth.signOut();location.reload()}}
   db.collection("submissions").onSnapshot(snap=>{const all=[],mine=[];
     for(const d of snap.docs){const films=Array.isArray(d.data()?.films)?d.data().films:[];
       for(const f of films){if(!f||!CATS.some(c=>c.id===f.cat)||typeof f.title!=="string")continue;
-        all.push({id:String(f.id),title:f.title.slice(0,120),cat:f.cat,char:String(f.char||""),src:String(f.src||"YouTube"),tool:String(f.tool||"Unknown"),len:"",days:daysSince(+f.t||Date.now()),added:+f.t||null,counts:[0,0,0,0,0],hue:(+f.hue||0)%360,url:/^https:\/\//.test(f.url)?f.url:"",byId:d.id,topic:String(f.topic||"").slice(0,60),...(/^https:\/\//.test(f.url)?parseVid(f.url):{}),format:["short","film","episode"].includes(f.format)?f.format:"film",seriesTitle:String(f.seriesTitle||"").slice(0,80),season:Math.max(1,+f.season||1),ep:Math.max(1,+f.ep||1)});
+        all.push({id:String(f.id),title:f.title.slice(0,120),cat:f.cat,char:String(f.char||""),src:String(f.src||"YouTube"),tool:String(f.tool||"Unknown"),len:"",days:daysSince(+f.t||Date.now()),added:+f.t||null,counts:[0,0,0,0,0],hue:(+f.hue||0)%360,url:/^https:\/\//.test(f.url)?f.url:"",...submissionCredit(f,d.id),topic:String(f.topic||"").slice(0,60),...(/^https:\/\//.test(f.url)?parseVid(f.url):{}),format:["short","film","episode"].includes(f.format)?f.format:"film",seriesTitle:String(f.seriesTitle||"").slice(0,80),season:Math.max(1,+f.season||1),ep:Math.max(1,+f.ep||1)});
         if(d.id===acct.uid)mine.push(f);}}
     all.forEach(applyYtInfo);sharedSubs=all;mySubs=mine;openLinkedFilm();render();resolveNames();setTimeout(()=>loadHandViews().catch(()=>{}),1500);},()=>{});
 })();
