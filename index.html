@@ -3852,7 +3852,7 @@ function parsePath(){
   if(a==="showdown")return {view:"showdown",sd:b||null,sdcat:q.get("c")||"all"};
   if(a==="series"&&b)return {view:"series",series:b,season:1};
   if(a==="creator"&&b)return {view:"creator",creator:b,ctab:"film"};
-  if(a==="u"&&b)return {view:"user",user:b,utab:"liked"};
+  if(a==="u"&&b)return {view:"user",user:b,utab:q.get("tab")==="videos"?"videos":"liked"};
   if(a==="live"&&b)return {view:"liveplay",liveId:b};
   if(a==="c"&&b&&CATS.some(c=>c.id===b))return {view:"home",feed:"home",cat:b,char:q.get("char")||null};
   if(a==="feed"&&b)return {view:"home",feed:b,cat:null};

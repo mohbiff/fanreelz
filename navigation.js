@@ -1,6 +1,6 @@
 /* Native links support middle-click, Ctrl/Cmd-click, copying and browser menus.
    Ordinary left-clicks keep the existing in-page navigation handlers. */
-const navigationSelector='[data-open],[data-open-full],[data-view],[data-feed],[data-cat],[data-creator],[data-user],[data-series],[data-browse],[data-liveopen],#homeLogo';
+const navigationSelector='[data-open],[data-open-full],[data-view],[data-feed],[data-cat],[data-creator],[data-user],[data-series],[data-browse],[data-liveopen],[data-fmtnav],[data-longnav],[data-you],#homeLogo';
 function navigationHref(el) {
   const d=el.dataset;
   if(el.id==='homeLogo')return '/';
@@ -11,6 +11,9 @@ function navigationHref(el) {
   if(d.creator!==undefined)return pathFor({view:'creator',creator:d.creator});
   if(d.liveopen!==undefined)return pathFor({view:'liveplay',liveId:d.liveopen});
   if(d.browse!==undefined)return pathFor({view:'browse',bgroup:d.browse});
+  if(d.fmtnav!==undefined)return pathFor({view:'home',format:d.fmtnav});
+  if(d.longnav!==undefined)return pathFor({view:'home',format:'film',dur:'o20'});
+  if(d.you!==undefined)return d.you==='channel'?(acct.uid?pathFor({view:'user',user:acct.uid})+'?tab=videos':'/you'):pathFor({view:d.you});
   if(d.view!==undefined)return pathFor({view:d.view});
   if(d.feed!==undefined)return pathFor({view:'home',feed:d.feed});
   if(d.cat!==undefined){

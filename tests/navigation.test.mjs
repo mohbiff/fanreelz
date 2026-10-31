@@ -5,7 +5,7 @@ import vm from 'node:vm';
 const html=readFileSync(new URL('../index.html',import.meta.url),'utf8');
 const source=readFileSync(new URL('../navigation.js',import.meta.url),'utf8');
 function setup(){
-  const listeners=[],ctx=vm.createContext({encodeURIComponent,
+  const listeners=[],ctx=vm.createContext({encodeURIComponent,acct:{uid:'member'},
     findFilm:id=>({id,format:id==='short'?'short':'film'}),
     document:{body:{querySelectorAll:()=>[]},addEventListener:(...args)=>listeners.push(args)},
     MutationObserver:class {observe(){}},
@@ -19,6 +19,9 @@ test('navigation URLs point to reloadable film, short, category and profile page
     ctx.el={dataset};assert.equal(vm.runInContext('navigationHref(el)',ctx),expected);
   }
   ctx.el={dataset:{cat:'warcraft',loreGo:'lore'}};assert.equal(vm.runInContext('navigationHref(el)',ctx),null);
+  for(const [dataset,expected] of [[{fmtnav:'series'},'/?f=series'],[{fmtnav:'short'},'/?f=short'],[{longnav:''},'/?f=film&d=o20'],[{you:'history'},'/history'],[{you:'channel'},'/u/member?tab=videos']]){
+    ctx.el={dataset};assert.equal(vm.runInContext('navigationHref(el)',ctx),expected);
+  }
 });
 test('middle/modified clicks keep browser defaults, left-click stays in the app, and actions stay buttons',()=>{
   const {ctx,listeners}=setup();assert.ok(listeners.some(([type,,capture])=>type==='click'&&capture));
