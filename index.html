@@ -36,6 +36,7 @@ html.splashing body{overflow:hidden}
 @media (prefers-reduced-motion:reduce){#splash svg,#splash .sp-spark,#splash .sp-glint{animation:none}}
 .logo .mark svg .spark{transform-origin:51px 11px;transition:transform .4s}.logo:hover .mark svg .spark{transform:rotate(90deg) scale(1.2)}
 html{color-scheme:dark}:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px/1.45 system-ui,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style>
+<style>a[data-fr-link]{color:inherit;text-decoration:none}a[data-fr-link]:not([class]){cursor:pointer}</style>
 </head>
 <body>
 <div id="splash" aria-hidden="true"><svg viewBox="0 0 62 58"><path class="sp-play" d="M8 6.5c0-3 3.3-4.9 5.9-3.3l38.4 22.8c2.5 1.5 2.5 5.1 0 6.6L13.9 55.4C11.3 57 8 55.1 8 52.1z" fill="#8b5cf6"/><path class="sp-spark" d="M51 2l2.6 6.4L60 11l-6.4 2.6L51 20l-2.6-6.4L42 11l6.4-2.6z" fill="#ffd23f"/></svg><span class="sp-glint"></span></div>
@@ -66,8 +67,8 @@ body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:14px
 html,body{overflow-x:clip}
 .vtitle,.vmeta,.cmbody p,.adm-who span{overflow-wrap:anywhere}
 body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
-button,input,select{font:inherit;color:inherit}
-button{cursor:pointer}
+:is(button,a[data-fr-link]),input,select{font:inherit;color:inherit}
+:is(button,a[data-fr-link]){cursor:pointer}
 :focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 /* no blue tap flash on Android (the browser default); keyboard focus still shows the outline above */
 html{-webkit-tap-highlight-color:transparent}*{-webkit-tap-highlight-color:transparent}:focus:not(:focus-visible){outline:none}
@@ -89,7 +90,7 @@ svg.i{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stro
 .search{display:flex;width:100%;max-width:600px;height:40px}
 .search input{flex:1;min-width:0;border:1px solid var(--line);border-right:0;border-radius:20px 0 0 20px;background:var(--surface);padding:0 16px;outline:none}
 .search input:focus{border-color:var(--accent)}
-.search button{width:62px;border:1px solid var(--line);border-radius:0 20px 20px 0;background:var(--chip);display:grid;place-items:center}
+.search :is(button,a[data-fr-link]){width:62px;border:1px solid var(--line);border-radius:0 20px 20px 0;background:var(--chip);display:grid;place-items:center}
 .actions{display:flex;align-items:center;gap:6px}
 .createbtn{display:flex;align-items:center;gap:6px;height:36px;padding:0 14px 0 10px;border-radius:18px;border:0;background:var(--chip);font-weight:600}
 .createbtn:hover{background:var(--hover)}
@@ -205,7 +206,7 @@ body.fsrot .edgegrab,body.fsrot .dragzone{display:none!important}
 body.fsmode .player.hasbar:not(.ytctrl) .fpcenter,body.wfs .player.hasbar:not(.ytctrl) .fpcenter{display:flex}
 .player.fpctl .fpcenter,.player.fppaused .fpcenter{opacity:1;pointer-events:auto}.player.ended .fpcenter{display:none!important}
 .dragzone{display:none;position:absolute;left:0;width:56px;top:0;height:52px;z-index:7;touch-action:none}
-.dragzone button{position:absolute;left:6px;top:6px;width:40px;height:40px;border:0;border-radius:50%;background:rgba(0,0,0,.35);color:#fff;display:flex;align-items:center;justify-content:center;padding:0;cursor:pointer}
+.dragzone :is(button,a[data-fr-link]){position:absolute;left:6px;top:6px;width:40px;height:40px;border:0;border-radius:50%;background:rgba(0,0,0,.35);color:#fff;display:flex;align-items:center;justify-content:center;padding:0;cursor:pointer}
 .dragzone svg,#mini svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
 #mini{position:fixed;z-index:45;left:0;right:0;bottom:var(--tabh,calc(54px + env(safe-area-inset-bottom,0px)));height:64px;display:flex;align-items:center;gap:10px;background:var(--bg2,#1b1724);border-top:1px solid var(--line);box-shadow:0 -4px 16px rgba(0,0,0,.25)}
 #mini .mvid{position:relative;width:114px;height:64px;flex:none;background:#000;overflow:hidden;order:3;transform-origin:100% 100%}
@@ -213,7 +214,7 @@ body.fsmode .player.hasbar:not(.ytctrl) .fpcenter,body.wfs .player.hasbar:not(.y
 #mini .mvid iframe{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;aspect-ratio:auto!important;margin:0!important;border:0;pointer-events:none}
 #mini .mtxt{all:unset;order:0;padding-left:14px;flex:1;min-width:0;cursor:pointer;display:flex;flex-direction:column;gap:2px}
 #mini .mtxt b{font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--fg)}#mini .mtxt small{font-size:12px;color:var(--muted,#999);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-#mini>button:not(.mtxt){width:44px;height:44px;flex:none;border:0;background:none;color:var(--fg);display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0}
+#mini>:is(button,a[data-fr-link]):not(.mtxt){width:44px;height:44px;flex:none;border:0;background:none;color:var(--fg);display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0}
 #mini.minienter{animation:minin .22s ease-out}
 /* dragging a video down: it follows the finger and shrinks toward the miniplayer, the page around it fades */
 body.mdragging .watch>div>:not(.player),body.mdragging .watch>aside,body.mdragging .pbar{opacity:calc(1 - var(--mdp,0)*1.6)}
@@ -310,15 +311,15 @@ body.wfs .player{position:fixed;inset:0;z-index:9000;width:100vw;height:100vh;he
 .owner small{color:var(--muted)}
 .ratebox{display:flex;align-items:center;gap:2px;background:var(--chip);border-radius:18px;padding:2px 10px 2px 8px;height:36px}
 .ratebox span{font-weight:600;font-size:13px;margin-right:6px;white-space:nowrap}
-.ratebox button{background:none;border:0;font-size:21px;color:var(--muted);padding:0 2px;line-height:1;opacity:.55}
-.ratebox button.on{color:var(--star);opacity:1}
+.ratebox :is(button,a[data-fr-link]){background:none;border:0;font-size:21px;color:var(--muted);padding:0 2px;line-height:1;opacity:.55}
+.ratebox :is(button,a[data-fr-link]).on{color:var(--star);opacity:1}
 .desc{background:var(--chip);border-radius:12px;padding:12px 14px;margin-top:14px;display:flex;flex-direction:column;gap:10px}
 .desc .top2{font-weight:700}
 .dist{display:grid;grid-template-columns:auto 1fr auto;gap:5px 10px;align-items:center;font-family:var(--mono);font-size:12px;color:var(--muted);max-width:420px}
 .bar{height:6px;background:var(--hover);border-radius:3px;overflow:hidden}
 .bar i{display:block;height:100%;background:var(--star)}
 .tags{display:flex;gap:8px;flex-wrap:wrap}
-.tags button{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:3px 10px;font-weight:600;font-size:13px}
+.tags :is(button,a[data-fr-link]){background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:3px 10px;font-weight:600;font-size:13px}
 .trendlbl{font-size:10.5px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.1em;margin-left:6px}
 .gi .tr{margin-left:auto;color:var(--accent);flex:none}
 .gi .tr svg{width:16px;height:16px}
@@ -334,8 +335,8 @@ body.wfs .player{position:fixed;inset:0;z-index:9000;width:100vw;height:100vh;he
 .dirhead small{color:var(--muted);font-size:13px}
 .hot{color:var(--accent);font-weight:700}
 .dirchars{display:flex;flex-wrap:wrap;gap:6px}
-.dirchars button{border:0;background:var(--chip);border-radius:6px;padding:3px 9px;font-size:12px;font-weight:600}
-.dirchars button:hover{background:var(--hover)}
+.dirchars :is(button,a[data-fr-link]){border:0;background:var(--chip);border-radius:6px;padding:3px 9px;font-size:12px;font-weight:600}
+.dirchars :is(button,a[data-fr-link]):hover{background:var(--hover)}
 .azlist{display:flex;flex-direction:column}
 .azletter{font-family:var(--display);font-size:18px;font-weight:800;color:var(--accent);padding:16px 4px 6px;border-bottom:1px solid var(--line)}
 .azrow{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,auto) 56px;gap:16px;align-items:center;background:none;border:0;border-bottom:1px solid var(--line);padding:10px 4px;text-align:left}
@@ -417,12 +418,12 @@ html:has(.player.hasbar),html:has(.player.hasbar) body{overscroll-behavior-y:non
 .owner.link{background:none;border:0;padding:0;text-align:left;color:inherit}
 .owner.link:hover b{text-decoration:underline}
 .wactions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
-.wactions button{height:34px;padding:0 14px;border-radius:17px;border:0;background:var(--chip);font-weight:600;display:inline-flex;align-items:center;gap:6px}
-.wactions button:hover{background:var(--hover)}
+.wactions :is(button,a[data-fr-link]){height:34px;padding:0 14px;border-radius:17px;border:0;background:var(--chip);font-weight:600;display:inline-flex;align-items:center;gap:6px}
+.wactions :is(button,a[data-fr-link]):hover{background:var(--hover)}
 .wactions svg.i{width:18px;height:18px}
 .lorebar{display:flex;gap:8px;margin:-4px 0 18px;flex-wrap:wrap}
-.lorebar button{height:28px;padding:0 12px;border-radius:14px;border:1px solid var(--line);background:none;font-weight:600;font-size:13px}
-.lorebar button.on{background:var(--accent-soft);border-color:var(--accent);color:var(--accent)}
+.lorebar :is(button,a[data-fr-link]){height:28px;padding:0 12px;border-radius:14px;border:1px solid var(--line);background:none;font-weight:600;font-size:13px}
+.lorebar :is(button,a[data-fr-link]).on{background:var(--accent-soft);border-color:var(--accent);color:var(--accent)}
 .toggle{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;padding:8px 12px;border:0;background:none;border-radius:10px;font-weight:600;text-align:left}
 .toggle:hover{background:var(--hover)}
 .sw{width:36px;height:20px;border-radius:10px;background:var(--line);position:relative;flex:none;transition:background .2s}
@@ -433,11 +434,11 @@ html:has(.player.hasbar),html:has(.player.hasbar) body{overscroll-behavior-y:non
 .newsbox .btn{align-self:flex-start;padding:7px 14px}
 .shell.mini .toggle,.shell.mini .newsbox{display:none}
 .familybar{display:flex;align-items:center;gap:8px;background:var(--accent-soft);color:var(--accent);font-weight:700;padding:8px 12px;border-radius:10px;margin:0 0 14px;font-size:13px}
-.familybar button{margin-left:auto;border:0;background:none;color:inherit;font-weight:700;text-decoration:underline}
+.familybar :is(button,a[data-fr-link]){margin-left:auto;border:0;background:none;color:inherit;font-weight:700;text-decoration:underline}
 @media (max-width:860px){.arena{grid-template-columns:minmax(0,1fr)}.vs{justify-self:center}.contest-hero{grid-template-columns:minmax(0,1fr)}.podium{grid-template-columns:minmax(0,1fr)}.discord-grid{grid-template-columns:minmax(0,1fr)}.req{grid-template-columns:52px minmax(0,1fr)}.req .remind{grid-column:2;justify-self:start}}
 .fmtbar{display:flex;gap:4px;border-bottom:1px solid var(--line);margin:0 0 18px;overflow-x:auto;scrollbar-width:none}
-.fmtbar button{background:none;border:0;padding:10px 14px;font-weight:700;color:var(--muted);border-bottom:2px solid transparent;margin-bottom:-1px;white-space:nowrap;display:flex;gap:6px;align-items:baseline}
-.fmtbar button.on{color:var(--fg);border-bottom-color:var(--fg)}
+.fmtbar :is(button,a[data-fr-link]){background:none;border:0;padding:10px 14px;font-weight:700;color:var(--muted);border-bottom:2px solid transparent;margin-bottom:-1px;white-space:nowrap;display:flex;gap:6px;align-items:baseline}
+.fmtbar :is(button,a[data-fr-link]).on{color:var(--fg);border-bottom-color:var(--fg)}
 .fmtbar small{font-weight:600;font-size:12px;color:var(--muted)}
 .seeall{margin-left:auto;background:none;border:0;color:var(--accent);font-weight:700;font-size:14px}
 .shortrow{display:grid;grid-auto-flow:column;grid-auto-columns:max(150px,calc((100% - 80px) / 6));gap:16px;overflow-x:auto;padding-bottom:6px}
@@ -491,8 +492,8 @@ html:has(.player.hasbar),html:has(.player.hasbar) body{overscroll-behavior-y:non
 /* Shorts on a computer (TikTok-style): buttons beside the video, arrows, side panel with tabs */
 .sprailout,.sparrows{display:none}
 .sptabs{display:flex;border-bottom:1px solid var(--line);margin-top:6px;position:sticky;top:0;background:var(--bg);z-index:2}
-.sptabs button{flex:1;background:none;border:0;border-bottom:2px solid transparent;color:var(--muted);font:inherit;font-weight:700;font-size:15px;padding:12px 6px;cursor:pointer}
-.sptabs button.on{color:var(--fg);border-bottom-color:var(--fg)}.sptabs small{color:var(--muted);font-weight:600}
+.sptabs :is(button,a[data-fr-link]){flex:1;background:none;border:0;border-bottom:2px solid transparent;color:var(--muted);font:inherit;font-weight:700;font-size:15px;padding:12px 6px;cursor:pointer}
+.sptabs :is(button,a[data-fr-link]).on{color:var(--fg);border-bottom-color:var(--fg)}.sptabs small{color:var(--muted);font-weight:600}
 .sptabbody .comments{max-height:none;overflow:visible;margin-top:10px}
 .splike{display:grid;grid-template-columns:1fr 1fr;gap:14px 10px;padding-top:12px}
 .splikec{all:unset;cursor:pointer;display:flex;flex-direction:column;gap:3px;min-width:0}
@@ -507,9 +508,9 @@ html:has(.player.hasbar),html:has(.player.hasbar) body{overscroll-behavior-y:non
   body:not(.spfs) .shorts-view .spcol{height:auto}
   body:not(.spfs) .shorts-view .sp .sprail{display:none}
   body:not(.spfs) .sprailout{display:flex;flex-direction:column;align-items:center;gap:14px;align-self:end;padding-bottom:20px}
-  .sprailout button{display:flex;flex-direction:column;align-items:center;gap:4px;background:none;border:0;padding:0;color:var(--fg);font:inherit;font-size:12px;font-weight:700;cursor:pointer}
+  .sprailout :is(button,a[data-fr-link]){display:flex;flex-direction:column;align-items:center;gap:4px;background:none;border:0;padding:0;color:var(--fg);font:inherit;font-size:12px;font-weight:700;cursor:pointer}
   .sprailout .spb{width:48px;height:48px;background:var(--chip);backdrop-filter:none}.sprailout .spb svg{stroke:var(--fg)}
-  .sprailout button:hover .spb{background:var(--hover)}
+  .sprailout :is(button,a[data-fr-link]):hover .spb{background:var(--hover)}
   .sprailout .spb.on svg{fill:#fbbf24;stroke:#fbbf24}.sprailout .spb.liked svg{fill:#ff3d5a;stroke:#ff3d5a}
   .spavatar{margin-bottom:6px}
   body:not(.spfs) .sparrows{display:flex;flex-direction:column;gap:14px;align-self:center}
@@ -555,15 +556,15 @@ html:has(.player.hasbar),html:has(.player.hasbar) body{overscroll-behavior-y:non
 img.cav.uimg{object-fit:cover;background:var(--chip);display:block}
 .uhero{display:flex;align-items:center;gap:20px;margin:24px 0 8px;flex-wrap:wrap}.uhero .cav{width:96px;height:96px;font-size:36px}.uhero h1{margin:0 0 4px;font-size:28px}
 .ustats{display:flex;gap:18px;flex-wrap:wrap;font-size:14px;color:var(--muted)}.ustats b{color:var(--fg)}
-.utabs{display:flex;gap:6px;margin:22px 0 18px;flex-wrap:wrap;border-bottom:1px solid var(--line)}.utabs button{background:none;border:0;border-bottom:2px solid transparent;padding:10px 12px;font:inherit;font-weight:600;color:var(--muted);cursor:pointer}.utabs button.on{color:var(--fg);border-bottom-color:var(--fg)}
-.ulist{display:flex;flex-direction:column;gap:8px;max-width:560px}.ulist button{display:flex;align-items:center;gap:12px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 14px;color:var(--fg);font:inherit;text-align:left;cursor:pointer}.ulist button:hover{background:var(--hover)}.ulist .cav{width:36px;height:36px}
+.utabs{display:flex;gap:6px;margin:22px 0 18px;flex-wrap:wrap;border-bottom:1px solid var(--line)}.utabs :is(button,a[data-fr-link]){background:none;border:0;border-bottom:2px solid transparent;padding:10px 12px;font:inherit;font-weight:600;color:var(--muted);cursor:pointer}.utabs :is(button,a[data-fr-link]).on{color:var(--fg);border-bottom-color:var(--fg)}
+.ulist{display:flex;flex-direction:column;gap:8px;max-width:560px}.ulist :is(button,a[data-fr-link]){display:flex;align-items:center;gap:12px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 14px;color:var(--fg);font:inherit;text-align:left;cursor:pointer}.ulist :is(button,a[data-fr-link]):hover{background:var(--hover)}.ulist .cav{width:36px;height:36px}
 .cmhead{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}
 .cmhead b{font-size:13px}
 .cm p{margin:4px 0 6px;white-space:pre-wrap;overflow-wrap:anywhere}
 .cmact{display:flex;gap:4px;flex-wrap:wrap}
-.cmact button{background:none;border:0;border-radius:14px;padding:4px 10px;font-weight:600;font-size:12px;color:var(--muted)}
-.cmact button:hover{background:var(--hover)}
-.cmact button.on{color:var(--accent)}
+.cmact :is(button,a[data-fr-link]){background:none;border:0;border-radius:14px;padding:4px 10px;font-weight:600;font-size:12px;color:var(--muted)}
+.cmact :is(button,a[data-fr-link]):hover{background:var(--hover)}
+.cmact :is(button,a[data-fr-link]).on{color:var(--accent)}
 .cmact svg.i{width:14px;height:14px;vertical-align:-2px}
 .len:empty{display:none}
 .ttbadge{position:absolute;left:8px;bottom:8px;font-size:11px;font-weight:700;background:#000;color:#fff;padding:1px 6px;border-radius:4px;box-shadow:-2px 0 0 #25f4ee,2px 0 0 #fe2c55}
@@ -578,7 +579,7 @@ img.cav.uimg{object-fit:cover;background:var(--chip);display:block}
 @keyframes spup{from{transform:translateY(40%);opacity:.3}to{transform:none;opacity:1}}@keyframes spdown{from{transform:translateY(-40%);opacity:.3}to{transform:none;opacity:1}}
 .sp.slideup{animation:spup .28s ease-out}.sp.slidedown{animation:spdown .28s ease-out}
 .sprail{position:absolute;right:10px;bottom:84px;z-index:5;display:flex;flex-direction:column;gap:14px}
-.sprail button{display:flex;flex-direction:column;align-items:center;gap:3px;background:none;border:0;padding:0;color:#fff;font:inherit;font-size:12px;font-weight:600;cursor:pointer;text-shadow:0 1px 3px rgba(0,0,0,.6)}
+.sprail :is(button,a[data-fr-link]){display:flex;flex-direction:column;align-items:center;gap:3px;background:none;border:0;padding:0;color:#fff;font:inherit;font-size:12px;font-weight:600;cursor:pointer;text-shadow:0 1px 3px rgba(0,0,0,.6)}
 .spb{width:46px;height:46px;border-radius:50%;background:rgba(0,0,0,.45);display:grid;place-items:center;backdrop-filter:blur(6px)}
 .spb svg{width:24px;height:24px;fill:none;stroke:#fff;stroke-width:2;stroke-linejoin:round;stroke-linecap:round}
 .spb.on svg{fill:#fbbf24;stroke:#fbbf24}.spb.liked svg{fill:#ff3d5a;stroke:#ff3d5a}
@@ -586,8 +587,8 @@ img.cav.uimg{object-fit:cover;background:var(--chip);display:block}
 .spsheet .comments{margin-top:6px;max-height:none;overflow:visible}
 /* full-screen shorts: the comment sheet rides above the phone keyboard (--kb is the keyboard height) */
 body.spfs .spsheet{bottom:var(--kb,0px);max-height:min(70%,calc(100% - var(--kb,0px) - 40px))}
-.spsheet-h{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}.spsheet-h button{background:var(--chip);border:0;color:var(--fg);width:36px;height:36px;border-radius:50%;font-size:16px;cursor:pointer}
-.ratebox.spbig button{font-size:30px}
+.spsheet-h{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}.spsheet-h :is(button,a[data-fr-link]){background:var(--chip);border:0;color:var(--fg);width:36px;height:36px;border-radius:50%;font-size:16px;cursor:pointer}
+.ratebox.spbig :is(button,a[data-fr-link]){font-size:30px}
 @keyframes sheetin{from{transform:translateY(100%)}to{transform:none}}
 body.spfs{overflow:hidden}
 /* black behind the full-screen short, so the page never shows through while swiping to the next one */
@@ -618,10 +619,10 @@ body.spfs .spback{display:flex}
 .spicon.paused{background-image:url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 24 24%27%3E%3Cpath fill=%27white%27 d=%27M6 5h4v14H6zM14 5h4v14h-4z%27/%3E%3C/svg%3E")}
 .spicon.playing{background-image:url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 24 24%27%3E%3Cpath fill=%27white%27 d=%27M8 5v14l11-7z%27/%3E%3C/svg%3E")}
 .spicon.show{animation:spflash .7s ease}
-/* shorts: a tap on the video only shows this button; the button itself pauses and plays */
+/* shorts: a tap on the video only shows this button; the :is(button,a[data-fr-link]) itself pauses and plays */
 .spicon.ctl{opacity:1;pointer-events:auto;cursor:pointer;transition:opacity .25s;-webkit-tap-highlight-color:transparent}
 .sprail{transition:opacity .3s}.sp.uihide .sprail{opacity:0;pointer-events:none}
-/* shorts: YouTube's own controls are off (they doubled our pause button and never showed on a tap), so the short has its own time bar */
+/* shorts: YouTube's own controls are off (they doubled our pause :is(button,a[data-fr-link]) and never showed on a tap), so the short has its own time bar */
 .spbar{position:absolute;left:0;right:0;bottom:0;z-index:5;padding:14px 12px calc(10px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:2px;background:linear-gradient(transparent,rgba(0,0,0,.5));transition:background .3s}
 .spseek{width:100%;margin:0;height:18px;cursor:pointer;touch-action:none;-webkit-appearance:none;appearance:none;background:transparent}
 /* slim, YouTube-style: a 3px line (red where it has played) and a small dot that grows while you drag */
@@ -650,7 +651,7 @@ body.spfs .spback{display:flex}
 .tttile span{display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden;opacity:.85}
 .ytthumb{display:block;width:100%;height:100%;object-fit:cover;background:var(--chip)}
 .livechat{height:min(70vh,640px);border-radius:12px;overflow:hidden;background:var(--surface);border:1px solid var(--line);display:flex;flex-direction:column}
-.lctabs{display:flex;border-bottom:1px solid var(--line)}.lctabs button{flex:1;background:none;border:0;border-bottom:2px solid transparent;padding:11px 8px;font:inherit;font-weight:600;color:var(--muted);cursor:pointer}.lctabs button.on{color:var(--fg);border-bottom-color:var(--accent)}
+.lctabs{display:flex;border-bottom:1px solid var(--line)}.lctabs :is(button,a[data-fr-link]){flex:1;background:none;border:0;border-bottom:2px solid transparent;padding:11px 8px;font:inherit;font-weight:600;color:var(--muted);cursor:pointer}.lctabs :is(button,a[data-fr-link]).on{color:var(--fg);border-bottom-color:var(--accent)}
 .lcbody{flex:1;min-height:0;display:flex;flex-direction:column}
 .lclist{flex:1;overflow-y:auto;padding:10px 12px;display:flex;flex-direction:column;gap:8px;overscroll-behavior:contain}
 .lcmsg{display:flex;gap:8px;align-items:flex-start;font-size:13.5px;line-height:1.4;word-break:break-word}.lcmsg .cav{width:24px;height:24px;font-size:11px}
@@ -764,7 +765,7 @@ body.spfs .spback{display:flex}
 .plist li span:first-child{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 
 
-/* computers: the menu is hidden until the menu button opens it (as a drawer over the page), so videos get the whole width */
+/* computers: the menu is hidden until the menu :is(button,a[data-fr-link]) opens it (as a drawer over the page), so videos get the whole width */
 @media (min-width:861px){
   .shell,.shell.mini{grid-template-columns:minmax(0,1fr)}
   .guide{display:none;position:fixed;left:0;top:0;bottom:0;width:260px;height:auto;padding-top:14px;background:var(--surface);z-index:120;box-shadow:4px 0 24px rgba(0,0,0,.35)}
@@ -790,7 +791,7 @@ body.spfs .spback{display:flex}
   .createbtn b,.logo .word-tag{display:none}
   .createbtn{padding:0;width:40px;justify-content:center;background:none}
   .grid{grid-template-columns:minmax(0,1fr)}
-  .search button{width:48px}
+  .search :is(button,a[data-fr-link]){width:48px}
 }
 @media (max-width:520px){.logo .word{display:none}.signin b{display:none}.signin{padding:0 10px}.mini-v{grid-template-columns:140px minmax(0,1fr)}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
@@ -822,15 +823,15 @@ body.spfs .spback{display:flex}
 .wmore{position:relative}
 .wmenu{display:none;position:absolute;right:0;top:calc(100% + 6px);min-width:240px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:8px 0;box-shadow:0 8px 28px rgba(0,0,0,.35);z-index:20}
 .wmore.open .wmenu{display:block}
-.wmenu button,.wmenu a{display:flex;align-items:center;gap:14px;width:100%;height:40px;padding:0 16px;border:0;background:none;text-align:left;font-size:14px;color:inherit;text-decoration:none;white-space:nowrap}
-.wmenu button:hover,.wmenu a:hover{background:var(--hover)}
+.wmenu :is(button,a[data-fr-link]),.wmenu a{display:flex;align-items:center;gap:14px;width:100%;height:40px;padding:0 16px;border:0;background:none;text-align:left;font-size:14px;color:inherit;text-decoration:none;white-space:nowrap}
+.wmenu :is(button,a[data-fr-link]):hover,.wmenu a:hover{background:var(--hover)}
 .wmenu svg.i{width:20px;height:20px;flex:none}
 .upnext{gap:10px}
 .upchips{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px}
 .upchips::-webkit-scrollbar{display:none}
-.upchips button{flex:none;height:32px;padding:0 12px;border-radius:8px;border:0;background:var(--chip);color:inherit;font-weight:600;font-size:14px;white-space:nowrap}
-.upchips button:hover{background:var(--hover)}
-.upchips button.on{background:var(--fg);color:var(--bg)}
+.upchips :is(button,a[data-fr-link]){flex:none;height:32px;padding:0 12px;border-radius:8px;border:0;background:var(--chip);color:inherit;font-weight:600;font-size:14px;white-space:nowrap}
+.upchips :is(button,a[data-fr-link]):hover{background:var(--hover)}
+.upchips :is(button,a[data-fr-link]).on{background:var(--fg);color:var(--bg)}
 .upnl{display:flex;flex-direction:column;gap:8px}
 .mini-v .vtitle{font-weight:600}
 @media (max-width:1100px){.wbtns{margin-left:0}}
@@ -1220,10 +1221,10 @@ const fdate=t=>new Date(t).toLocaleDateString("en-GB",{day:"numeric",month:"shor
 const datesLine=f=>[f.pub?`Published on ${esc(f.src||"YouTube")} ${fdate(f.pub)}`:"",f.added?`Added to Fanreelz ${fdate(f.added)}`:""].filter(Boolean).join(" · ");
 const metaLine=f=>{const s=stats(f);return `${viewTxt(f)}${s.n?`<span class="st">★</span> ${s.avg.toFixed(1)} · ${fmtN(s.n)} ratings`:"No ratings yet"} · ${f.days==null?"on "+esc(f.src):ago(f.days)}`};
 function card(f,rank){
-  return `<button class="vid" data-open="${esc(f.id)}"><div class="thumb"><canvas data-f="${esc(f.id)}"></canvas>${rank?`<span class="rank">${rank}</span>`:""}<span class="len">${esc(f.len)}</span></div>
+  return `<a class="vid" href="${esc(pathFor({view:f.format==="short"||f.vert?"shorts":"watch",film:f.id}))}" data-fr-link data-open="${esc(f.id)}"><div class="thumb"><canvas data-f="${esc(f.id)}"></canvas>${rank?`<span class="rank">${rank}</span>`:""}<span class="len">${esc(f.len)}</span></div>
   <div class="vinfo">${cav(byName(f))}<div class="vtext"><h3 class="vtitle">${esc(f.title)}</h3>
   <div class="vmeta">${esc(byName(f)||"YouTube creator")}${f.real?'<span class="pill">Real</span>':""}${myRatings[f.id]?`<span class="pill">You ${myRatings[f.id]}★</span>`:""}</div>
-  <div class="vmeta">${metaLine(f)}</div></div></div></button>`;
+  <div class="vmeta">${metaLine(f)}</div></div></div></a>`;
 }
 
 function renderTabbar(){
@@ -4343,6 +4344,8 @@ async function sbSignOut(){if(sb){await sb.auth.signOut();location.reload()}}
     all.forEach(applyYtInfo);sharedSubs=all;mySubs=mine;openLinkedFilm();render();resolveNames();setTimeout(()=>loadHandViews().catch(()=>{}),1500);},()=>{});
 })();
 </script>
+
+<script src="/navigation.js"></script>
 
 <!-- Cloudflare Web Analytics: counts visits without cookies or tracking individual visitors -->
 <script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "94673d86616b4c7fb6b3d6c3ad8f7383"}'></script>
