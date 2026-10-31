@@ -7,6 +7,7 @@ import { BLOCK_RE, classify } from "./lib/classify.mjs";
 import { readAffiliates } from "./affiliates.mjs";
 import showdown from "./showdown.mjs";
 import { notePeak } from "./peak.mjs";
+import { trafficHistory } from "./lib/traffic-history.mjs";
 const json = (o, status = 200) => new Response(JSON.stringify(o), { status, headers: { "Content-Type": "application/json", "Cache-Control": "no-store" } });
 
 export async function whoIs(req) {
@@ -90,6 +91,10 @@ export default async (req) => {
       if (!r.ok) throw new Error("Umami " + r.status + " " + path);
       return r.json();
     };
+    if (body.metric === "daily-history") {
+      try { return json(await trafficHistory(get, body.before)); }
+      catch (e) { return json({error:String(e.message || e)},503); }
+    }
     // All time: from the first visit Umami has ({startDate, endDate} from /daterange)
     if (body.range === "all") {
       const dr = await get("/daterange").catch(() => null);
