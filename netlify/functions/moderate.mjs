@@ -2,7 +2,7 @@
 // POST /api/moderate with the signed-in user's token. Body {action:"check"} answers whether this user is an admin;
 // {action:"remove", owner:"<user id>", id:"<comment id>"} removes that comment and its replies; {action:"hide", id:"yt-…"} hides a film.
 // Needs: ADMIN_EMAILS (comma-separated sign-in emails of the admins), SUPABASE_URL, SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY (secret).
-import importYoutube, { searchNow, addByLinks } from "./import-youtube.mjs";
+import importYoutube, { searchNow, addByLinks, addChannel } from "./import-youtube.mjs";
 import { BLOCK_RE, classify } from "./lib/classify.mjs";
 import { readAffiliates } from "./affiliates.mjs";
 import showdown from "./showdown.mjs";
@@ -27,6 +27,7 @@ export default async (req) => {
   const admin = isAdmin(u);
   if (body.action === "check") return json({ admin });
   if (!admin) return json({ error: "not allowed" }, 403);
+  if (body.action === "addchannel") return json(await addChannel(body.q, u.id).catch(() => ({error:"Channel import could not finish. Please try again; queued videos will also be retried automatically."})));
   if (body.action === "search") return json(await searchNow(body.q).catch((e) => ({ error: String(e.message || e) })));
   if (body.action === "addurl") return json(await addByLinks(body.q).catch((e) => ({ error: String(e.message || e) })));
   if (body.action === "users") {
@@ -256,6 +257,12 @@ export default async (req) => {
       if (!r.ok) return json({ error: "save failed " + r.status }, 500);
       const n = (await r.json().catch(() => [])).length;
       await fetch(base + "catalog_channels?title=eq." + encodeURIComponent(ch), { method: "PATCH", headers: h, body: JSON.stringify({ status: "skipped", next_page: null }) });
+      const jobs = await fetch(base + 'import_state?key=like.channel-import%3A*&select=key,value', {headers:h});
+      if (!jobs.ok) return json({error:'Videos hidden, but automatic channel import could not be stopped. Please retry.'},503);
+      for (const job of await jobs.json()) if (job.value.title === ch) {
+        const stopped = await fetch(base + 'import_state?key=eq.' + encodeURIComponent(job.key), {method:'PATCH',headers:h,body:JSON.stringify({value:{...job.value,disabled:true}})});
+        if (!stopped.ok) return json({error:'Videos hidden, but automatic channel import could not be stopped. Please retry.'},503);
+      }
       return json({ ok: true, hidden: n });
     }
     // cleanup: hide catalogue films whose titles the current filters would now reject (gameplay, voice changers, trolling…)

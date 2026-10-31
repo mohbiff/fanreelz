@@ -198,11 +198,63 @@ async function run() {
 }
 
 export default async () => {
-  try { const r = await run(); console.log(JSON.stringify(r)); return new Response(JSON.stringify(r), { headers: { "Content-Type": "application/json" } }); }
+  try { const channels = await runChannelImports().catch(() => ({error:'Channel import will retry on the next run'})); const r = await run(); r.channels = channels; console.log(JSON.stringify(r)); return new Response(JSON.stringify(r), { headers: { "Content-Type": "application/json" } }); }
   catch (e) { console.error(e); return new Response(JSON.stringify({ error: String(e.message || e) }), { status: 500 }); }
 };
 
 export const config = { schedule: "17 */2 * * *" };
+
+// Explicit admin imports are separate from automatic AI discovery. Process one
+// uploads page per request, persisting the cursor only after the catalogue save.
+export function channelReference(text) {
+  let u;try { u = new URL(String(text || '').trim()); } catch { return null; }
+  if (u.protocol !== 'https:' || !['youtube.com','www.youtube.com','m.youtube.com'].includes(u.hostname)) return null;
+  let parts;try { parts = u.pathname.split('/').filter(Boolean).map(decodeURIComponent); } catch { return null; }
+  if (parts[0]?.startsWith('@') && /^@[^\s/?#]{1,100}$/.test(parts[0])) return { forHandle: parts[0] };
+  if (parts[0] === 'channel' && /^UC[\w-]{22}$/.test(parts[1] || '')) return { id: parts[1] };
+  if (parts[0] === 'user' && /^[\w-]{1,100}$/.test(parts[1] || '')) return { forUsername: parts[1] };
+  return null;
+}
+async function importChannelPage(job, sb) {
+  const pl = await yt('playlistItems', { part:'snippet', playlistId:job.uploads, maxResults:'50', ...(job.nextPage ? {pageToken:job.nextPage} : {}) });
+  const ids = (pl.items || []).map(x => x.snippet?.resourceId?.videoId).filter(Boolean);
+  const det = ids.length ? await yt('videos', {part:'snippet,contentDetails,status,statistics',id:ids.join(',')}) : {items:[]};
+  const keep = [];
+  for (const d of det.items || []) {
+    if (!d.status?.embeddable || d.status.privacyStatus !== 'public' || d.snippet?.channelId !== job.channelId) continue;
+    const sn=d.snippet,secs=iso(d.contentDetails?.duration);
+    const c=classify(sn.title,sn.description || '',true) || {cat:'original',char:'Drama',lore:'lore'};
+    keep.push({id:'yt-'+d.id,platform:'YouTube',video_id:d.id,title:sn.title.slice(0,200),channel:sn.channelTitle,channel_id:sn.channelId,
+      cat:c.cat,char:c.char,lore:c.lore,format:secs<=75?'short':'film',duration:secs,views:+(d.statistics?.viewCount||0),published_at:sn.publishedAt,
+      age_restricted:d.contentDetails?.contentRating?.ytRating==='ytAgeRestricted'});
+  }
+  // Omit hidden: importing a channel must not undo an existing moderation decision.
+  await sb.upsert('catalog',keep);
+  const next={...job,nextPage:pl.nextPageToken || null,processed:(job.processed||0)+ids.length,lastRun:new Date().toISOString(),done:!pl.nextPageToken};
+  await sb.upsert('import_state',[{key:'channel-import:'+job.channelId,value:next}]);
+  return {channel:job.title,processed:next.processed,imported:keep.length,more:!next.done};
+}
+export async function addChannel(link, submittedBy) {
+  const ref=channelReference(link);
+  if (!ref) return {error:'Paste a YouTube channel link such as https://www.youtube.com/@ChannelName or /channel/UC…'};
+  const info=await yt('channels',{part:'snippet,contentDetails',...ref});
+  const ch=info.items?.[0];
+  if (!ch?.contentDetails?.relatedPlaylists?.uploads) return {error:'YouTube channel not found. Use its @handle or /channel/ link.'};
+  const sb=db(),key='channel-import:'+ch.id;
+  const existing=(await sb.get('import_state?key=eq.'+encodeURIComponent(key)+'&select=value'))[0]?.value;
+  const job=existing && !existing.done ? {...existing,disabled:false} : {channelId:ch.id,title:ch.snippet.title,uploads:ch.contentDetails.relatedPlaylists.uploads,nextPage:null,processed:0,done:false,submittedBy,createdAt:new Date().toISOString()};
+  // Queue first: temporary YouTube/storage errors can be retried by the schedule.
+  await sb.upsert('import_state',[{key,value:job}]);
+  return importChannelPage(job,sb);
+}
+export async function runChannelImports() {
+  const sb=db(),jobs=await sb.get('import_state?key=like.channel-import%3A*&select=value');
+  const due=jobs.map(x=>x.value).filter(j=>!j.disabled && (!j.done || Date.now()-Date.parse(j.lastRun||j.createdAt)>6*3600e3))
+    .sort((a,b)=>String(a.lastRun||'').localeCompare(String(b.lastRun||'')));
+  if (!due.length) return null;
+  const job=due[0];
+  return importChannelPage(job.done?{...job,nextPage:null,processed:0}:job,sb);
+}
 
 // Admin "Find AI films now": one YouTube search for any words, and the AI fan films it finds go straight into the catalogue.
 // Their channels are queued too, so the hourly importer reads the rest of their uploads later. Costs about 101 quota units.

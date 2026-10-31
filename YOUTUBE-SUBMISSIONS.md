@@ -1,5 +1,27 @@
 # YouTube submissions
 
+## Import a whole channel (admins)
+
+Open **Accounts (admin) → New videos → Import YouTube channel**. Paste an
+`https://www.youtube.com/@Handle`, `/channel/UC…`, or legacy `/user/…` link,
+then press **Import channel**. The same form appears below the homepage admin
+search bar. It is only displayed to admins; the server also requires admin access.
+
+The first batch runs immediately. Cloudflare's existing ten-minute importer
+schedule continues one page (up to 50 uploads) per run, saves its cursor privately
+in `import_state`, and checks finished channels again after six hours. A full
+rescan refreshes metadata and finds new uploads, using stable YouTube video IDs
+to avoid duplicate catalogue entries. All public embeddable videos are imported,
+including titles without AI keywords. Hidden videos stay hidden, and Hide channel
+disables this channel's automatic import. No schema changes or new secrets.
+
+The result message reports uploads checked, videos saved in the current batch,
+and whether more batches remain. Import counts include refreshed existing videos.
+API failures keep the cursor for retry. Imports are not a copy or re-upload of
+video files: playback uses the original YouTube embed.
+
+## Individual video submissions
+
 Cloudflare routes `POST /api/submit-youtube` to the shared server handler.
 It validates the signed-in account with Supabase Auth, reads YouTube's video
 snippet, and saves `channelTitle` and `channelId` on the existing submission
