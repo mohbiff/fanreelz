@@ -11,7 +11,7 @@ android {
 
     defaultConfig {
         applicationId "com.fanreelz.app"
-        minSdk 23
+        minSdk 24
         targetSdk 36
         // Every build from GitHub Actions gets a higher number automatically (Google Play needs that for each upload)
         def vc = (System.getenv("VERSION_CODE") ?: "1").toInteger()
