@@ -17,6 +17,7 @@ import ytViews from "../netlify/functions/yt-views.mjs";
 import affiliates from "../netlify/functions/affiliates.mjs";
 import insights from "../netlify/functions/insights.mjs";
 import creatorAi from "../netlify/functions/creator-ai.mjs";
+import {refreshCreatorSubscribers} from "../netlify/functions/lib/creator-subscribers.mjs";
 import creatorRankings from "../netlify/functions/creator-rankings.mjs";
 import discordDaily, { runFollows } from "../netlify/functions/discord-daily.mjs";
 import { withSeo, sitemap } from "./seo.mjs";
@@ -139,6 +140,7 @@ export default {
   },
   async scheduled(event, env, ctx) {
     useEnv(env);
+    if(event.cron==="*/10 * * * *")ctx.waitUntil(refreshCreatorSubscribers().catch(()=>console.error("Subscriber refresh failed")));
     const job = CRONS[event.cron];
     if (job) ctx.waitUntil(job(new Request("https://fanreelz.com/scheduled")).then((r) => r.text()).then((t) => console.log(event.cron, t)));
   },

@@ -35,9 +35,16 @@ test('public rankings read all catalogue pages, use the public key and never ret
 test('public creator page labels the view scope, escapes names and links to the original YouTube channel',()=>{
   const html=readFileSync(new URL('../index.html',import.meta.url),'utf8'),main={innerHTML:''};
   const ctx=vm.createContext({isMod:false,acct:{online:true},insightsTabs:()=>'<nav>Creator rankings · Free</nav>',renderInsightsSignin:()=>{main.innerHTML='Sign in / Sign up free'},document:{addEventListener(){}},encodeURIComponent,esc:s=>String(s).replaceAll('<','&lt;'),icon:()=>'',state:{view:'creators'},$:()=>main});
-  vm.runInContext(html.slice(html.indexOf('let creatorBoard=null'),html.indexOf('function renderTop10(){')),ctx);
+  vm.runInContext(html.slice(html.indexOf('let creatorBoardSort='),html.indexOf('function renderTop10(){')),ctx);
   vm.runInContext('creatorBoard={rankings:[{rank:1,id:"UC1",name:"Creator <test>",views:123456,films:4}],videoCount:4};renderCreatorRankings()',ctx);
   assert.match(main.innerHTML,/123,456/);assert.match(main.innerHTML,/Creator &lt;test>/);assert.match(main.innerHTML,/Videos outside Fanreelz are not included/);assert.match(main.innerHTML,/data-creator="Creator &lt;test>"/);assert.ok(!main.innerHTML.includes("youtube.com/channel"));vm.runInContext("isMod=true;renderCreatorRankings()",ctx);assert.match(main.innerHTML,/youtube.com\/channel\/UC1/);
   assert.ok(html.includes('creators:renderCreatorRankings'));assert.ok(html.includes('Creator rankings · Free'));
+  assert.match(main.innerHTML,/YouTube subscribers/);
+  vm.runInContext('creatorBoard={rankings:[{id:"a",views:10,films:4,subscribers:null},{id:"b",views:20,films:1,subscribers:0},{id:"c",views:5,films:2,subscribers:500}]};creatorBoardSort="subscribers";',ctx);
+  assert.deepEqual(Array.from(vm.runInContext('sortCreatorBoard(creatorBoard.rankings).map(c=>c.id)',ctx)),['c','b','a']);
+  vm.runInContext('creatorBoardDirection="asc"',ctx);
+  assert.deepEqual(Array.from(vm.runInContext('sortCreatorBoard(creatorBoard.rankings).map(c=>c.id)',ctx)),['b','c','a']);
+  vm.runInContext('creatorBoardSort="films";creatorBoardDirection="desc"',ctx);
+  assert.deepEqual(Array.from(vm.runInContext('sortCreatorBoard(creatorBoard.rankings).map(c=>c.id)',ctx)),['a','c','b']);
   vm.runInContext('acct.online=false;renderCreatorRankings()',ctx);assert.equal(main.innerHTML,'Sign in / Sign up free');
 });

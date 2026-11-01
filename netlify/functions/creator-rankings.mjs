@@ -1,5 +1,6 @@
 import {rankCreators} from './lib/creator-rankings.mjs';
 import {whoIs} from './moderate.mjs';
+import {subscriberCounts} from './lib/creator-subscribers.mjs';
 const json=(value,status=200)=>Response.json(value,{status,headers:{'Cache-Control':'no-store'}});
 export default async function creatorRankings(req){
   if(req.method!=='GET')return json({error:'GET required'},405);
@@ -13,7 +14,7 @@ export default async function creatorRankings(req){
       const response=await fetch(base+'/rest/v1/catalog?'+query,{headers:{apikey:key,...(key.startsWith('sb_publishable_')?{}:{Authorization:'Bearer '+key})}});
       if(!response.ok)throw Error('Catalogue unavailable');
       const rows=await response.json();if(!Array.isArray(rows))throw Error('Invalid catalogue');videos.push(...rows);
-      if(rows.length<1000){const rankings=rankCreators(videos);return json({rankings,videoCount:rankings.reduce((n,c)=>n+c.films,0),asOf:new Date().toISOString(),scope:'Visible YouTube videos imported into Fanreelz'});}
+      if(rows.length<1000){const ranked=rankCreators(videos),counts=await subscriberCounts(ranked.map(c=>c.id));const rankings=ranked.map(c=>({...c,subscribers:null,subscribersAt:null,...counts.get(c.id)}));return json({rankings,videoCount:rankings.reduce((n,c)=>n+c.films,0),asOf:new Date().toISOString(),scope:'Visible YouTube videos imported into Fanreelz'});}
     }
     // Never present a partial catalogue as a complete leaderboard.
     throw Error('Catalogue exceeds request capacity');
