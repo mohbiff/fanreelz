@@ -34,10 +34,10 @@ test('public rankings read all catalogue pages, use the public key and never ret
 });
 test('public creator page labels the view scope, escapes names and links to the original YouTube channel',()=>{
   const html=readFileSync(new URL('../index.html',import.meta.url),'utf8'),main={innerHTML:''};
-  const ctx=vm.createContext({acct:{online:true},insightsTabs:()=>'<nav>Creator rankings · Free</nav>',renderInsightsSignin:()=>{main.innerHTML='Sign in / Sign up free'},document:{addEventListener(){}},encodeURIComponent,esc:s=>String(s).replaceAll('<','&lt;'),icon:()=>'',state:{view:'creators'},$:()=>main});
+  const ctx=vm.createContext({isMod:false,acct:{online:true},insightsTabs:()=>'<nav>Creator rankings · Free</nav>',renderInsightsSignin:()=>{main.innerHTML='Sign in / Sign up free'},document:{addEventListener(){}},encodeURIComponent,esc:s=>String(s).replaceAll('<','&lt;'),icon:()=>'',state:{view:'creators'},$:()=>main});
   vm.runInContext(html.slice(html.indexOf('let creatorBoard=null'),html.indexOf('function renderTop10(){')),ctx);
   vm.runInContext('creatorBoard={rankings:[{rank:1,id:"UC1",name:"Creator <test>",views:123456,films:4}],videoCount:4};renderCreatorRankings()',ctx);
-  assert.match(main.innerHTML,/123,456/);assert.match(main.innerHTML,/Creator &lt;test>/);assert.match(main.innerHTML,/Videos outside Fanreelz are not included/);assert.match(main.innerHTML,/youtube.com\/channel\/UC1/);
+  assert.match(main.innerHTML,/123,456/);assert.match(main.innerHTML,/Creator &lt;test>/);assert.match(main.innerHTML,/Videos outside Fanreelz are not included/);assert.match(main.innerHTML,/data-creator="Creator &lt;test>"/);assert.ok(!main.innerHTML.includes("youtube.com/channel"));vm.runInContext("isMod=true;renderCreatorRankings()",ctx);assert.match(main.innerHTML,/youtube.com\/channel\/UC1/);
   assert.ok(html.includes('creators:renderCreatorRankings'));assert.ok(html.includes('Creator rankings · Free'));
   vm.runInContext('acct.online=false;renderCreatorRankings()',ctx);assert.equal(main.innerHTML,'Sign in / Sign up free');
 });
