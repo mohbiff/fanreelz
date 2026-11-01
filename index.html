@@ -870,6 +870,7 @@ body.spfs .spback{display:flex}
 <div class="toast" id="toast" hidden></div>
 <div id="frameHold" hidden></div><div id="spPre" aria-hidden="true" style="position:fixed;left:-10000px;top:0;width:360px;height:640px;opacity:0;pointer-events:none;overflow:hidden"></div>
 <script src="/email-auth.js?v=1"></script>
+<script src="/creator-profiles.js?v=1"></script>
 <script>
 const GROUPS=[
  {name:"Fantasy",cats:[
@@ -1381,7 +1382,7 @@ function renderWatch(){
   $("#main").innerHTML=`${theater?`<div class="theater">${playerHtml}</div>`:""}<div class="watch"><div>
     ${theater?"":playerHtml}
     ${f.seriesId&&findSeries(f.seriesId)?`<button class="serieslink" data-series="${esc(f.seriesId)}">${esc(findSeries(f.seriesId)?.title||"Series")} · Season ${f.season}, Episode ${f.ep}</button>`:""}<h1 class="wtitle" ${f.format==="episode"?'style="margin-top:4px"':""}>${esc(f.title)}${f.real?'<span class="pill">Real</span>':""}${isVerified(f)?'<span class="pill">Verified original</span>':""}</h1>
-    <div class="wbar"><div class="wowner">${(f.real||f.yt||f.tt||f.ig||f.vm||f.dm)?`<div class="owner">${cav(byName(f),40)}<div><b>${esc(byName(f)||"YouTube creator")}</b><small>${esc(catName(f.cat))} · ${esc(f.char)}</small></div></div>`:`<button class="owner link" data-creator="${esc(f.byId||f.by)}">${cav(byName(f),40)}<div><b>${esc(byName(f)||"YouTube creator")}</b><small>${fmtN(followerCount(f.byId||f.by))} followers · ${esc(catName(f.cat))}</small></div></button>`}${(f.real||f.yt||f.tt||f.ig||f.vm||f.dm)?"":`<button class="wfollow ${myFollows[f.byId||f.by]?"on":""}" data-follow="${esc(f.byId||f.by)}">${myFollows[f.byId||f.by]?"Following":"Follow"}</button>`}</div>
+    <div class="wbar"><div class="wowner">${(f.real||f.yt||f.tt||f.ig||f.vm||f.dm)?`<button class="owner link" data-creator="${esc(videoCreatorKey(f))}">${cav(byName(f),40)}<div><b>${esc(byName(f)||"YouTube creator")}</b><small>${esc(catName(f.cat))} · ${esc(f.char)}</small></div></button>${f.yt?creatorSubscriptionButton(f):""}`:`<button class="owner link" data-creator="${esc(f.byId||f.by)}">${cav(byName(f),40)}<div><b>${esc(byName(f)||"YouTube creator")}</b><small>${fmtN(followerCount(f.byId||f.by))} followers · ${esc(catName(f.cat))}</small></div></button>`}${(f.real||f.yt||f.tt||f.ig||f.vm||f.dm)?"":`<button class="wfollow ${myFollows[f.byId||f.by]?"on":""}" data-follow="${esc(f.byId||f.by)}">${myFollows[f.byId||f.by]?"Following":"Follow"}</button>`}</div>
       <div class="wbtns"><div class="ratebox" role="group" aria-label="Rate this film"><span>${mine?"Your rating":"Rate"}</span>${[1,2,3,4,5].map(k=>`<button data-rate="${k}" class="${k<=mine?"on":""}" aria-label="${k} stars">★</button>`).join("")}</div><button class="wpill" data-share="${esc(f.id)}">${icon("share")}Share</button><button class="wpill" data-save="${esc(f.id)}">${icon("save")}Save</button><div class="wmore"><button class="wpill wdots" data-wmore="" aria-label="More actions" aria-haspopup="menu"><svg class="i" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.3"/><circle cx="12" cy="12" r="1.3"/><circle cx="19" cy="12" r="1.3"/></svg></button><div class="wmenu" role="menu"><button data-later="${esc(f.id)}">${icon("clock")}${myLater.some(x=>x.id===f.id)?"Remove from Watch later":"Watch later"}</button>${f.real||f.yt||f.tt||f.ig||f.vm||f.dm?"":`<button data-tip="${esc(f.byId||f.by)}" data-tipfilm="${esc(f.id)}">${icon("heart")}Tip the creator</button>`}${f.url?`<a class="wmlink" href="${esc(f.url)}" target="_blank" rel="noopener">${icon("film")}Watch on ${esc(f.src)}</a>`:""}${isVerified(f)?"":`<button data-claimorig="${esc(f.id)}">${icon("shield")}Is this yours?</button>`}<button data-report="${esc(f.id)}">${icon("flag")}Report content</button>${isMod&&f.yt?`<button data-adminhide="${esc(f.id)}">${icon("shield")}Hide from Fanreelz</button>`:""}</div></div></div></div>
     <div class="desc"><div class="top2">${[isMod?viewsOf(f).toLocaleString("en-US")+" views on Fanreelz":"",f.ytViews?f.ytViews.toLocaleString("en-US")+" views on YouTube":""].filter(Boolean).map(x=>x+" · ").join("")}${s.n?`★ ${s.avg.toFixed(1)} from ${s.n.toLocaleString("en-US")} ratings`:"No ratings yet"} · ${f.days==null?"":ago(f.days)+" · "}${esc(f.src)}${f.tool&&f.tool!=="Unknown"?" · made with "+esc(f.tool):""}</div>${datesLine(f)?`<div class="vmeta" style="margin-top:4px">${datesLine(f)}</div>`:""}
       <div class="dist">${[5,4,3,2,1].map(k=>`<span>${k}★</span><span class="bar"><i style="width:${max?s.c[k-1]/max*100:0}%"></i></span><span>${fmtN(s.c[k-1])}</span>`).join("")}</div>
@@ -1495,7 +1496,7 @@ function renderGrowthCenter(D){
  return `<h2 class="sect-h">Creator Growth Center</h2><p class="vmeta">Platform search signals: last 30 days, latest 7 days versus the previous 7. Updated ${esc(D.at||'')}.${D.sampled?' Search sample limited to the latest 20,000 events.':''} Search signals are not personal analytics. Search counts remain admin-only.</p><div class="umgrid">`+
  box('Trending Opportunities','<p class="vmeta">Topics with increasing weekly search activity. Use these as ideas, not predictions.</p>'+topics(D.trending))+
  box('Personal Performance Dashboard',`<p class="vmeta">${esc(G.personal?.reason||'Personal analytics are not connected.')}</p><p>Connection status: unavailable</p>`)+
- box('Creator Rankings',`<p class="vmeta">Ranked by combined YouTube views on visible videos imported into Fanreelz. Videos outside Fanreelz are not included.${G.catalogSampled?' Limited to the first 20,000 catalogue records.':''}</p>${G.catalogError?`<p>${esc(G.catalogError)}</p>`:(G.rankings||[]).map((c,i)=>`<div class="umrow"><span class="umname">${i+1}. <a href="/creator/${encodeURIComponent(c.name)}" data-creator="${esc(c.name)}" style="color:inherit">${esc(c.name)}</a>${D.admin?` <a href="https://www.youtube.com/channel/${encodeURIComponent(c.id)}" target="_blank" rel="noopener" class="vmeta">YouTube ↗</a>`:""}</span><span>${Number(c.views||0).toLocaleString("en-US")} YouTube views · ${c.films} videos</span></div>`).join('')||'<p>No eligible catalogue channels yet.</p>'}`)+
+ box('Creator Rankings',`<p class="vmeta">Ranked by combined YouTube views on visible videos imported into Fanreelz. Videos outside Fanreelz are not included.${G.catalogSampled?' Limited to the first 20,000 catalogue records.':''}</p>${G.catalogError?`<p>${esc(G.catalogError)}</p>`:(G.rankings||[]).map((c,i)=>`<div class="umrow"><span class="umname">${i+1}. <a href="/creator/${encodeURIComponent(c.id)}" data-creator="${esc(c.id)}" style="color:inherit">${esc(c.name)}</a>${D.admin?` <a href="https://www.youtube.com/channel/${encodeURIComponent(c.id)}" target="_blank" rel="noopener" class="vmeta">YouTube ↗</a>`:""}</span><span>${Number(c.views||0).toLocaleString("en-US")} YouTube views · ${c.films} videos</span></div>`).join('')||'<p>No eligible catalogue channels yet.</p>'}`)+
  box('Trend Alerts',`<p class="vmeta">In-app alerts on reload when a watched topic appears in the weekly trending list. Email and push delivery are not connected.</p>${topics(watched)}<form id="growthWatchForm"><label>Watch a category <select name="topic" required>${CATS.map(c=>`<option value="${esc(c.name)}">${esc(c.name)}</option>`).join("")}</select></label><button class="chip">Add</button></form>${prefs.watch.map((w,i)=>`<p>${esc(w)} <button class="chip" data-growth-unwatch="${i}">Remove</button></p>`).join('')}`)+
  box('Creator Planning Calendar',`<p class="vmeta">Private plans saved to your account. Dates use your selected calendar day. Publishing and external calendar sync are not connected.</p><form id="growthPlanForm"><label>Title <input name="title" required maxlength="160"></label> <label>Date <input name="date" type="date" required></label><button class="chip">Save plan</button></form>${prefs.plans.map((p,i)=>({p,i})).sort((a,b)=>a.p.date.localeCompare(b.p.date)).map(({p,i})=>`<p><time>${esc(p.date)}</time> · ${esc(p.title)} · ${esc(p.status)} <button class="chip" data-growth-done="${i}">${p.status==='published'?'Mark planned':'Mark published'}</button> <button class="chip" data-growth-remove="${i}">Delete</button></p>`).join('')||'<p>No plans yet.</p>'}`)+
  box('Global Audience Insights',`<p class="vmeta">Category interests by country from Fanreelz searches, not the audience of your channel. Exact phrases, unmatched searches and unknown locations are excluded.</p>${(D.countries||[]).map(c=>`<p><b>${esc(c.cc)}</b>: ${c.top.map(t=>esc(t.q)).join(', ')}</p>`).join('')||'<p>No country search data yet.</p>'}`)+
@@ -2240,7 +2241,7 @@ function renderCreatorRankings(){
   if(!creatorBoard)loadCreatorRankings();
   const B=creatorBoard,nf=n=>Number(n||0).toLocaleString("en-US"),rows=sortCreatorBoard(B?.rankings||[]),visibleLimit=isMod?creatorBoardLimit:Math.min(creatorBoardLimit,200);
   $("#main").innerHTML=insightsTabs()+`<h1 class="sect-h">${icon("trophy")} Creator rankings</h1><p class="vmeta">Ranked by the combined YouTube views on each creator’s visible videos imported into Fanreelz. Videos outside Fanreelz are not included. These are the latest stored YouTube counts, not Fanreelz page views.</p><p class="vmeta">Click a column heading to sort.${isMod?" Subscriber counts cover the whole YouTube channel and are rounded by YouTube. Fanreelz views count recorded plays on visible imported videos. Counts refresh periodically; — means unavailable or pending.":""}</p>
-  ${!B||B.loading?`<p role="status">Loading creator rankings…</p>`:B.error?`<p role="alert">${esc(B.error)}</p><button class="btn" data-creators-retry>Try again</button>`:rows.length?`<p class="vmeta">${nf(rows.length)} creators · ${nf(B.videoCount)} videos</p><div class="umbox" style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;text-align:left"><thead><tr><th scope="col" style="padding:12px">Rank</th><th scope="col" style="padding:12px">Creator</th>${creatorSortHeading("views","Views")}${isMod?creatorSortHeading("subscribers","YouTube subscribers")+creatorSortHeading("fanreelzViews","Fanreelz views"):""}${creatorSortHeading("films","Videos on Fanreelz")}</tr></thead><tbody>${rows.slice(0,visibleLimit).map(c=>`<tr style="border-top:1px solid var(--line)"><td style="padding:12px;font-weight:700">#${c.rank}</td><th scope="row" style="padding:12px"><a href="/creator/${encodeURIComponent(c.name)}" data-creator="${esc(c.name)}" style="color:inherit">${esc(c.name)}</a>${isMod?` <a href="https://www.youtube.com/channel/${encodeURIComponent(c.id)}" target="_blank" rel="noopener" class="vmeta" style="margin-left:10px">YouTube ↗</a>`:""}</th><td style="padding:12px;text-align:right;font-weight:700">${nf(c.views)}</td>${isMod?`<td style="padding:12px;text-align:right" title="${c.subscribersAt&&c.subscribersAt!=="1970-01-01T00:00:00.000Z"?"Updated "+esc(c.subscribersAt):"Unavailable or pending"}">${c.subscribers==null?"—":nf(c.subscribers)}</td><td style="padding:12px;text-align:right">${c.fanreelzViews==null?"—":nf(c.fanreelzViews)}</td>`:""}<td style="padding:12px;text-align:right">${nf(c.films)}</td></tr>`).join("")}</tbody></table></div>${rows.length>visibleLimit&&(isMod||visibleLimit<200)?`<button class="btn ghost" style="margin-top:14px" data-creators-more>Show more creators</button>`:""}`:`<p>No YouTube creators have been imported yet.</p>`}`;
+  ${!B||B.loading?`<p role="status">Loading creator rankings…</p>`:B.error?`<p role="alert">${esc(B.error)}</p><button class="btn" data-creators-retry>Try again</button>`:rows.length?`<p class="vmeta">${nf(rows.length)} creators · ${nf(B.videoCount)} videos</p><div class="umbox" style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;text-align:left"><thead><tr><th scope="col" style="padding:12px">Rank</th><th scope="col" style="padding:12px">Creator</th>${creatorSortHeading("views","Views")}${isMod?creatorSortHeading("subscribers","YouTube subscribers")+creatorSortHeading("fanreelzViews","Fanreelz views"):""}${creatorSortHeading("films","Videos on Fanreelz")}</tr></thead><tbody>${rows.slice(0,visibleLimit).map(c=>`<tr style="border-top:1px solid var(--line)"><td style="padding:12px;font-weight:700">#${c.rank}</td><th scope="row" style="padding:12px"><a href="/creator/${encodeURIComponent(c.id)}" data-creator="${esc(c.id)}" style="color:inherit">${esc(c.name)}</a>${isMod?` <a href="https://www.youtube.com/channel/${encodeURIComponent(c.id)}" target="_blank" rel="noopener" class="vmeta" style="margin-left:10px">YouTube ↗</a>`:""}</th><td style="padding:12px;text-align:right;font-weight:700">${nf(c.views)}</td>${isMod?`<td style="padding:12px;text-align:right" title="${c.subscribersAt&&c.subscribersAt!=="1970-01-01T00:00:00.000Z"?"Updated "+esc(c.subscribersAt):"Unavailable or pending"}">${c.subscribers==null?"—":nf(c.subscribers)}</td><td style="padding:12px;text-align:right">${c.fanreelzViews==null?"—":nf(c.fanreelzViews)}</td>`:""}<td style="padding:12px;text-align:right">${nf(c.films)}</td></tr>`).join("")}</tbody></table></div>${rows.length>visibleLimit&&(isMod||visibleLimit<200)?`<button class="btn ghost" style="margin-top:14px" data-creators-more>Show more creators</button>`:""}`:`<p>No YouTube creators have been imported yet.</p>`}`;
 }
 document.addEventListener('click',e=>{if(e.target.closest('[data-creators-retry]')){e.preventDefault();loadCreatorRankings();return}if(e.target.closest('[data-creators-more]')){e.preventDefault();creatorBoardLimit=isMod?creatorBoardLimit+50:Math.min(creatorBoardLimit+50,200);render()}});
 function renderTop10(){
@@ -2509,7 +2510,7 @@ function openSave(filmId){
 }
 
 /* ---------- Creators ---------- */
-function creatorFilms(key){return allFilms().filter(f=>(f.byId?f.byId===key:f.by===key))}
+function creatorFilms(key){return allFilms().filter(f=>(f.channelId===key||(!/^UC[\w-]{22}$/.test(key)&&(f.byId?f.byId===key:f.by===key))))}
 function creatorBadges(key,films){
   const b=[];const T=trendingByGroup();
   for(const g of GROUPS)for(const c of g.cats){const top=allFilms().filter(f=>f.cat===c.id).sort((a,b)=>stats(b).bayes-stats(a).bayes).slice(0,3);if(top.some(f=>films.includes(f)))b.push(`Top 3 in ${c.name}`)}
@@ -2518,27 +2519,29 @@ function creatorBadges(key,films){
   return b.slice(0,4);
 }
 function followerCount(key){const base=isExampleCreator(key)?200+hnum(key)%9000:0;
-  const real=Object.entries(followDocs).filter(([uid,c])=>c[key]&&uid!==acct.uid).length;return base+real+(myFollows[key]?1:0)}
+  const alias=/^UC[\w-]{22}$/.test(key)?creatorFilms(key)[0]?.by:null;const real=Object.entries(followDocs).filter(([uid,c])=>(c[key]||(alias&&c[alias]))&&uid!==acct.uid).length;return base+real+(creatorFollowing(key)?1:0)}
 const followersOf=key=>Object.entries(followDocs).filter(([uid,c])=>c[key]).map(([uid])=>uid);
 const followingOf=uid=>Object.keys((uid===acct.uid?myFollows:followDocs[uid])||{});
 function renderCreator(){
   if(isUid(state.creator)){state.view="user";state.user=state.creator;return renderUser()}
   const key=state.creator;const films=creatorFilms(key);const name=films[0]?byName(films[0]):key;
   const rated=films.filter(f=>stats(f).n);const avg=rated.length?rated.reduce((a,f)=>a+stats(f).avg,0)/rated.length:0;
-  const badges=creatorBadges(key,films);const following=!!myFollows[key];
+  const badges=creatorBadges(key,films);const following=creatorFollowing(key);
   $("#main").innerHTML=`<div class="chero">${cav(name,96)}<div class="cinfo"><h1>${esc(name)}</h1>
-     <div class="vmeta">${fmtN(followerCount(key))} followers · ${films.length} films${rated.length?` · ★ ${avg.toFixed(1)} average`:""}</div>
+     <div class="vmeta">${fmtN(followerCount(key))} subscribers · ${films.length} films${rated.length?` · ★ ${avg.toFixed(1)} average`:""}</div>
      <div class="row" style="gap:6px;margin-top:6px">${badges.map(b=>`<span class="badge2">${esc(b)}</span>`).join("")}</div>
-     <div class="row" style="margin-top:12px"><button class="btn ${following?"ghost":""}" data-follow="${esc(key)}">${following?"✓ Following":"Follow"}</button>
+     <div class="row" style="margin-top:12px"><button class="btn ${following?"ghost":""}" data-follow="${esc(key)}">${following?"✓ Subscribed":"Subscribe"}</button>
        <button class="btn ghost" data-tip="${esc(key)}">${icon("heart")} Tip</button><button class="btn ghost" data-commission="${esc(name)}">Commission a film</button></div></div></div>
+   ${creatorClaimButton(films)}
    ${supportersHtml(key)}
    ${creatorContent(key,films)}
    ${isExampleCreator(key)?`<p class="note">Example creator. Follower counts and badges are made up.</p>`:""}`;
+  loadCreatorOwner(films);
 }
 async function toggleFollow(key){
-  if(!needAccount("Sign in to follow creators."))return;
-  const next={...myFollows};if(next[key])delete next[key];else next[key]=true;
-  if(await writeOwn("follows",{c:next})){myFollows=next;render();toast(next[key]?"Following":"Unfollowed")}
+  if(!needAccount("Sign in to subscribe to creators on Fanreelz."))return;
+  const next={...myFollows},alias=/^UC[\w-]{22}$/.test(key)?creatorFilms(key)[0]?.by:null,was=creatorFollowing(key);if(alias)delete next[alias];if(was)delete next[key];else next[key]=true;
+  if(await writeOwn("follows",{c:next})){myFollows=next;render();toast(next[key]?"Subscribed":"Unsubscribed")}
 }
 const TIP_FEE=0.08,TIP_FEE_PRO=0.05;
 const isPro=key=>isExampleCreator(key)&&hnum(key)%2===0;
@@ -4358,10 +4361,10 @@ async function sbSave(col,id,data){
 /* The big catalogue: AI fan films the importer has found on YouTube.
    The last copy is kept on the device (IndexedDB), so the page shows every film at once on the next visit;
    a fresh copy is then read from the database in parallel pages of 1,000 (only the columns the page uses). */
-const CAT_COLS="id,video_id,title,cat,char,channel,duration,published_at,added_at,format,lore,age_restricted,views";
+const CAT_COLS="id,video_id,title,cat,char,channel,channel_id,duration,published_at,added_at,format,lore,age_restricted,views";
 const idb=(mode,fn)=>new Promise((res,rej)=>{try{const o=indexedDB.open("fanreelz",1);o.onupgradeneeded=()=>o.result.createObjectStore("kv");
   o.onsuccess=()=>{try{const tx=o.result.transaction("kv",mode),r=fn(tx.objectStore("kv"));tx.oncomplete=()=>{res(r?.result);o.result.close()};tx.onerror=()=>rej(tx.error)}catch(e){rej(e)}};o.onerror=()=>rej(o.error)}catch(e){rej(e)}});
-const catSig=rows=>(rows[0]?.added_at?"a|":"")+rows.length+"|"+rows.map(r=>r.id).join(",").length+"|"+(rows[0]?.id||"")+"|"+(rows[rows.length-1]?.id||"");
+const catSig=rows=>(rows[0]?.channel_id||"legacy")+"|"+(rows[0]?.added_at?"a|":"")+rows.length+"|"+rows.map(r=>r.id).join(",").length+"|"+(rows[0]?.id||"")+"|"+(rows[rows.length-1]?.id||"");
 let catLoaded="";
 function useCatalog(rows){
   const sig=catSig(rows);if(sig===catLoaded)return 0;catLoaded=sig;
@@ -4370,10 +4373,10 @@ function useCatalog(rows){
   const byId=new Map(FILMS.map(f=>[f.id,f]));
   rows.forEach((r,k)=>{
     // films added by hand that the importer also has: take YouTube's view count and dates from the database
-    const own=byId.get(r.id);if(own){if(!own.ytViews&&r.views)own.ytViews=+r.views;if(!own.pub&&r.published_at)own.pub=Date.parse(r.published_at);if(!own.added&&r.added_at)own.added=Date.parse(r.added_at);if(own.days==null&&r.published_at)own.days=daysSince(Date.parse(r.published_at));return}
+    const own=byId.get(r.id);if(own){if(r.channel_id)own.channelId=r.channel_id;if(!own.ytViews&&r.views)own.ytViews=+r.views;if(!own.pub&&r.published_at)own.pub=Date.parse(r.published_at);if(!own.added&&r.added_at)own.added=Date.parse(r.added_at);if(own.days==null&&r.published_at)own.days=daysSince(Date.parse(r.published_at));return}
     if(have.has(r.id)||!known.has(r.cat))return;have.add(r.id);
     const d=+r.duration||0;
-    FILMS.push({id:r.id,yt:r.video_id,title:r.title,cat:r.cat,char:r.char||"",src:"YouTube",tool:"AI tools",by:r.channel||"",
+    FILMS.push({id:r.id,yt:r.video_id,title:r.title,cat:r.cat,char:r.char||"",src:"YouTube",tool:"AI tools",by:r.channel||"",channelId:r.channel_id||"",
       len:d?`${Math.floor(d/60)}:${String(d%60).padStart(2,"0")}`:"",days:r.published_at?daysSince(Date.parse(r.published_at)):null,
       counts:[0,0,0,0,0],hue:(k*47)%360,format:r.format==="short"?"short":"film",lore:r.lore||"whatif",boost:Math.max(0,20-k/50),
       url:"https://www.youtube.com/watch?v="+r.video_id,age:!!r.age_restricted,ytViews:+r.views||0,db:true,pub:r.published_at?Date.parse(r.published_at):null,added:r.added_at?Date.parse(r.added_at):null});n++});
@@ -4425,7 +4428,7 @@ async function sbSignOut(){if(sb){await sb.auth.signOut();location.reload()}}
     const b=await startSupabase();if(!b){window.FanreelzTraffic?.start({known:false});return;}({user,db,me}=b);
     try{const back=JSON.parse(localStorage.getItem("fr_back")||"null");localStorage.removeItem("fr_back");if(back&&me){Object.assign(state,back);history.replaceState({fr:navSnap(),y:0},"")}}catch(e){}
   }
-  Object.assign(acct,{user,db,uid:me?.id||null,me:me||null,online:!!me});insData=null;creatorBoard=null;const trafficAdmin=await checkMod();await window.FanreelzTraffic?.start({owner:trafficAdmin===true,known:trafficAdmin!==null,record:payload=>modCall({action:"owner-visit",...payload})});startSafety();emailAuthReady=true;render();if(emailRecovery)openEmailAuth("update");
+  Object.assign(acct,{user,db,uid:me?.id||null,me:me||null,online:!!me});insData=null;creatorBoard=null;const trafficAdmin=await checkMod();await window.FanreelzTraffic?.start({owner:trafficAdmin===true,known:trafficAdmin!==null,record:payload=>modCall({action:"owner-visit",...payload})});startSafety();emailAuthReady=true;render();resumeCreatorVerification();if(emailRecovery)openEmailAuth("update");
   db.collection("ratings").onSnapshot(snap=>{const agg={};
     for(const d of snap.docs){const r=d.data()?.r;if(!r||typeof r!=="object")continue;
       for(const [fid,v] of Object.entries(r)){const k=Math.round(+v);if(k<1||k>5)continue;(agg[fid]||(agg[fid]=[0,0,0,0,0]))[k-1]++}

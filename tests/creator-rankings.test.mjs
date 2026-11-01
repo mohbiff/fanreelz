@@ -50,7 +50,7 @@ test('public creator page labels the view scope, escapes names and links to the 
   vm.runInContext(html.slice(html.indexOf('let creatorBoardSort='),html.indexOf('function renderTop10(){')),ctx);
   vm.runInContext('creatorBoard={rankings:[{rank:1,id:"UC1",name:"Creator <test>",views:123456,films:4}],videoCount:4};renderCreatorRankings()',ctx);
   assert.ok(!main.innerHTML.includes('YouTube subscribers'));assert.ok(!main.innerHTML.includes('Fanreelz views'));
-  assert.match(main.innerHTML,/123,456/);assert.match(main.innerHTML,/Creator &lt;test>/);assert.match(main.innerHTML,/Videos outside Fanreelz are not included/);assert.match(main.innerHTML,/data-creator="Creator &lt;test>"/);assert.ok(!main.innerHTML.includes("youtube.com/channel"));vm.runInContext("isMod=true;renderCreatorRankings()",ctx);assert.match(main.innerHTML,/youtube.com\/channel\/UC1/);
+  assert.match(main.innerHTML,/123,456/);assert.match(main.innerHTML,/Creator &lt;test>/);assert.match(main.innerHTML,/Videos outside Fanreelz are not included/);assert.match(main.innerHTML,/data-creator="UC1"/);assert.ok(!main.innerHTML.includes("youtube.com/channel"));vm.runInContext("isMod=true;renderCreatorRankings()",ctx);assert.match(main.innerHTML,/youtube.com\/channel\/UC1/);
   assert.ok(html.includes('creators:renderCreatorRankings'));assert.ok(html.includes('Creator rankings · Free'));
   assert.match(main.innerHTML,/YouTube subscribers/);
   assert.match(main.innerHTML,/Fanreelz views/);
