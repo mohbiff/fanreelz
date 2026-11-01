@@ -8,7 +8,6 @@ let actor=null, saved=new Map(),failCatalog=false;
 globalThis.fetch=async (url,opts={})=>{
  url=String(url);const reply=(data,status=200)=>new Response(JSON.stringify(data),{status});
  if(url.includes('/auth/v1/user'))return actor?reply(actor):reply({},401);
- if(url.includes('import_state?')&&new URL(url).searchParams.get('key')==='like.channel-import:*')return reply([{value:{channelId:'UC1',submittedBy:'admin'}}]);
  if(url.includes('import_state?')){const k=new URL(url).searchParams.get('key').slice(3);return reply([{value:k==='plus'?{ids:['plus-user']}:saved.get(k)||{}}]);}
  if(url.endsWith('import_state')){const [row]=JSON.parse(opts.body);saved.set(row.key,row.value);return reply({});}
  if(url.includes('search_events?'))return reply(Array.from({length:3},()=>({q:'Arthas',cc:'SE',zero:true,at:new Date().toISOString()})));
