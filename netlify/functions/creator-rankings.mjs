@@ -1,8 +1,10 @@
 import {rankCreators} from './lib/creator-rankings.mjs';
-const json=(value,status=200)=>Response.json(value,{status,headers:{'Cache-Control':status===200?'public, max-age=300':'no-store'}});
+import {whoIs} from './moderate.mjs';
+const json=(value,status=200)=>Response.json(value,{status,headers:{'Cache-Control':'no-store'}});
 export default async function creatorRankings(req){
   if(req.method!=='GET')return json({error:'GET required'},405);
   try{
+    if(!(await whoIs(req))?.id)return json({error:'Sign in to see Creator rankings'},401);
     const base=Netlify.env.get('SUPABASE_URL'),key=Netlify.env.get('SUPABASE_ANON_KEY');
     if(!base||!key)throw Error('Missing public database configuration');
     const videos=[];

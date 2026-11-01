@@ -1291,13 +1291,13 @@ function renderGuide(){renderTabbar();
   const T=trendingByGroup();
   $("#guide").innerHTML=fi("home","Home","home")+fnav("short","Shorts")+fnav("series","Series")+`<button class="gi ${state.view==="home"&&!state.cat&&state.format==="film"&&state.dur==="o20"?"on":""}" data-longnav="">${icon("film")}<span>Films</span></button>`+fi("top","Top rated","top")+fi("new","New","fresh")+
     `<button class="gi ${state.view==="browse"?"on":""}" data-browse="All">${icon("list")}<span>Browse all</span></button>`+
-    `<button class="gi ${state.view==="insights"?"on":""}" data-view="insights">${icon("trend")}<span>Insights <small class="plustag">PLUS</small></span></button><hr>`+
+    `<button class="gi ${state.view==="insights"?"on":""}" data-view="insights">${icon("trend")}<span>Insights</span></button><hr>`+
     `<button class="gi youhead ${state.view==="you"?"on":""}" data-view="you"><span>You</span><svg class="i" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></button>`+
     [["channel","Creator page","user"],["history","History","clock"],["playlists","Playlists","list"],["later","Watch later","clock"],["liked","Liked videos","like"],["yourvideos","Your videos","film"]]
       .map(([v,l,ic])=>`<button class="gi ${state.view===v||(v==="channel"&&state.view==="user"&&state.user===acct.uid)?"on":""}" data-you="${v}">${icon(ic)}<span>${l}</span></button>`).join("")+
     fi("mine","Your ratings","mine")+(isMod?`<button class="gi ${state.view==="admin"?"on":""}" data-view="admin">${icon("shield")}<span>Accounts (admin)</span></button>`:"")+`<hr>`+
     `<button class="gi ${state.view==="live"?"on":""}" data-view="live">${icon("live")}<span>Live now</span>${LIVE.length?`<span class="livecount">${LIVE.length}</span>`:""}</button>`+[["premieres","Premieres","prem"],["tv","Fanreelz TV","tv"]].map(([v,l,ic])=>`<button class="gi ${state.view===v?"on":""}" data-view="${v}">${icon(ic)}<span>${l}</span></button>`).join("")+
-    `<hr><h4>Community</h4>`+[["creators","Creator rankings","trophy"],["top10","Top 10 this month","top"],["battles","Fan Battles","battle"],["requests","Requests","req"],["showdown","Character Showdown","trophy"],["playlists","Playlists","list"],["discord","Discord bot","bot"]].map(([v,l,ic])=>`<button class="gi ${state.view===v?"on":""}" data-view="${v}">${icon(ic)}<span>${l}</span></button>`).join("")+
+    `<hr><h4>Community</h4>`+[["top10","Top 10 this month","top"],["battles","Fan Battles","battle"],["requests","Requests","req"],["showdown","Character Showdown","trophy"],["playlists","Playlists","list"],["discord","Discord bot","bot"]].map(([v,l,ic])=>`<button class="gi ${state.view===v?"on":""}" data-view="${v}">${icon(ic)}<span>${l}</span></button>`).join("")+
     `<button class="gi ${state.view==="about"?"on":""}" data-view="about">${icon("info")}<span>About us</span></button>`+
     (matchMedia("(display-mode: standalone)").matches||matchMedia("(display-mode: fullscreen)").matches||navigator.standalone||window.FanreelzApp||/FanreelzApp\//.test(navigator.userAgent)?"":`<button class="gi" data-install="">${icon("save")}<span>Install app</span></button>`)+
     `<button class="gi" data-theme-next="">${icon("info")}<span>Appearance: ${({dark:"Dark",light:"Light",system:"Device theme"})[document.documentElement.dataset.theme]||"Dark"}</span></button>`+
@@ -1412,6 +1412,10 @@ document.addEventListener("click",e=>{
 });
 document.addEventListener("keydown",e=>{if(e.key==="Escape")document.querySelectorAll(".wmore.open").forEach(x=>x.classList.remove("open"))});
 /* ---------- Creator Insights (Fanreelz Plus): what fans search for, counted together (never who) ---------- */
+let insightsTab='rankings';
+function insightsTabs(){return `<nav class="row" aria-label="Insights sections" style="gap:8px;margin-bottom:20px"><button class="chip ${state.view==='creators'||insightsTab==='rankings'?'on':''}" data-insights-tab="rankings">Creator rankings · Free</button><button class="chip ${state.view==='insights'&&insightsTab==='analytics'?'on':''}" data-insights-tab="analytics">Creator Insights <small class="plustag">PLUS</small></button></nav>`}
+function renderInsightsSignin(){ $("#main").innerHTML=`<div class="about"><h1 class="ab-h">Insights</h1><p class="ab-lede">Sign in or create a free account to explore Creator rankings. Creator Insights and analytics require Fanreelz Plus.</p><button class="btn" id="signinBtn">Sign in / Sign up free</button></div>` }
+document.addEventListener('click',e=>{const tab=e.target.closest?.('[data-insights-tab]');if(!tab)return;e.preventDefault();insightsTab=tab.dataset.insightsTab;go({view:'insights'})});
 let insData=null,plusIdsAdm=null;
 async function loadInsights(){insData={loading:true};try{const r=await fetch("/api/insights",{method:"POST",headers:{"Content-Type":"application/json",Authorization:"Bearer "+(sbToken||"")},body:"{}"});insData={...(await r.json()),at2:Date.now()}}catch(e){insData={error:String(e.message||e)}}if(state.view==="insights")render()}
 async function loadPlusIds(){try{const r=await fetch("/api/insights",{method:"POST",headers:{"Content-Type":"application/json",Authorization:"Bearer "+(sbToken||"")},body:JSON.stringify({action:"plusget"})}).then(r=>r.json());plusIdsAdm=r.ids||[]}catch(e){plusIdsAdm=[]}if(state.view==="admin")render()}
@@ -1419,6 +1423,8 @@ document.addEventListener("click",async e=>{const b=e.target.closest?.("[data-pl
   const r=await fetch("/api/insights",{method:"POST",headers:{"Content-Type":"application/json",Authorization:"Bearer "+(sbToken||"")},body:JSON.stringify({action:"plusset",uid,on})}).then(r=>r.json()).catch(()=>({}));
   if(r.ids){plusIdsAdm=r.ids;toast(on?"Plus given: they now see all Creator Insights":"Plus removed");render()}else toast("Couldn't change Plus: "+(r.error||"error"))});
 function renderInsights(){
+  if(!acct.online)return renderInsightsSignin();
+  if(insightsTab==='rankings')return renderCreatorRankings();
   if(!insData||(!insData.loading&&Date.now()-(insData.at2||0)>120e3))loadInsights();
   const D=insData||{},P=!!D.plus,H=D.hidden||{};let cn=null;try{cn=new Intl.DisplayNames(["en"],{type:"region"})}catch(e){}
   const flag=c=>/^[A-Z]{2}$/.test(c||"")?String.fromCodePoint(...[...c].map(ch=>127397+ch.charCodeAt(0))):"";
@@ -1428,7 +1434,7 @@ function renderInsights(){
   const cc=r=>r.cc?.length?" "+r.cc.map(flag).join(""):"";
   let html=`<h1 class="sect-h" style="font-size:24px">${icon("trend")} Creator Insights <small class="plustag">PLUS</small></h1>
   <p class="vmeta" style="margin:-4px 0 16px;max-width:720px">What fans look for on Fanreelz in the last 30 days, so you know what to make next. Only recognized Fanreelz categories are shown. Exact search phrases and unmatched searches are excluded.${D.admin&&D.total?` · ${D.total.toLocaleString("en-US")} searches`:""}</p>`;
-  if(!P&&!D.loading)html+=`<div class="insplus"><b>✦ Fanreelz Plus for creators</b><span>See every wanted topic, what is trending this week, which worlds are growing and which categories interest each country. Plus is in a free beta for AI creators: message the Fanreelz team on <a href="/discord" data-view="discord">Discord</a> or Instagram to join.</span></div>`;
+  if(!P&&!D.loading)html+=`<div class="insplus"><b>✦ Fanreelz Plus for creators</b><span>See every wanted topic, what is trending this week, which worlds are growing and which categories interest each country. To upgrade, contact the Fanreelz team on <a href="/discord" data-view="discord">Discord</a> or Instagram to join.</span></div>`;
   if(D.loading&&!D.wanted)html+=`<p class="vmeta">Loading…</p>`;
   else if(D.error)html+=`<p class="vmeta">Couldn't load: ${esc(D.error)}</p>`;
   else html+=`<div class="umgrid">
@@ -1452,7 +1458,7 @@ function renderInsights(){
     </form>
     <div id="creatorAiAnswer" class="vmeta" aria-live="polite" style="white-space:pre-wrap;margin-top:14px"></div>
   </section>`;
-  $("#main").innerHTML=html}
+  $("#main").innerHTML=insightsTabs()+html}
 document.addEventListener("click",e=>{
   const p=e.target.closest?.("[data-ai-prompt]");
   if(p){const input=document.getElementById("creatorAiQuestion");if(input){input.value=p.dataset.aiPrompt;input.focus()}return}
@@ -2212,14 +2218,15 @@ let creatorBoard=null,creatorBoardLimit=50;
 async function loadCreatorRankings(){
   if(creatorBoard?.loading)return;
   creatorBoard={loading:true};
-  try{const r=await fetch('/api/creator-rankings');const data=await r.json();if(!r.ok)throw Error(data.error||"Could not load creator rankings");creatorBoard=data}
+  try{const r=await fetch('/api/creator-rankings',{headers:{Authorization:'Bearer '+(sbToken||'')}});const data=await r.json();if(!r.ok)throw Error(data.error||"Could not load creator rankings");creatorBoard=data}
   catch(e){creatorBoard={error:e.message||"Could not load creator rankings"}}
-  if(state.view==="creators")render();
+  if(state.view==="creators"||(state.view==="insights"&&insightsTab==="rankings"))render();
 }
 function renderCreatorRankings(){
+  if(!acct.online)return renderInsightsSignin();
   if(!creatorBoard)loadCreatorRankings();
   const B=creatorBoard,nf=n=>Number(n||0).toLocaleString("en-US"),rows=B?.rankings||[];
-  $("#main").innerHTML=`<h1 class="sect-h">${icon("trophy")} Creator rankings</h1><p class="vmeta">Ranked by the combined YouTube views on each creator’s visible videos imported into Fanreelz. Videos outside Fanreelz are not included. These are the latest stored YouTube counts, not Fanreelz page views.</p>
+  $("#main").innerHTML=insightsTabs()+`<h1 class="sect-h">${icon("trophy")} Creator rankings</h1><p class="vmeta">Ranked by the combined YouTube views on each creator’s visible videos imported into Fanreelz. Videos outside Fanreelz are not included. These are the latest stored YouTube counts, not Fanreelz page views.</p>
   ${!B||B.loading?`<p role="status">Loading creator rankings…</p>`:B.error?`<p role="alert">${esc(B.error)}</p><button class="btn" data-creators-retry>Try again</button>`:rows.length?`<p class="vmeta">${nf(rows.length)} creators · ${nf(B.videoCount)} videos</p><div class="umbox" style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;text-align:left"><thead><tr><th scope="col" style="padding:12px">Rank</th><th scope="col" style="padding:12px">Creator</th><th scope="col" style="padding:12px;text-align:right">YouTube views</th><th scope="col" style="padding:12px;text-align:right">Videos on Fanreelz</th></tr></thead><tbody>${rows.slice(0,creatorBoardLimit).map(c=>`<tr style="border-top:1px solid var(--line)"><td style="padding:12px;font-weight:700">#${c.rank}</td><th scope="row" style="padding:12px"><a href="https://www.youtube.com/channel/${encodeURIComponent(c.id)}" target="_blank" rel="noopener" style="color:inherit">${esc(c.name)}</a></th><td style="padding:12px;text-align:right;font-weight:700">${nf(c.views)}</td><td style="padding:12px;text-align:right">${nf(c.films)}</td></tr>`).join("")}</tbody></table></div>${rows.length>creatorBoardLimit?`<button class="btn ghost" style="margin-top:14px" data-creators-more>Show more creators</button>`:""}`:`<p>No YouTube creators have been imported yet.</p>`}`;
 }
 document.addEventListener('click',e=>{if(e.target.closest('[data-creators-retry]')){e.preventDefault();loadCreatorRankings();return}if(e.target.closest('[data-creators-more]')){e.preventDefault();creatorBoardLimit+=50;render()}});
@@ -4393,7 +4400,7 @@ async function sbSignOut(){if(sb){await sb.auth.signOut();location.reload()}}
     const b=await startSupabase();if(!b){window.FanreelzTraffic?.start({known:false});return;}({user,db,me}=b);
     try{const back=JSON.parse(localStorage.getItem("fr_back")||"null");localStorage.removeItem("fr_back");if(back&&me){Object.assign(state,back);history.replaceState({fr:navSnap(),y:0},"")}}catch(e){}
   }
-  Object.assign(acct,{user,db,uid:me?.id||null,me:me||null,online:!!me});insData=null;const trafficAdmin=await checkMod();await window.FanreelzTraffic?.start({owner:trafficAdmin===true,known:trafficAdmin!==null,record:payload=>modCall({action:"owner-visit",...payload})});startSafety();render();emailAuthReady=true;if(emailRecovery)openEmailAuth("update");
+  Object.assign(acct,{user,db,uid:me?.id||null,me:me||null,online:!!me});insData=null;creatorBoard=null;const trafficAdmin=await checkMod();await window.FanreelzTraffic?.start({owner:trafficAdmin===true,known:trafficAdmin!==null,record:payload=>modCall({action:"owner-visit",...payload})});startSafety();render();emailAuthReady=true;if(emailRecovery)openEmailAuth("update");
   db.collection("ratings").onSnapshot(snap=>{const agg={};
     for(const d of snap.docs){const r=d.data()?.r;if(!r||typeof r!=="object")continue;
       for(const [fid,v] of Object.entries(r)){const k=Math.round(+v);if(k<1||k>5)continue;(agg[fid]||(agg[fid]=[0,0,0,0,0]))[k-1]++}
