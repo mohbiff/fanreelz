@@ -1,3 +1,4 @@
+import { categoryForSearch } from "./search-categories.mjs";
 // Private Growth Center state uses import_state, whose RLS permits service-role access only.
 const json=(data,status=200)=>new Response(JSON.stringify(data),{status,headers:{'Content-Type':'application/json','Cache-Control':'no-store'}});
 async function read(db,key){const r=await fetch(db.url+'import_state?key=eq.'+encodeURIComponent(key)+'&select=value',{headers:db.h});if(!r.ok)throw Error('Growth storage unavailable');return (await r.json())[0]?.value||{};}
@@ -13,7 +14,9 @@ export async function growthAction(body,user,admin,db){
     plans.push({title:p.title.trim(),date:p.date,status:p.status});
    }
    if(body.watch.some(x=>typeof x!=='string'||!x.trim()||x.length>100))return json({error:'Invalid watched topic'},400);
-   const value={plans,watch:[...new Set(body.watch.map(x=>x.trim().toLowerCase()))]};await write(db,key,value);return json({prefs:value});
+   const categories=body.watch.map(x=>categoryForSearch(x));
+   if(categories.some(c=>!c))return json({error:'Choose a recognized Fanreelz category'},400);
+   const value={plans,watch:[...new Set(categories.map(c=>c.name))]};await write(db,key,value);return json({prefs:value});
   }
   if(body.action==='growthFeature'){
    if(!admin)return json({error:'Admins only'},403);
@@ -25,7 +28,7 @@ export async function growthAction(body,user,admin,db){
 }
 export async function growthData(user,db){
  const out={prefs:{plans:[],watch:[]},rankings:[],featured:null,personal:{available:false,reason:'Verified account-to-channel ownership and personal analytics are not connected. Views, followers, watch time and revenue are unavailable.'}};
- try{out.prefs=await read(db,'growth:'+user.id);out.prefs={plans:out.prefs.plans||[],watch:out.prefs.watch||[]};}catch{out.storageError='Calendar and alert settings could not be loaded. Saving is disabled until reload.';}
+ try{out.prefs=await read(db,'growth:'+user.id);out.prefs={plans:out.prefs.plans||[],watch:[...new Set((out.prefs.watch||[]).map(x=>categoryForSearch(x)?.name).filter(Boolean))]};}catch{out.storageError='Calendar and alert settings could not be loaded. Saving is disabled until reload.';}
  try{
   const channels=new Map();let truncated=false;
   for(let offset=0;offset<20000;offset+=1000){
