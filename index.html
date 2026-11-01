@@ -1412,9 +1412,9 @@ document.addEventListener("click",e=>{
 });
 document.addEventListener("keydown",e=>{if(e.key==="Escape")document.querySelectorAll(".wmore.open").forEach(x=>x.classList.remove("open"))});
 /* ---------- Creator Insights (Fanreelz Plus): what fans search for, counted together (never who) ---------- */
-let insightsTab='rankings';
+let insightsTab='rankings',insightsLoginPrompted=false;
 function insightsTabs(){return `<nav class="row" aria-label="Insights sections" style="gap:8px;margin-bottom:20px"><button class="chip ${state.view==='creators'||insightsTab==='rankings'?'on':''}" data-insights-tab="rankings">Creator rankings · Free</button><button class="chip ${state.view==='insights'&&insightsTab==='analytics'?'on':''}" data-insights-tab="analytics">Creator Insights <small class="plustag">PLUS</small></button></nav>`}
-function renderInsightsSignin(){ $("#main").innerHTML=`<div class="about"><h1 class="ab-h">Insights</h1><p class="ab-lede">Sign in or create a free account to explore Creator rankings. Creator Insights and analytics require Fanreelz Plus.</p><button class="btn" id="signinBtn">Sign in / Sign up free</button></div>` }
+function renderInsightsSignin(){ $("#main").innerHTML=`<div class="about"><h1 class="ab-h">Insights</h1><p class="ab-lede">Sign in or create a free account to explore Creator rankings. Creator Insights and analytics require Fanreelz Plus.</p><button class="btn" id="signinBtn">Sign in / Sign up free</button></div>`; if(emailAuthReady&&!insightsLoginPrompted){insightsLoginPrompted=true;openSignin("Sign in or create a free account to access Insights and Creator rankings. Creator analytics require Plus.")} }
 document.addEventListener('click',e=>{const tab=e.target.closest?.('[data-insights-tab]');if(!tab)return;e.preventDefault();insightsTab=tab.dataset.insightsTab;go({view:'insights'})});
 let insData=null,plusIdsAdm=null;
 async function loadInsights(){insData={loading:true};try{const r=await fetch("/api/insights",{method:"POST",headers:{"Content-Type":"application/json",Authorization:"Bearer "+(sbToken||"")},body:"{}"});insData={...(await r.json()),at2:Date.now()}}catch(e){insData={error:String(e.message||e)}}if(state.view==="insights")render()}
@@ -3935,7 +3935,7 @@ function parsePath(){
   return {};
 }
 const urlNow=()=>location.pathname+location.search;
-function go(patch){if(patch.view==="admin"&&typeof umBase!=="undefined")umBase={};
+function go(patch){if(patch.view==="insights"||patch.view==="creators")insightsLoginPrompted=false;if(patch.view==="admin"&&typeof umBase!=="undefined")umBase={};
   if(patch.view&&patch.view!=="watch"&&document.body.classList.contains("fsmode")){try{(document.exitFullscreen||document.webkitExitFullscreen).call(document)}catch(e){}}
   renderHard=true;
   if(patch.view&&patch.view!=="shorts"&&document.body.classList.contains("spfs"))toggleShortsFull(false);
@@ -4400,7 +4400,7 @@ async function sbSignOut(){if(sb){await sb.auth.signOut();location.reload()}}
     const b=await startSupabase();if(!b){window.FanreelzTraffic?.start({known:false});return;}({user,db,me}=b);
     try{const back=JSON.parse(localStorage.getItem("fr_back")||"null");localStorage.removeItem("fr_back");if(back&&me){Object.assign(state,back);history.replaceState({fr:navSnap(),y:0},"")}}catch(e){}
   }
-  Object.assign(acct,{user,db,uid:me?.id||null,me:me||null,online:!!me});insData=null;creatorBoard=null;const trafficAdmin=await checkMod();await window.FanreelzTraffic?.start({owner:trafficAdmin===true,known:trafficAdmin!==null,record:payload=>modCall({action:"owner-visit",...payload})});startSafety();render();emailAuthReady=true;if(emailRecovery)openEmailAuth("update");
+  Object.assign(acct,{user,db,uid:me?.id||null,me:me||null,online:!!me});insData=null;creatorBoard=null;const trafficAdmin=await checkMod();await window.FanreelzTraffic?.start({owner:trafficAdmin===true,known:trafficAdmin!==null,record:payload=>modCall({action:"owner-visit",...payload})});startSafety();emailAuthReady=true;render();if(emailRecovery)openEmailAuth("update");
   db.collection("ratings").onSnapshot(snap=>{const agg={};
     for(const d of snap.docs){const r=d.data()?.r;if(!r||typeof r!=="object")continue;
       for(const [fid,v] of Object.entries(r)){const k=Math.round(+v);if(k<1||k>5)continue;(agg[fid]||(agg[fid]=[0,0,0,0,0]))[k-1]++}
