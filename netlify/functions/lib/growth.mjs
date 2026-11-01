@@ -1,4 +1,5 @@
 import { rankCreators } from "./creator-rankings.mjs";
+import {selectedCreatorIds} from './selected-creators.mjs';
 import { categoryForSearch } from "./search-categories.mjs";
 // Private Growth Center state uses import_state, whose RLS permits service-role access only.
 const json=(data,status=200)=>new Response(JSON.stringify(data),{status,headers:{'Content-Type':'application/json','Cache-Control':'no-store'}});
@@ -31,14 +32,14 @@ export async function growthData(user,db){
  const out={prefs:{plans:[],watch:[]},rankings:[],featured:null,personal:{available:false,reason:'Verified account-to-channel ownership and personal analytics are not connected. Views, followers, watch time and revenue are unavailable.'}};
  try{out.prefs=await read(db,'growth:'+user.id);out.prefs={plans:out.prefs.plans||[],watch:[...new Set((out.prefs.watch||[]).map(x=>categoryForSearch(x)?.name).filter(Boolean))]};}catch{out.storageError='Calendar and alert settings could not be loaded. Saving is disabled until reload.';}
  try{
-  const videos=[];let truncated=false;
+  const approved=await selectedCreatorIds(db),videos=[];let truncated=false;
   for(let offset=0;offset<20000;offset+=1000){
    const r=await fetch(db.url+`catalog?select=id,video_id,platform,channel_id,channel,views&platform=eq.YouTube&hidden=eq.false&order=id.asc&offset=${offset}&limit=1000`,{headers:db.h});
    if(!r.ok)throw Error();const rows=await r.json();
    videos.push(...rows);
    if(rows.length<1000)break;if(offset===19000)truncated=true;
   }
-  const ranked=rankCreators(videos);out.rankings=ranked.slice(0,20);out.catalogSampled=truncated;
+  const ranked=rankCreators(videos.filter(v=>approved.has(v.channel_id)));out.rankings=ranked.slice(0,20);out.catalogSampled=truncated;
   const f=await read(db,'growth:featured');out.featured=ranked.find(c=>c.id===f.channelId)||null;
  }catch{out.catalogError='Catalogue rankings and featured creator could not be loaded.';}
  return out;

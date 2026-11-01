@@ -13,17 +13,18 @@ test('rankings sum YouTube views per channel ID, deduplicate videos and preserve
 });
 test('public rankings read all catalogue pages, use the public key and never return partial failures',async()=>{
   const oldFetch=globalThis.fetch,oldEnv=globalThis.Netlify;let failing=false;const offsets=[];
-  globalThis.Netlify={env:{get:k=>({SUPABASE_URL:'https://db.test',SUPABASE_ANON_KEY:'public-test'})[k]}};
+  globalThis.Netlify={env:{get:k=>({SUPABASE_URL:'https://db.test',SUPABASE_ANON_KEY:'public-test',SUPABASE_SERVICE_ROLE_KEY:'sb_secret_test'})[k]}};
   globalThis.fetch=async(url,options)=>{
+    if(new URL(url).pathname.endsWith('/import_state'))return Response.json([{value:{channelId:'UC1',submittedBy:'admin'}},{value:{channelId:'UC2',submittedBy:'admin'}}]);
     const q=new URL(url).searchParams,offset=+q.get('offset');offsets.push(offset);
     assert.equal(options.headers.apikey,'public-test');assert.equal(q.get('hidden'),'eq.false');assert.equal(q.get('platform'),'eq.YouTube');assert.equal(q.get('order'),'id.asc');
     if(offset===0)return Response.json(Array.from({length:1000},(_,i)=>({id:'a'+i,video_id:'a'+i,channel_id:'UC1',channel:'Many small videos',views:1})));
     if(failing)return new Response(null,{status:503});
-    return Response.json([{id:'winner',video_id:'winner',channel_id:'UC2',channel:'Big <creator>',views:5000}]);
+    return Response.json([{id:'winner',video_id:'winner',channel_id:'UC2',channel:'Big <creator>',views:5000},{id:'unrelated',video_id:'unrelated',channel_id:'UNSELECTED',channel:'Unrelated channel',views:999999999}]);
   };
   try{
     const r=await handler(new Request('https://fanreelz.com/api/creator-rankings'));assert.equal(r.status,200);assert.equal(r.headers.get('Cache-Control'),'public, max-age=300');
-    const data=await r.json();assert.deepEqual(offsets,[0,1000]);assert.equal(data.videoCount,1001);assert.equal(data.rankings[0].id,'UC2');assert.equal(data.rankings[1].views,1000);
+    const data=await r.json();assert.deepEqual(offsets,[0,1000]);assert.equal(data.videoCount,1001);assert.equal(data.rankings[0].id,'UC2');assert.equal(data.rankings[1].views,1000);assert.ok(!JSON.stringify(data).includes('Unrelated channel'));
     failing=true;const failed=await handler(new Request('https://fanreelz.com/api/creator-rankings'));assert.equal(failed.status,503);assert.equal('rankings' in await failed.json(),false);
     assert.equal((await handler(new Request('https://fanreelz.com/api/creator-rankings',{method:'POST'}))).status,405);
   }finally{globalThis.fetch=oldFetch;globalThis.Netlify=oldEnv}
