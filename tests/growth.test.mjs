@@ -22,7 +22,7 @@ let [r,d]=await call({});assert.equal(d.plus,true);assert.ok(!('total'in d));ass
 assert.equal((await call({action:'growthFeature',channelId:'UC1'}))[0].status,403);
 assert.equal((await call({action:'growthSave',plans:[{title:'Plan',date:'2026-02-30',status:'planned'}],watch:[]}))[0].status,400);
 assert.equal((await call({action:'growthSave',plans:[{title:'Plan',date:'2026-11-01',status:'planned'}],watch:['Arthas']}))[0].status,200);
-assert.equal(saved.get('growth:plus-user').watch[0],'arthas');
+assert.equal(saved.get('growth:plus-user').watch[0],'Warcraft III');
 assert.equal((await call({}))[1].growth.prefs.plans.length,1);
 actor={id:'admin-user',email:'admin@test.invalid'};
 assert.equal((await call({}))[1].total,3);
@@ -31,7 +31,6 @@ assert.equal((await call({}))[1].growth.featured.id,'UC1');assert.equal((await c
 failCatalog=true;assert.ok((await call({}))[1].growth.catalogError);
 const html=fs.readFileSync(new URL('../index.html', import.meta.url),'utf8');let scripts=0;for(const m of html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/gi)){if(!m[2].trim()||/application\/ld\+json/.test(m[1]))continue;new vm.Script(m[2]);scripts++;}
 const start=html.indexOf('function renderGrowthCenter('),end=html.indexOf('let growthSaving=',start);
-const context={esc:s=>String(s).replaceAll('<','&lt;'),Intl};vm.createContext(context);vm.runInContext(html.slice(start,end),context);
+const context={esc:s=>String(s).replaceAll('<','&lt;'),Intl,CATS:[]};vm.createContext(context);vm.runInContext(html.slice(start,end),context);
 const view=context.renderGrowthCenter({...d,admin:false});assert.ok(view.includes('Creator Rankings'));assert.ok(view.includes('Creator &lt;test>'));assert.ok(!view.includes('growthFeatureForm'));
 console.log('PASS: access gates, admin-only counts, private account storage, date validation, featured creator permissions, data failures, UI escaping, '+scripts+' inline scripts parsed.');
-

@@ -17,6 +17,7 @@ import ytViews from "../netlify/functions/yt-views.mjs";
 import affiliates from "../netlify/functions/affiliates.mjs";
 import insights from "../netlify/functions/insights.mjs";
 import creatorAi from "../netlify/functions/creator-ai.mjs";
+import creatorRankings from "../netlify/functions/creator-rankings.mjs";
 import discordDaily, { runFollows } from "../netlify/functions/discord-daily.mjs";
 import { withSeo, sitemap } from "./seo.mjs";
 
@@ -35,6 +36,7 @@ const ROUTES = {
   "/api/affiliates": affiliates,
   "/api/insights": insights,
   "/api/creator-ai": creatorAi,
+  "/api/creator-rankings": creatorRankings,
 };
 // Schedules (see wrangler.jsonc): the Discord "AI video of the day" at 16:00 UTC, the importer every 10 minutes (it searches YouTube about once an hour), the showdown judge every hour at :41,
 // and every minute a look at how many are online (for the "most online at once" record)
