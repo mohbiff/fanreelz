@@ -3427,8 +3427,8 @@ function spInfo(ps){
 function spToggle(){
   const fr=document.querySelector(".sp iframe"),f=findFilm(state.film);if(!fr||!f)return;
   // follow what the player really does (it may have paused itself), so one tap always flips it
-  spPaused=f.yt?!spIsPaused():!spPaused;
-  if(f.yt)spPending=spPaused;
+  spPaused=f.yt||f.tt?!spIsPaused():!spPaused;
+  if(f.yt||f.tt)spPending=spPaused;
   const w=fr.contentWindow,cmd=spPaused?"pause":"play";
   if(f.yt)w.postMessage(JSON.stringify({event:"command",func:cmd+"Video",args:[]}),"*");
   else if(f.tt)w.postMessage({"x-tiktok-player":true,type:cmd},"*");
@@ -3885,16 +3885,21 @@ document.addEventListener("click",e=>{
 addEventListener("message",e=>{
   let host="";try{host=new URL(e.origin).hostname}catch(x){}if(!/(^|\.)tiktok\.com$/.test(host))return;
   let d=e.data;if(typeof d==="string"){try{d=JSON.parse(d)}catch(x){return}}
-  if(!d||!d["x-tiktok-player"]||d.type!=="onPlayerReady")return;
+  if(!d||!d["x-tiktok-player"])return;
   const send=t=>{try{e.source.postMessage({"x-tiktok-player":true,type:t},"*")}catch(x){}};
   const hov=[...document.querySelectorAll(".hovprev iframe")].some(i=>i.contentWindow===e.source);
   const main=[...document.querySelectorAll(".sp iframe, .player iframe")].some(i=>i.contentWindow===e.source);
   const short=[...document.querySelectorAll(".sp iframe")].find(i=>i.contentWindow===e.source),fid=short?.dataset.fid;
+  if(short&&d.type==="onStateChange"){const prev=spState;spInfo(d.value);if(prev!==spState)spShowCtl(spIsPaused()||!!document.querySelector(".spicon.ctl"));return}
+  // TikTok explicitly reports browser autoplay rejection. Retry once muted, never after a user pause.
+  if(short&&d.type==="onPlayerError"&&d.value?.errorCode===3002&&!spPaused&&!spAutoMuted){
+    spAutoMuted=true;send("mute");send("play");document.querySelectorAll("[data-spmute]").forEach(b=>b.outerHTML=spMuteBtn());return}
+  if(d.type!=="onPlayerReady")return;
   // send play a few times: TikTok ignores play until the video data has arrived
   if(hov){send("mute");[0,400,1200,2500].forEach(t=>setTimeout(()=>send("play"),t))}
   else if(main&&!spPaused){[0,400,1200].forEach(t=>setTimeout(()=>{
     if(short&&(spPaused||short!==document.querySelector(".sp iframe")||short.dataset.fid!==fid))return;
-    send(spMuted?"mute":"unMute");send("play")},t))}
+    send((short?spSoundMuted():spMuted)?"mute":"unMute");send("play")},t))}
 });
 const ageGate=f=>`<a class="agegate" href="${esc(f.url)}" target="_blank" rel="noopener"><img src="https://i.ytimg.com/vi/${esc(f.yt)}/hqdefault.jpg" alt="" referrerpolicy="no-referrer"><span><b>18+</b>This AI film is age-restricted on YouTube, so it can only play there.<em>Watch on YouTube ↗</em></span></a>`;
 const EXT=[{p:"tt",name:"TikTok"},{p:"ig",name:"Instagram"},{p:"vm",name:"Vimeo"},{p:"dm",name:"Dailymotion"}];
