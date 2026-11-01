@@ -758,7 +758,9 @@ body.spfs .spback{display:flex}
 .form{display:flex;flex-direction:column;gap:12px}
 .form label{display:flex;flex-direction:column;gap:4px;font-weight:600;font-size:13px}
 .form input,.form select{border:1px solid var(--line);background:var(--bg);border-radius:8px;padding:9px 11px;font-weight:400}
-.btn{border:0;border-radius:18px;padding:9px 16px;font-weight:700;background:var(--accent);color:var(--ink-on-accent)}
+.btn{border:0;border-radius:18px;padding:9px 16px;font-weight:700;background:#594475;color:#fff}
+.btn:hover{background:#695187}
+.btn:disabled{opacity:.6;cursor:not-allowed}
 .btn.ghost{background:var(--chip);color:var(--fg)}
 .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
 .toast{position:fixed;left:max(16px,env(safe-area-inset-left,0px));bottom:calc(20px + env(safe-area-inset-bottom,0px));background:var(--fg);color:var(--bg);padding:12px 18px;border-radius:8px;z-index:30;font-weight:600}
