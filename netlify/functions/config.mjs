@@ -5,6 +5,8 @@ export default async () =>
   new Response(JSON.stringify({
     supabaseUrl: Netlify.env.get("SUPABASE_URL") || "",
     supabaseAnonKey: Netlify.env.get("SUPABASE_ANON_KEY") || "",
+    // Enable only after SMTP delivery and recovery links have been verified.
+    emailSignupEnabled: Netlify.env.get("EMAIL_SIGNUP_ENABLED") === "true",
     discordAppId: Netlify.env.get("DISCORD_APP_ID") || "", // public: the bot's install link uses it
   }), {
     headers: {

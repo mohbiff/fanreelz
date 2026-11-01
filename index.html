@@ -36,7 +36,8 @@ html.splashing body{overflow:hidden}
 @media (prefers-reduced-motion:reduce){#splash svg,#splash .sp-spark,#splash .sp-glint{animation:none}}
 .logo .mark svg .spark{transform-origin:51px 11px;transition:transform .4s}.logo:hover .mark svg .spark{transform:rotate(90deg) scale(1.2)}
 html{color-scheme:dark}:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px/1.45 system-ui,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style>
-<style>a[data-fr-link]{color:inherit;text-decoration:none}a[data-fr-link]:not([class]){cursor:pointer}</style>
+<style>a[data-fr-link]{color:inherit;text-decoration:none}a[data-fr-link]:not([class]){cursor:pointer}.emailauth form{display:grid;gap:12px}.emailauth label{display:grid;gap:5px;font-weight:600}.emailauth input:not([type=checkbox]){box-sizing:border-box;width:100%;font:inherit;color:var(--text,inherit);background:var(--panel,#262331);border:1px solid var(--line,#4c455d);border-radius:10px;padding:12px}.emailauth .emailterms{display:flex;align-items:flex-start;gap:10px;font-size:12px;font-weight:400}.emailauth .emailterms input{width:auto;margin-top:3px}.emailauthlinks{flex-wrap:wrap}.emailauth #emailAuthMessage{margin:0;font-size:13px;line-height:1.5}.emailauth input:focus-visible{outline:2px solid #8b5cf6;outline-offset:2px}
+</style>
 </head>
 <body>
 <div id="splash" aria-hidden="true"><svg viewBox="0 0 62 58"><path class="sp-play" d="M8 6.5c0-3 3.3-4.9 5.9-3.3l38.4 22.8c2.5 1.5 2.5 5.1 0 6.6L13.9 55.4C11.3 57 8 55.1 8 52.1z" fill="#8b5cf6"/><path class="sp-spark" d="M51 2l2.6 6.4L60 11l-6.4 2.6L51 20l-2.6-6.4L42 11l6.4-2.6z" fill="#ffd23f"/></svg><span class="sp-glint"></span></div>
@@ -858,6 +859,7 @@ body.spfs .spback{display:flex}
 <div class="scrim" id="scrim" hidden></div>
 <div class="toast" id="toast" hidden></div>
 <div id="frameHold" hidden></div><div id="spPre" aria-hidden="true" style="position:fixed;left:-10000px;top:0;width:360px;height:640px;opacity:0;pointer-events:none;overflow:hidden"></div>
+<script src="/email-auth.js?v=1"></script>
 <script>
 const GROUPS=[
  {name:"Fantasy",cats:[
@@ -3925,14 +3927,16 @@ window.addEventListener("popstate",e=>{
 /* dialogs */
 function openModal(html,onclick){$("#scrim").innerHTML=html;$("#scrim").hidden=false;$("#scrim").onclick=e=>{if(e.target===$("#scrim")||e.target.closest("[data-close]")){closeModal();return}onclick&&onclick(e)}}
 function closeModal(){$("#scrim").hidden=true;$("#scrim").onclick=null}
+let emailSignupEnabled=false,emailRecovery=false,emailAuthReady=false;
+function openEmailAuth(mode){if(!sb||!window.FanreelzEmailAuth){toast("Sign-in is still loading. Try again in a moment.");return}window.FanreelzEmailAuth.open({client:sb,show:openModal,notify:toast,mode:mode||"signin",signupEnabled:emailSignupEnabled,recovery:emailRecovery})}
 function openSignin(reason){
   openModal(`<div class="dlg" role="dialog" aria-modal="true" aria-label="Sign in"><h2>Sign in to Fanreelz</h2>
     <p style="margin:0">${esc(reason||"Sign in to rate films, submit your own finds and keep track of what you've rated.")}</p>
     ${sb?`<div class="authbtns"><button class="authbtn" data-auth="google"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#4285F4" d="M22.6 12.2c0-.8-.1-1.5-.2-2.2H12v4.2h5.9a5 5 0 0 1-2.2 3.3v2.7h3.6c2.1-1.9 3.3-4.8 3.3-8z"/><path fill="#34A853" d="M12 23c3 0 5.5-1 7.3-2.7l-3.6-2.8c-1 .7-2.2 1.1-3.7 1.1-2.9 0-5.3-1.9-6.2-4.5H2.1v2.8A11 11 0 0 0 12 23z"/><path fill="#FBBC05" d="M5.8 14.1a6.6 6.6 0 0 1 0-4.2V7.1H2.1a11 11 0 0 0 0 9.8z"/><path fill="#EA4335" d="M12 5.4c1.6 0 3.1.6 4.2 1.7l3.2-3.2A11 11 0 0 0 2.1 7.1l3.7 2.8C6.7 7.3 9.1 5.4 12 5.4z"/></svg>Continue with Google</button>
-      <button class="authbtn discord" data-auth="discord"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M20.3 4.4A19.6 19.6 0 0 0 15.4 3l-.6 1.3a18 18 0 0 0-5.6 0L8.6 3a19.5 19.5 0 0 0-4.9 1.5C.6 9.1-.3 13.7.1 18.2a19.8 19.8 0 0 0 6 3l1.3-2a12.7 12.7 0 0 1-2-1l.5-.4a14 14 0 0 0 12.2 0l.5.4c-.6.4-1.3.7-2 1l1.3 2a19.7 19.7 0 0 0 6-3c.5-5.2-.8-9.7-3.6-13.8zM8 15.4c-1.2 0-2.2-1.1-2.2-2.4S6.8 10.6 8 10.6s2.2 1.1 2.2 2.4-1 2.4-2.2 2.4zm8 0c-1.2 0-2.2-1.1-2.2-2.4s1-2.4 2.2-2.4 2.2 1.1 2.2 2.4-1 2.4-2.2 2.4z"/></svg>Continue with Discord</button></div>
-      <p class="vmeta" style="margin:0;font-size:12px">Your name and profile picture from Google or Discord are shown next to your ratings and comments. Your email is never shown. <a href="/privacy.html" target="_blank">Privacy</a> · <a href="/terms.html" target="_blank">Terms</a></p>
+      <button class="authbtn discord" data-auth="discord"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M20.3 4.4A19.6 19.6 0 0 0 15.4 3l-.6 1.3a18 18 0 0 0-5.6 0L8.6 3a19.5 19.5 0 0 0-4.9 1.5C.6 9.1-.3 13.7.1 18.2a19.8 19.8 0 0 0 6 3l1.3-2a12.7 12.7 0 0 1-2-1l.5-.4a14 14 0 0 0 12.2 0l.5.4c-.6.4-1.3.7-2 1l1.3 2a19.7 19.7 0 0 0 6-3c.5-5.2-.8-9.7-3.6-13.8zM8 15.4c-1.2 0-2.2-1.1-2.2-2.4S6.8 10.6 8 10.6s2.2 1.1 2.2 2.4-1 2.4-2.2 2.4zm8 0c-1.2 0-2.2-1.1-2.2-2.4s1-2.4 2.2-2.4 2.2 1.1 2.2 2.4-1 2.4-2.2 2.4z"/></svg>Continue with Discord</button><button class="authbtn" data-email-auth>Continue with email</button></div>
+      <p class="vmeta" style="margin:0;font-size:12px">Your display name and profile picture are shown next to your ratings and comments. Your email is never shown. <a href="/privacy.html" target="_blank">Privacy</a> · <a href="/terms.html" target="_blank">Terms</a></p>
       <div class="row"><button class="btn ghost" data-close>Not now</button></div></div>`:`<p class="vmeta" style="margin:0;font-size:13px">Sign-in with Google and Discord opens at launch. This is a preview of Fanreelz.</p>
-    <div class="row"><button class="btn" data-close>Got it</button></div></div>`}`,e=>{const a=e.target.closest("[data-auth]");if(a)sbSignIn(a.dataset.auth)});
+    <div class="row"><button class="btn" data-close>Got it</button></div></div>`}`,e=>{if(e.target.closest("[data-email-auth]")){openEmailAuth("signin");return}const a=e.target.closest("[data-auth]");if(a)sbSignIn(a.dataset.auth)});
 }
 function guestMigrateSd(){if(!acct.online||guestMig.sd)return;guestMig.sd=true;const keys=Object.keys(GUEST.sd);if(!keys.length)return;
   const mine={...(sdVotes[acct.uid]?.a||{})};for(const k of keys)if(!mine[k])mine[k]=GUEST.sd[k];
@@ -4246,6 +4250,7 @@ async function startSupabase(){
   let cfg={};try{cfg=await (await fetch("/api/config")).json()}catch(e){return null}
   discordAppId=String(cfg.discordAppId||"");if(state.view==="discord")render();
   if(!cfg.supabaseUrl||!cfg.supabaseAnonKey)return null;
+  emailSignupEnabled=cfg.emailSignupEnabled===true;
   try{await loadScript("https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js")}catch(e){return null}
   // Our own storage for the sign-in: kept in memory too, and every removal is logged, so a lost sign-in can be traced.
   const mem={},sbStorage={
@@ -4253,12 +4258,13 @@ async function startSupabase(){
     setItem:(k,v)=>{mem[k]=v;try{localStorage.setItem(k,v)}catch(e){console.warn("[fanreelz auth] could not save sign-in in this browser:",e.message)}},
     removeItem:k=>{console.warn("[fanreelz auth] sign-in data removed:",k);console.trace();delete mem[k];try{localStorage.removeItem(k)}catch(e){}}};
   sb=window.supabase.createClient(cfg.supabaseUrl,cfg.supabaseAnonKey,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true,flowType:"pkce",storage:sbStorage,debug:/[?&]authdebug/.test(location.search)}});
+  sb.auth.onAuthStateChange((event)=>{if(event==="PASSWORD_RECOVERY"){emailRecovery=true;if(emailAuthReady)setTimeout(()=>openEmailAuth("update"),0)}});
   const {data:{session}}=await sb.auth.getSession();
   {const q=new URLSearchParams(location.search),h=new URLSearchParams(location.hash.slice(1));const er=q.get("error_description")||h.get("error_description");if(er)setTimeout(()=>toast("Sign-in failed: "+er.slice(0,140)),600)}
   if(/[?&](code|error)=/.test(location.search)){const u=new URL(location.href);["code","error","error_description","error_code"].forEach(k=>u.searchParams.delete(k));history.replaceState(history.state,"",u.pathname+u.search+u.hash)}
   if(/[#&](error|access_token)=/.test(location.hash))history.replaceState(history.state,"",location.pathname+location.search);
   let signedIn=!!session;sbToken=session?.access_token||null;
-  sb.auth.onAuthStateChange((ev,sess)=>{if(sess?.access_token)sbToken=sess.access_token;sbTokenNote=ev;if(!!sess!==signedIn&&ev!=="TOKEN_REFRESHED")location.reload()});
+  sb.auth.onAuthStateChange((ev,sess)=>{if(sess?.access_token)sbToken=sess.access_token;sbTokenNote=ev;if(!emailRecovery&&!!sess!==signedIn&&ev!=="TOKEN_REFRESHED"&&ev!=="PASSWORD_RECOVERY")location.reload()});
   const u=session?.user;let me=null;
   if(u){const meta=u.user_metadata||{};const {data:prof}=await sb.from("profiles").select("name,avatar_url,created_at").eq("id",u.id).maybeSingle();
     const name=prof?.name||meta.full_name||meta.name||meta.user_name||"Fan";
@@ -4354,7 +4360,7 @@ async function sbSignOut(){if(sb){await sb.auth.signOut();location.reload()}}
     const b=await startSupabase();if(!b)return;({user,db,me}=b);
     try{const back=JSON.parse(localStorage.getItem("fr_back")||"null");localStorage.removeItem("fr_back");if(back&&me){Object.assign(state,back);history.replaceState({fr:navSnap(),y:0},"")}}catch(e){}
   }
-  Object.assign(acct,{user,db,uid:me?.id||null,me:me||null,online:!!me});startSafety();render();
+  Object.assign(acct,{user,db,uid:me?.id||null,me:me||null,online:!!me});startSafety();render();emailAuthReady=true;if(emailRecovery)openEmailAuth("update");
   db.collection("ratings").onSnapshot(snap=>{const agg={};
     for(const d of snap.docs){const r=d.data()?.r;if(!r||typeof r!=="object")continue;
       for(const [fid,v] of Object.entries(r)){const k=Math.round(+v);if(k<1||k>5)continue;(agg[fid]||(agg[fid]=[0,0,0,0,0]))[k-1]++}
