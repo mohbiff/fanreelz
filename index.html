@@ -3110,7 +3110,7 @@ function renderShorts(){setTimeout(()=>{if(!spSw)document.querySelectorAll(".spp
    ${spRailOut(f,s,mine)}
    <div class="sparrows"><button class="sparrow" data-snav="-1" aria-label="Previous short" ${state.shortI===0?"disabled":""}><svg viewBox="0 0 24 24"><path d="M6 15l6-6 6 6"/></svg></button><button class="sparrow" data-snav="1" aria-label="Next short"><svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></button></div>
    <div class="sside">
-     ${(f.real||f.yt||f.tt||f.ig||f.vm||f.dm)?`<div class="owner">${cav(byName(f),40)}<div><b>${esc(byName(f)||"YouTube creator")}</b><small>${f.days==null?"on "+esc(f.src):ago(f.days)}</small></div></div>`:`<button class="owner link" data-creator="${esc(f.byId||f.by)}">${cav(byName(f),40)}<div><b>${esc(byName(f)||"YouTube creator")}</b><small>${fmtN(followerCount(f.byId||f.by))} followers</small></div></button>`}
+     ${(f.real||f.yt||f.tt||f.ig||f.vm||f.dm)?`<button class="owner link" data-creator="${esc(videoCreatorKey(f))}">${cav(byName(f),40)}<div><b>${esc(byName(f)||"YouTube creator")}</b><small>${f.days==null?"on "+esc(f.src):ago(f.days)}</small></div></button>${f.yt?creatorSubscriptionButton(f):""}`:`<button class="owner link" data-creator="${esc(f.byId||f.by)}">${cav(byName(f),40)}<div><b>${esc(byName(f)||"YouTube creator")}</b><small>${fmtN(followerCount(f.byId||f.by))} followers</small></div></button>`}
      <b class="sside-t">${esc(f.title)}</b>
      <div class="vmeta">${viewTxt(f)}${s.n?`★ ${s.avg.toFixed(1)} from ${fmtN(s.n)} ratings`:"No ratings yet"}${[catName(f.cat),f.char].filter(Boolean).map(x=>" · "+esc(x)).join("")}</div>
      <div class="row" style="gap:10px;flex-wrap:wrap"><div class="ratebox" role="group" aria-label="Rate this short"><span>${mine?"Your rating":"Rate"}</span>${[1,2,3,4,5].map(k=>`<button data-rate="${k}" class="${k<=mine?"on":""}" aria-label="${k} stars">★</button>`).join("")}</div>
@@ -3215,7 +3215,7 @@ function nextFor(f){
   return allFilms().filter(x=>x.id!==f.id&&x.format!=="short").sort((a,b)=>((b.cat===f.cat)-(a.cat===f.cat))||(langTier(b)-langTier(a))||(stats(b).bayes-stats(a).bayes)).slice(0,14);
 }
 function creatorContent(key,films){
-  const fl=films.filter(f=>f.format!=="short"),sh=films.filter(f=>f.format==="short"),se=allSeries().filter(s=>(s.byId||s.by)===key);
+  const fl=films.filter(f=>f.format!=="short"),sh=films.filter(f=>f.format==="short"),se=allSeries().filter(s=>s.channelId===key||(s.byId||s.by)===key||(/^UC[\w-]{22}$/.test(key)&&s.by===films[0]?.by));
   const tab=state.ctab||"film";
   return `<div class="fmtbar" style="margin-top:24px">${[["film","Films",fl.length],["short","Shorts",sh.length],["series","Series",se.length]].map(([k,l,n])=>`<button class="${tab===k?"on":""}" data-ctab="${k}">${l}<small>${n}</small></button>`).join("")}</div>`+
    (tab==="short"?(sh.length?moreGrid("shortgrid",sh,shortCard):`<div class="empty">No shorts yet.</div>`)
