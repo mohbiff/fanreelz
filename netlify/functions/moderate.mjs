@@ -7,7 +7,7 @@ import { BLOCK_RE, classify } from "./lib/classify.mjs";
 import { readAffiliates } from "./affiliates.mjs";
 import showdown from "./showdown.mjs";
 import { notePeak } from "./peak.mjs";
-import { trafficHistory } from "./lib/traffic-history.mjs";
+import { trafficHistory, calendarDate, dayStart, shiftDate } from "./lib/traffic-history.mjs";
 const json = (o, status = 200) => new Response(JSON.stringify(o), { status, headers: { "Content-Type": "application/json", "Cache-Control": "no-store" } });
 
 export async function whoIs(req) {
@@ -81,9 +81,9 @@ export default async (req) => {
     const conn = await umamiConn();
     if (conn.error) return json({ error: conn.error });
     let { site, base, headers } = conn;
-    let days = { "24h": 1, "7d": 7, "30d": 30, "90d": 90, "365d": 365 }[body.range] || 7;
+    let days = { "today": 1, "24h": 1, "7d": 7, "30d": 30, "90d": 90, "365d": 365 }[body.range] || 7;
     const endAt = Date.now();
-    let startAt = endAt - days * 864e5;
+    let startAt = body.range === "today" ? dayStart(calendarDate(endAt)) : endAt - days * 864e5;
     const get = async (path, q = {}) => {
       const u = new URL(base + path);
       for (const [k, v] of Object.entries(q)) u.searchParams.set(k, String(v));
@@ -101,7 +101,7 @@ export default async (req) => {
       const first = Date.parse(dr?.startDate || dr?.mindate || "") || Date.parse("2026-10-01T00:00:00Z");
       startAt = Math.min(first, endAt - 864e5);days = Math.max(1, Math.ceil((endAt - startAt) / 864e5));
     }
-    const prevStart = startAt - days * 864e5, tz = "Europe/Stockholm", unit = days <= 1 ? "hour" : days > 180 ? "month" : "day";
+    const prevStart = body.range === "today" ? dayStart(shiftDate(calendarDate(endAt), -1)) : startAt - days * 864e5, tz = "Europe/Stockholm", unit = days <= 1 ? "hour" : days > 180 ? "month" : "day";
     const range = { startAt, endAt };
     // a number from either version of Umami ({value, prev} in v2, plain numbers in v3)
     const num = (x) => (x && typeof x === "object" ? +x.value || 0 : +x || 0);
@@ -129,8 +129,8 @@ export default async (req) => {
       const WIN = { "5m": 5 * 60e3, "6h": 6 * 36e5, "24h": 864e5, "7d": 7 * 864e5, "30d": 30 * 864e5, "180d": 180 * 864e5 };
       const t = Date.now(), span = WIN[body.win] || WIN["5m"];
       let rows = [];
-      try { const d = await get("/metrics", { startAt: t - span, endAt: t, type: "country", limit: 250, timezone: tz }); if (Array.isArray(d)) rows = d.map((x) => ({ x: x.x ?? x.name ?? "", y: +x.y || +x.value || 0 })).filter((x) => x.y > 0); } catch (e) {}
-      return json({ metric: "online", rows, from: t - span });
+      try { const d = await get("/metrics", { startAt: body.win === "today" ? dayStart(calendarDate(t)) : t - span, endAt: t, type: "country", limit: 250, timezone: tz }); if (Array.isArray(d)) rows = d.map((x) => ({ x: x.x ?? x.name ?? "", y: +x.y || +x.value || 0 })).filter((x) => x.y > 0); } catch (e) {}
+      return json({ metric: "online", rows, from: body.win === "today" ? dayStart(calendarDate(t)) : t - span });
     }
     if (body.metric === "referrers") { const [refs, ch] = await Promise.all([metric(["referrer"], 1000), metric(["channel"], 20)]); return json({ metric: "referrers", rows: withDirect(refs, ch), from: startAt }); }
     if (body.metric === "campaigns") return json({ metric: "campaigns", rows: campaigns(await metric(["query"], 1000)), from: startAt });
