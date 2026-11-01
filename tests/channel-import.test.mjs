@@ -48,6 +48,7 @@ test('admin imports a whole channel across pages; failures retain cursor and mod
     assert.equal(catalog.get('yt-abcdefghijk').channel,'Original Channel');assert.equal(catalog.get('yt-abcdefghijk').channel_id,channelId);assert.equal(catalog.get('yt-abcdefghijk').hidden,true);
     fail=true;await assert.rejects(runChannelImports());assert.equal(jobs.get(key).nextPage,'page2');
     fail=false;const second=await runChannelImports();assert.equal(second.more,false);assert.equal(second.processed,2);assert.equal(catalog.size,2);
+    assert.ok(jobs.get(key).verifiedAt);assert.deepEqual(jobs.get(key).seenVideoIds,['abcdefghijk','lmnopqrstuv']);
     assert.equal(await runChannelImports(),null);
     jobs.get(key).lastRun='2026-01-01T00:00:00Z';await runChannelImports();assert.equal(jobs.get(key).nextPage,'page2');
     jobs.get(key).disabled=true;const previous=pages;assert.equal(await runChannelImports(),null);assert.equal(pages,previous);

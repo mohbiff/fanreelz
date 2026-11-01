@@ -9,6 +9,7 @@
 //
 // Needs in Netlify: YOUTUBE_API_KEY, SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY (secret; never in the page).
 import { classify, AI_RE, VOICE_RE, BLOCK_RE } from "./lib/classify.mjs";
+import {channelStats} from './lib/channel-stats.mjs';
 
 const TOPICS = [
   "AI fan film", "AI movie trailer", "as an 80s dark fantasy film", "1950s super panavision 70", "AI live action anime",
@@ -184,6 +185,11 @@ async function run() {
       }
     }
     await sb.upsert("catalog", keep);
+    if(keep.length){
+      const key='channel-import:'+ch.channel_id;
+      const existing=await sb.get('import_state?key=eq.'+encodeURIComponent(key)+'&select=key');
+      if(!existing.length)await sb.upsert('import_state',[{key,value:{channelId:ch.channel_id,title:ch.title,uploads:ch.uploads,done:false,nextPage:null,processed:0,priority:999999,createdAt:new Date().toISOString(),source:'catalogue-discovery'}}]);
+    }
     added += keep.length;
     await sb.upsert("catalog_channels", [{
       channel_id: ch.channel_id, title: ch.title, uploads: ch.uploads, next_page: page,
@@ -198,7 +204,7 @@ async function run() {
 }
 
 export default async () => {
-  try { const channels = await runChannelImports().catch(() => ({error:'Channel import will retry on the next run'})); const r = await run(); r.channels = channels; console.log(JSON.stringify(r)); return new Response(JSON.stringify(r), { headers: { "Content-Type": "application/json" } }); }
+  try { const stats=await refreshChannelStats().catch(()=>({error:'Channel statistics will retry'})); const channels = await runChannelImports().catch(() => ({error:'Channel import will retry on the next run'})); const r = await run(); r.channelStats=stats;r.channels = channels; console.log(JSON.stringify(r)); return new Response(JSON.stringify(r), { headers: { "Content-Type": "application/json" } }); }
   catch (e) { console.error(e); return new Response(JSON.stringify({ error: String(e.message || e) }), { status: 500 }); }
 };
 
@@ -216,6 +222,13 @@ export function channelReference(text) {
   return null;
 }
 async function importChannelPage(job, sb) {
+  if(job.nextPage&&!Array.isArray(job.seenVideoIds))job={...job,nextPage:null,processed:0,seenVideoIds:[]};
+  if(!job.uploads){
+    const info=await yt('channels',{part:'snippet,contentDetails,statistics',id:job.channelId});
+    const ch=info.items?.[0];if(!ch?.contentDetails?.relatedPlaylists?.uploads)throw Error('Channel unavailable');
+    job={...job,title:ch.snippet.title,uploads:ch.contentDetails.relatedPlaylists.uploads};
+    await sb.upsert('import_state',[{key:'channel-stats:'+ch.id,value:channelStats(ch,new Date().toISOString())}]);
+  }
   const pl = await yt('playlistItems', { part:'snippet', playlistId:job.uploads, maxResults:'50', ...(job.nextPage ? {pageToken:job.nextPage} : {}) });
   const ids = (pl.items || []).map(x => x.snippet?.resourceId?.videoId).filter(Boolean);
   const det = ids.length ? await yt('videos', {part:'snippet,contentDetails,status,statistics',id:ids.join(',')}) : {items:[]};
@@ -230,7 +243,9 @@ async function importChannelPage(job, sb) {
   }
   // Omit hidden: importing a channel must not undo an existing moderation decision.
   await sb.upsert('catalog',keep);
-  const next={...job,nextPage:pl.nextPageToken || null,processed:(job.processed||0)+ids.length,lastRun:new Date().toISOString(),done:!pl.nextPageToken};
+  const seenVideoIds=[...new Set([...(job.seenVideoIds||[]),...ids])];
+  const next={...job,nextPage:pl.nextPageToken || null,seenVideoIds,processed:seenVideoIds.length,lastRun:new Date().toISOString(),done:!pl.nextPageToken,
+    ...(pl.nextPageToken?{}:{verifiedAt:new Date().toISOString()})};
   await sb.upsert('import_state',[{key:'channel-import:'+job.channelId,value:next}]);
   return {channel:job.title,processed:next.processed,imported:keep.length,more:!next.done};
 }
@@ -248,12 +263,28 @@ export async function addChannel(link, submittedBy) {
   return importChannelPage(job,sb);
 }
 export async function runChannelImports() {
-  const sb=db(),jobs=await sb.get('import_state?key=like.channel-import%3A*&select=value');
+  const sb=db(),jobs=[];
+  for(let offset=0;offset<10000;offset+=1000){const page=await sb.get('import_state?key=like.channel-import%3A*&select=value&order=key.asc&offset='+offset+'&limit=1000');jobs.push(...page);if(page.length<1000)break;}
   const due=jobs.map(x=>x.value).filter(j=>!j.disabled && (!j.done || Date.now()-Date.parse(j.lastRun||j.createdAt)>6*3600e3))
-    .sort((a,b)=>String(a.lastRun||'').localeCompare(String(b.lastRun||'')));
+    .sort((a,b)=>Number(!!a.verifiedAt)-Number(!!b.verifiedAt)||(a.priority??999999)-(b.priority??999999)||String(a.lastRun||'').localeCompare(String(b.lastRun||'')));
   if (!due.length) return null;
   const job=due[0];
-  return importChannelPage(job.done?{...job,nextPage:null,processed:0}:job,sb);
+  return importChannelPage(job.done?{...job,nextPage:null,processed:0,seenVideoIds:[]}:job,sb);
+}
+
+// Refresh public channel statistics in batches of 50 using the existing API key.
+// The database queue includes every creator shown on the leaderboard.
+export async function refreshChannelStats(){
+  const sb=db(),state=(await sb.get('import_state?key=eq.channel-stats-refresh&select=value'))[0]?.value||{};
+  if(state.nextRefresh&&Date.parse(state.nextRefresh)>Date.now())return {waiting:true};
+  const offset=state.offset||0;
+  const jobs=await sb.get('import_state?key=like.channel-import%3A*&select=value&order=key.asc&offset='+offset+'&limit=50');
+  if(!jobs.length){await sb.upsert('import_state',[{key:'channel-stats-refresh',value:{offset:0,nextRefresh:new Date(Date.now()+6*3600e3).toISOString()}}]);return {updated:0,complete:true};}
+  const info=await yt('channels',{part:'snippet,statistics',id:jobs.map(j=>j.value.channelId).join(',')});
+  const at=new Date().toISOString();
+  await sb.upsert('import_state',(info.items||[]).map(ch=>({key:'channel-stats:'+ch.id,value:channelStats(ch,at)})));
+  await sb.upsert('import_state',[{key:'channel-stats-refresh',value:{offset:offset+jobs.length,updatedAt:at}}]);
+  return {updated:(info.items||[]).length,offset:offset+jobs.length};
 }
 
 // Admin "Find AI films now": one YouTube search for any words, and the AI fan films it finds go straight into the catalogue.
