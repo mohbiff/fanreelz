@@ -125,6 +125,19 @@ test('TikTok ready retries cannot resume a Short after a manual pause or video c
   }
 });
 
+test('TikTok actual pause resumes with one tap; autoplay rejection retries muted only once',()=>{
+  const f=setup();f.ctx.findFilm=()=>({tt:'a'});
+  const start=html.indexOf('addEventListener("message",e=>{',html.indexOf("/* TikTok's player"));
+  f.run(html.slice(start,html.indexOf('const ageGate=',start)));
+  const message=(type,value)=>fire(f,'window:message',{origin:'https://www.tiktok.com',source:f.frame.contentWindow,data:{'x-tiktok-player':true,type,value}});
+  message('onStateChange',2);f.run('spToggle()');assert.equal(f.commands.at(-1).type,'play');
+  message('onStateChange',1);f.commands.length=0;
+  message('onPlayerError',{errorCode:3002});message('onPlayerError',{errorCode:3002});
+  assert.deepEqual(f.commands.map(x=>x.type),['mute','play']);assert.equal(f.run('spSoundMuted()'),true);
+  f.commands.length=0;message('onPlayerReady');f.run('spPaused=true');
+  for(const fn of f.timers)fn();message('onPlayerError',{errorCode:3002});assert.equal(f.commands.length,0);
+});
+
 test('Safari UI updates keep the iframe and every ancestor in place while replacing controls and metadata',()=>{
   // A small DOM fixture rejects removal/reparenting of the player or any ancestor.
   // The production update function, rather than a second implementation of it, runs against this contract.
