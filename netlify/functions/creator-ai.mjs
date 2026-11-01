@@ -1,6 +1,7 @@
 // Fanreelz Plus: AI Creator Assistant. The OpenAI key is read only on the server.
 import { whoIs, isAdmin } from "./moderate.mjs";
 import { plusIds } from "./insights.mjs";
+import { categoryForSearch } from "./lib/search-categories.mjs";
 
 const json = (data, status = 200) => new Response(JSON.stringify(data), {
   status,
@@ -19,12 +20,12 @@ async function getCreatorContext() {
   const r = await fetch(url, { headers });
   if (!r.ok) return {};
   const rows = await r.json();
-  const cleanQ = q => String(q || "").normalize("NFKD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
   const agg = {};
   const now = Date.now(), week = 7 * 864e5;
   for (const row of rows) {
-    const q = cleanQ(row.q);
-    if (q.length < 2) continue;
+    const category = categoryForSearch(row.q);
+    if (!category) continue;
+    const q = category.name;
     const a = agg[q] ||= { topic: q, searches30d: 0, noResults: 0, thisWeek: 0, lastWeek: 0 };
     const age = now - Date.parse(row.at);
     a.searches30d++;

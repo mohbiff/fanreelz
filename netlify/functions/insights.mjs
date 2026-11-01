@@ -5,6 +5,7 @@
 import { whoIs, isAdmin } from "./moderate.mjs";
 import { growthAction, growthData } from "./lib/growth.mjs";
 import CATS from "./lib/catmap.mjs";
+import { categoryForSearch } from "./lib/search-categories.mjs";
 
 const json = (o, status = 200) => new Response(JSON.stringify(o), { status, headers: { "Content-Type": "application/json", "Cache-Control": "no-store" } });
 const sb = () => {
@@ -23,33 +24,9 @@ async function savePlus(ids) {
   return r.ok;
 }
 
-const WORLD = CATS.flatMap((c) => [c.name, ...(c.chars || [])].filter((k) => k && k.length >= 3).map((k) => [k.toLowerCase(), c]));
-const worldOf = (q) => WORLD.find(([k]) => q.includes(k) || (q.length >= 4 && k.includes(q)))?.[1] || null;
-const cleanQ = (q) => String(q || "").normalize("NFKD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim().replace(/\s+/g, " ");
-const editDistance = (a, b) => {
-  if (a === b) return 0;
-  if (!a.length) return b.length;
-  if (!b.length) return a.length;
-  let prev = Array.from({ length: b.length + 1 }, (_, i) => i);
-  for (let i = 1; i <= a.length; i++) {
-    const cur = [i];
-    for (let j = 1; j <= b.length; j++) cur[j] = Math.min(cur[j - 1] + 1, prev[j] + 1, prev[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
-    prev = cur;
-  }
-  return prev[b.length];
-};
-const sameTopic = (a, b) => {
-  if (a === b) return true;
-  if (a.length < 4 || b.length < 4) return false;
-  if (a.split(" ").length !== b.split(" ").length) return false;
-  const longest = Math.max(a.length, b.length), d = editDistance(a, b);
-  return d <= Math.max(1, Math.floor(longest * 0.20));
-};
-
-// Explicit/sexual queries remain available to admins for moderation, but never leave the API in member-facing Insights.
-const adultTerms = /\b(?:strip(?:s|ped|per|pers|ping)?|sex(?:ual|ually|y)?|porn(?:o|ography)?|xxx|nude|nudes|nudity|naked|hentai|nsfw|erotic|erotica|blow ?job|hand ?job|escort|fetish|bdsm|onlyfans|topless|boobs|tits|pussy|vagina|penis|dick|cock|cum|orgasm|masturbat(?:e|es|ed|ing|ion)?)\b/i;
-const isAdultQuery = (q) => adultTerms.test(String(q || ""));
-
+const worldOf = q => CATS.find(c => c.name === q) || null;
+const cleanQ = q => String(q || "");
+const sameTopic = (a,b) => a === b;
 export default async (req) => {
   if (req.method !== "POST") return json({ error: "POST only" }, 405);
   const body = await req.json().catch(() => ({}));
@@ -73,12 +50,12 @@ export default async (req) => {
   if (!plus) return json({plus:false,admin:false});
 
   const { url, h } = sb(), since = new Date(Date.now() - 30 * 864e5).toISOString();
-  const rows = [];
+  const rows = []; let scanned = 0;
   for (let from = 0; from < 20000; from += 1000) {
     const r = await fetch(url + `search_events?select=q,cc,zero,at&at=gte.${since}&order=at.desc&offset=${from}&limit=1000`, { headers: h });
     if (!r.ok) return json({ error: "Supabase " + r.status });
-    const page = await r.json();
-    rows.push(...page);
+    const page = await r.json(); scanned += page.length;
+    rows.push(...page.flatMap(x => { const category = categoryForSearch(x.q); return category ? [{...x, q: category.name}] : []; }));
     if (page.length < 1000) break;
   }
   const now = Date.now(), wk = 7 * 864e5;
@@ -102,8 +79,8 @@ export default async (req) => {
     m.n += a.n; m.zero += a.zero; m.w += a.w; m.pw += a.pw;
     for (const [c, n] of Object.entries(a.cc)) m.cc[c] = (m.cc[c] || 0) + n;
   }
-  // Admin keeps the complete moderation view. Every non-admin list is built only from safe queries.
-  const all = admin ? merged : merged.filter((a) => !isAdultQuery(a.q));
+  // Creator Insights exposes category aggregates to every role. Raw phrases remain in the separate admin moderation tools.
+  const all = merged;
   const topCc = (a) => Object.entries(a.cc).sort((p, q) => q[1] - p[1]).slice(0, 3).map(([c]) => c);
   const row = (a) => ({ q: a.q, n: a.n, zero: a.zero, w: a.w, pw: a.pw, cc: topCc(a), world: worldOf(a.q)?.name || null });
 
@@ -115,7 +92,6 @@ export default async (req) => {
   for (const x of rows) if (x.cc) {
     const raw = cleanQ(x.q); if (raw.length < 2) continue;
     const q = aliases[raw] || raw;
-    if (!admin && isAdultQuery(q)) continue;
     ((byCc[x.cc] ||= { cc: x.cc, n: 0, q: {} }).q[q] = (byCc[x.cc].q[q] || 0) + 1); byCc[x.cc].n++;
   }
   const countries = Object.values(byCc).sort((a, b) => b.n - a.n).slice(0, 12).map((c) => ({ cc: c.cc, n: c.n, top: Object.entries(c.q).sort((a, b) => b[1] - a[1]).slice(0, 6).map(([q, n]) => ({ q, n })) }));
@@ -127,7 +103,7 @@ export default async (req) => {
   const growth = await growthData(u, sb());
   const privateRow = ({n,zero,w,pw,...rest}) => rest;
   return json({
-    growth, sampled: rows.length === 20000, plus, ...(admin ? {total} : {}), at: new Date().toISOString(),
+    growth, sampled: scanned === 20000, plus, ...(admin ? {total} : {}), at: new Date().toISOString(),
     wanted: admin ? wanted : wanted.map(privateRow), trending: admin ? trending : trending.map(privateRow), top: admin ? top : [], countries: admin ? countries : countries.map(({n,top,...c})=>({...c,top:top.map(({n,...t})=>t)})), admin, worlds: admin ? worlds : worlds.map(({w,pw,n,...r})=>r),
     hidden: plus ? null : { wanted: 0, trending: 0, top: 0, countries: 0, worlds: 0 },
   });
