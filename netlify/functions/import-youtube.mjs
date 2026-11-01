@@ -9,7 +9,6 @@
 //
 // Needs in Netlify: YOUTUBE_API_KEY, SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY (secret; never in the page).
 import { classify, AI_RE, VOICE_RE, BLOCK_RE } from "./lib/classify.mjs";
-import {channelStats} from './lib/channel-stats.mjs';
 
 const TOPICS = [
   "AI fan film", "AI movie trailer", "as an 80s dark fantasy film", "1950s super panavision 70", "AI live action anime",
@@ -185,11 +184,6 @@ async function run() {
       }
     }
     await sb.upsert("catalog", keep);
-    if(keep.length){
-      const key='channel-import:'+ch.channel_id;
-      const existing=await sb.get('import_state?key=eq.'+encodeURIComponent(key)+'&select=key');
-      if(!existing.length)await sb.upsert('import_state',[{key,value:{channelId:ch.channel_id,title:ch.title,uploads:ch.uploads,done:false,nextPage:null,processed:0,priority:999999,createdAt:new Date().toISOString(),source:'catalogue-discovery'}}]);
-    }
     added += keep.length;
     await sb.upsert("catalog_channels", [{
       channel_id: ch.channel_id, title: ch.title, uploads: ch.uploads, next_page: page,
@@ -222,13 +216,6 @@ export function channelReference(text) {
   return null;
 }
 async function importChannelPage(job, sb) {
-  if(job.nextPage&&!Array.isArray(job.seenVideoIds))job={...job,nextPage:null,processed:0,seenVideoIds:[]};
-  if(!job.uploads){
-    const info=await yt('channels',{part:'snippet,contentDetails,statistics',id:job.channelId});
-    const ch=info.items?.[0];if(!ch?.contentDetails?.relatedPlaylists?.uploads)throw Error('Channel unavailable');
-    job={...job,title:ch.snippet.title,uploads:ch.contentDetails.relatedPlaylists.uploads};
-    await sb.upsert('import_state',[{key:'channel-stats:'+ch.id,value:channelStats(ch,new Date().toISOString())}]);
-  }
   const pl = await yt('playlistItems', { part:'snippet', playlistId:job.uploads, maxResults:'50', ...(job.nextPage ? {pageToken:job.nextPage} : {}) });
   const ids = (pl.items || []).map(x => x.snippet?.resourceId?.videoId).filter(Boolean);
   const det = ids.length ? await yt('videos', {part:'snippet,contentDetails,status,statistics',id:ids.join(',')}) : {items:[]};
@@ -243,9 +230,7 @@ async function importChannelPage(job, sb) {
   }
   // Omit hidden: importing a channel must not undo an existing moderation decision.
   await sb.upsert('catalog',keep);
-  const seenVideoIds=[...new Set([...(job.seenVideoIds||[]),...ids])];
-  const next={...job,nextPage:pl.nextPageToken || null,seenVideoIds,processed:seenVideoIds.length,lastRun:new Date().toISOString(),done:!pl.nextPageToken,
-    ...(pl.nextPageToken?{}:{verifiedAt:new Date().toISOString()})};
+  const next={...job,nextPage:pl.nextPageToken || null,processed:(job.processed||0)+ids.length,lastRun:new Date().toISOString(),done:!pl.nextPageToken};
   await sb.upsert('import_state',[{key:'channel-import:'+job.channelId,value:next}]);
   return {channel:job.title,processed:next.processed,imported:keep.length,more:!next.done};
 }
@@ -263,30 +248,12 @@ export async function addChannel(link, submittedBy) {
   return importChannelPage(job,sb);
 }
 export async function runChannelImports() {
-  const sb=db(),jobs=[];
-  for(let offset=0;offset<10000;offset+=1000){const page=await sb.get('import_state?key=like.channel-import%3A*&select=value&order=key.asc&offset='+offset+'&limit=1000');jobs.push(...page);if(page.length<1000)break;}
+  const sb=db(),jobs=await sb.get('import_state?key=like.channel-import%3A*&select=value');
   const due=jobs.map(x=>x.value).filter(j=>!j.disabled && (!j.done || Date.now()-Date.parse(j.lastRun||j.createdAt)>6*3600e3))
-    .sort((a,b)=>Number(!!a.verifiedAt)-Number(!!b.verifiedAt)||(a.priority??999999)-(b.priority??999999)||String(a.lastRun||'').localeCompare(String(b.lastRun||'')));
+    .sort((a,b)=>String(a.lastRun||'').localeCompare(String(b.lastRun||'')));
   if (!due.length) return null;
   const job=due[0];
-  return importChannelPage(job.done?{...job,nextPage:null,processed:0,seenVideoIds:[]}:job,sb);
-}
-
-// Refresh public channel statistics in batches of 50 using the existing API key.
-// The database queue includes every creator shown on the leaderboard.
-export async function refreshChannelStats(batchSize=50){
-  const sb=db(),state=(await sb.get('import_state?key=eq.channel-stats-refresh&select=value'))[0]?.value||{};
-  if(state.nextRefresh&&Date.parse(state.nextRefresh)>Date.now())return {waiting:true};
-  const offset=state.offset||0;
-  const cycleStartedAt=state.cycleStartedAt||new Date().toISOString(),limit=Math.min(250,Math.max(1,Math.floor(batchSize)));
-  const jobs=await sb.get('import_state?key=like.channel-import%3A*&select=value&order=key.asc&offset='+offset+'&limit='+limit);
-  if(!jobs.length){await sb.upsert('import_state',[{key:'channel-stats-refresh',value:{offset:0,nextRefresh:new Date(Math.max(Date.now()+60000,Date.parse(cycleStartedAt)+6*3600e3)).toISOString()}}]);return {updated:0,complete:true};}
-  const items=[];
-  for(let i=0;i<jobs.length;i+=50){const info=await yt('channels',{part:'snippet,statistics',id:jobs.slice(i,i+50).map(j=>j.value.channelId).join(',')});items.push(...(info.items||[]));}
-  const at=new Date().toISOString();
-  await sb.upsert('import_state',items.map(ch=>({key:'channel-stats:'+ch.id,value:channelStats(ch,at)})));
-  await sb.upsert('import_state',[{key:'channel-stats-refresh',value:{offset:offset+jobs.length,updatedAt:at,cycleStartedAt}}]);
-  return {updated:items.length,offset:offset+jobs.length};
+  return importChannelPage(job.done?{...job,nextPage:null,processed:0}:job,sb);
 }
 
 // Admin "Find AI films now": one YouTube search for any words, and the AI fan films it finds go straight into the catalogue.

@@ -4,7 +4,7 @@
 import config from "../netlify/functions/config.mjs";
 import discord from "../netlify/functions/discord.mjs";
 import discordRegister from "../netlify/functions/discord-register.mjs";
-import importYoutube, {refreshChannelStats} from "../netlify/functions/import-youtube.mjs";
+import importYoutube from "../netlify/functions/import-youtube.mjs";
 import liveYoutube from "../netlify/functions/live-youtube.mjs";
 import live from "../netlify/functions/live.mjs";
 import moderate from "../netlify/functions/moderate.mjs";
@@ -40,7 +40,7 @@ const ROUTES = {
 };
 // Schedules (see wrangler.jsonc): the Discord "AI video of the day" at 16:00 UTC, the importer every 10 minutes (it searches YouTube about once an hour), the showdown judge every hour at :41,
 // and every minute a look at how many are online (for the "most online at once" record)
-const CRONS = { "3,13,23,33,43,53 * * * *": () => refreshChannelStats(250).then(value=>Response.json(value)), "*/10 * * * *": importYoutube, "41 * * * *": showdown, "* * * * *": (req) => (new Date().getUTCMinutes() % 10 === 5 ? Promise.all([peak(req), runFollows()]).then(([a]) => a) : peak(req)), "0 16 * * *": discordDaily };
+const CRONS = { "*/10 * * * *": importYoutube, "41 * * * *": showdown, "* * * * *": (req) => (new Date().getUTCMinutes() % 10 === 5 ? Promise.all([peak(req), runFollows()]).then(([a]) => a) : peak(req)), "0 16 * * *": discordDaily };
 
 // Digital Asset Links: proves that the Android app (Google Play) and fanreelz.com belong together, so the app shows no browser bar.
 // The first fingerprint is the upload key; add Google Play's "App signing key" SHA-256 from Play Console → Test and release → App integrity,

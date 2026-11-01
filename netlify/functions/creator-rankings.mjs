@@ -1,5 +1,4 @@
 import {rankCreators} from './lib/creator-rankings.mjs';
-import {attachChannelStatus} from './lib/channel-stats.mjs';
 const json=(value,status=200)=>Response.json(value,{status,headers:{'Cache-Control':status===200?'public, max-age=300':'no-store'}});
 export default async function creatorRankings(req){
   if(req.method!=='GET')return json({error:'GET required'},405);
@@ -12,18 +11,7 @@ export default async function creatorRankings(req){
       const response=await fetch(base+'/rest/v1/catalog?'+query,{headers:{apikey:key,...(key.startsWith('sb_publishable_')?{}:{Authorization:'Bearer '+key})}});
       if(!response.ok)throw Error('Catalogue unavailable');
       const rows=await response.json();if(!Array.isArray(rows))throw Error('Invalid catalogue');videos.push(...rows);
-      if(rows.length<1000){
-        const service=Netlify.env.get('SUPABASE_SERVICE_ROLE_KEY');if(!service)throw Error('Channel coverage unavailable');
-        const headers={apikey:service,...(service.startsWith('sb_secret_')?{}:{Authorization:'Bearer '+service})};
-        const records=[];
-        for(let n=0;n<10000;n+=1000){
-          const q=new URLSearchParams({select:'key,value',or:'(key.like.channel-stats:*,key.like.channel-import:*)',order:'key.asc',offset:String(n),limit:'1000'});
-          const r=await fetch(base+'/rest/v1/import_state?'+q,{headers});if(!r.ok)throw Error('Channel coverage unavailable');
-          const page=await r.json();records.push(...page);if(page.length<1000)break;if(n===9000)throw Error('Incomplete channel coverage');
-        }
-        const rankings=attachChannelStatus(rankCreators(videos),records.filter(r=>r.key.startsWith('channel-stats:')).map(r=>r.value),records.filter(r=>r.key.startsWith('channel-import:')).map(r=>r.value));
-        return json({rankings,videoCount:rankings.reduce((n,c)=>n+c.films,0),asOf:new Date().toISOString(),scope:'Visible YouTube videos imported into Fanreelz'});
-      }
+      if(rows.length<1000){const rankings=rankCreators(videos);return json({rankings,videoCount:rankings.reduce((n,c)=>n+c.films,0),asOf:new Date().toISOString(),scope:'Visible YouTube videos imported into Fanreelz'});}
     }
     // Never present a partial catalogue as a complete leaderboard.
     throw Error('Catalogue exceeds request capacity');
