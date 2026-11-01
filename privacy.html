@@ -24,6 +24,7 @@ a{color:var(--accent)}h1{font-size:32px;line-height:1.15;margin:16px 0 6px}h2{fo
 <ul>
 <li><b>Supabase</b> stores accounts and activity (servers in the EU).</li>
 <li><b>Cloudflare</b> hosts the website.</li>
+<li><b>Resend</b> delivers account-verification and password-reset emails when email registration is enabled. Supabase sends Resend the recipient email address and the account email content needed for delivery. These emails are for account access, not marketing.</li>
 <li><b>Google and Discord</b> handle their respective social sign-in options. Supabase handles email and password sign-in.</li>
 <li><b>Cloudflare Web Analytics</b> counts page views and visits so we know how many people use Fanreelz. It sets no cookies and does not track individual visitors.</li>
 <li><b>Umami</b> measures how long visits last and which pages are read, also without cookies and without identifying you.</li>
