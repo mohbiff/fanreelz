@@ -8,6 +8,7 @@ import { readAffiliates } from "./affiliates.mjs";
 import showdown from "./showdown.mjs";
 import { notePeak } from "./peak.mjs";
 import { trafficHistory, calendarDate, dayStart, shiftDate } from "./lib/traffic-history.mjs";
+import { ownerTraffic } from "./lib/owner-traffic.mjs";
 const json = (o, status = 200) => new Response(JSON.stringify(o), { status, headers: { "Content-Type": "application/json", "Cache-Control": "no-store" } });
 
 export async function whoIs(req) {
@@ -28,6 +29,7 @@ export default async (req) => {
   const admin = isAdmin(u);
   if (body.action === "check") return json({ admin });
   if (!admin) return json({ error: "not allowed" }, 403);
+  if (body.action === "owner-visit" || body.action === "owner-stats") return ownerTraffic(body,u);
   if (body.action === "addchannel") return json(await addChannel(body.q, u.id).catch(() => ({error:"Channel import could not finish. Please try again; queued videos will also be retried automatically."})));
   if (body.action === "search") return json(await searchNow(body.q).catch((e) => ({ error: String(e.message || e) })));
   if (body.action === "addurl") return json(await addByLinks(body.q).catch((e) => ({ error: String(e.message || e) })));

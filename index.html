@@ -1,6 +1,7 @@
 <!doctype html>
 <html lang="en">
 <head>
+<script src="/owner-traffic.js?v=1"></script>
 <script>window.__q0=location.search</script>
 <script>document.documentElement.classList.add("js")</script>
 <meta charset="utf-8">
@@ -2035,12 +2036,30 @@ document.addEventListener("click",e=>{
   if(e.target.closest("[data-history-refresh]")){e.preventDefault();loadTrafficHistory();return}
   if(e.target.closest("[data-history-more]")){e.preventDefault();loadTrafficHistory(true)}
 });
+
+const ownerStats={};
+async function loadOwnerStats(range){
+ ownerStats[range]={loading:true};
+ try{const data=await modCall({action:"owner-stats",range});ownerStats[range]={...data,at2:Date.now()}}
+ catch{ownerStats[range]={error:"Your visit counts could not be loaded.",at2:Date.now()}}
+ if(state.view==="admin"&&state.adminSec==="stats")render();
+}
+function ownerTrafficHtml(range){
+ const data=ownerStats[range];
+ if(!data||(!data.loading&&Date.now()-(data.at2||0)>60e3))loadOwnerStats(range);
+ const d=data||{},nf=n=>(n||0).toLocaleString("en-US");
+ return `<section class="umbox" style="margin:0 0 18px"><h2 style="font-size:18px;margin:0 0 8px">Your visits — separate from other visitors</h2>
+ <p class="vmeta">Recognized owner devices are excluded from the visitor statistics below going forward. Earlier visits remain mixed. Sign in with your admin account on your phone to recognize that browser too.</p>
+ ${d.loading||!data?'<p role="status">Loading your visits…</p>':d.error?`<p role="alert">${esc(d.error)}</p>`:`<div class="adm-cards"><div class="adm-card"><b>${nf(d.computer)}</b><span>You — computer</span></div><div class="adm-card"><b>${nf(d.phone)}</b><span>You — phone</span></div><div class="adm-card"><b>${nf(d.tablet)}</b><span>You — tablet</span></div><div class="adm-card"><b>${nf(d.total)}</b><span>Your visits in this period</span></div></div>`}
+ <p class="vmeta" style="font-size:12px">This browser is recognized as yours. Owner visits are counted while signed in, with a new visit after 30 minutes of inactivity or a new Stockholm calendar day. ${d.sampled?'Showing the first 20,000 owner visits in this period.':''}</p></section>`;
+}
+
 function renderUmami(){
   if(umamiTab==="history"){renderTrafficHistory();return}
   const r=umamiRange,U=umami[r];if(!U||(!U.loading&&Date.now()-(U.at||0)>60e3))loadUmami(r);
   const nf=n=>Math.round(n).toLocaleString("sv-SE"),dur=s=>{s=Math.round(s);return s>=60?Math.floor(s/60)+" min "+(s%60)+" s":s+" s"};
   const chips=`<div class="chips" style="margin:0 0 14px">${[["today","Today"],["7d","7 days"],["30d","30 days"],["90d","90 days"],["365d","1 year"],["all","All time"]].map(([k,l])=>`<button class="chip ${r===k?"on":""}" data-umrange="${k}">${l}</button>`).join("")}<button class="chip" data-umreload="">Refresh</button></div>`;
-  const head=admSecTabs()+`<h1 class="sect-h" style="font-size:22px">${icon("trend")} Statistics <small class="vmeta" style="font-weight:500">from Umami</small></h1>`+umamiTabs()+(umamiMore==="online"?"":chips);
+  const head=admSecTabs()+`<h1 class="sect-h" style="font-size:22px">${icon("trend")} Statistics <small class="vmeta" style="font-weight:500">from Umami</small></h1>`+umamiTabs()+(umamiMore==="online"?"":chips)+ownerTrafficHtml(r);
   if(!U||U.loading&&!U.stats){$("#main").innerHTML=head+`<div class="empty">Loading statistics…</div>`;return}
   if(U.error==="no-key"){$("#main").innerHTML=head+`<div class="about" style="padding:0"><p class="lede">Connect Umami once and the statistics show up here:</p><ol class="lede" style="line-height:1.7">
     <li>Log in at <a href="https://cloud.umami.is" target="_blank" rel="noopener">cloud.umami.is</a> → profile → <b>Settings</b> → <b>API keys</b> → <b>Create key</b>, and copy it.</li>
@@ -2113,7 +2132,7 @@ function renderUmami(){
 document.addEventListener("click",e=>{
   const sc=e.target.closest("[data-adminsec]");if(sc){e.preventDefault();state.adminSec=sc.dataset.adminsec;umBase={};umamiMore=null;umamiFlt=null;render();return}
   const ur=e.target.closest("[data-umrange]");if(ur){e.preventDefault();umamiRange=ur.dataset.umrange;render();return}
-  if(e.target.closest("[data-umreload]")){e.preventDefault();loadUmami(umamiRange);if(umamiMore)loadUmamiAll(umamiMore,umamiRange);return}
+  if(e.target.closest("[data-umreload]")){e.preventDefault();loadOwnerStats(umamiRange);loadUmami(umamiRange);if(umamiMore)loadUmamiAll(umamiMore,umamiRange);return}
   const um=e.target.closest("[data-ummore]");if(um){e.preventDefault();umamiMore=um.dataset.ummore;umamiFlt=null;umamiQ="";state.umLimit=100;render();scrollTo(0,0);return}
   const ud=e.target.closest("[data-umdrill]");if(ud){e.preventDefault();const [k,v,...l]=ud.dataset.umdrill.split("|");umamiFlt={k,v,label:l.join("|")||v};umamiMore="pages";umamiQ="";state.umLimit=100;render();scrollTo(0,0);return}
   const uw=e.target.closest("[data-umwin]");if(uw){e.preventDefault();umOnWin=uw.dataset.umwin;umamiQ="";state.umLimit=100;render();return}
@@ -3286,7 +3305,7 @@ async function adminDo(body,label){if(adminBusy)return;adminBusy=true;adminMsg=l
   catch(e){adminMsg="Error: "+esc(e.message||e)}
   adminBusy=false;render()}
 async function modCall(body){const r=await fetch("/api/moderate",{method:"POST",headers:{"Content-Type":"application/json",Authorization:"Bearer "+(sbToken||"")},body:JSON.stringify(body)});return r.json().catch(()=>({}))}
-async function checkMod(){if(!sbToken)return;try{const r=await modCall({action:"check"});if(r.admin){isMod=true;try{renderGuide()}catch(e){}renderHard=true;render();loadViews().catch(()=>{})}}catch{}}
+async function checkMod(){if(!sbToken)return false;try{const r=await modCall({action:"check"});if(typeof r.admin!=="boolean")return null;if(r.admin){isMod=true;try{renderGuide()}catch(e){}renderHard=true;render();loadViews().catch(()=>{})}return r.admin}catch{return null}}
 async function modRemove(v){const i=v.indexOf("|"),owner=v.slice(0,i),id=v.slice(i+1);
   if(!confirm("Hide this comment for everyone? You can restore it in Reports."))return;
   const r=await safetyCall({action:"moderateComment",owner,id}).catch(e=>({error:e.message}));
@@ -4272,7 +4291,6 @@ async function startSupabase(){
   const user={me:async()=>me||{},profiles:async ids=>{const out={};if(!ids.length)return out;
     const {data}=await sb.from("profiles").select("id,name,avatar_url,created_at").in("id",ids.slice(0,300));for(const r of data||[]){out[r.id]={name:r.name||"Fan",avatar:r.avatar_url||""};if(r.created_at)joined[r.id]=r.created_at}return out}};
   loadCatalog().catch(e=>console.warn("catalogue",e));
-  if(u)setTimeout(checkMod,0);
   return {user,db:supabaseDb(me?.id||null),me};
 }
 /* Save one document. Sends the signed-in user's token explicitly, and if the database still
@@ -4357,10 +4375,10 @@ async function sbSignOut(){if(sb){await sb.auth.signOut();location.reload()}}
     [user,db]=await Promise.all([claude.use("user"),claude.use("db")]);
     if(!user||!db)return;me=await user.me();if(!me.id)return;
   }else{
-    const b=await startSupabase();if(!b)return;({user,db,me}=b);
+    const b=await startSupabase();if(!b){window.FanreelzTraffic?.start({known:false});return;}({user,db,me}=b);
     try{const back=JSON.parse(localStorage.getItem("fr_back")||"null");localStorage.removeItem("fr_back");if(back&&me){Object.assign(state,back);history.replaceState({fr:navSnap(),y:0},"")}}catch(e){}
   }
-  Object.assign(acct,{user,db,uid:me?.id||null,me:me||null,online:!!me});insData=null;startSafety();render();emailAuthReady=true;if(emailRecovery)openEmailAuth("update");
+  Object.assign(acct,{user,db,uid:me?.id||null,me:me||null,online:!!me});insData=null;const trafficAdmin=await checkMod();await window.FanreelzTraffic?.start({owner:trafficAdmin===true,known:trafficAdmin!==null,record:payload=>modCall({action:"owner-visit",...payload})});startSafety();render();emailAuthReady=true;if(emailRecovery)openEmailAuth("update");
   db.collection("ratings").onSnapshot(snap=>{const agg={};
     for(const d of snap.docs){const r=d.data()?.r;if(!r||typeof r!=="object")continue;
       for(const [fid,v] of Object.entries(r)){const k=Math.round(+v);if(k<1||k>5)continue;(agg[fid]||(agg[fid]=[0,0,0,0,0]))[k-1]++}
@@ -4381,9 +4399,5 @@ async function sbSignOut(){if(sb){await sb.auth.signOut();location.reload()}}
 
 <script src="/navigation.js"></script>
 
-<!-- Cloudflare Web Analytics: counts visits without cookies or tracking individual visitors -->
-<script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "94673d86616b4c7fb6b3d6c3ad8f7383"}'></script>
-<!-- Umami: visit length and bounce rate, without cookies -->
-<script defer src="https://cloud.umami.is/script.js" data-website-id="d8274143-7ceb-4717-aa02-13bfb95bfbf3"></script>
 </body>
 </html>
