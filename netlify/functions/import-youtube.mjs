@@ -223,7 +223,9 @@ async function importChannelPage(job, sb) {
   for (const d of det.items || []) {
     if (!d.status?.embeddable || d.status.privacyStatus !== 'public' || d.snippet?.channelId !== job.channelId) continue;
     const sn=d.snippet,secs=iso(d.contentDetails?.duration);
-    const c=classify(sn.title,sn.description || '',true) || {cat:'original',char:'Drama',lore:'lore'};
+    const classified=classify(sn.title,sn.description || '',!job.aiOnly);
+    if(job.aiOnly&&!classified)continue;
+    const c=classified || {cat:'original',char:'Drama',lore:'lore'};
     keep.push({id:'yt-'+d.id,platform:'YouTube',video_id:d.id,title:sn.title.slice(0,200),channel:sn.channelTitle,channel_id:sn.channelId,
       cat:c.cat,char:c.char,lore:c.lore,format:secs<=75?'short':'film',duration:secs,views:+(d.statistics?.viewCount||0),published_at:sn.publishedAt,
       age_restricted:d.contentDetails?.contentRating?.ytRating==='ytAgeRestricted'});
@@ -234,7 +236,7 @@ async function importChannelPage(job, sb) {
   await sb.upsert('import_state',[{key:'channel-import:'+job.channelId,value:next}]);
   return {channel:job.title,processed:next.processed,imported:keep.length,more:!next.done};
 }
-export async function addChannel(link, submittedBy) {
+export async function addChannel(link, submittedBy, {aiOnly=false}={}) {
   const ref=channelReference(link);
   if (!ref) return {error:'Paste a YouTube channel link such as https://www.youtube.com/@ChannelName or /channel/UC…'};
   const info=await yt('channels',{part:'snippet,contentDetails',...ref});
@@ -243,6 +245,8 @@ export async function addChannel(link, submittedBy) {
   const sb=db(),key='channel-import:'+ch.id;
   const existing=(await sb.get('import_state?key=eq.'+encodeURIComponent(key)+'&select=value'))[0]?.value;
   const job=existing && !existing.done ? {...existing,disabled:false} : {channelId:ch.id,title:ch.snippet.title,uploads:ch.contentDetails.relatedPlaylists.uploads,nextPage:null,processed:0,done:false,submittedBy,createdAt:new Date().toISOString()};
+  // Owner syncs require per-video AI metadata; retain that restriction on scheduled runs.
+  if(aiOnly||existing?.aiOnly)job.aiOnly=true;
   // Queue first: temporary YouTube/storage errors can be retried by the schedule.
   await sb.upsert('import_state',[{key,value:job}]);
   return importChannelPage(job,sb);

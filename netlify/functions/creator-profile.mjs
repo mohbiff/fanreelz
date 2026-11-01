@@ -24,7 +24,7 @@ export default async function creatorProfile(req){
   const channels=await response.json();if(!channels.items?.some(c=>c.id===id))return json({error:'This YouTube account does not own this creator profile. Choose the correct YouTube channel account.'},403);
   if(!owner?.userId){const saved=await fetch(base+'import_state',{method:'POST',headers:{...headers,'Content-Type':'application/json',Prefer:'resolution=ignore-duplicates,return=minimal'},body:JSON.stringify([{key:'creator-owner:'+id,value:{userId:user.id,channelId:id,verifiedAt:new Date().toISOString()}}])});if(!saved.ok)throw Error();if((await read())?.userId!==user.id)return json({error:'This profile has already been claimed'},409)}
   if(body.action==='claim')return json({claimed:true,mine:true});
-  const result=await addChannel('https://www.youtube.com/channel/'+id,user.id);if(result.error)return json({error:result.error},503);
+  const result=await addChannel('https://www.youtube.com/channel/'+id,user.id,{aiOnly:true});if(result.error)return json({error:result.error},503);
   return json({claimed:true,mine:true,synced:true,imported:result.imported,more:result.more});
  }catch{return json({error:'Creator verification is unavailable. Please try again.'},503)}
 }

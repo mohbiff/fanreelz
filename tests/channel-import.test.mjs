@@ -2,7 +2,7 @@ import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import vm from 'node:vm';
-import {channelReference,runChannelImports} from '../netlify/functions/import-youtube.mjs';
+import {channelReference,runChannelImports,addChannel} from '../netlify/functions/import-youtube.mjs';
 import moderate from '../netlify/functions/moderate.mjs';
 
 test('channel link validation supports handles, IDs and legacy usernames',()=>{
@@ -10,6 +10,22 @@ test('channel link validation supports handles, IDs and legacy usernames',()=>{
   assert.deepEqual(channelReference('https://youtube.com/channel/UCabcdefghijklmnopqrstuv'),{id:'UCabcdefghijklmnopqrstuv'});
   assert.deepEqual(channelReference('https://youtube.com/user/Example'),{forUsername:'Example'});
   for(const link of ['https://youtube.com.evil.test/@Example','https://evil.test/youtube.com/@Example','https://youtu.be/abcdefghijk','https://youtube.com/watch?v=abcdefghijk','https://youtube.com/%XX','http://youtube.com/@Example'])assert.equal(channelReference(link),null);
+});
+
+test('owner sync imports only AI films and retains the filter for later scheduled pages',async()=>{
+ const oldFetch=globalThis.fetch,oldEnv=globalThis.Netlify,id='UCabcdefghijklmnopqrstuv',saved=[];let job;
+ globalThis.Netlify={env:{get:k=>({SUPABASE_URL:'https://db.test',SUPABASE_SERVICE_ROLE_KEY:'sb_secret_test',YOUTUBE_API_KEY:'test'})[k]}};
+ globalThis.fetch=async(input,options={})=>{const u=new URL(input);
+  if(u.hostname==='www.googleapis.com'){
+   if(u.pathname.endsWith('/channels'))return Response.json({items:[{id,snippet:{title:'Mixed channel'},contentDetails:{relatedPlaylists:{uploads:'uploads'}}}]});
+   if(u.pathname.endsWith('/playlistItems'))return Response.json({items:[{snippet:{resourceId:{videoId:'ai-film'}}}],...(!u.searchParams.has('pageToken')?{nextPageToken:'page2'}:{})});
+   const video=(videoId,title)=>({id:videoId,snippet:{channelId:id,channelTitle:'Mixed channel',title,description:'',publishedAt:'2026-01-01'},status:{embeddable:true,privacyStatus:'public'},contentDetails:{duration:'PT3M'}});
+   return Response.json({items:[video('ai-film','AI short film: a dragon story'),video('normal','Our travel movie'),video('tutorial','AI tutorial: how to make a film')]});
+  }
+  if(u.pathname.endsWith('/import_state')){if(options.method==='POST'){job=JSON.parse(options.body)[0].value;return new Response(null,{status:204})}return Response.json(job?[{value:job}]:[])}
+  if(u.pathname.endsWith('/catalog')){saved.push(...JSON.parse(options.body));return new Response(null,{status:204})}throw Error('Unexpected request');
+ };
+ try{const first=await addChannel('https://youtube.com/channel/'+id,'owner',{aiOnly:true});assert.equal(first.imported,1);assert.equal(job.aiOnly,true);assert.equal(job.nextPage,'page2');await runChannelImports();assert.deepEqual(saved.map(v=>v.video_id),['ai-film','ai-film']);assert.equal(job.aiOnly,true)}finally{globalThis.fetch=oldFetch;globalThis.Netlify=oldEnv}
 });
 
 test('admin imports a whole channel across pages; failures retain cursor and moderation remains intact',async()=>{
@@ -63,3 +79,4 @@ test('channel form has a clear location, label and submit action',()=>{
   assert.ok(html.includes('New videos</h1>${channelImportBox()}'));
   assert.ok(html.includes('adminDo({action:"addchannel",q}'));
 });
+
