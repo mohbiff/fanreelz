@@ -204,7 +204,7 @@ async function run() {
 }
 
 export default async () => {
-  try { const stats=await refreshChannelStats().catch(()=>({error:'Channel statistics will retry'})); const channels = await runChannelImports().catch(() => ({error:'Channel import will retry on the next run'})); const r = await run(); r.channelStats=stats;r.channels = channels; console.log(JSON.stringify(r)); return new Response(JSON.stringify(r), { headers: { "Content-Type": "application/json" } }); }
+  try { const channels = await runChannelImports().catch(() => ({error:'Channel import will retry on the next run'})); const r = await run(); r.channels = channels; console.log(JSON.stringify(r)); return new Response(JSON.stringify(r), { headers: { "Content-Type": "application/json" } }); }
   catch (e) { console.error(e); return new Response(JSON.stringify({ error: String(e.message || e) }), { status: 500 }); }
 };
 
@@ -274,17 +274,19 @@ export async function runChannelImports() {
 
 // Refresh public channel statistics in batches of 50 using the existing API key.
 // The database queue includes every creator shown on the leaderboard.
-export async function refreshChannelStats(){
+export async function refreshChannelStats(batchSize=50){
   const sb=db(),state=(await sb.get('import_state?key=eq.channel-stats-refresh&select=value'))[0]?.value||{};
   if(state.nextRefresh&&Date.parse(state.nextRefresh)>Date.now())return {waiting:true};
   const offset=state.offset||0;
-  const jobs=await sb.get('import_state?key=like.channel-import%3A*&select=value&order=key.asc&offset='+offset+'&limit=50');
-  if(!jobs.length){await sb.upsert('import_state',[{key:'channel-stats-refresh',value:{offset:0,nextRefresh:new Date(Date.now()+6*3600e3).toISOString()}}]);return {updated:0,complete:true};}
-  const info=await yt('channels',{part:'snippet,statistics',id:jobs.map(j=>j.value.channelId).join(',')});
+  const cycleStartedAt=state.cycleStartedAt||new Date().toISOString(),limit=Math.min(250,Math.max(1,Math.floor(batchSize)));
+  const jobs=await sb.get('import_state?key=like.channel-import%3A*&select=value&order=key.asc&offset='+offset+'&limit='+limit);
+  if(!jobs.length){await sb.upsert('import_state',[{key:'channel-stats-refresh',value:{offset:0,nextRefresh:new Date(Math.max(Date.now()+60000,Date.parse(cycleStartedAt)+6*3600e3)).toISOString()}}]);return {updated:0,complete:true};}
+  const items=[];
+  for(let i=0;i<jobs.length;i+=50){const info=await yt('channels',{part:'snippet,statistics',id:jobs.slice(i,i+50).map(j=>j.value.channelId).join(',')});items.push(...(info.items||[]));}
   const at=new Date().toISOString();
-  await sb.upsert('import_state',(info.items||[]).map(ch=>({key:'channel-stats:'+ch.id,value:channelStats(ch,at)})));
-  await sb.upsert('import_state',[{key:'channel-stats-refresh',value:{offset:offset+jobs.length,updatedAt:at}}]);
-  return {updated:(info.items||[]).length,offset:offset+jobs.length};
+  await sb.upsert('import_state',items.map(ch=>({key:'channel-stats:'+ch.id,value:channelStats(ch,at)})));
+  await sb.upsert('import_state',[{key:'channel-stats-refresh',value:{offset:offset+jobs.length,updatedAt:at,cycleStartedAt}}]);
+  return {updated:items.length,offset:offset+jobs.length};
 }
 
 // Admin "Find AI films now": one YouTube search for any words, and the AI fan films it finds go straight into the catalogue.
