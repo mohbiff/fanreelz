@@ -39,7 +39,7 @@ create table if not exists public.docs (
   updated_at timestamptz not null default now(),
   primary key (col, id),
   constraint docs_known_col check (
-    col in ('ratings','submissions','votes','tips','comments','commentlikes','requests','upvotes','claims','playlists','follows','showdown','showdowns')
+    col in ('ratings','reactions','submissions','votes','tips','comments','commentlikes','requests','upvotes','claims','playlists','follows','showdown','showdowns')
     or col like 'data/users/%'),
   constraint docs_size check (pg_column_size(data) < 300000)
 );
@@ -167,7 +167,7 @@ grant select on public.showdown_verdicts to anon, authenticated;
 -- 9. Allow the Character Showdown collections in docs (for databases created before showdowns existed)
 alter table public.docs drop constraint if exists docs_known_col;
 alter table public.docs add constraint docs_known_col check (
-  col in ('ratings','submissions','votes','tips','comments','commentlikes','requests','upvotes','claims','playlists','follows','showdown','showdowns')
+  col in ('ratings','reactions','submissions','votes','tips','comments','commentlikes','requests','upvotes','claims','playlists','follows','showdown','showdowns')
   or col like 'data/users/%');
 
 -- 10. What visitors search for (admins see it on the admin page). Only the words and counts are kept, never who searched.
@@ -206,3 +206,6 @@ begin
 end $$;
 revoke all on function public.add_search(text, boolean, text, text) from public;
 grant execute on function public.add_search(text, boolean, text, text) to anon, authenticated;
+
+-- Reactions are stored separately from legacy numeric ratings in docs.col = 'reactions'.
+-- data.r maps film IDs to any subset of: epic, impressive, funny, moving, visual.

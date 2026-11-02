@@ -7,7 +7,7 @@
 <meta charset="utf-8">
 <link rel="preconnect" href="https://www.youtube-nocookie.com"><link rel="preconnect" href="https://i.ytimg.com"><link rel="dns-prefetch" href="https://www.youtube.com">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="description" content="The home of AI fan films. Watch, discover and rate the best AI-made films about the games, books, anime and series you love – and get your own films seen.">
+<meta name="description" content="The home of AI fan films. Watch, discover and react to the best AI-made films about the games, books, anime and series you love – and get your own films seen.">
 <link rel="manifest" href="/manifest.webmanifest">
 <meta name="theme-color" content="#0f0f0f">
 <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png?v=2">
@@ -19,7 +19,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta property="og:image" content="https://fanreelz.com/og.png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">
 <meta property="og:title" content="Fanreelz – Where AI fan films find their fans">
-<meta property="og:description" content="The home of AI fan films. Watch, discover and rate the best AI-made fan films – and get your own films seen.">
+<meta property="og:description" content="The home of AI fan films. Watch, discover and react to the best AI-made fan films – and get your own films seen.">
 <meta property="og:url" content="https://fanreelz.com/">
 <meta property="og:type" content="website">
 <meta name="twitter:card" content="summary_large_image">
@@ -85,8 +85,24 @@ html{color-scheme:dark}:root{padding-top:env(safe-area-inset-top,0px);padding-bo
 @media(max-width:860px){.library-page{padding-top:15px}.library-profile{gap:19px;margin-bottom:32px}.library-profile>img{width:88px;height:88px}.library-profile h1{font-size:30px}.library-profile .library-byline{font-size:12px;margin-bottom:11px}.library-profile-actions{gap:7px}.library-pill{font-size:12px;padding:9px 12px}.library-heading{margin-bottom:13px}.library-heading h2{font-size:19px}.library-section{margin-bottom:31px}.library-row{grid-auto-columns:calc((100% - 16px)/2);gap:16px}.library-actions{gap:6px}.library-arrow{width:31px;height:31px}.library-row .vinfo .cav{display:none}}
 @media(max-width:560px){.library-profile{align-items:flex-start;gap:15px}.library-profile>img{width:74px;height:74px}.library-profile h1{font-size:27px;margin-bottom:7px}.library-profile .library-byline{gap:5px;font-size:11px}.library-profile-actions{margin-left:-89px;margin-top:20px}.library-heading{gap:8px}.library-heading h2{font-size:18px}.library-row{grid-auto-columns:82%;gap:14px}.library-arrow{display:none}.library-viewall{font-size:12px;padding:8px 12px}.library-empty{padding:17px}.library-count{font-size:11px}}
 
+
+.reactionbox.ratebox{display:block;width:100%;height:auto;padding:14px 0;background:transparent;border:0;color:var(--fg)}
+.reaction-heading{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:10px}.reaction-heading b{font-size:15px}.reaction-heading>span{font-size:12px;color:var(--muted)}
+.reaction-options{display:flex;flex-wrap:wrap;gap:8px}.reactionbox.ratebox .reaction-chip{display:inline-flex;align-items:center;justify-content:center;gap:7px;width:auto;height:auto;min-height:42px;margin:0;padding:8px 12px;border:1px solid var(--line);border-radius:22px;background:var(--chip);color:var(--fg);font-size:13px;font-weight:600;line-height:1.3;opacity:1;cursor:pointer;transition:background .15s,border-color .15s}
+.reactionbox.ratebox .reaction-chip:hover{border-color:var(--muted)}.reactionbox.ratebox .reaction-chip.selected{background:rgba(139,92,246,.18);border-color:#a78bfa;color:var(--fg)}
+.reactionbox.ratebox .reaction-chip span{margin:0}.reaction-chip:focus-visible{outline:2px solid #a78bfa;outline-offset:3px}.reaction-chip:disabled{cursor:wait;opacity:.6}.reaction-emoji{font-size:20px;line-height:1}.reaction-count{font-size:11px;opacity:.65;font-variant-numeric:tabular-nums}.wbtns:has(.reactionbox){flex-wrap:wrap;justify-content:flex-start}.wbtns>.reactionbox{flex:1 0 100%;order:2}.wbar:has(.reactionbox){flex-wrap:wrap}.sside .reaction-options{gap:7px}.spsheet .reactionbox{padding:6px 0 12px}
+@media(max-width:560px){.reactionbox.ratebox .reaction-chip{padding:8px 10px;font-size:12px;min-height:42px}.reaction-options{gap:7px}.reaction-heading{gap:5px 10px}.reaction-heading b{font-size:14px}}
+
 </style>
 <style>a[data-fr-link]{color:inherit;text-decoration:none}a[data-fr-link]:not([class]){cursor:pointer}.emailauth form{display:grid;gap:12px}.emailauth label{display:grid;gap:5px;font-weight:600}.emailauth input:not([type=checkbox]){box-sizing:border-box;width:100%;font:inherit;color:var(--text,inherit);background:var(--panel,#262331);border:1px solid var(--line,#4c455d);border-radius:10px;padding:12px}.emailauth .emailterms{display:flex;align-items:flex-start;gap:10px;font-size:12px;font-weight:400}.emailauth .emailterms input{width:auto;margin-top:3px}.emailauthlinks{flex-wrap:wrap}.emailauth #emailAuthMessage{margin:0;font-size:13px;line-height:1.5}.emailauth input:focus-visible{outline:2px solid #8b5cf6;outline-offset:2px}
+
+.reactionbox.ratebox{display:block;width:100%;height:auto;padding:14px 0;background:transparent;border:0;color:var(--fg)}
+.reaction-heading{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:10px}.reaction-heading b{font-size:15px}.reaction-heading>span{font-size:12px;color:var(--muted)}
+.reaction-options{display:flex;flex-wrap:wrap;gap:8px}.reactionbox.ratebox .reaction-chip{display:inline-flex;align-items:center;justify-content:center;gap:7px;width:auto;height:auto;min-height:42px;margin:0;padding:8px 12px;border:1px solid var(--line);border-radius:22px;background:var(--chip);color:var(--fg);font-size:13px;font-weight:600;line-height:1.3;opacity:1;cursor:pointer;transition:background .15s,border-color .15s}
+.reactionbox.ratebox .reaction-chip:hover{border-color:var(--muted)}.reactionbox.ratebox .reaction-chip.selected{background:rgba(139,92,246,.18);border-color:#a78bfa;color:var(--fg)}
+.reactionbox.ratebox .reaction-chip span{margin:0}.reaction-chip:focus-visible{outline:2px solid #a78bfa;outline-offset:3px}.reaction-chip:disabled{cursor:wait;opacity:.6}.reaction-emoji{font-size:20px;line-height:1}.reaction-count{font-size:11px;opacity:.65;font-variant-numeric:tabular-nums}.wbtns:has(.reactionbox){flex-wrap:wrap;justify-content:flex-start}.wbtns>.reactionbox{flex:1 0 100%;order:2}.wbar:has(.reactionbox){flex-wrap:wrap}.sside .reaction-options{gap:7px}.spsheet .reactionbox{padding:6px 0 12px}
+@media(max-width:560px){.reactionbox.ratebox .reaction-chip{padding:8px 10px;font-size:12px;min-height:42px}.reaction-options{gap:7px}.reaction-heading{gap:5px 10px}.reaction-heading b{font-size:14px}}
+
 </style>
 </head>
 <body>
@@ -890,9 +906,17 @@ body.spfs .spback{display:flex}
 .mini-v .vtitle{font-weight:600}
 @media (max-width:1100px){.wbtns{margin-left:0}}
 @media (max-width:600px){.wbtns{width:100%;flex-wrap:wrap}.wbtns .ratebox{width:100%;justify-content:center}.wmenu{left:0;right:auto}}
+
+.reactionbox.ratebox{display:block;width:100%;height:auto;padding:14px 0;background:transparent;border:0;color:var(--fg)}
+.reaction-heading{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:10px}.reaction-heading b{font-size:15px}.reaction-heading>span{font-size:12px;color:var(--muted)}
+.reaction-options{display:flex;flex-wrap:wrap;gap:8px}.reactionbox.ratebox .reaction-chip{display:inline-flex;align-items:center;justify-content:center;gap:7px;width:auto;height:auto;min-height:42px;margin:0;padding:8px 12px;border:1px solid var(--line);border-radius:22px;background:var(--chip);color:var(--fg);font-size:13px;font-weight:600;line-height:1.3;opacity:1;cursor:pointer;transition:background .15s,border-color .15s}
+.reactionbox.ratebox .reaction-chip:hover{border-color:var(--muted)}.reactionbox.ratebox .reaction-chip.selected{background:rgba(139,92,246,.18);border-color:#a78bfa;color:var(--fg)}
+.reactionbox.ratebox .reaction-chip span{margin:0}.reaction-chip:focus-visible{outline:2px solid #a78bfa;outline-offset:3px}.reaction-chip:disabled{cursor:wait;opacity:.6}.reaction-emoji{font-size:20px;line-height:1}.reaction-count{font-size:11px;opacity:.65;font-variant-numeric:tabular-nums}.wbtns:has(.reactionbox){flex-wrap:wrap;justify-content:flex-start}.wbtns>.reactionbox{flex:1 0 100%;order:2}.wbar:has(.reactionbox){flex-wrap:wrap}.sside .reaction-options{gap:7px}.spsheet .reactionbox{padding:6px 0 12px}
+@media(max-width:560px){.reactionbox.ratebox .reaction-chip{padding:8px 10px;font-size:12px;min-height:42px}.reaction-options{gap:7px}.reaction-heading{gap:5px 10px}.reaction-heading b{font-size:14px}}
+
 </style>
 
-<div id="betabar" style="background:var(--accent);color:var(--ink-on-accent);text-align:center;font-weight:700;font-size:13px;padding:7px 16px">Beta: rate, vote and save AI fan films right away. Sign in during the beta to keep it all and get the ⭐ Early fan badge.</div>
+<div id="betabar" style="background:var(--accent);color:var(--ink-on-accent);text-align:center;font-weight:700;font-size:13px;padding:7px 16px">Beta: react, vote and save AI fan films right away. Sign in during the beta to keep it all and get the ⭐ Early fan badge.</div>
 <header class="top">
   <button class="iconbtn" id="menuBtn" aria-label="Menu"><svg class="i" viewBox="0 0 24 24"><path d="M3 6h18M3 12h18M3 18h18"/></svg></button>
   <button class="logo" id="homeLogo" aria-label="Fanreelz home"><span class="mark"><svg viewBox="0 0 62 58" aria-hidden="true"><path d="M8 6.5c0-3 3.3-4.9 5.9-3.3l38.4 22.8c2.5 1.5 2.5 5.1 0 6.6L13.9 55.4C11.3 57 8 55.1 8 52.1z" fill="#8b5cf6"/><path class="spark" d="M51 2l2.6 6.4L60 11l-6.4 2.6L51 20l-2.6-6.4L42 11l6.4-2.6z" fill="#ffd23f"/></svg></span><span class="word">Fanreel<span class="zz">z</span></span><span class="word-tag">The home of AI fan films</span></button>
@@ -1142,7 +1166,7 @@ let myRatings={},community={},mySubs=[],sharedSubs=[],names={},avatars={},rating
 /* Guests can rate, vote and save before they have an account: kept in this browser, moved to the account when they sign in */
 const GUEST=Object.assign({r:{},sd:{}},store.get("fr_guest",{}));const guestSave=()=>store.set("fr_guest",GUEST);Object.assign(myRatings,GUEST.r);
 const guestMig={r:false,sd:false};
-const guestCount=()=>Object.keys(GUEST.r).length+Object.keys(GUEST.sd).length+(acct.online?0:myLater.length);
+const guestCount=()=>Object.keys(GUEST.r).length+Object.keys(GUEST.reactions||{}).length+Object.keys(GUEST.sd).length+(acct.online?0:myLater.length);
 // after 2, 5 and 10 things (at most once a day) invite the guest to keep them
 function guestNudge(){if(acct.online)return;const n=guestCount(),today=new Date().toDateString();if(n<2||store.get("fr_nudge","")===today)return;if(![2,5,10].includes(n)&&n<10)return;store.set("fr_nudge",today);
   const nr=Object.keys(GUEST.r).length,ns=Object.keys(GUEST.sd).length,nl=myLater.length,bits=[nr?`rated ${nr} film${nr>1?"s":""}`:"",ns?`voted in ${ns} showdown${ns>1?"s":""}`:"",nl?`saved ${nl} to Watch later`:""].filter(Boolean);
@@ -1225,20 +1249,52 @@ let langFirst=store.get("fr_langfirst",true);
 const langTier=f=>{if(!langFirst)return 1;const l=langOf(f);return MY_LANGS.has(l)?2:l==="en"?1:0};
 const LANG_MULT=[.12,1,3];
 const langMult=f=>LANG_MULT[langTier(f)];
+
+// Reactions are independent feelings, never numeric ratings. Legacy ratings stay in their own collection.
+const REACTIONS=[{id:"epic",emoji:"🔥",label:"Epic"},{id:"impressive",emoji:"😮",label:"Impressive"},{id:"funny",emoji:"😂",label:"Funny"},{id:"moving",emoji:"❤️",label:"Moving"},{id:"visual",emoji:"🎨",label:"Visually stunning"}];
+const cleanReactions=value=>Array.isArray(value)?REACTIONS.map(x=>x.id).filter(id=>value.includes(id)):[];
+function cleanReactionMap(value){const out={};if(value&&typeof value==="object"&&!Array.isArray(value))for(const [id,v]of Object.entries(value)){const a=cleanReactions(v);if(id.length<=100&&a.length)out[id]=a}return out}
+let myReactions=cleanReactionMap(GUEST.reactions),reactionsBy={},reactionTotals={},reactionSaving=false,reactionsReady=false;
+function aggregateReactions(docs){const totals={};for(const map of Object.values(docs))for(const [id,values]of Object.entries(map)){const a=cleanReactions(values);if(!a.length)continue;const t=totals[id]||(totals[id]={n:0,fans:0,c:[0,0,0,0,0]});t.fans++;for(const k of a){t.n++;t.c[REACTIONS.findIndex(r=>r.id===k)]++}}return totals}
+function updateReactionTotals(){reactionTotals=aggregateReactions(reactionsBy);statMemo=null;trendMemo=null}
+function reactionSummary(f){const t=stats(f);if(!t.n)return "No reactions yet";const icons=REACTIONS.map((r,i)=>({r,n:t.c[i]})).filter(x=>x.n).sort((a,b)=>b.n-a.n).slice(0,2).map(x=>x.r.emoji).join(" ");return icons+" "+fmtN(t.n)+" "+(t.n===1?"reaction":"reactions")}
+function reactionBox(f){const selected=myReactions[f.id]||[],t=stats(f);return '<div class="reactionbox ratebox" role="group" aria-label="How did it make you feel?"><div class="reaction-heading"><b>How did it make you feel?</b><span>Choose all that fit</span></div><div class="reaction-options">'+REACTIONS.map((r,i)=>'<button type="button" data-reaction="'+r.id+'" data-reaction-film="'+esc(f.id)+'" aria-label="'+r.label+'" aria-pressed="'+selected.includes(r.id)+'" class="reaction-chip '+(selected.includes(r.id)?'selected':'')+'" '+(reactionSaving||acct.online&&!reactionsReady?'disabled':'')+'><span class="reaction-emoji" aria-hidden="true">'+r.emoji+'</span><span>'+r.label+'</span><span class="reaction-count">'+fmtN(t.c[i])+'</span></button>').join('')+'</div></div>'}
+function reactionBadge(f){const a=myReactions[f.id]||[];return a.length?'<span class="pill" title="Your reactions">'+REACTIONS.filter(r=>a.includes(r.id)).map(r=>r.emoji).join(' ')+'</span>':''}
+const reactedTo=id=>(myReactions[id]||[]).length>0;
+const likedIds=(ratings,reactions)=>[...new Set([...Object.entries(ratings||{}).filter(([,r])=>r>=4).map(([id])=>id),...Object.keys(cleanReactionMap(reactions))])];
+async function toggleReaction(id,key){
+ if(reactionSaving||!REACTIONS.some(r=>r.id===key)||!findFilm(id))return false;
+ if(acct.online&&!reactionsReady){toast("Your reactions are still loading. Please try again.");return false}
+ if(acct.online&&!needAccount("Sign in to save your reactions."))return false;
+ const previous={...myReactions},a=myReactions[id]||[],removed=a.includes(key),next=a.filter(x=>x!==key);if(!removed)next.push(key);
+ const updated={...myReactions};if(next.length)updated[id]=cleanReactions(next);else delete updated[id];
+ if(!acct.online){myReactions=updated;GUEST.reactions=updated;guestSave();render();toast(removed?"Reaction removed":"Reaction saved on this device. Sign in to keep it.");guestNudge();return true}
+ reactionSaving=true;myReactions=updated;render();
+ try{await acct.db.doc("reactions/"+acct.uid).set({r:updated,t:Date.now()});reactionsBy[acct.uid]=updated;updateReactionTotals();toast(removed?"Reaction removed":"Reaction added");return true}
+ catch(e){myReactions=previous;toast("Couldn't save your reaction. Please try again.");return false}
+ finally{reactionSaving=false;render()}
+}
+function startReactions(db){db.collection("reactions").onSnapshot(async snap=>{
+ const all={};for(const d of snap.docs)all[d.id]=cleanReactionMap(d.data()?.r);reactionsBy=all;
+ if(acct.online&&!reactionSaving)myReactions={...(all[acct.uid]||{})};reactionsReady=true;updateReactionTotals();render();
+ if(acct.online&&!guestMig.reactions){guestMig.reactions=true;const guest=cleanReactionMap(GUEST.reactions);if(Object.keys(guest).length){const merged={...myReactions};for(const [id,a]of Object.entries(guest))merged[id]=cleanReactions([...(merged[id]||[]),...a]);
+ try{await acct.db.doc("reactions/"+acct.uid).set({r:merged,t:Date.now()});myReactions=merged;reactionsBy[acct.uid]=merged;GUEST.reactions={};guestSave();updateReactionTotals();render()}catch(e){guestMig.reactions=false;toast("Your device reactions are safe here. Sign in again to sync them.")}}}
+ },()=>{reactionsReady=false;toast("Couldn't load reactions. Please refresh to try again.")})}
+
 function counts(f){const c=[...f.counts];const x=community[f.id];if(x)x.forEach((v,i)=>c[i]+=v);return c}
 let statMemo=null;
 function stats(f){if(statMemo){const m=statMemo.get(f);if(m)return m;const r=statsRaw(f);statMemo.set(f,r);return r}return statsRaw(f)}
-function statsRaw(f){const c=counts(f);const n=c.reduce((a,b)=>a+b,0);const avg=n?c.reduce((a,v,i)=>a+v*(i+1),0)/n:0;return {n,avg,bayes:(avg*n+3.4*50)/(n+50),c}}
+function statsRaw(f){const t=reactionTotals[f.id]||{n:0,fans:0,c:[0,0,0,0,0]};return {...t,avg:t.fans,bayes:t.fans}}
 const fmtN=n=>n>=1000?(n/1000).toFixed(1).replace(/\.0$/,"")+"K":String(n);
 const ago=d=>d==null?"on YouTube":d===0?"today":d===1?"1 day ago":d<7?`${d} days ago`:d<14?"1 week ago":d<60?`${Math.round(d/7)} weeks ago`:d<365?`${Math.round(d/30)} months ago`:"1 year ago";
 const byName=f=>f.yt?(f.channelTitle||f.by||"YouTube creator"):f.byId?(f.byId===acct.uid?"You":(names[f.byId]||"Fanreelz member")):f.by;
 const hueOf=s=>{let h=0;for(const ch of String(s))h=(h*31+ch.charCodeAt(0))%360;return h};
 const cav=(name0,size,name=name0||"YouTube")=>`<span class="cav" style="background:hsl(${hueOf(name)},45%,42%)${size?`;width:${size}px;height:${size}px`:""}" aria-hidden="true">${esc((String(name).replace(/^@/,"")[0]||"?").toUpperCase())}</span>`;
 const daysSince=t=>Math.max(0,Math.floor((Date.now()-t)/864e5));
-const I={user:'<circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/>',clock:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',like:'<path d="M7 11v9H4v-9zM7 11l4-8a2 2 0 0 1 2 2v4h5.5a2 2 0 0 1 2 2.3l-1.2 7A2 2 0 0 1 17.3 20H7"/>',share:'<path d="M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7M16 6l-4-4-4 4M12 2v13"/>',info:'<circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 7.5v.5"/>',home:'<path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/>',top:'<path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/>',
+const I={user:'<circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/>',clock:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',like:'<path d="M7 11v9H4v-9zM7 11l4-8a2 2 0 0 1 2 2v4h5.5a2 2 0 0 1 2 2.3l-1.2 7A2 2 0 0 1 17.3 20H7"/>',share:'<path d="M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7M16 6l-4-4-4 4M12 2v13"/>',info:'<circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 7.5v.5"/>',home:'<path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/>',top:'<circle cx="12" cy="12" r="9"/><path d="M8 14s1 3 4 3 4-3 4-3M8 8h.01M16 8h.01"/>',
   fresh:'<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>',mine:'<path d="M5 4h14v17l-7-4-7 4z"/>',list:'<path d="M9 6h11M9 12h11M9 18h11M4.5 6h.01M4.5 12h.01M4.5 18h.01"/>',trend:'<path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/>',live:'<circle cx="12" cy="12" r="2.5"/><path d="M7.8 7.8a6 6 0 0 0 0 8.4M16.2 7.8a6 6 0 0 1 0 8.4M5 5a10 10 0 0 0 0 14M19 5a10 10 0 0 1 0 14"/>',prem:'<rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4"/>',tv:'<rect x="3" y="6" width="18" height="13" rx="2"/><path d="M8 3l4 3 4-3"/>',battle:'<path d="M14.5 17.5L3 6V3h3l11.5 11.5M13 19l6-6M16 16l4 4M9.5 17.5L21 6V3h-3L6.5 14.5M11 19l-6-6M8 16l-4 4"/>',req:'<path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-4 10.5c.8.8 1 1.5 1 2.5h6c0-1 .2-1.7 1-2.5A6 6 0 0 0 12 3z"/>',trophy:'<path d="M8 4h8v5a4 4 0 0 1-8 0zM8 6H4a3 3 0 0 0 4 4M16 6h4a3 3 0 0 1-4 4M12 13v4M8 21h8M10 17h4v4"/>',bot:'<rect x="4" y="8" width="16" height="11" rx="3"/><path d="M12 4v4M9 13h.01M15 13h.01M9 16h6"/>',save:'<path d="M4 6h12M4 12h12M4 18h7M18 14v7M14.5 17.5h7"/>',flag:'<path d="M5 21V4h11l-2 4 2 4H5"/>',shield:'<path d="M12 3l8 3v6c0 4.5-3.4 8-8 9-4.6-1-8-4.5-8-9V6z"/><path d="M8.5 12l2.5 2.5 4.5-5"/>',short:'<rect x="7" y="3" width="10" height="18" rx="2.5"/><path d="M11 9.5v5l3.5-2.5z"/>',series:'<rect x="3" y="8" width="14" height="12" rx="2"/><path d="M7 5h12a2 2 0 0 1 2 2v9"/>',heart:'<path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/>',film:'<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M7 5v14M17 5v14M3 9.5h4M17 9.5h4M3 14.5h4M17 14.5h4"/>'};
 let trendMemo=null;
-const filmTrend=f=>{if(trendMemo){const v=trendMemo.get(f);if(v!==undefined)return v}const v=(stats(f).n+(f.real?3000:0)+(f.boost||0))*Math.exp(-(f.days??14)/21)*langMult(f);trendMemo?.set(f,v);return v};
+const filmTrend=f=>{if(trendMemo){const v=trendMemo.get(f);if(v!==undefined)return v}const v=(stats(f).fans+(f.real?3000:0)+(f.boost||0))*Math.exp(-(f.days??14)/21)*langMult(f);trendMemo?.set(f,v);return v};
 function trendingByGroup(){const per={};for(const f of allFilms())per[f.cat]=(per[f.cat]||0)+filmTrend(f);const m={};for(const g of GROUPS)m[g.name]=g.cats.map(c=>({c,s:per[c.id]||0})).sort((a,b)=>b.s-a.s);return m}
 const icon=k=>`<svg class="i" viewBox="0 0 24 24">${I[k]}</svg>`;
 
@@ -1275,11 +1331,11 @@ async function loadViews(){if(!isMod)return;const r=await modCall({action:"views
 /* publish dates: on YouTube (or the film's own site) and when Fanreelz added it */
 const fdate=t=>new Date(t).toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"});
 const datesLine=f=>[f.pub?`Published on ${esc(f.src||"YouTube")} ${fdate(f.pub)}`:"",f.added?`Added to Fanreelz ${fdate(f.added)}`:""].filter(Boolean).join(" · ");
-const metaLine=f=>{const s=stats(f);return `${viewTxt(f)}${s.n?`<span class="st">★</span> ${s.avg.toFixed(1)} · ${fmtN(s.n)} ratings`:"No ratings yet"} · ${f.days==null?"on "+esc(f.src):ago(f.days)}`};
+const metaLine=f=>{const s=stats(f);return `${viewTxt(f)}${reactionSummary(f)} · ${f.days==null?"on "+esc(f.src):ago(f.days)}`};
 function card(f,rank){
   return `<a class="vid" href="${esc(pathFor({view:f.format==="short"||f.vert?"shorts":"watch",film:f.id}))}" data-fr-link data-open="${esc(f.id)}"><div class="thumb"><canvas data-f="${esc(f.id)}"></canvas>${rank?`<span class="rank">${rank}</span>`:""}<span class="len">${esc(f.len)}</span></div>
   <div class="vinfo">${cav(byName(f))}<div class="vtext"><h3 class="vtitle">${esc(f.title)}</h3>
-  <div class="vmeta">${esc(byName(f)||"YouTube creator")}${f.real?'<span class="pill">Real</span>':""}${myRatings[f.id]?`<span class="pill">You ${myRatings[f.id]}★</span>`:""}</div>
+  <div class="vmeta">${esc(byName(f)||"YouTube creator")}${f.real?'<span class="pill">Real</span>':""}${reactionBadge(f)}</div>
   <div class="vmeta">${metaLine(f)}</div></div></div></a>`;
 }
 
@@ -1347,13 +1403,13 @@ function renderGuide(){renderTabbar();
   const fnav=(k,label)=>`<button class="gi ${(state.view==="home"&&!state.cat&&state.feed==="home"&&state.format===k)||(k==="short"&&state.view==="shorts")||(k==="series"&&state.view==="series")?"on":""}" data-fmtnav="${k}">${icon(k)}<span>${label}</span></button>`;
   const T=trendingByGroup();
   const installNav=(!isMobileBrowser()||matchMedia("(display-mode: standalone)").matches||matchMedia("(display-mode: fullscreen)").matches||navigator.standalone||window.FanreelzApp||/FanreelzApp\//.test(navigator.userAgent)?"":`<button class="gi" data-install=""><svg class="i" style="stroke:none" viewBox="0 0 62 58" aria-hidden="true"><path d="M8 6.5c0-3 3.3-4.9 5.9-3.3l38.4 22.8c2.5 1.5 2.5 5.1 0 6.6L13.9 55.4C11.3 57 8 55.1 8 52.1z" fill="#8b5cf6"/><path class="spark" d="M51 2l2.6 6.4L60 11l-6.4 2.6L51 20l-2.6-6.4L42 11l6.4-2.6z" fill="#ffd23f"/></svg><span>Install app</span></button>`);
-  $("#guide").innerHTML=fi("home","Home","home")+fnav("short","Shorts")+fnav("series","Series")+`<button class="gi ${state.view==="home"&&!state.cat&&state.format==="film"&&state.dur==="o20"?"on":""}" data-longnav="">${icon("film")}<span>Films</span></button>`+fi("top","Top rated","top")+fi("new","New","fresh")+
+  $("#guide").innerHTML=fi("home","Home","home")+fnav("short","Shorts")+fnav("series","Series")+`<button class="gi ${state.view==="home"&&!state.cat&&state.format==="film"&&state.dur==="o20"?"on":""}" data-longnav="">${icon("film")}<span>Films</span></button>`+fi("top","Most appreciated","top")+fi("new","New","fresh")+
     `<button class="gi ${state.view==="browse"?"on":""}" data-browse="All">${icon("list")}<span>Browse all</span></button>`+
     `<button class="gi ${state.view==="insights"?"on":""}" data-view="insights">${icon("trend")}<span>Insights <small class="plustag">PLUS</small></span></button>`+installNav+`<hr>`+
     `<button class="gi youhead ${state.view==="you"?"on":""}" data-view="you"><span>You</span><svg class="i" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></button>`+
     [["channel","Creator page","user"],["history","History","clock"],["later","Watch later","clock"],["liked","Liked videos","like"],["yourvideos","Your videos","film"]]
       .map(([v,l,ic])=>`<button class="gi ${state.view===v||(v==="channel"&&state.view==="user"&&state.user===acct.uid)?"on":""}" data-you="${v}">${icon(ic)}<span>${l}</span></button>`).join("")+
-    fi("mine","Your ratings","mine")+(isMod?`<button class="gi ${state.view==="admin"?"on":""}" data-view="admin">${icon("shield")}<span>Accounts (admin)</span></button>`:"")+`<hr>`+
+    fi("mine","Your reactions","mine")+(isMod?`<button class="gi ${state.view==="admin"?"on":""}" data-view="admin">${icon("shield")}<span>Accounts (admin)</span></button>`:"")+`<hr>`+
     `<button class="gi ${state.view==="live"?"on":""}" data-view="live">${icon("live")}<span>Live now</span>${LIVE.length?`<span class="livecount">${LIVE.length}</span>`:""}</button>`+[["premieres","Premieres","prem"],["tv","Fanreelz TV","tv"]].map(([v,l,ic])=>`<button class="gi ${state.view===v?"on":""}" data-view="${v}">${icon(ic)}<span>${l}</span></button>`).join("")+
     `<hr><h4>Community</h4>`+[["top10","Top 10 this month","top"],["battles","Fan Battles","battle"],["requests","Requests","req"],["showdown","Character Showdown","trophy"],["discord","Discord bot","bot"]].map(([v,l,ic])=>`<button class="gi ${state.view===v?"on":""}" data-view="${v}">${icon(ic)}<span>${l}</span></button>`).join("")+
     `<button class="gi ${state.view==="about"?"on":""}" data-view="about">${icon("info")}<span>About us</span></button>`+
@@ -1376,7 +1432,7 @@ function feedList(){
   let list=allFilms().filter(f=>(!state.cat||f.cat===state.cat)&&(!state.char||f.char===state.char)&&
     (state.cat||state.group==="All"||state.group===FOR_YOU||groupOf(f.cat)?.name===state.group)&&
     (!q||[f.title,f.char,catName(f.cat),byName(f),f.tool].join(" ").toLowerCase().includes(q)));
-  if(state.feed==="mine"&&!state.cat)list=list.filter(f=>myRatings[f.id]);
+  if(state.feed==="mine"&&!state.cat)list=list.filter(f=>reactedTo(f.id));
   if(state.cat&&state.lore!=="all")list=list.filter(f=>loreOf(f)===state.lore);
   const k=state.feed==="new"?f=>f.days:f=>-stats(f).bayes,L=state.feed==="mine"?()=>0:langTier;
   return list.sort((a,b)=>(L(b)-L(a))||(k(a)-k(b)));
@@ -1403,9 +1459,9 @@ function renderHome(){
   if(showShelf&&!c&&state.group==="All")GROUPS.forEach(g=>{const ids=new Set(g.cats.map(x=>x.id));
     const row=list.filter(f=>ids.has(f.cat)).sort((a,b)=>filmTrend(b)-filmTrend(a)).slice(0,8);if(row.length<3)return;
     html+=`<section class="shelf"><h2><button class="shelfh" data-group="${esc(g.name)}">${esc(g.name)} <span aria-hidden="true">›</span></button></h2><div class="shelfrow">${row.map(f=>card(f)).join("")}</div></section>`});
-  if(state.feed==="top"&&!c)html+=`<h2 class="sect-h">${icon("top")} Top rated</h2>`;
+  if(state.feed==="top"&&!c)html+=`<h2 class="sect-h">${icon("top")} Most appreciated</h2>`;
   if(state.feed==="new"&&!c)html+=`<h2 class="sect-h">${icon("fresh")} Newest</h2>`;
-  if(state.feed==="mine"&&!c)html+=`<h2 class="sect-h">${icon("mine")} Your ratings</h2>`;
+  if(state.feed==="mine"&&!c)html+=`<h2 class="sect-h">${icon("mine")} Your reactions</h2>`;
   if(showShelf)html+=`<h2 class="sect-h">${icon("fresh")} Latest</h2>`;
   html+=rest.length?moreGrid("grid",rest,f=>card(f))
     :`<div class="empty">${state.feed==="mine"?(acct.online?"You haven't rated anything yet.":"Sign in to see the films you've rated."):"No films here yet. Submit the first one."}</div>`;
@@ -1430,9 +1486,9 @@ function renderWatch(){
     ${theater?"":playerHtml}
     ${f.seriesId&&findSeries(f.seriesId)?`<button class="serieslink" data-series="${esc(f.seriesId)}">${esc(findSeries(f.seriesId)?.title||"Series")} · Season ${f.season}, Episode ${f.ep}</button>`:""}<h1 class="wtitle" ${f.format==="episode"?'style="margin-top:4px"':""}>${esc(f.title)}${f.real?'<span class="pill">Real</span>':""}${isVerified(f)?'<span class="pill">Verified original</span>':""}</h1>
     <div class="wbar"><div class="wowner">${(f.real||f.yt||f.tt||f.ig||f.vm||f.dm)?`<button class="owner link" data-creator="${esc(videoCreatorKey(f))}">${cav(byName(f),40)}<div><b>${esc(byName(f)||"YouTube creator")}</b><small>${esc(catName(f.cat))} · ${esc(f.char)}</small></div></button>${f.yt?creatorSubscriptionButton(f):""}`:`<button class="owner link" data-creator="${esc(f.byId||f.by)}">${cav(byName(f),40)}<div><b>${esc(byName(f)||"YouTube creator")}</b><small>${esc(catName(f.cat))}</small></div></button>`}</div>
-      <div class="wbtns"><div class="ratebox" role="group" aria-label="Rate this film"><span>${mine?"Your rating":"Rate"}</span>${[1,2,3,4,5].map(k=>`<button data-rate="${k}" class="${k<=mine?"on":""}" aria-label="${k} stars">★</button>`).join("")}</div><button class="wpill" data-share="${esc(f.id)}">${icon("share")}Share</button><button class="wpill" data-save="${esc(f.id)}">${icon("save")}Save</button><div class="wmore"><button class="wpill wdots" data-wmore="" aria-label="More actions" aria-haspopup="menu"><svg class="i" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.3"/><circle cx="12" cy="12" r="1.3"/><circle cx="19" cy="12" r="1.3"/></svg></button><div class="wmenu" role="menu"><button data-later="${esc(f.id)}">${icon("clock")}${myLater.some(x=>x.id===f.id)?"Remove from Watch later":"Watch later"}</button>${f.real||f.yt||f.tt||f.ig||f.vm||f.dm?"":`<button data-tip="${esc(f.byId||f.by)}" data-tipfilm="${esc(f.id)}">${icon("heart")}Tip the creator</button>`}${f.url?`<a class="wmlink" href="${esc(f.url)}" target="_blank" rel="noopener">${icon("film")}Watch on ${esc(f.src)}</a>`:""}${isVerified(f)?"":`<button data-claimorig="${esc(f.id)}">${icon("shield")}Is this yours?</button>`}<button data-report="${esc(f.id)}">${icon("flag")}Report content</button>${isMod&&f.yt?`<button data-adminhide="${esc(f.id)}">${icon("shield")}Hide from Fanreelz</button>`:""}</div></div></div></div>
-    <div class="desc"><div class="top2">${[isMod?viewsOf(f).toLocaleString("en-US")+" views on Fanreelz":"",f.ytViews?f.ytViews.toLocaleString("en-US")+" views on YouTube":""].filter(Boolean).map(x=>x+" · ").join("")}${s.n?`★ ${s.avg.toFixed(1)} from ${s.n.toLocaleString("en-US")} ratings`:"No ratings yet"} · ${f.days==null?"":ago(f.days)+" · "}${esc(f.src)}${f.tool&&f.tool!=="Unknown"?" · made with "+esc(f.tool):""}</div>${datesLine(f)?`<div class="vmeta" style="margin-top:4px">${datesLine(f)}</div>`:""}
-      <div class="dist">${[5,4,3,2,1].map(k=>`<span>${k}★</span><span class="bar"><i style="width:${max?s.c[k-1]/max*100:0}%"></i></span><span>${fmtN(s.c[k-1])}</span>`).join("")}</div>
+      <div class="wbtns">${reactionBox(f)}<button class="wpill" data-share="${esc(f.id)}">${icon("share")}Share</button><button class="wpill" data-save="${esc(f.id)}">${icon("save")}Save</button><div class="wmore"><button class="wpill wdots" data-wmore="" aria-label="More actions" aria-haspopup="menu"><svg class="i" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.3"/><circle cx="12" cy="12" r="1.3"/><circle cx="19" cy="12" r="1.3"/></svg></button><div class="wmenu" role="menu"><button data-later="${esc(f.id)}">${icon("clock")}${myLater.some(x=>x.id===f.id)?"Remove from Watch later":"Watch later"}</button>${f.real||f.yt||f.tt||f.ig||f.vm||f.dm?"":`<button data-tip="${esc(f.byId||f.by)}" data-tipfilm="${esc(f.id)}">${icon("heart")}Tip the creator</button>`}${f.url?`<a class="wmlink" href="${esc(f.url)}" target="_blank" rel="noopener">${icon("film")}Watch on ${esc(f.src)}</a>`:""}${isVerified(f)?"":`<button data-claimorig="${esc(f.id)}">${icon("shield")}Is this yours?</button>`}<button data-report="${esc(f.id)}">${icon("flag")}Report content</button>${isMod&&f.yt?`<button data-adminhide="${esc(f.id)}">${icon("shield")}Hide from Fanreelz</button>`:""}</div></div></div></div>
+    <div class="desc"><div class="top2">${[isMod?viewsOf(f).toLocaleString("en-US")+" views on Fanreelz":"",f.ytViews?f.ytViews.toLocaleString("en-US")+" views on YouTube":""].filter(Boolean).map(x=>x+" · ").join("")}${reactionSummary(f)} · ${f.days==null?"":ago(f.days)+" · "}${esc(f.src)}${f.tool&&f.tool!=="Unknown"?" · made with "+esc(f.tool):""}</div>${datesLine(f)?`<div class="vmeta" style="margin-top:4px">${datesLine(f)}</div>`:""}
+      
       <div class="tags"><button data-cat="${f.cat}">${esc(catName(f.cat))}</button><button data-cat="${f.cat}" data-char-go="${esc(f.char)}">${esc(f.char)}</button><button data-cat="${f.cat}" data-lore-go="${loreOf(f)}">${loreOf(f)==="lore"?"Lore-accurate":"What if"}</button>${isKids(f)?'<button data-family-info="">Family-friendly</button>':""}</div>
       ${f.real||f.yt||f.tt||f.ig||f.vm||f.dm||f.byId?"":`<div class="howmade"><b>How it was made</b><div class="vmeta">Tool: ${esc(f.tool)} · Prompt shared by ${esc(byName(f)||"YouTube creator")}</div><div class="prompt" id="promptText">${esc(promptOf(f))}</div><div class="row"><button class="btn ghost" data-copyprompt="" style="padding:6px 12px">Copy prompt</button></div></div>`}
       <div class="vmeta" style="font-size:12px">The video plays at the source, so the creator gets the views.</div></div>${affRow(f)}
@@ -1701,7 +1757,7 @@ function renderPremieres(){
 const until=ms=>ms>=864e5?`${Math.floor(ms/864e5)}d ${Math.floor(ms%864e5/36e5)}h`:hms(ms);
 function tickPremieres(){const now=Date.now();for(const p of PREMS){const el=document.querySelector(`[data-cd="${p.id}"]`);if(!el)continue;const st=premState(p,now);
   if((st==="now")!==el.classList.contains("date")){render();return}el.textContent=st==="now"?hms(now-p.at)+" in":until(p.at-now)}}
-function tvChannels(){const T=trendingByGroup();return [{id:"top",name:"Top rated"},{id:"trending",name:"Trending"},...GROUPS.map(g=>T[g.name][0]?.c).filter(Boolean).map(c=>({id:c.id,name:c.name}))]}
+function tvChannels(){const T=trendingByGroup();return [{id:"top",name:"Most appreciated"},{id:"trending",name:"Trending"},...GROUPS.map(g=>T[g.name][0]?.c).filter(Boolean).map(c=>({id:c.id,name:c.name}))]}
 function tvQueue(ch){
   let list=allFilms().filter(f=>!f.real&&f.format!=="short"&&(ch==="top"||ch==="trending"||f.cat===ch));
   list=list.sort((a,b)=>ch==="trending"?filmTrend(b)-filmTrend(a):stats(b).bayes-stats(a).bayes).slice(0,30);
@@ -1724,7 +1780,7 @@ function renderTV(){
       <div class="ov"><small>Now playing</small><b>${esc(f.title)}</b><small>${esc(byName(f)||"YouTube creator")} \u00b7 ${esc(catName(f.cat))} \u00b7 ${esc(f.char)}</small>
       <div class="prog"><i id="tvbar" style="width:0%"></i></div><span class="tvtime" id="tvtime"></span></div></div>
     <div class="wbar" style="margin-top:14px"><div class="row"><a class="btn link" href="${esc(url)}" target="_blank" rel="noopener">Watch on ${esc(f.src)} \u2197</a><button class="btn ghost" data-open="${esc(f.id)}">Film page</button></div>
-      <div class="ratebox" role="group" aria-label="Rate this film"><span>${mine?"Your rating":s.n?"\u2605 "+s.avg.toFixed(1)+" \u00b7 Rate":"Rate"}</span>${[1,2,3,4,5].map(k=>`<button data-rate="${k}" class="${k<=mine?"on":""}" aria-label="${k} stars">\u2605</button>`).join("")}</div></div>
+      ${reactionBox(f)}</div>
     <p class="vmeta" style="margin-top:12px">Fanreelz TV plays a channel's best films back to back, like a TV schedule. Everyone tuned in sees the same film at the same moment.</p>
    </div><aside class="sched"><h3>Coming up</h3>
     <div class="srow cur"><span class="t">Now</span><span><b>${esc(f.title)}</b><small>${esc(catName(f.cat))} \u00b7 ${esc(f.len)}</small></span></div>
@@ -1755,7 +1811,7 @@ async function writeOwn(col,data){
 const battle={pool:"all",pair:null,seen:new Set()};
 function battlePool(){return allFilms().filter(f=>!f.real&&(battle.pool==="all"||f.cat===battle.pool))}
 function eloTable(pool){
-  const R={};for(const f of pool)R[f.id]=1400+Math.round((stats(f).bayes-3)*120);
+  const R={};for(const f of pool)R[f.id]=1400;
   const W={},L={};
   for(const [w,l] of allVotes){if(!(w in R)||!(l in R))continue;const ea=1/(1+10**((R[l]-R[w])/400));R[w]+=24*(1-ea);R[l]-=24*(1-ea);W[w]=(W[w]||0)+1;L[l]=(L[l]||0)+1}
   return {R,W,L};
@@ -1786,7 +1842,7 @@ function renderBattles(){
    <div class="row" style="justify-content:center;margin:14px 0 30px"><button class="btn ghost" data-vote="skip">Skip this pair</button><span class="vmeta">${myVotes.length?`You've voted ${myVotes.length} times`:acct.online?"":"Sign in to vote"}</span></div>`:`<div class="empty">Not enough films in this pool yet.</div>`}
    <h2 class="sect-h">Battle ranking <span class="vmeta" style="font-size:14px;font-weight:500">${esc(pools.find(p=>p.id===battle.pool)?.name||"")}</span></h2>
    <div class="azlist">${board.map((f,i)=>`<button class="azrow" data-open="${esc(f.id)}"><span class="aztitle"><span class="rk">${i+1}</span>${esc(f.title)}</span><span class="azcat">${esc(catName(f.cat))} · ${W[f.id]||0} vote${(W[f.id]||0)===1?"":"s"}</span><span class="azscore">${Math.round(R[f.id])}</span></button>`).join("")}</div>
-   <p class="note">Ranking starts from each film's star rating and moves with every vote cast on this page.</p>`;
+   <p class="note">Films start equally and the ranking moves with every vote cast on this page.</p>`;
 }
 /* Fan Battles: the video plays right here; starting one stops the other */
 const bFrame=f=>f.yt?ytFrame(f.yt):f.tt?ttFrame(f.tt):extFrame(f);
@@ -1989,7 +2045,7 @@ function igCaption(f){const by=byName(f)||"the creator",h=(igHandle[f.id]||"").t
 function igDM(f){const by=byName(f)||"there";
   return `Hi ${by}! I run Fanreelz (fanreelz.com), a site that collects the best AI fan films – your film "${f.title}" is featured there.\n\nWe'd love to share a short clip of it on our Instagram ${IG_ACCOUNT}, fully credited and tagged, with a link to your full film. Would that be OK with you?\n\nIf you have an Instagram account we should tag, just let me know. Thanks, and great work!`}
 function renderAdminInsta(){
-  const now=Date.now(),score=f=>(f.ytViews||0)+stats(f).n*500+viewsOf(f)*50,q=igQ.trim().toLowerCase();
+  const now=Date.now(),score=f=>(f.ytViews||0)+stats(f).fans*500+viewsOf(f)*50,q=igQ.trim().toLowerCase();
   let list=rawFilms().filter(f=>(f.yt||f.tt||f.vm)&&!f.age&&f.format!=="episode");
   if(igFmt!=="all")list=list.filter(f=>igFmt==="short"?f.format==="short":f.format!=="short");
   if(igStF!=="all")list=list.filter(f=>(igSt[f.id]||"")===(igStF==="none"?"":igStF));
@@ -2012,7 +2068,7 @@ function renderAdminInsta(){
     <input readonly value="${esc(igLink(f))}" data-igtxt="link" style="width:100%;box-sizing:border-box">
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px"><button class="chip" data-igcopy="link">Copy link</button></div></div>`;
   const row=f=>`<div class="adm-row">${f.yt?`<img src="https://i.ytimg.com/vi/${esc(f.yt)}/mqdefault.jpg" alt="" loading="lazy" style="width:96px;height:54px;border-radius:8px;object-fit:cover">`:""}
-    <div class="adm-who" data-open="${esc(f.id)}" role="button" tabindex="0" style="cursor:pointer"><b>${esc(f.title)}</b><span>${esc([catName(f.cat),f.format==="short"?"Short":"Film",f.len].filter(Boolean).join(" · "))} · ${esc(byName(f)||"YouTube creator")}${f.ytViews?" · "+fmtN(f.ytViews)+" YouTube views":""}${stats(f).n?` · ★ ${stats(f).avg.toFixed(1)}`:""}</span></div>
+    <div class="adm-who" data-open="${esc(f.id)}" role="button" tabindex="0" style="cursor:pointer"><b>${esc(f.title)}</b><span>${esc([catName(f.cat),f.format==="short"?"Short":"Film",f.len].filter(Boolean).join(" · "))} · ${esc(byName(f)||"YouTube creator")}${f.ytViews?" · "+fmtN(f.ytViews)+" YouTube views":""}${stats(f).n?` · ${fmtN(stats(f).n)} reactions`:""}</span></div>
     <div class="adm-meta">${stChip(f)}<button class="chip ${igOpen===f.id?"on":""}" data-igprep="${esc(f.id)}">${igOpen===f.id?"Close":"Prepare post"}</button></div>${igOpen===f.id?panel(f):""}</div>`;
   const opened=igOpen&&findFilm(igOpen);if(opened&&!list.includes(opened))list.unshift(opened);
   const card=(n,l)=>`<div class="adm-card"><b>${n}</b><span>${l}</span></div>`;
@@ -2021,7 +2077,7 @@ function renderAdminInsta(){
   <p class="vmeta" style="margin:0 0 14px;max-width:760px">Pick a film, ask the creator, then post with credit. Only post clips the creator has allowed, and add Instagram's "AI info" label. Statuses are saved in this browser.</p>
   <div class="adm-cards">${card(cnt("asked"),"asked")}${card(cnt("yes"),"allowed")}${card(cnt("posted"),"posted")}${card(cnt("no"),"said no")}</div>
   <input id="igq" value="${esc(igQ)}" placeholder="Search title, creator or world" style="width:100%;max-width:420px;box-sizing:border-box;margin:16px 0 8px">
-  <div class="chips" style="margin:0 0 6px">${ch([["popular","Most popular"],["week","New this week"],["rated","Top rated"],["new","Newest added"]],igSort,"data-igsort")}</div>
+  <div class="chips" style="margin:0 0 6px">${ch([["popular","Most popular"],["week","New this week"],["rated","Most appreciated"],["new","Newest added"]],igSort,"data-igsort")}</div>
   <div class="chips" style="margin:0 0 6px">${ch([["all","All"],["film","Films"],["short","Shorts"]],igFmt,"data-igfmt")}</div>
   <div class="chips" style="margin:0 0 12px">${ch([["all","Any status"],["none","Not asked"],["asked","Asked"],["yes","Allowed"],["posted","Posted"],["no","Said no"]],igStF,"data-igstf")}</div>
   ${list.length?moreGrid("adm-list",list,row,30):`<div class="empty">No films match.</div>`}`}
@@ -2294,17 +2350,17 @@ document.addEventListener('click',e=>{if(e.target.closest('[data-creators-retry]
 function renderTop10(){
   const month=new Date().toLocaleString("en-GB",{month:"long",year:"numeric"});
   const pool=allFilms().filter(f=>(f.yt||f.tt||f.ig||f.vm||f.dm)&&!f.age&&f.format!=="short");
-  const score=f=>(f.ytViews||0)+stats(f).n*500;
+  const score=f=>(f.ytViews||0)+stats(f).fans*500;
   const fresh=pool.filter(f=>f.days!=null&&f.days<=31).sort((a,b)=>score(b)-score(a)).slice(0,10);
   const top=fresh.length>=5?fresh:[...pool].sort((a,b)=>score(b)-score(a)).slice(0,10);
-  const row=(f,i)=>`<button class="t10row" data-open="${esc(f.id)}"><span class="t10n">${i+1}</span><span class="thumb"><canvas data-f="${esc(f.id)}"></canvas></span><span class="t10t"><b>${esc(f.title)}</b><small class="vmeta">${esc(byName(f)||"YouTube creator")} · ${esc(catName(f.cat))}${f.ytViews?` · ${fmtN(f.ytViews)} views`:""}${stats(f).n?` · ★ ${stats(f).avg.toFixed(1)}`:""}</small></span></button>`;
+  const row=(f,i)=>`<button class="t10row" data-open="${esc(f.id)}"><span class="t10n">${i+1}</span><span class="thumb"><canvas data-f="${esc(f.id)}"></canvas></span><span class="t10t"><b>${esc(f.title)}</b><small class="vmeta">${esc(byName(f)||"YouTube creator")} · ${esc(catName(f.cat))}${f.ytViews?` · ${fmtN(f.ytViews)} views`:""}${stats(f).n?` · ${fmtN(stats(f).n)} reactions`:""}</small></span></button>`;
   const groups=GROUPS.map(g=>{const ids=new Set(g.cats.map(c=>c.id));return {g,list:pool.filter(f=>ids.has(f.cat)).sort((a,b)=>score(b)-score(a)).slice(0,5)}}).filter(x=>x.list.length>=3);
   $("#main").innerHTML=`<h1 class="sect-h" style="font-size:26px;margin-top:16px">${icon("top")} Top 10 AI fan films · ${esc(month)}</h1>
    <p class="lede">${fresh.length>=5?"The most-watched AI fan films released in the last 30 days":"The most-watched AI fan films on Fanreelz"}, across YouTube, TikTok and Vimeo. Every film plays through the creator's own player, so the views are theirs.</p>
    <div class="row" style="margin:6px 0 18px"><button class="btn ghost" data-share-page="top10">${icon("share")}Share this list</button></div>
    <div class="t10">${top.map(row).join("")}</div>
    ${groups.map(({g,list})=>`<h2 class="sect-h" style="margin-top:28px">Top 5 · ${esc(g.name)}<button class="seeall" data-t10group="${esc(g.name)}">See all</button></h2><div class="t10">${list.map(row).join("")}</div>`).join("")}
-   <p class="note">Ranked by views on the original platform plus Fanreelz ratings. Updated as new films come in.</p>`;
+   <p class="note">Ranked by views on the original platform plus Fanreelz reactions. Updated as new films come in.</p>`;
 }
 document.addEventListener("click",e=>{const g=e.target.closest("[data-t10group]");if(g){e.preventDefault();go({view:"home",feed:"home",group:g.dataset.t10group,cat:null,char:null,q:"",format:"all"});window.scrollTo(0,0)}});
 document.addEventListener("click",e=>{if(!e.target.closest("[data-share-page]"))return;e.preventDefault();
@@ -2507,7 +2563,7 @@ function renderContest(){
     <div class="prize"><small>PRIZE</small><b>Sponsor slot</b><span>An AI video tool sponsors the prize, for example a year of their top plan.</span></div></div>
    <h2 class="sect-h">Leading entries <span class="vmeta" style="font-size:14px;font-weight:500">${entries.length} entries</span></h2>
    ${pod.length?`<div class="podium">${pod.map((f,i)=>`<div class="pod p${i+1}">${card(f,i+1)}</div>`).join("")}</div>`:`<div class="empty">No entries yet. Be the first.</div>`}
-   ${rest.length?`<div class="azlist" style="margin-top:24px">${rest.map((f,i)=>{const s=stats(f);return `<button class="azrow" data-open="${esc(f.id)}"><span class="aztitle"><span class="rk">${i+4}</span>${esc(f.title)}</span><span class="azcat">${esc(byName(f)||"YouTube creator")} · ${esc(catName(f.cat))}</span><span class="azscore">${s.n?"★ "+s.avg.toFixed(1):"–"}</span></button>`}).join("")}</div>`:""}
+   ${rest.length?`<div class="azlist" style="margin-top:24px">${rest.map((f,i)=>{const s=stats(f);return `<button class="azrow" data-open="${esc(f.id)}"><span class="aztitle"><span class="rk">${i+4}</span>${esc(f.title)}</span><span class="azcat">${esc(byName(f)||"YouTube creator")} · ${esc(catName(f.cat))}</span><span class="azscore">${s.n?fmtN(s.fans)+" fans":"–"}</span></button>`}).join("")}</div>`:""}
    <h2 class="sect-h" style="margin-top:30px">Rules</h2><ul class="rules"><li>One entry per creator per week, made mostly with AI tools.</li><li>The theme changes every Monday. Past winners get a badge on their profile.</li><li>No real people, nothing sexual, nothing hateful. Entries that break the rules are removed.</li><li>Ranking uses the same weighted rating as the top lists, so a handful of 5-star votes can't win alone.</li></ul>
    <p class="note">Prototype: the theme rotates weekly; entries are the existing example films that fit the theme.</p>`;
 }
@@ -2573,7 +2629,7 @@ function renderCreator(){
   const rated=films.filter(f=>stats(f).n);const avg=rated.length?rated.reduce((a,f)=>a+stats(f).avg,0)/rated.length:0;
   const badges=creatorBadges(key,films);const following=creatorFollowing(key);
   $("#main").innerHTML=`<div class="chero">${cav(name,96)}<div class="cinfo"><h1>${esc(name)}</h1>
-     <div class="vmeta">${fmtN(creatorSubscriberCount(key))} subscribers · ${films.length} films${rated.length?` · ★ ${avg.toFixed(1)} average`:""}</div>
+     <div class="vmeta">${fmtN(creatorSubscriberCount(key))} subscribers · ${films.length} films${rated.length?` · ${fmtN(rated.reduce((n,f)=>n+stats(f).n,0))} reactions`:""}</div>
      <div class="row" style="gap:6px;margin-top:6px">${badges.map(b=>`<span class="badge2">${esc(b)}</span>`).join("")}</div>
      <div class="row" style="margin-top:12px"><button class="btn ${following?"ghost":""}" data-follow="${esc(key)}">${following?"✓ Subscribed":"Subscribe"}</button>
        <button class="btn ghost" data-tip="${esc(key)}">${icon("heart")} Tip</button><button class="btn ghost" data-commission="${esc(name)}">Commission a film</button></div></div></div>
@@ -2665,14 +2721,14 @@ function renderUser(){
   const uid=state.user,me=uid===acct.uid,name=cname(uid);
   if(safetyBlocked(uid)){$("#main").innerHTML=`<h1>Blocked member</h1><p>This member’s content is hidden from your view.</p>${safetyButtons(uid)}`;return}
   if(!names[uid]&&!me)resolveExtraNames();
-  const liked=Object.entries(ratingsBy[uid]||{}).filter(([,r])=>r>=4).map(([id])=>findFilm(id)).filter(Boolean);
+  const liked=likedIds(ratingsBy[uid],reactionsBy[uid]).map(findFilm).filter(Boolean);
   const vids=creatorFilms(uid);
   const lists=Array.isArray(plDocs[uid]?.lists)?plDocs[uid].lists:[];
   const nComments=Array.isArray(commentDocs[uid]?.items)?commentDocs[uid].items.length:0;
   const tab=["liked","videos","playlists"].includes(state.utab)?state.utab:"liked";
   const tabs=[["liked",`Liked videos`,liked.length],["videos","Videos",vids.length],["playlists","Playlists",lists.length]];
   let body="";
-  if(tab==="liked")body=liked.length?moreGrid("grid",liked,f=>card(f)):`<div class="empty">${me?"Films you rate 4 or 5 stars show up here.":"No liked videos yet."}</div>`;
+  if(tab==="liked")body=liked.length?moreGrid("grid",liked,f=>card(f)):`<div class="empty">${me?"Films you react to show up here, along with your previous liked videos.":"No liked videos yet."}</div>`;
   if(tab==="videos")body=vids.length?moreGrid("grid",vids,f=>card(f)):`<div class="empty">${me?"Films you submit show up here.":"No videos yet."}</div>`;
   if(tab==="playlists")body=(me?`<button class="btn" data-view="playlists" style="margin-bottom:16px">Manage your playlists</button>`:"")+(lists.length?`<div class="plgrid">${lists.map(l=>listCard(l,me)).join("")}</div>`:`<div class="empty">No playlists yet.</div>`);
   $("#main").innerHTML=`<div class="uhero">${uav(uid,96)}<div><h1>${esc(name)} ${earlyBadge(uid)}</h1>
@@ -2701,7 +2757,7 @@ function startYou(db){
   db.doc("data/users/"+acct.uid+"/later").onSnapshot(d=>{myLater=d.exists&&Array.isArray(d.data()?.items)?d.data().items:[];
     if(localLater.length){const merged=[...localLater,...myLater].filter((x,i,a)=>a.findIndex(y=>y.id===x.id)===i).slice(0,500);localLater.length=0;store.set("fr_later",[]);saveYou("later",merged)}if(["you","later"].includes(state.view))render()},()=>{});
 }
-const likedFilms=()=>Object.entries(myRatings).filter(([,r])=>r>=4).map(([id])=>findFilm(id)).filter(Boolean);
+const likedFilms=()=>likedIds(myRatings,myReactions).map(findFilm).filter(Boolean);
 const yourVideos=()=>(mySubs||[]).map(f=>findFilm(String(f.id))).filter(Boolean);
 const filmsOf=list=>list.map(x=>findFilm(x.id)).filter(Boolean);
 
@@ -2720,7 +2776,7 @@ function youShelf(title,view,films,empty){
 }
 function libraryLikedCard(){
  const liked=likedFilms();
- return `<button class="plcard" data-you="liked"><div class="thumb">${liked[0]?`<canvas data-f="${esc(liked[0].id)}"></canvas>`:""}<span class="plcount">${icon("list")} ${liked.length} videos</span></div><h3 class="vtitle">Liked videos</h3><div class="vmeta">Automatic playlist · Rated 4 or 5 stars</div><span class="library-playlist-hint">View full playlist</span></button>`;
+ return `<button class="plcard" data-you="liked"><div class="thumb">${liked[0]?`<canvas data-f="${esc(liked[0].id)}"></canvas>`:""}<span class="plcount">${icon("list")} ${liked.length} videos</span></div><h3 class="vtitle">Liked videos</h3><div class="vmeta">Automatic playlist · Films you appreciate</div><span class="library-playlist-hint">View full playlist</span></button>`;
 }
 function libraryPlaylists(){
  const mine=myLists(),cards=libraryLikedCard()+mine.map(l=>listCard(l,true).replace("</button>",'<span class="library-playlist-hint">View full playlist</span></button>')).join("");
@@ -2739,7 +2795,7 @@ function renderYou(){
  youShelf("History","history",filmsOf(myHistory),"Videos you watch will appear here, ready to find again.")+
  libraryPlaylists()+
  youShelf("Watch later","later",filmsOf(myLater),"Save a video to Watch later and find it here.")+
- youShelf("Liked videos","liked",likedFilms(),"Rate a video 4 or 5 stars to add it to your liked videos.")+
+ youShelf("Liked videos","liked",likedFilms(),"React to a video to add it to your liked videos.")+
  youShelf("Your videos","yourvideos",yourVideos(),"Videos you submit to Fanreelz will appear here.")+"</div>";
  requestAnimationFrame(syncLibraryArrows);
 }
@@ -2760,7 +2816,7 @@ document.addEventListener("click",e=>{
 
 function renderYouList(){
   const v=state.view,meta={history:["History","clock",filmsOf(myHistory),"Films you watch show up here."],later:["Watch later","clock",filmsOf(myLater),"Press Watch later on a film to save it here."],
-    liked:["Liked videos","like",likedFilms(),"Films you rate 4 or 5 stars show up here."],yourvideos:["Your videos","film",yourVideos(),"Films you submit show up here. Press Submit to add one."]}[v];
+    liked:["Liked videos","like",likedFilms(),"Films you react to show up here, along with your previous liked videos."],yourvideos:["Your videos","film",yourVideos(),"Films you submit show up here. Press Submit to add one."]}[v];
   if(v!=="history"&&!acct.online){$("#main").innerHTML=`<div class="about"><h1 class="ab-h">${meta[0]}</h1><p class="ab-lede">Sign in to see this.</p><button class="btn" id="signinBtn">Sign in</button></div>`;return}
   $("#main").innerHTML=`<div class="wbar" style="margin-top:16px"><h1 class="sect-h" style="font-size:24px;margin:0">${icon(meta[1])} ${meta[0]}</h1>${v==="history"&&meta[2].length?`<button class="btn ghost" data-clearhistory="">Clear history</button>`:""}</div>
     <p class="lede" style="margin-top:8px">${meta[2].length} film${meta[2].length===1?"":"s"}</p>
@@ -2831,7 +2887,7 @@ function renderAbout(){
    <h2 class="ab-h2">For fans</h2>
    <div class="abgrid">
     ${card("list","Find films about your world","Browse by game, book, anime, series or a single character. Looking for the best Sylvanas film? It's one click away.")}
-    ${card("top","Rate and rank","Your ratings decide the top lists. Rankings weigh the number of votes, so one lucky 5-star rating can't beat a film loved by hundreds.")}
+    ${card("top","Share how it feels","Epic, Impressive, Funny, Moving or Visually stunning? Choose every reaction that fits. Most appreciated films are ranked by the number of fans who react, with each fan counted once per film.")}
     ${card("battle","Join the fun","Vote in Fan Battles, enter the weekly contest, build playlists and ask creators for the film you want to see next.")}
    </div>
 
@@ -2846,7 +2902,7 @@ function renderAbout(){
    <ol class="ab-steps">
     <li><b>We collect.</b> Fanreelz finds AI fan films on YouTube, TikTok, Vimeo, Instagram and Dailymotion several times a day, and creators can submit their own.</li>
     <li><b>We sort.</b> Every film gets a home: its world, its characters and its format, whether it's a full film, a short or a series.</li>
-    <li><b>Fans decide.</b> Ratings, battles and contests push the best films to the top of each category.</li>
+    <li><b>Fans decide.</b> Reactions, battles and contests push the best films to the top of each category.</li>
    </ol>
 
    <h2 class="ab-h2">Our principles</h2>
@@ -2974,7 +3030,7 @@ const allEpisodes=()=>[...EPISODES,...sharedSubs.filter(f=>f.format==="episode")
 const allSeries=()=>{const l=[...SERIES,...autoSeries(),...userSeries()];return state.family?l.filter(s=>isKids(s)&&!s.episodes.some(e=>e.age)):l};
 const findSeries=id=>[...SERIES,...autoSeries(),...userSeries()].find(s=>s.id===id);
 const seriesBy=s=>s.byId?(s.byId===acct.uid?"You":(names[s.byId]||"Fanreelz member")):s.by;
-function seriesStats(s){const c=[0,0,0,0,0];for(const e of s.episodes)counts(e).forEach((v,i)=>c[i]+=v);const n=c.reduce((a,b)=>a+b,0);const avg=n?c.reduce((a,v,i)=>a+v*(i+1),0)/n:0;return {n,avg,bayes:(avg*n+3.4*50)/(n+50)}}
+function seriesStats(s){const totals=s.episodes.map(stats),n=totals.reduce((n,t)=>n+t.n,0),fans=totals.reduce((n,t)=>n+t.fans,0);return {n,fans,avg:fans,bayes:fans}}
 const seriesDays=s=>s.episodes.length?Math.min(...s.episodes.map(e=>e.days??999)):(s.days||0);
 const seasonsOf=s=>[...new Set(s.episodes.map(e=>e.season))].sort((a,b)=>a-b);
 let watched=store.get("fr_watched",{});
@@ -2982,8 +3038,8 @@ function seriesList(){
   const q=state.q.toLowerCase();
   let l=allSeries().filter(s=>(!state.cat||s.cat===state.cat)&&(!state.char||s.char===state.char)&&(state.cat||state.group==="All"||groupOf(s.cat)?.name===state.group)&&
     (!q||[s.title,s.char,catName(s.cat),seriesBy(s),...s.episodes.map(e=>e.title)].join(" ").toLowerCase().includes(q)));
-  if(state.feed==="mine"&&!state.cat)l=l.filter(s=>s.episodes.some(e=>myRatings[e.id]));
-  // the viewer's sort (Most viewed = all episodes' YouTube views together, Newest = latest episode, Top rated), else the feed's
+  if(state.feed==="mine"&&!state.cat)l=l.filter(s=>s.episodes.some(e=>reactedTo(e.id)));
+  // the viewer's sort (Most viewed = all episodes' YouTube views together, Newest = latest episode, Most appreciated), else the feed's
   const yv=s=>s.episodes.reduce((a,e)=>a+(findFilm(e.id)?.ytViews||0),0);
   const k=state.sort==="views"?s=>-yv(s):state.sort==="new"||state.feed==="new"?s=>seriesDays(s)??1e9:s=>-seriesStats(s).bayes;
   return l.sort((a,b)=>k(a)-k(b));
@@ -3016,11 +3072,11 @@ const durOk=f=>{const s=secs(f.len);return state.dur==="any"||(state.dur==="u5"&
 
 function shortCard(f){const s=stats(f);
   return `<button class="vid short" data-short="${esc(f.id)}"><div class="thumb vert"><canvas data-f="${esc(f.id)}"></canvas>${f.real?'<span class="livebadge" style="background:var(--accent)">REAL</span>':""}<span class="len">${esc(f.len)}</span></div>
-   <h3 class="vtitle" style="font-size:14px">${esc(f.title)}</h3><div class="vmeta" style="font-size:12px">${s.n?`<span class="st">★</span> ${s.avg.toFixed(1)} · ${fmtN(s.n)} ratings`:"No ratings yet"}</div></button>`}
+   <h3 class="vtitle" style="font-size:14px">${esc(f.title)}</h3><div class="vmeta" style="font-size:12px">${reactionSummary(f)}</div></button>`}
 function seriesCard(s){const st=seriesStats(s),ss=seasonsOf(s);
   return `<button class="vid" data-series="${esc(s.id)}"><div class="thumb stack"><canvas data-s="${esc(s.id)}"></canvas><span class="sbadge">${icon("series")}${s.episodes.length?`${s.episodes.length} episodes`:"Series"}</span>${s.real?'<span class="livebadge" style="background:var(--accent)">REAL</span>':""}</div>
    <div class="vinfo">${cav(seriesBy(s))}<div class="vtext"><h3 class="vtitle">${esc(s.title)}</h3><div class="vmeta">${esc(seriesBy(s))} · ${esc(catName(s.cat))}</div>
-   <div class="vmeta">${ss.length?`${ss.length} season${ss.length>1?"s":""} · `:""}${st.n?`<span class="st">★</span> ${st.avg.toFixed(1)}`:"Episodes on "+esc(s.src||"YouTube")} · updated ${ago(seriesDays(s))}</div></div></div></button>`}
+   <div class="vmeta">${ss.length?`${ss.length} season${ss.length>1?"s":""} · `:""}${st.n?`${fmtN(st.n)} reactions`:"Episodes on "+esc(s.src||"YouTube")} · updated ${ago(seriesDays(s))}</div></div></div></button>`}
 function fmtTabs(nAll,nFilm,nShort,nSeries){
   return `<div class="fmtbar" role="tablist">${[["all","All",nAll],["film","Films",nFilm],["short","Shorts",nShort],["series","Series",nSeries]].map(([k,l,n])=>`<button role="tab" aria-selected="${state.format===k}" class="${state.format===k?"on":""}" data-fmt="${k}">${l}${isMod?`<small>${n}</small>`:""}</button>`).join("")}</div>`}
 
@@ -3032,6 +3088,7 @@ function interests(){
   const cat={},ch={},now=Date.now(),add=(o,k,w)=>{if(k)o[k]=(o[k]||0)+w};
   myHistory.slice(0,150).forEach((h,i)=>{const f=findFilm(h.id);if(!f)return;const w=Math.exp(-(now-(+h.t||now))/(14*864e5))+(i<10?.5:0);add(cat,f.cat,w);add(ch,f.cat+"|"+f.char,w*1.5)});
   for(const [id,r] of Object.entries(myRatings)){const f=findFilm(id);if(!f)continue;add(cat,f.cat,(r-3)*.8);add(ch,f.cat+"|"+f.char,(r-3))}
+  for(const id of Object.keys(myReactions)){const f=findFilm(id);if(f){add(cat,f.cat,1);add(ch,f.cat+"|"+f.char,1)}}
   myLater.forEach(x=>{const f=findFilm(x.id);if(f){add(cat,f.cat,.6);add(ch,f.cat+"|"+f.char,.6)}});
   try{for(const [key] of Object.entries(sdVotes[acct.uid]?.a||{})){const m=sdList().find(x=>x.key===key);if(m)sdCats(m).forEach(id=>add(cat,id,.5))}}catch(e){}
   return {cat,ch,n:myHistory.length+Object.keys(myRatings).length+myLater.length};
@@ -3096,13 +3153,13 @@ function renderHomeF(){
   if(state.q&&!c){const q=state.q.toLowerCase();const mc=CATS.filter(x=>x.name.toLowerCase().includes(q)||x.chars.some(ch=>ch.toLowerCase().includes(q)));
     html+=`<h1 class="sect-h" style="font-size:22px">Results for “${esc(state.q)}”</h1>`;
     if(mc.length)html+=`<section class="shelf"><h2 class="sect-h" style="font-size:16px">Categories</h2><div class="dirgrid">${mc.slice(0,6).map(x=>`<button class="dircard dirhead" data-cat="${x.id}">${cav(x.name,40)}<span><b>${esc(x.name)}</b><small>${esc(groupOf(x.id).name)}${isMod?" · "+allFilms().filter(f=>f.cat===x.id).length+" films":""}</small></span></button>`).join("")}</div></section>`;}
-  if(state.feed==="top"&&!c)html+=`<h2 class="sect-h">${icon("top")} Top rated</h2>`;
+  if(state.feed==="top"&&!c)html+=`<h2 class="sect-h">${icon("top")} Most appreciated</h2>`;
   if(state.feed==="new"&&!c)html+=`<h2 class="sect-h">${icon("fresh")} Newest</h2>`;
-  if(state.feed==="mine"&&!c)html+=`<h2 class="sect-h">${icon("mine")} Your ratings</h2>`;
+  if(state.feed==="mine"&&!c)html+=`<h2 class="sect-h">${icon("mine")} Your reactions</h2>`;
   if(!plainHome)html+=fmtTabs(films.length+shorts.length,films.length,shorts.length,series.length);
-  if(!plainHome||state.format==="series")html+=`<div class="lorebar sortbar" role="group" aria-label="Sort" style="flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none">${[["","Recommended"],["views","Most viewed"],["new","Newest"],["top","Top rated"]].map(([k,l])=>`<button style="flex-shrink:0" class="${(state.sort||"")===k?"on":""}" data-sort="${k}">${l}</button>`).join("")}</div>`;
+  if(!plainHome||state.format==="series")html+=`<div class="lorebar sortbar" role="group" aria-label="Sort" style="flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none">${[["","Recommended"],["views","Most viewed"],["new","Newest"],["top","Most appreciated"]].map(([k,l])=>`<button style="flex-shrink:0" class="${(state.sort||"")===k?"on":""}" data-sort="${k}">${l}</button>`).join("")}</div>`;
   const sub=c&&state.format!=="short"&&state.format!=="series"?`<div class="lorebar">${[["all","All films"],["lore","Lore-accurate"],["whatif","What if"]].map(([k,l])=>`<button class="${state.lore===k?"on":""}" data-lore="${k}">${l}</button>`).join("")}</div>`:"";
-  const empty=`<div class="empty">${state.feed==="mine"?(acct.online?"You haven't rated anything here yet.":"Sign in to see what you've rated."):c&&!state.q?`<b style="display:block;color:var(--fg);font-size:17px;margin-bottom:6px">No ${esc(c.name)} films yet</b>Fanreelz searches YouTube every hour and adds new AI fan films here automatically.<br>Know a good one? <button class="btn" data-submitcat="" style="margin-top:14px">Submit a film</button>`:"Nothing here yet. Submit the first one."}</div>`;
+  const empty=`<div class="empty">${state.feed==="mine"?(acct.online?"You haven't reacted to anything here yet.":"Sign in to see your reactions."):c&&!state.q?`<b style="display:block;color:var(--fg);font-size:17px;margin-bottom:6px">No ${esc(c.name)} films yet</b>Fanreelz searches YouTube every hour and adds new AI fan films here automatically.<br>Know a good one? <button class="btn" data-submitcat="" style="margin-top:14px">Submit a film</button>`:"Nothing here yet. Submit the first one."}</div>`;
   if(state.format==="film"){
     langPrep(films,langOf);const fl=films.filter(durOk).filter(f=>genreOk(f,genresOf)&&langOk(f,langOf));
     html+=sub+langBar(films,langOf)+genreBar(films,genresOf)+`<div class="lorebar">${DUR.map(([k,l])=>`<button class="${state.dur===k?"on":""}" data-dur="${k}">${l}</button>`).join("")}</div>`;
@@ -3197,8 +3254,8 @@ function renderShorts(){setTimeout(()=>{if(!spSw)document.querySelectorAll(".spp
    <div class="sside">
      ${(f.real||f.yt||f.tt||f.ig||f.vm||f.dm)?`<button class="owner link" data-creator="${esc(videoCreatorKey(f))}">${cav(byName(f),40)}<div><b>${esc(byName(f)||"YouTube creator")}</b><small>${f.days==null?"on "+esc(f.src):ago(f.days)}</small></div></button>${f.yt?creatorSubscriptionButton(f):""}`:`<button class="owner link" data-creator="${esc(f.byId||f.by)}">${cav(byName(f),40)}<div><b>${esc(byName(f)||"YouTube creator")}</b><small>${esc(catName(f.cat))}</small></div></button>`}
      <b class="sside-t">${esc(f.title)}</b>
-     <div class="vmeta">${viewTxt(f)}${s.n?`★ ${s.avg.toFixed(1)} from ${fmtN(s.n)} ratings`:"No ratings yet"}${[catName(f.cat),f.char].filter(Boolean).map(x=>" · "+esc(x)).join("")}</div>
-     <div class="row" style="gap:10px;flex-wrap:wrap"><div class="ratebox" role="group" aria-label="Rate this short"><span>${mine?"Your rating":"Rate"}</span>${[1,2,3,4,5].map(k=>`<button data-rate="${k}" class="${k<=mine?"on":""}" aria-label="${k} stars">★</button>`).join("")}</div>
+     <div class="vmeta">${viewTxt(f)}${reactionSummary(f)}${[catName(f.cat),f.char].filter(Boolean).map(x=>" · "+esc(x)).join("")}</div>
+     <div class="row" style="gap:10px;flex-wrap:wrap">${reactionBox(f)}
        <button class="chip" data-open-full="${esc(f.id)}">${icon("film")}Details</button>${f.real||f.yt||f.tt||f.ig||f.vm||f.dm?"":`<button class="chip" data-tip="${esc(f.byId||f.by)}" data-tipfilm="${esc(f.id)}">${icon("heart")}Tip</button>`}${isMod&&f.yt?`<button class="chip" data-adminhide="${esc(f.id)}">${icon("shield")}Hide</button>`:""}</div>
      <div class="sptabs" role="tablist"><button role="tab" class="${spTab==="comments"?"on":""}" data-sptab="comments">Comments <small>${filmComments(f.id).length}</small></button><button role="tab" class="${spTab==="like"?"on":""}" data-sptab="like">You may like</button></div>
      <div class="sptabbody">${spTab==="comments"?commentsHtml(f):spLikeGrid()}</div></div></div>`;
@@ -3226,14 +3283,14 @@ function renderShorts(){setTimeout(()=>{if(!spSw)document.querySelectorAll(".spp
     const nC=filmComments(f.id).length,full=document.body.classList.contains("spfs");
     sp.insertAdjacentHTML("beforeend",`<div class="sprail">
       ${spMuteBtn()}
-      <button data-spsheet="rate" aria-label="Rate"><span class="spb ${mine?"on":""}"><svg viewBox="0 0 24 24"><path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/></svg></span><small>${s.n?s.avg.toFixed(1):"Rate"}</small></button>
+      <button data-spsheet="rate" aria-label="Reactions"><span class="spb ${reactedTo(f.id)?"on":""}"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M8 14s1 3 4 3 4-3 4-3M8 8h.01M16 8h.01"/></svg></span><small>${stats(f).n||"React"}</small></button>
       <button data-splike="${esc(f.id)}" aria-label="Like"><span class="spb ${(likeDocs[acct.uid]?.ids||{})["film-"+f.id]?"liked":""}"><svg viewBox="0 0 24 24"><path d="M12 20s-7-4.4-9-8.6C1.6 8.3 3.5 5 6.8 5c2 0 3.4 1.1 4.2 2.4C11.8 6.1 13.2 5 15.2 5 18.5 5 20.4 8.3 19 11.4 17 15.6 12 20 12 20z"/></svg></span><small>${Object.values(likeDocs).filter(d=>d?.ids?.["film-"+f.id]).length||"Like"}</small></button>
       <button data-spsheet="comments" aria-label="Comments"><span class="spb"><svg viewBox="0 0 24 24"><path d="M4 5h16v11H9l-5 4z"/></svg></span><small>${nC}</small></button>
       <button data-share="${esc(f.id)}" data-share-short="1" aria-label="Share"><span class="spb"><svg viewBox="0 0 24 24"><path d="M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7M16 6l-4-4-4 4M12 2v13"/></svg></span><small>Share</small></button>
       ${phone()?"":`<button data-spfull="" aria-label="${full?"Exit full screen":"Full screen"}"><span class="spb"><svg viewBox="0 0 24 24"><path d="${full?"M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5":"M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"}"/></svg></span><small>${full?"Exit":"Full"}</small></button>`}
     </div><button class="spback" data-spback="" aria-label="Back"><svg viewBox="0 0 24 24"><path d="M19 12H5M11 6l-6 6 6 6"/></svg></button>
-    <div class="spsheet" ${spSheet?"":"hidden"}><div class="spsheet-h"><b>${spSheet==="rate"?"Rate this short":"Comments"}</b><button data-spsheet="" aria-label="Close">✕</button></div>
-      ${spSheet==="rate"?`<div class="ratebox spbig" role="group" aria-label="Rate this short"><span>${mine?"Your rating":"Rate"}</span>${[1,2,3,4,5].map(k=>`<button data-rate="${k}" class="${k<=mine?"on":""}" aria-label="${k} stars">★</button>`).join("")}</div><p class="vmeta" style="margin:10px 0 0">${s.n?`★ ${s.avg.toFixed(1)} from ${fmtN(s.n)} ratings`:"No ratings yet. Be the first."}</p>`:spSheet==="comments"?commentsHtml(f):""}
+    <div class="spsheet" ${spSheet?"":"hidden"}><div class="spsheet-h"><b>${spSheet==="rate"?"Your reactions":"Comments"}</b><button data-spsheet="" aria-label="Close">✕</button></div>
+      ${spSheet==="rate"?`${reactionBox(f)}<p class="vmeta" style="margin:10px 0 0">${reactionSummary(f)}</p>`:spSheet==="comments"?commentsHtml(f):""}
     </div>`)}}
 }
 /* Shorts on a computer, like TikTok: the buttons sit beside the video, round up/down arrows, and a side panel with
@@ -3245,7 +3302,7 @@ function spRailOut(f,s,mine){const liked=(likeDocs[acct.uid]?.ids||{})["film-"+f
     ${spMuteBtn()}
     <button data-splike="${esc(f.id)}" aria-label="Like"><span class="spb ${liked?"liked":""}"><svg viewBox="0 0 24 24"><path d="M12 20s-7-4.4-9-8.6C1.6 8.3 3.5 5 6.8 5c2 0 3.4 1.1 4.2 2.4C11.8 6.1 13.2 5 15.2 5 18.5 5 20.4 8.3 19 11.4 17 15.6 12 20 12 20z"/></svg></span><small>${nL||"Like"}</small></button>
     <button data-sptab="comments" aria-label="Comments"><span class="spb"><svg viewBox="0 0 24 24"><path d="M4 5h16v11H9l-5 4z"/></svg></span><small>${filmComments(f.id).length}</small></button>
-    <button data-sptab="rate" aria-label="Rate"><span class="spb ${mine?"on":""}"><svg viewBox="0 0 24 24"><path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/></svg></span><small>${s.n?s.avg.toFixed(1):"Rate"}</small></button>
+    <button data-sptab="rate" aria-label="Reactions"><span class="spb ${reactedTo(f.id)?"on":""}"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M8 14s1 3 4 3 4-3 4-3M8 8h.01M16 8h.01"/></svg></span><small>${stats(f).n||"React"}</small></button>
     <button data-save="${esc(f.id)}" aria-label="Save"><span class="spb"><svg viewBox="0 0 24 24"><path d="M6 3h12v18l-6-4-6 4z"/></svg></span><small>Save</small></button>
     <button data-share="${esc(f.id)}" data-share-short="1" aria-label="Share"><span class="spb"><svg viewBox="0 0 24 24"><path d="M14 4l7 7-7 7v-4c-6 0-9 2-11 6 1-7 4-11 11-12z"/></svg></span><small>Share</small></button>
     <button data-spfull="" aria-label="Full screen"><span class="spb"><svg viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></span><small>Full</small></button></div>`}
@@ -3285,13 +3342,13 @@ function renderSeries(){
   $("#main").innerHTML=`<div class="sbanner"><canvas data-s="${esc(s.id)}"></canvas><div class="ov">
      <span class="row" style="gap:8px"><span class="nowtag" style="background:var(--accent);color:var(--ink-on-accent)">SERIES</span>${s.real?'<span class="nowtag" style="background:#fff;color:#000">REAL</span>':""}</span>
      <h1>${esc(s.title)}</h1>
-     <div style="opacity:.9">${esc(catName(s.cat))} · ${esc(s.char)}${ss.length?` · ${ss.length} season${ss.length>1?"s":""} · ${s.episodes.length} episodes`:""}${st.n?` · ★ ${st.avg.toFixed(1)} from ${fmtN(st.n)} episode ratings`:""}</div>
+     <div style="opacity:.9">${esc(catName(s.cat))} · ${esc(s.char)}${ss.length?` · ${ss.length} season${ss.length>1?"s":""} · ${s.episodes.length} episodes`:""}${st.n?` · ${fmtN(st.n)} episode reactions`:""}</div>
      <div class="row">${s.real?`<a class="btn link" href="${esc(s.url)}" target="_blank" rel="noopener">Watch episodes on ${esc(s.src)} ↗</a>`:firstUnwatched?`<button class="btn" data-open="${esc(firstUnwatched.id)}">${anyWatched?`Continue: S${firstUnwatched.season} E${firstUnwatched.ep}`:"Start watching"}</button>`:`<button class="btn" data-open="${esc(s.episodes[0]?.id||"")}">Watch again</button>`}
        ${s.real?"":`<button class="btn ghost" data-creator="${esc(s.byId||s.by)}">${esc(seriesBy(s))}</button>`}</div></div></div>
    ${s.real?`<p class="lede" style="margin-top:18px">Fruit Love Island is a real AI-generated dating-show series, first posted on TikTok in March 2026. Episodes aren't listed in this prototype; the button above searches for them.</p>`:`
    <div class="fmtbar" style="margin-top:18px">${ss.map(n=>`<button class="${state.season===n?"on":""}" data-season="${n}">Season ${n}<small>${s.episodes.filter(e=>e.season===n).length}</small></button>`).join("")}</div>
    <div class="eplist">${eps.map(e=>{const es=stats(e);return `<button class="ep ${watched[e.id]?"watched":""}" data-open="${esc(e.id)}"><span class="num">${e.ep}</span><span class="thumb"><canvas data-f="${esc(e.id)}"></canvas><span class="len">${esc(e.len)}</span></span>
-      <span class="eptext"><b>${esc(e.epTitle||e.title)}</b><small class="vmeta">S${e.season} E${e.ep} · ${ago(e.days)}${watched[e.id]?" · Watched":""}</small></span><span class="azscore">${es.n?"★ "+es.avg.toFixed(1):"–"}</span></button>`}).join("")}</div>
+      <span class="eptext"><b>${esc(e.epTitle||e.title)}</b><small class="vmeta">S${e.season} E${e.ep} · ${ago(e.days)}${watched[e.id]?" · Watched":""}</small></span><span class="azscore">${es.n?fmtN(es.fans)+" fans":"–"}</span></button>`}).join("")}</div>
    <p class="note">Rate each episode on its own page. The series score combines every episode rating.</p>`}`;
 }
 function nextFor(f){
@@ -4132,10 +4189,10 @@ let emailSignupEnabled=false,emailRecovery=false,emailAuthReady=false;
 function openEmailAuth(mode){if(!sb||!window.FanreelzEmailAuth){toast("Sign-in is still loading. Try again in a moment.");return}window.FanreelzEmailAuth.open({client:sb,show:openModal,notify:toast,mode:mode||"signin",signupEnabled:emailSignupEnabled,recovery:emailRecovery})}
 function openSignin(reason){
   openModal(`<div class="dlg" role="dialog" aria-modal="true" aria-label="Sign in"><h2>Sign in to Fanreelz</h2>
-    <p style="margin:0">${esc(reason||"Sign in to rate films, submit your own finds and keep track of what you've rated.")}</p>
+    <p style="margin:0">${esc(reason||"Sign in to react to films, submit your own finds and keep your favourites.")}</p>
     ${sb?`<div class="authbtns"><button class="authbtn" data-auth="google"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#4285F4" d="M22.6 12.2c0-.8-.1-1.5-.2-2.2H12v4.2h5.9a5 5 0 0 1-2.2 3.3v2.7h3.6c2.1-1.9 3.3-4.8 3.3-8z"/><path fill="#34A853" d="M12 23c3 0 5.5-1 7.3-2.7l-3.6-2.8c-1 .7-2.2 1.1-3.7 1.1-2.9 0-5.3-1.9-6.2-4.5H2.1v2.8A11 11 0 0 0 12 23z"/><path fill="#FBBC05" d="M5.8 14.1a6.6 6.6 0 0 1 0-4.2V7.1H2.1a11 11 0 0 0 0 9.8z"/><path fill="#EA4335" d="M12 5.4c1.6 0 3.1.6 4.2 1.7l3.2-3.2A11 11 0 0 0 2.1 7.1l3.7 2.8C6.7 7.3 9.1 5.4 12 5.4z"/></svg>Continue with Google</button>
       <button class="authbtn discord" data-auth="discord"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M20.3 4.4A19.6 19.6 0 0 0 15.4 3l-.6 1.3a18 18 0 0 0-5.6 0L8.6 3a19.5 19.5 0 0 0-4.9 1.5C.6 9.1-.3 13.7.1 18.2a19.8 19.8 0 0 0 6 3l1.3-2a12.7 12.7 0 0 1-2-1l.5-.4a14 14 0 0 0 12.2 0l.5.4c-.6.4-1.3.7-2 1l1.3 2a19.7 19.7 0 0 0 6-3c.5-5.2-.8-9.7-3.6-13.8zM8 15.4c-1.2 0-2.2-1.1-2.2-2.4S6.8 10.6 8 10.6s2.2 1.1 2.2 2.4-1 2.4-2.2 2.4zm8 0c-1.2 0-2.2-1.1-2.2-2.4s1-2.4 2.2-2.4 2.2 1.1 2.2 2.4-1 2.4-2.2 2.4z"/></svg>Continue with Discord</button><button class="authbtn" data-email-auth>Continue with email</button></div>
-      <p class="vmeta" style="margin:0;font-size:12px">Your display name and profile picture are shown next to your ratings and comments. Your email is never shown. <a href="/privacy.html" target="_blank">Privacy</a> · <a href="/terms.html" target="_blank">Terms</a></p>
+      <p class="vmeta" style="margin:0;font-size:12px">Your display name and profile picture are shown next to your reactions and comments. Your email is never shown. <a href="/privacy.html" target="_blank">Privacy</a> · <a href="/terms.html" target="_blank">Terms</a></p>
       <div class="row"><button class="btn ghost" data-close>Not now</button></div></div>`:`<p class="vmeta" style="margin:0;font-size:13px">Sign-in with Google and Discord opens at launch. This is a preview of Fanreelz.</p>
     <div class="row"><button class="btn" data-close>Got it</button></div></div>`}`,e=>{if(e.target.closest("[data-email-auth]")){openEmailAuth("signin");return}const a=e.target.closest("[data-auth]");if(a)sbSignIn(a.dataset.auth)});
 }
@@ -4148,10 +4205,10 @@ function needAccount(reason){
   openSignin(reason);return false;
 }
 function openProfile(){
-  const rated=Object.keys(myRatings).filter(id=>findFilm(id));
+  const rated=Object.keys(myReactions).filter(id=>findFilm(id));
   openModal(`<div class="dlg" role="dialog" aria-modal="true" aria-label="Your profile"><div class="row"><img class="avatar" id="pAv" alt="" style="width:48px;height:48px"><h2 id="pName"></h2></div>
-    <div class="vmeta">${rated.length} films rated · ${mySubs.length} submitted · signed in with ${sb?(acct.me.provider==="discord"?"Discord":acct.me.provider==="google"?"Google":"your account"):"your Claude account"}</div>
-    <div class="row"><button class="btn ghost" data-user="${esc(acct.uid)}">Your profile</button><button class="btn ghost" data-myratings>Your ratings</button>${sb?`<button class="btn ghost" data-switch>Switch account</button><button class="btn ghost" data-signout>Sign out</button><a class="btn ghost" href="/delete-account.html">Delete account or data</a>`:""}<button class="btn ghost" data-close>Close</button></div>
+    <div class="vmeta">${rated.length} films reacted to · ${mySubs.length} submitted · signed in with ${sb?(acct.me.provider==="discord"?"Discord":acct.me.provider==="google"?"Google":"your account"):"your Claude account"}</div>
+    <div class="row"><button class="btn ghost" data-user="${esc(acct.uid)}">Your profile</button><button class="btn ghost" data-myratings>Your reactions</button>${sb?`<button class="btn ghost" data-switch>Switch account</button><button class="btn ghost" data-signout>Sign out</button><a class="btn ghost" href="/delete-account.html">Delete account or data</a>`:""}<button class="btn ghost" data-close>Close</button></div>
     ${sb?`<div class="switchbox" id="switchBox" hidden><b>Switch to another account</b><p class="vmeta" style="margin:4px 0 10px">You're signed out of this one and can pick any Google or Discord account.</p>
       <div class="row"><button class="btn" data-switchto="google">Google account</button><button class="btn" data-switchto="discord">Discord account</button></div></div>`:""}</div>`,
     e=>{if(e.target.closest("[data-signout]")){sbSignOut();return}
@@ -4315,10 +4372,7 @@ document.addEventListener("click",async e=>{
   const c=e.target.closest("[data-cat]");if(c){$("#shell").classList.remove("open");go({view:"home",feed:"home",cat:c.dataset.cat,char:c.dataset.charGo||null,lore:"all"});return}
   const g=e.target.closest("[data-group]");if(g){groupTouched=true;gcatsOpen=false;go({group:g.dataset.group});return}
   const ch=e.target.closest("[data-char]");if(ch){go({char:ch.dataset.char||null});return}
-  const r=e.target.closest("[data-rate]");if(r){
-    const k=+r.dataset.rate;
-    if(!acct.online&&sb){myRatings={...myRatings,[state.film]:k};GUEST.r[state.film]=k;guestSave();render();toast(`You rated it ${k} out of 5. Sign in to make it count`);guestNudge();return}
-    if(!needAccount("Sign in to rate films. Your ratings count toward the top lists everyone sees."))return;if(await saveRating(state.film,k)){render();toast(`You rated it ${k} out of 5`)}return}
+  const reaction=e.target.closest("[data-reaction]");if(reaction){await toggleReaction(reaction.dataset.reactionFilm,reaction.dataset.reaction);return}
   const o=e.target.closest("[data-open]");if(o){const f=findFilm(o.dataset.open);if(!f)return;if(f.format==="short"||f.vert){openShorts(f.id);return}if(f.format==="episode"||f.seriesId){watched[f.id]=true;store.set("fr_watched",watched)}go({view:"watch",film:f.id})}
 });
 document.addEventListener("keydown",e=>{if(e.key==="Escape"){closeModal();if($("#shell").classList.contains("open"))closeMenu()}});
@@ -4370,7 +4424,7 @@ var installPrompt=null;addEventListener("beforeinstallprompt",e=>{e.preventDefau
    which hands it to the installed Fanreelz app (or keeps it in Chrome) */
 (()=>{const ua=navigator.userAgent;if(!/android/i.test(ua)||!/FBAN|FBAV|FB_IAB|Instagram|Messenger/i.test(ua))return;
   const show=()=>{if($("#iabbar"))return;const u=location.href.replace(/^https?:\/\//,""),fb=encodeURIComponent(location.href);
-    document.body.insertAdjacentHTML("afterbegin",`<a id="iabbar" class="instbar iab" href="intent://${u}#Intent;scheme=https;package=com.android.chrome;S.browser_fallback_url=${fb};end" data-umami-event="open-in-app"><span class="instic" aria-hidden="true"></span><span><b>Open in the Fanreelz app</b><small>Full screen, faster, your ratings saved</small></span><span class="btn">Open</span><button class="instx" data-iabx="" aria-label="Close">✕</button></a>`)};
+    document.body.insertAdjacentHTML("afterbegin",`<a id="iabbar" class="instbar iab" href="intent://${u}#Intent;scheme=https;package=com.android.chrome;S.browser_fallback_url=${fb};end" data-umami-event="open-in-app"><span class="instic" aria-hidden="true"></span><span><b>Open in the Fanreelz app</b><small>Full screen, faster, your reactions saved</small></span><span class="btn">Open</span><button class="instx" data-iabx="" aria-label="Close">✕</button></a>`)};
   document.addEventListener("click",e=>{if(e.target.closest("[data-iabx]")){e.preventDefault();e.stopPropagation();$("#iabbar")?.remove()}},true);
   show()})();
 /* "Get the app" card at the top of the screen: Android (one-tap install) and iPhone Safari (shows the steps).
@@ -4566,10 +4620,10 @@ async function sbSignOut(){if(sb){await sb.auth.signOut();location.reload()}}
       for(const [fid,v] of Object.entries(r)){const k=Math.round(+v);if(k<1||k>5)continue;(agg[fid]||(agg[fid]=[0,0,0,0,0]))[k-1]++}
       ratingsBy[d.id]=r;if(d.id===acct.uid)myRatings={...r};}
     if(acct.online&&!guestMig.r){guestMig.r=true;const add=Object.fromEntries(Object.entries(GUEST.r).filter(([k])=>!myRatings[k]));
-      if(Object.keys(add).length){myRatings={...myRatings,...add};acct.db.doc("ratings/"+acct.uid).set({r:myRatings,t:Date.now()}).then(()=>{GUEST.r={};guestSave();toast("Your ratings from before you signed in are saved")}).catch(e=>console.warn("guest ratings",e))}
+      if(Object.keys(add).length){myRatings={...myRatings,...add};acct.db.doc("ratings/"+acct.uid).set({r:myRatings,t:Date.now()}).then(()=>{GUEST.r={};guestSave();toast("Your reactions from before you signed in are saved")}).catch(e=>console.warn("guest ratings",e))}
       else{GUEST.r={};guestSave()}}
     community=agg;render();},()=>{});
-  startCommunity(db);startYou(db);
+  startReactions(db);startCommunity(db);startYou(db);
   db.collection("submissions").onSnapshot(snap=>{const all=[],mine=[];
     for(const d of snap.docs){const films=Array.isArray(d.data()?.films)?d.data().films:[];
       for(const f of films){if(!f||!CATS.some(c=>c.id===f.cat)||typeof f.title!=="string")continue;
