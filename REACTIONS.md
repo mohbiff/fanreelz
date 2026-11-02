@@ -29,3 +29,9 @@ Discovery uses the two highest positive reaction counts per video, not every rea
 ## Informative
 
 The fifth reaction is 💡 Informative (id: informative), for videos that teach, explain or share useful facts. It replaces the retired visual reaction. Existing visual votes are not reinterpreted as informative; no stored visual selections existed when this change was made. The two-reaction limit, scoped discovery and leading-reaction ranking are unchanged.
+
+## Position filters and explanation pop-ups
+
+In Browse by reaction, clicking a feeling once filters for that feeling in first place (the most-voted reaction). Clicking it again activates ×2 and filters for that feeling in second place. Clicking a third time removes it. The other position is unrestricted unless another feeling is explicitly selected. Combined filters use AND with their selected positions. If both feelings currently select first place, the page explains that one must be clicked again for ×2. At most one feeling can select second place.
+
+The second query parameter stores the ×2 feeling, e.g. /reactions?with=epic,informative&second=informative. Group/category/character and video format scopes remain intact. Invalid second parameters are ignored. Each feeling opens a dismissible explanation pop-up; closing it, clicking outside, or Escape dismisses it. The controls filter videos; they do not add or double any votes. Informative replaces the retired Visually stunning reaction in all current UI.
