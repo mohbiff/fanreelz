@@ -42,6 +42,49 @@ html{color-scheme:dark}:root{padding-top:env(safe-area-inset-top,0px);padding-bo
 .creator-view-help summary::-webkit-details-marker{display:none}
 .creator-view-note{display:none;position:absolute;right:0;top:100%;z-index:30;width:260px;max-width:70vw;box-sizing:border-box;padding:12px;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--fg);box-shadow:0 6px 24px #0005;font-size:13px;line-height:1.5;white-space:normal}
 .creator-view-help:hover .creator-view-note,.creator-view-help:focus-within .creator-view-note,.creator-view-help[open] .creator-view-note{display:block}
+
+/* Personal library: profile header and horizontal collection shelves. */
+.library-page{padding:24px 0 32px;min-width:0}
+.library-profile{display:flex;align-items:center;gap:26px;margin:0 0 44px;padding:8px 0}
+.library-profile>img{width:128px;height:128px;border-radius:50%;object-fit:cover;flex:none;background:var(--panel)}
+.library-profile h1{font-size:clamp(30px,3.2vw,46px);line-height:1.12;letter-spacing:-1px;margin:0 0 10px;font-weight:800}
+.library-profile .library-byline{display:flex;align-items:center;gap:8px;flex-wrap:wrap;color:var(--muted);font-size:14px;margin:0 0 16px}
+.library-byline a{color:var(--muted);text-decoration:none}.library-byline a:hover{color:var(--fg)}
+.library-profile-actions{display:flex;gap:9px;flex-wrap:wrap}
+.library-pill{display:inline-flex;align-items:center;justify-content:center;gap:8px;background:var(--panel);border:1px solid var(--line);color:var(--fg);border-radius:999px;padding:10px 16px;font:inherit;font-weight:650;font-size:13px;cursor:pointer;white-space:nowrap;text-decoration:none}
+.library-pill:hover{background:var(--line)}.library-pill .i{width:19px;height:19px}
+.library-section{margin:0 0 42px;min-width:0}
+.library-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 0 19px}
+.library-heading h2{font-size:21px;line-height:1.25;margin:0;font-weight:750;letter-spacing:-.3px}
+.library-count{margin:5px 0 0;color:var(--muted);font-size:12px}
+.library-actions{display:flex;align-items:center;gap:9px;flex:none}
+.library-viewall{background:none;border-color:var(--line);padding:9px 16px}
+.library-arrow,.library-add,.library-more{display:inline-flex;align-items:center;justify-content:center;background:none;border:1px solid var(--line);color:var(--fg);border-radius:50%;width:36px;height:36px;cursor:pointer;flex:none}
+.library-arrow .i{width:18px;height:18px}.library-arrow:disabled{opacity:.3;cursor:default}
+.library-add{border:0}.library-add .i{width:23px;height:23px}
+.library-row{display:grid;grid-auto-flow:column;grid-auto-columns:calc((100% - 40px)/3);gap:20px;overflow-x:auto;overscroll-behavior-x:contain;scroll-snap-type:x proximity;scrollbar-width:none;padding:6px 1px 12px;margin:0 -1px;min-width:0}
+.library-row::-webkit-scrollbar{display:none}.library-row>*{min-width:0;scroll-snap-align:start}
+.library-row .vid{min-width:0}.library-row .thumb{border-radius:12px;aspect-ratio:16/9}
+.library-row .vinfo{gap:10px;margin-top:11px}.library-row .vtitle{font-size:14px;line-height:1.45}
+.library-row .vmeta{font-size:12px;line-height:1.6}.library-video{position:relative;min-width:0;container-type:inline-size}
+.library-video .vtext{padding-right:19px}.library-more{position:absolute;right:-7px;top:calc(100cqw * .5625 + 8px);width:28px;height:32px;border:0;background:var(--bg);border-radius:10px}
+.library-more svg{width:17px;height:17px}.library-more:hover{background:var(--panel)}
+.library-row .plcard{color:var(--fg);cursor:pointer;gap:7px;padding:0 0 3px}
+.library-row .plcard .thumb{position:relative;width:100%;overflow:visible;margin-top:8px;isolation:isolate;background:var(--panel)}
+.library-row .plcard .thumb canvas{position:relative;border-radius:12px;overflow:hidden;z-index:1}
+.library-row .plcard .thumb:before,.library-row .plcard .thumb:after{content:"";position:absolute;left:5px;right:5px;top:-5px;height:15px;background:var(--line);border-radius:12px;z-index:-1}
+.library-row .plcard .thumb:after{left:11px;right:11px;top:-10px;opacity:.5;z-index:-2}
+.library-row .plcount{z-index:2;background:rgba(12,12,16,.85);border-radius:6px;bottom:8px;right:8px;font-size:11px;padding:4px 6px}
+.library-row .plcard h3{margin:5px 0 0}.library-playlist-hint{color:var(--muted);font-size:12px;font-weight:600}
+.library-empty{display:flex;gap:14px;align-items:center;padding:22px;border:1px solid var(--line);border-radius:12px;color:var(--muted);min-height:92px}
+.library-empty .i{width:27px;height:27px;flex:none;opacity:.7}.library-empty p{margin:0;font-size:14px;line-height:1.6}
+.library-empty h3{font-size:15px;color:var(--fg);margin:0 0 4px}.library-page button:focus-visible,.library-page a:focus-visible,.library-row:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+@media(min-width:1600px){.library-row{grid-auto-columns:calc((100% - 60px)/4)}}
+@media(min-width:2300px){.library-row{grid-auto-columns:calc((100% - 80px)/5)}}
+@media(max-width:1100px) and (min-width:861px){.library-row{grid-auto-columns:calc((100% - 20px)/2)}}
+@media(max-width:860px){.library-page{padding-top:15px}.library-profile{gap:19px;margin-bottom:32px}.library-profile>img{width:88px;height:88px}.library-profile h1{font-size:30px}.library-profile .library-byline{font-size:12px;margin-bottom:11px}.library-profile-actions{gap:7px}.library-pill{font-size:12px;padding:9px 12px}.library-heading{margin-bottom:13px}.library-heading h2{font-size:19px}.library-section{margin-bottom:31px}.library-row{grid-auto-columns:calc((100% - 16px)/2);gap:16px}.library-actions{gap:6px}.library-arrow{width:31px;height:31px}.library-row .vinfo .cav{display:none}}
+@media(max-width:560px){.library-profile{align-items:flex-start;gap:15px}.library-profile>img{width:74px;height:74px}.library-profile h1{font-size:27px;margin-bottom:7px}.library-profile .library-byline{gap:5px;font-size:11px}.library-profile-actions{margin-left:-89px;margin-top:20px}.library-heading{gap:8px}.library-heading h2{font-size:18px}.library-row{grid-auto-columns:82%;gap:14px}.library-arrow{display:none}.library-viewall{font-size:12px;padding:8px 12px}.library-empty{padding:17px}.library-count{font-size:11px}}
+
 </style>
 <style>a[data-fr-link]{color:inherit;text-decoration:none}a[data-fr-link]:not([class]){cursor:pointer}.emailauth form{display:grid;gap:12px}.emailauth label{display:grid;gap:5px;font-weight:600}.emailauth input:not([type=checkbox]){box-sizing:border-box;width:100%;font:inherit;color:var(--text,inherit);background:var(--panel,#262331);border:1px solid var(--line,#4c455d);border-radius:10px;padding:12px}.emailauth .emailterms{display:flex;align-items:flex-start;gap:10px;font-size:12px;font-weight:400}.emailauth .emailterms input{width:auto;margin-top:3px}.emailauthlinks{flex-wrap:wrap}.emailauth #emailAuthMessage{margin:0;font-size:13px;line-height:1.5}.emailauth input:focus-visible{outline:2px solid #8b5cf6;outline-offset:2px}
 </style>
@@ -1268,7 +1311,7 @@ function closeMenu(fromBack){const sh=$("#shell");if(!sh.classList.contains("ope
    A video's picture swallows touches, so the player has a thin strip at its left edge (.edgegrab) that catches the swipe instead. */
 (()=>{let sw=null;
   // rows that scroll sideways only keep the swipe when they can scroll back (a row already at its start can't move right anyway)
-  const skip=t=>{const row=t.closest(".shelfrow,.shortrow,.chips,.lorebar,.fmtbar");if(row&&row.scrollLeft>2)return true;
+  const skip=t=>{const row=t.closest(".shelfrow,.shortrow,.library-row,.chips,.lorebar,.fmtbar");if(row&&row.scrollLeft>2)return true;
     return !!t.closest(".endgrid,.fpbar,.fpzone,.sp,.dlg,#guide,#menuBack,input,textarea,select,[contenteditable]")};
   document.addEventListener("touchstart",e=>{sw=null;if(!phone()||e.touches.length>1||$("#shell").classList.contains("open")||state.view==="shorts"||document.body.classList.contains("spfs")||(typeof fpIsFs==="function"&&fpIsFs())||skip(e.target))return;
     const t=e.touches[0];if(t.clientX>innerWidth*.6&&!e.target.closest(".edgegrab"))return;sw={x:t.clientX,y:t.clientY,at:Date.now()}},{passive:true});
@@ -2494,7 +2537,7 @@ function renderPlaylists(){
   const mine=myLists(),comm=communityLists();
   $("#main").innerHTML=`<div class="wbar" style="margin-top:16px"><h1 class="sect-h" style="font-size:24px;margin:0">${icon("list")} Playlists</h1><button class="btn" data-plnew="">+ New playlist</button></div>
    <p class="lede" style="margin-top:8px">Collect films in the order you want to watch them, and share your lists with other fans.</p>
-   <h2 class="sect-h">Your playlists</h2>${mine.length?`<div class="plgrid">${mine.map(l=>listCard(l,true)).join("")}</div>`:`<p class="vmeta">${acct.online?"You have no playlists yet. Open a film and choose Save, or make one here.":"Sign in to make playlists."}</p>`}
+   <h2 class="sect-h">Your playlists</h2>${(mine.length||acct.online)?`<div class="plgrid">${libraryLikedCard()}${mine.map(l=>listCard(l,true)).join("")}</div>`:`<p class="vmeta">${acct.online?"You have no playlists yet. Open a film and choose Save, or make one here.":"Sign in to make playlists."}</p>`}
    <h2 class="sect-h" style="margin-top:28px">Featured</h2><div class="plgrid">${featuredLists().map(l=>listCard(l)).join("")}</div>
    ${comm.length?`<h2 class="sect-h" style="margin-top:28px">From the community</h2><div class="plgrid">${comm.map(l=>listCard(l)).join("")}</div>`:""}`;
 }
@@ -2661,17 +2704,60 @@ function startYou(db){
 const likedFilms=()=>Object.entries(myRatings).filter(([,r])=>r>=4).map(([id])=>findFilm(id)).filter(Boolean);
 const yourVideos=()=>(mySubs||[]).map(f=>findFilm(String(f.id))).filter(Boolean);
 const filmsOf=list=>list.map(x=>findFilm(x.id)).filter(Boolean);
-function youShelf(title,view,films,empty){return `<section class="youshelf"><div class="wbar"><h2 class="sect-h" style="margin:0">${title}</h2>${films.length?`<button class="btn ghost" data-you="${view}">See all</button>`:""}</div>
-  ${films.length?`<div class="grid">${films.slice(0,4).map(f=>card(f)).join("")}</div>`:`<p class="vmeta">${empty}</p>`}</section>`}
-function renderYou(){
-  if(!acct.online){$("#main").innerHTML=`<div class="about"><h1 class="ab-h">You</h1><p class="ab-lede">Sign in to keep your history, Watch later list, liked films, playlists and your own channel in one place, on every device.</p><button class="btn" id="signinBtn">Sign in</button>
-    ${myHistory.length?youShelf("History (this browser)","history",filmsOf(myHistory),""):""}</div>`;return}
-  $("#main").innerHTML=`<div class="youhero"><img alt="" src="${esc(acct.me.avatarUrl||"")}"><div><h1>${esc(acct.me.name||"You")}</h1><button class="chip" data-you="channel">View your creator page</button></div></div>`+
-    youShelf("History","history",filmsOf(myHistory),"Films you watch show up here.")+
-    youShelf("Watch later","later",filmsOf(myLater),"Press Watch later on a film to save it for later.")+
-    youShelf("Liked videos","liked",likedFilms(),"Films you rate 4 or 5 stars show up here.")+
-    youShelf("Your videos","yourvideos",yourVideos(),"Films you submit show up here.");
+
+const libraryArrow=direction=>`<svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="${direction<0?'M15 5l-7 7 7 7':'M9 5l7 7-7 7'}" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+function libraryHeading(title,key,count,extra=""){
+ return `<div class="library-heading"><div><h2>${esc(title)}</h2><p class="library-count">${count} ${key==="playlists"?(count===1?"playlist":"playlists"):count===1?"video":"videos"}</p></div><div class="library-actions">${extra}<button class="library-pill library-viewall" data-you="${key}">View all</button><button class="library-arrow" data-library-scroll="${key}" data-direction="-1" aria-label="Scroll ${esc(title)} backward" disabled>${libraryArrow(-1)}</button><button class="library-arrow" data-library-scroll="${key}" data-direction="1" aria-label="Scroll ${esc(title)} forward">${libraryArrow(1)}</button></div></div>`;
 }
+function libraryEmpty(title,message,ic="film"){
+ return `<div class="library-empty">${icon(ic)}<div><h3>${esc(title)}</h3><p>${esc(message)}</p></div></div>`;
+}
+function libraryVideo(f){
+ return `<div class="library-video">${card(f)}<button class="library-more" data-library-film="${esc(f.id)}" aria-label="Options for ${esc(f.title)}"><svg viewBox="0 0 24 24" aria-hidden="true"><g fill="currentColor"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></g></svg></button></div>`;
+}
+function youShelf(title,view,films,empty){
+ return `<section class="library-section">${libraryHeading(title,view,films.length)}${films.length?`<div class="library-row" id="library-${view}" role="region" aria-label="${esc(title)} videos" tabindex="0">${films.slice(0,24).map(libraryVideo).join("")}</div>`:libraryEmpty("Nothing here yet",empty,view==="history"?"clock":view==="liked"?"like":"film")}</section>`;
+}
+function libraryLikedCard(){
+ const liked=likedFilms();
+ return `<button class="plcard" data-you="liked"><div class="thumb">${liked[0]?`<canvas data-f="${esc(liked[0].id)}"></canvas>`:""}<span class="plcount">${icon("list")} ${liked.length} videos</span></div><h3 class="vtitle">Liked videos</h3><div class="vmeta">Automatic playlist · Rated 4 or 5 stars</div><span class="library-playlist-hint">View full playlist</span></button>`;
+}
+function libraryPlaylists(){
+ const mine=myLists(),cards=libraryLikedCard()+mine.map(l=>listCard(l,true).replace("</button>",'<span class="library-playlist-hint">View full playlist</span></button>')).join("");
+ return `<section class="library-section">${libraryHeading("Playlists","playlists",mine.length+1,'<button class="library-add" data-plnew="" aria-label="Create a playlist"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v16M4 12h16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button>')}<div class="library-row" id="library-playlists" role="region" aria-label="Your playlists" tabindex="0">${cards}</div></section>`;
+}
+function syncLibraryArrows(){
+ document.querySelectorAll("[data-library-scroll]").forEach(button=>{
+ const row=document.getElementById("library-"+button.dataset.libraryScroll);
+ button.disabled=!row||(Number(button.dataset.direction)<0?row.scrollLeft<=2:row.scrollLeft+row.clientWidth>=row.scrollWidth-2);
+ });
+}
+function renderYou(){
+ if(!acct.online){$("#main").innerHTML=`<div class="library-page"><div class="library-profile"><div><h1>Your library</h1><p class="library-byline">Your history, saved videos and playlists, all in one place.</p><button class="library-pill" id="signinBtn">Sign in</button></div></div>${youShelf("History on this browser","history",filmsOf(myHistory),"Start watching and your recent videos will appear here.")}</div>`;requestAnimationFrame(syncLibraryArrows);return}
+ const me=acct.me||{},profile=pathFor({view:"user",user:acct.uid,utab:"videos"});
+ $("#main").innerHTML=`<div class="library-page"><header class="library-profile"><img src="${esc(me.avatarUrl||initialAvatar(me.name||"Fan"))}" alt="" referrerpolicy="no-referrer"><div><h1>${esc(me.name||"Your library")}</h1><p class="library-byline"><span>Your personal library</span><span aria-hidden="true">·</span><a href="${esc(profile)}" data-fr-link data-you="channel">View your creator page</a></p><div class="library-profile-actions"><button class="library-pill" data-library-account="switch">${icon("user")} Switch account</button><button class="library-pill" data-library-account="profile">${icon("user")} Your account</button></div></div></header>`+
+ youShelf("History","history",filmsOf(myHistory),"Videos you watch will appear here, ready to find again.")+
+ libraryPlaylists()+
+ youShelf("Watch later","later",filmsOf(myLater),"Save a video to Watch later and find it here.")+
+ youShelf("Liked videos","liked",likedFilms(),"Rate a video 4 or 5 stars to add it to your liked videos.")+
+ youShelf("Your videos","yourvideos",yourVideos(),"Videos you submit to Fanreelz will appear here.")+"</div>";
+ requestAnimationFrame(syncLibraryArrows);
+}
+document.addEventListener("scroll",e=>{if(e.target?.matches?.(".library-row"))syncLibraryArrows()},true);
+window.addEventListener("resize",()=>{if(state.view==="you")syncLibraryArrows()});
+document.addEventListener("click",e=>{
+ const scroll=e.target.closest("[data-library-scroll]");
+ if(scroll){const row=document.getElementById("library-"+scroll.dataset.libraryScroll);if(row)row.scrollBy({left:Number(scroll.dataset.direction)*Math.max(240,row.clientWidth*.85),behavior:matchMedia("(prefers-reduced-motion: reduce)").matches?"instant":"smooth"});return}
+ const account=e.target.closest("[data-library-account]");
+ if(account){openProfile();if(account.dataset.libraryAccount==="switch"){const box=document.getElementById("switchBox");if(box)box.hidden=false}return}
+ const menu=e.target.closest("[data-library-film]");
+ if(menu){const f=findFilm(menu.dataset.libraryFilm);if(!f)return;const saved=myLater.some(x=>x.id===f.id);
+ openModal(`<div class="dlg" role="dialog" aria-modal="true" aria-label="Video options"><h2>${esc(f.title)}</h2><div class="row"><button class="btn" data-library-later="${esc(f.id)}">${saved?"Remove from Watch later":"Save to Watch later"}</button><button class="btn ghost" data-library-save="${esc(f.id)}">Save to playlist</button><button class="btn ghost" data-close>Close</button></div></div>`,event=>{
+ const later=event.target.closest("[data-library-later]");if(later){closeModal();toggleLater(later.dataset.libraryLater);return}
+ const save=event.target.closest("[data-library-save]");if(save){closeModal();openSave(save.dataset.librarySave)}
+ });}
+});
+
 function renderYouList(){
   const v=state.view,meta={history:["History","clock",filmsOf(myHistory),"Films you watch show up here."],later:["Watch later","clock",filmsOf(myLater),"Press Watch later on a film to save it here."],
     liked:["Liked videos","like",likedFilms(),"Films you rate 4 or 5 stars show up here."],yourvideos:["Your videos","film",yourVideos(),"Films you submit show up here. Press Submit to add one."]}[v];
