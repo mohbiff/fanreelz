@@ -1303,11 +1303,11 @@ function renderGuide(){renderTabbar();
     `<button class="gi ${state.view==="browse"?"on":""}" data-browse="All">${icon("list")}<span>Browse all</span></button>`+
     `<button class="gi ${state.view==="insights"?"on":""}" data-view="insights">${icon("trend")}<span>Insights <small class="plustag">PLUS</small></span></button><hr>`+
     `<button class="gi youhead ${state.view==="you"?"on":""}" data-view="you"><span>You</span><svg class="i" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></button>`+
-    [["channel","Creator page","user"],["history","History","clock"],["playlists","Playlists","list"],["later","Watch later","clock"],["liked","Liked videos","like"],["yourvideos","Your videos","film"]]
+    [["channel","Creator page","user"],["history","History","clock"],["later","Watch later","clock"],["liked","Liked videos","like"],["yourvideos","Your videos","film"]]
       .map(([v,l,ic])=>`<button class="gi ${state.view===v||(v==="channel"&&state.view==="user"&&state.user===acct.uid)?"on":""}" data-you="${v}">${icon(ic)}<span>${l}</span></button>`).join("")+
     fi("mine","Your ratings","mine")+(isMod?`<button class="gi ${state.view==="admin"?"on":""}" data-view="admin">${icon("shield")}<span>Accounts (admin)</span></button>`:"")+`<hr>`+
     `<button class="gi ${state.view==="live"?"on":""}" data-view="live">${icon("live")}<span>Live now</span>${LIVE.length?`<span class="livecount">${LIVE.length}</span>`:""}</button>`+[["premieres","Premieres","prem"],["tv","Fanreelz TV","tv"]].map(([v,l,ic])=>`<button class="gi ${state.view===v?"on":""}" data-view="${v}">${icon(ic)}<span>${l}</span></button>`).join("")+
-    `<hr><h4>Community</h4>`+[["top10","Top 10 this month","top"],["battles","Fan Battles","battle"],["requests","Requests","req"],["showdown","Character Showdown","trophy"],["playlists","Playlists","list"],["discord","Discord bot","bot"]].map(([v,l,ic])=>`<button class="gi ${state.view===v?"on":""}" data-view="${v}">${icon(ic)}<span>${l}</span></button>`).join("")+
+    `<hr><h4>Community</h4>`+[["top10","Top 10 this month","top"],["battles","Fan Battles","battle"],["requests","Requests","req"],["showdown","Character Showdown","trophy"],["discord","Discord bot","bot"]].map(([v,l,ic])=>`<button class="gi ${state.view===v?"on":""}" data-view="${v}">${icon(ic)}<span>${l}</span></button>`).join("")+
     `<button class="gi ${state.view==="about"?"on":""}" data-view="about">${icon("info")}<span>About us</span></button>`+
     (matchMedia("(display-mode: standalone)").matches||matchMedia("(display-mode: fullscreen)").matches||navigator.standalone||window.FanreelzApp||/FanreelzApp\//.test(navigator.userAgent)?"":`<button class="gi" data-install="">${icon("save")}<span>Install app</span></button>`)+
     `<button class="gi" data-theme-next="">${icon("info")}<span>Appearance: ${({dark:"Dark",light:"Light",system:"Device theme"})[document.documentElement.dataset.theme]||"Dark"}</span></button>`+
@@ -2629,7 +2629,7 @@ function renderUser(){
   let body="";
   if(tab==="liked")body=liked.length?moreGrid("grid",liked,f=>card(f)):`<div class="empty">${me?"Films you rate 4 or 5 stars show up here.":"No liked videos yet."}</div>`;
   if(tab==="videos")body=vids.length?moreGrid("grid",vids,f=>card(f)):`<div class="empty">${me?"Films you submit show up here.":"No videos yet."}</div>`;
-  if(tab==="playlists")body=lists.length?`<div class="plgrid">${lists.map(l=>listCard(l,me)).join("")}</div>`:`<div class="empty">No playlists yet.</div>`;
+  if(tab==="playlists")body=(me?`<button class="btn" data-view="playlists" style="margin-bottom:16px">Manage your playlists</button>`:"")+(lists.length?`<div class="plgrid">${lists.map(l=>listCard(l,me)).join("")}</div>`:`<div class="empty">No playlists yet.</div>`);
   if(tab==="following")body=following.length?`<div class="ulist">${following.map(personRow).join("")}</div>`:`<div class="empty">Not following anyone yet.</div>`;
   if(tab==="followers")body=followers.length?`<div class="ulist">${followers.map(personRow).join("")}</div>`:`<div class="empty">No followers yet.</div>`;
   $("#main").innerHTML=`<div class="uhero">${uav(uid,96)}<div><h1>${esc(name)} ${earlyBadge(uid)}</h1>
@@ -2670,8 +2670,7 @@ function renderYou(){
     youShelf("History","history",filmsOf(myHistory),"Films you watch show up here.")+
     youShelf("Watch later","later",filmsOf(myLater),"Press Watch later on a film to save it for later.")+
     youShelf("Liked videos","liked",likedFilms(),"Films you rate 4 or 5 stars show up here.")+
-    youShelf("Your videos","yourvideos",yourVideos(),"Films you submit show up here.")+
-    `<section class="youshelf"><div class="wbar"><h2 class="sect-h" style="margin:0">Playlists</h2><button class="btn ghost" data-view="playlists">See all</button></div><p class="vmeta">${myLists().length} playlist${myLists().length===1?"":"s"}</p></section>`;
+    youShelf("Your videos","yourvideos",yourVideos(),"Films you submit show up here.");
 }
 function renderYouList(){
   const v=state.view,meta={history:["History","clock",filmsOf(myHistory),"Films you watch show up here."],later:["Watch later","clock",filmsOf(myLater),"Press Watch later on a film to save it here."],
@@ -4216,7 +4215,7 @@ document.addEventListener("click",async e=>{
   if(A("[data-copyprompt]")){const t=$("#promptText")?.textContent||"";try{await navigator.clipboard.writeText(t);toast("Prompt copied")}catch{const r=document.createRange();r.selectNodeContents($("#promptText"));const sel=getSelection();sel.removeAllRanges();sel.addRange(r);toast("Prompt selected, press Ctrl+C to copy")}return}
   if(x=A("[data-soon]")){toast(x.dataset.soon+" is a concept and isn't available yet");return}
   if(A("[data-plnew]")){if(!needAccount("Sign in to make playlists."))return;openModal(`<div class="dlg" role="dialog" aria-modal="true" aria-label="New playlist"><h2>New playlist</h2><form class="form" id="pln"><label for="plnName">Name<input id="plnName" required maxlength="80"></label><div class="row"><button class="btn" type="submit">Create</button><button class="btn ghost" type="button" data-close>Cancel</button></div></form></div>`);$("#pln").onsubmit=async ev=>{ev.preventDefault();const l={id:"pl"+Date.now().toString(36),name:$("#plnName").value.trim(),films:[]};if(await saveLists([l,...myLists()].slice(0,50))){closeModal();openList=l.id;render()}};return}
-  if(x=A("[data-plopen]")){openList=x.dataset.plopen||null;render();window.scrollTo({top:0});return}
+  if(x=A("[data-plopen]")){openList=x.dataset.plopen||null;if(state.view!=="playlists")go({view:"playlists"});else render();window.scrollTo({top:0});return}
   if(x=A("[data-plremove]")){const [lid,fid]=x.dataset.plremove.split("|");await saveLists(myLists().map(l=>l.id===lid?{...l,films:l.films.filter(i=>i!==fid)}:l));render();return}
   if(x=A("[data-pldelete]")){const lid=x.dataset.pldelete;if(await saveLists(myLists().filter(l=>l.id!==lid))){openList=null;render();toast("Playlist deleted")}return}
   const vw=e.target.closest("[data-view]");if(vw){$("#shell").classList.remove("open");resetSections();go({view:vw.dataset.view,adminUser:null,cat:null,char:null,sd:null,sdcat:"all",utab:"liked",azLimit:60,user:vw.dataset.view==="user"?state.user:null});window.scrollTo(0,0);return}
