@@ -209,3 +209,7 @@ grant execute on function public.add_search(text, boolean, text, text) to anon, 
 
 -- Reactions are stored separately from legacy numeric ratings in docs.col = 'reactions'.
 -- data.r maps film IDs to any subset of: epic, impressive, funny, moving, visual.
+
+-- Each fan may select at most two reactions per video.
+alter table public.docs drop constraint if exists docs_reaction_limit;
+alter table public.docs add constraint docs_reaction_limit check (col <> 'reactions' or (data ? 'r' and jsonb_typeof(data->'r') = 'object' and not jsonb_path_exists(data, 'strict $.r.* ? (@.type() != "array" || @.size() > 2)')));

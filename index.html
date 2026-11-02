@@ -900,6 +900,12 @@ body.spfs .spback{display:flex}
 .reactionbox.ratebox .reaction-chip:hover{border-color:var(--muted)}.reactionbox.ratebox .reaction-chip.selected{background:rgba(139,92,246,.18);border-color:#a78bfa;color:var(--fg)}
 .reactionbox.ratebox .reaction-chip span{margin:0}.reaction-chip:focus-visible{outline:2px solid #a78bfa;outline-offset:3px}.reaction-chip:disabled{cursor:wait;opacity:.6}.reactionbox .reaction-emoji{font-size:20px;line-height:1}.reactionbox .reaction-count{font-size:11px;opacity:.65;font-variant-numeric:tabular-nums}.wbtns:has(.reactionbox){flex-wrap:wrap;justify-content:flex-start}.wbtns>.reactionbox{flex:1 0 100%;order:2}.wbar:has(.reactionbox){flex-wrap:wrap}.sside .reaction-options{gap:7px}.spsheet .reactionbox{padding:6px 0 12px}
 @media(max-width:560px){.reactionbox.ratebox .reaction-chip{padding:8px 10px;font-size:12px;min-height:42px}.reaction-options{gap:7px}.reaction-heading{gap:5px 10px}.reaction-heading b{font-size:14px}}
+
+.reaction-chip:disabled:not([aria-pressed="true"]){cursor:not-allowed}.reaction-browse{max-width:1500px;margin:auto}.reaction-browse-header{padding:12px 0 22px}.reaction-eyebrow{font-size:11px;font-weight:800;letter-spacing:2px;color:#a78bfa}.reaction-browse-header h1{font-size:36px;margin:9px 0 12px;letter-spacing:-1px}.reaction-browse-header p{margin:0;color:var(--muted);font-size:15px;line-height:1.6;max-width:660px}
+.reaction-filter-panel{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:20px;margin-bottom:30px}.reaction-filter-heading{display:flex;align-items:center;gap:12px;margin-bottom:16px}.reaction-filter-heading>span{font-size:12px;color:var(--muted)}.reaction-clear{margin-left:auto;border:0;background:transparent;color:var(--fg);font:inherit;font-size:12px;text-decoration:underline;cursor:pointer}.reaction-filter-options{display:flex;flex-wrap:wrap;gap:10px}.reaction-filter-chip{display:flex;align-items:center;gap:9px;padding:12px 16px;border:1px solid var(--line);border-radius:14px;background:var(--chip);color:var(--fg);font:inherit;cursor:pointer;min-height:56px}.reaction-filter-chip>span{font-size:25px}.reaction-filter-chip>b{font-size:14px}.reaction-filter-chip>small{color:var(--muted);font-variant-numeric:tabular-nums}.reaction-filter-chip.selected{border-color:#a78bfa;background:rgba(139,92,246,.18)}.reaction-filter-chip:disabled{opacity:.4;cursor:not-allowed}.reaction-filter-chip:focus-visible,.reaction-combo:focus-visible{outline:2px solid #a78bfa;outline-offset:3px}.reaction-filter-hint{color:var(--muted);font-size:12px;margin:14px 0 0}
+.reaction-pairs{margin:24px 0 38px}.reaction-pairs h2,.reaction-results h2{font-size:22px;margin:0 0 8px}.reaction-combo-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px;margin-top:18px}.reaction-combo{display:flex;flex-direction:column;align-items:flex-start;gap:12px;padding:20px 16px;border:1px solid var(--line);border-radius:16px;background:linear-gradient(140deg,rgba(139,92,246,.12),transparent 80%),var(--surface);color:var(--fg);text-decoration:none;transition:border-color .15s,transform .15s}.reaction-combo:hover{border-color:#a78bfa;transform:translateY(-2px)}.reaction-combo-icons{font-size:30px;letter-spacing:3px}.reaction-combo b{font-size:13px;line-height:1.5}.reaction-combo small{font-size:12px;color:var(--muted)}.reaction-results-heading{display:flex;align-items:baseline;flex-wrap:wrap;gap:12px;margin:30px 0 14px}.reaction-results .chips{margin-bottom:22px}.reaction-results .empty h3{margin:0 0 10px;color:var(--fg);font-size:18px}.reaction-results .empty p{margin:0}.reaction-pairs-more summary{cursor:pointer;font-weight:700;font-size:18px}
+.reaction-discovery{margin:18px 0 26px;padding:18px 20px;border:1px solid var(--line);border-radius:16px;background:linear-gradient(110deg,rgba(139,92,246,.12),transparent 70%)}.reaction-discovery h2{font-size:18px;margin:0 0 5px}.reaction-discovery p{font-size:13px;color:var(--muted);margin:0 0 13px}.reaction-discovery-links{display:flex;gap:8px;flex-wrap:wrap}.reaction-discovery-links a{display:inline-flex;align-items:center;gap:6px;border-radius:20px;background:var(--chip);border:1px solid var(--line);color:var(--fg);padding:8px 12px;text-decoration:none;font-size:12px;font-weight:600}.reaction-discovery-links a:hover{border-color:#a78bfa}.reaction-discovery-links a>span{font-size:19px}.reaction-discovery-links a.reaction-all-combos{background:transparent;border-color:transparent}
+@media(max-width:1100px){.reaction-combo-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}@media(max-width:560px){.reaction-browse-header h1{font-size:29px}.reaction-browse-header{padding-top:8px}.reaction-browse-header p{font-size:13px}.reaction-filter-panel{padding:15px;border-radius:15px}.reaction-filter-heading{gap:8px;flex-wrap:wrap}.reaction-filter-heading>b{font-size:13px}.reaction-filter-chip{padding:10px 11px;gap:7px;min-height:48px}.reaction-filter-chip>b{font-size:12px}.reaction-filter-chip>span{font-size:22px}.reaction-filter-options{gap:8px}.reaction-combo-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.reaction-combo{padding:16px 13px;gap:10px}.reaction-combo-icons{font-size:27px}.reaction-results h2{font-size:19px}.reaction-discovery{padding:16px}.reaction-discovery-links{gap:7px}}
 </style>
 
 <div id="betabar" style="background:var(--accent);color:var(--ink-on-accent);text-align:center;font-weight:700;font-size:13px;padding:7px 16px">Beta: react, vote and save AI fan films right away. Sign in during the beta to keep it all and get the ⭐ Early fan badge.</div>
@@ -1160,7 +1166,7 @@ function guestNudge(){if(acct.online)return;const n=guestCount(),today=new Date(
 const EARLY_UNTIL=Date.parse("2027-01-01T00:00:00Z");
 const earlyFan=uid=>{const t=uid===acct.uid?Date.parse(acct.me?.joined||joined[uid]||""):Date.parse(joined[uid]||"");return t&&t<EARLY_UNTIL};
 const earlyBadge=uid=>earlyFan(uid)?`<span class="earlyfan" title="Joined Fanreelz during the beta">⭐ Early fan</span>`:"";
-const state={genre:"all",sdur:"any",sort:"",format:"all",dur:"any",shortList:null,shortI:0,series:null,season:1,ctab:"film",family:store.get("fr_family",false),lore:"all",creator:null,tv:"top",view:"home",feed:"home",group:"All",cat:null,char:null,q:"",film:null,bgroup:"All",azLimit:60};
+const state={reactionFilter:[],reactionFormat:"all",genre:"all",sdur:"any",sort:"",format:"all",dur:"any",shortList:null,shortI:0,series:null,season:1,ctab:"film",family:store.get("fr_family",false),lore:"all",creator:null,tv:"top",view:"home",feed:"home",group:"All",cat:null,char:null,q:"",film:null,bgroup:"All",azLimit:60};
 const $=s=>document.querySelector(s);
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const rawFilms=()=>[...sharedSubs.filter(f=>f.format!=="episode"),...FILMS];
@@ -1238,13 +1244,13 @@ const langMult=f=>LANG_MULT[langTier(f)];
 
 // Reactions are independent feelings, never numeric ratings. Legacy ratings stay in their own collection.
 const REACTIONS=[{id:"epic",emoji:"🔥",label:"Epic"},{id:"impressive",emoji:"😮",label:"Impressive"},{id:"funny",emoji:"😂",label:"Funny"},{id:"moving",emoji:"❤️",label:"Moving"},{id:"visual",emoji:"🎨",label:"Visually stunning"}];
-const cleanReactions=value=>Array.isArray(value)?REACTIONS.map(x=>x.id).filter(id=>value.includes(id)):[];
+const cleanReactions=value=>Array.isArray(value)?REACTIONS.map(x=>x.id).filter(id=>value.includes(id)).slice(0,2):[];
 function cleanReactionMap(value){const out={};if(value&&typeof value==="object"&&!Array.isArray(value))for(const [id,v]of Object.entries(value)){const a=cleanReactions(v);if(id.length<=100&&a.length)out[id]=a}return out}
 let myReactions=cleanReactionMap(GUEST.reactions),reactionsBy={},reactionTotals={},reactionSaving=false,reactionsReady=false;
 function aggregateReactions(docs){const totals={};for(const map of Object.values(docs))for(const [id,values]of Object.entries(map)){const a=cleanReactions(values);if(!a.length)continue;const t=totals[id]||(totals[id]={n:0,fans:0,c:[0,0,0,0,0]});t.fans++;for(const k of a){t.n++;t.c[REACTIONS.findIndex(r=>r.id===k)]++}}return totals}
 function updateReactionTotals(){reactionTotals=aggregateReactions(reactionsBy);statMemo=null;trendMemo=null}
 function reactionSummary(f){const t=stats(f);if(!t.n)return "No reactions yet";const icons=REACTIONS.map((r,i)=>({r,n:t.c[i]})).filter(x=>x.n).sort((a,b)=>b.n-a.n).slice(0,2).map(x=>x.r.emoji).join(" ");return icons+" "+fmtN(t.n)+" "+(t.n===1?"reaction":"reactions")}
-function reactionBox(f){const selected=myReactions[f.id]||[],t=stats(f);return '<div class="reactionbox ratebox" role="group" aria-label="How did it make you feel?"><div class="reaction-heading"><b>How did it make you feel?</b><span>Choose all that fit</span></div><div class="reaction-options">'+REACTIONS.map((r,i)=>'<button type="button" data-reaction="'+r.id+'" data-reaction-film="'+esc(f.id)+'" aria-label="'+r.label+'" aria-pressed="'+selected.includes(r.id)+'" class="reaction-chip '+(selected.includes(r.id)?'selected':'')+'" '+(reactionSaving||acct.online&&!reactionsReady?'disabled':'')+'><span class="reaction-emoji" aria-hidden="true">'+r.emoji+'</span><span>'+r.label+'</span><span class="reaction-count">'+fmtN(t.c[i])+'</span></button>').join('')+'</div></div>'}
+function reactionBox(f){const selected=myReactions[f.id]||[],t=stats(f);return '<div class="reactionbox ratebox" role="group" aria-label="How did it make you feel?"><div class="reaction-heading"><b>How did it make you feel?</b><span>'+selected.length+'/2 selected · '+(selected.length>=2?'Remove one to change':'Choose up to 2')+'</span></div><div class="reaction-options">'+REACTIONS.map((r,i)=>'<button type="button" data-reaction="'+r.id+'" data-reaction-film="'+esc(f.id)+'" aria-label="'+r.label+'" aria-pressed="'+selected.includes(r.id)+'" class="reaction-chip '+(selected.includes(r.id)?'selected':'')+'" '+(reactionSaving||acct.online&&!reactionsReady||selected.length>=2&&!selected.includes(r.id)?'disabled':'')+'><span class="reaction-emoji" aria-hidden="true">'+r.emoji+'</span><span>'+r.label+'</span><span class="reaction-count">'+fmtN(t.c[i])+'</span></button>').join('')+'</div></div>'}
 function reactionBadge(f){const a=myReactions[f.id]||[];return a.length?'<span class="pill" title="Your reactions">'+REACTIONS.filter(r=>a.includes(r.id)).map(r=>r.emoji).join(' ')+'</span>':''}
 const reactedTo=id=>(myReactions[id]||[]).length>0;
 const likedIds=(ratings,reactions)=>[...new Set([...Object.entries(ratings||{}).filter(([,r])=>r>=4).map(([id])=>id),...Object.keys(cleanReactionMap(reactions))])];
@@ -1252,7 +1258,7 @@ async function toggleReaction(id,key){
  if(reactionSaving||!REACTIONS.some(r=>r.id===key)||!findFilm(id))return false;
  if(acct.online&&!reactionsReady){toast("Your reactions are still loading. Please try again.");return false}
  if(acct.online&&!needAccount("Sign in to save your reactions."))return false;
- const previous={...myReactions},a=myReactions[id]||[],removed=a.includes(key),next=a.filter(x=>x!==key);if(!removed)next.push(key);
+ const previous={...myReactions},a=myReactions[id]||[],removed=a.includes(key),next=a.filter(x=>x!==key);if(!removed&&a.length>=2){toast("You can choose up to 2 reactions per video. Remove one to choose another.");return false}if(!removed)next.push(key);
  const updated={...myReactions};if(next.length)updated[id]=cleanReactions(next);else delete updated[id];
  if(!acct.online){myReactions=updated;GUEST.reactions=updated;guestSave();render();toast(removed?"Reaction removed":"Reaction saved on this device. Sign in to keep it.");guestNudge();return true}
  reactionSaving=true;myReactions=updated;render();
@@ -1266,6 +1272,30 @@ function startReactions(db){db.collection("reactions").onSnapshot(async snap=>{
  if(acct.online&&!guestMig.reactions){guestMig.reactions=true;const guest=cleanReactionMap(GUEST.reactions);if(Object.keys(guest).length){const merged={...myReactions};for(const [id,a]of Object.entries(guest))merged[id]=cleanReactions([...(merged[id]||[]),...a]);
  try{await acct.db.doc("reactions/"+acct.uid).set({r:merged,t:Date.now()});myReactions=merged;reactionsBy[acct.uid]=merged;GUEST.reactions={};guestSave();updateReactionTotals();render()}catch(e){guestMig.reactions=false;toast("Your device reactions are safe here. Sign in again to sync them.")}}}
  },()=>{reactionsReady=false;toast("Couldn't load reactions. Please refresh to try again.")})}
+
+
+// Discovery uses AND: every selected feeling must have been received by the video.
+const reactionSelection=value=>cleanReactions(Array.isArray(value)?value:String(value||"").split(","));
+function reactionPairs(){const pairs=[];for(let i=0;i<REACTIONS.length;i++)for(let j=i+1;j<REACTIONS.length;j++)pairs.push([REACTIONS[i].id,REACTIONS[j].id]);return pairs}
+function matchesReactionFilter(f,selection,totals=reactionTotals){const t=totals[f.id];return !!t?.n&&selection.every(id=>{const i=REACTIONS.findIndex(r=>r.id===id);return i>=0&&t.c[i]>0})}
+const reactionLabels=ids=>REACTIONS.filter(r=>ids.includes(r.id)).map(r=>r.label).join(" + ");
+function reactionBrowsePath(ids,format="all"){const p=new URLSearchParams();if(ids.length)p.set("with",reactionSelection(ids).join(","));if(["film","short"].includes(format))p.set("format",format);return "/reactions"+(p.size?"?"+p.toString():"")}
+function reactionDiscovery(){return '<section class="reaction-discovery"><div><h2>Browse by reaction</h2><p>Find a feeling, or mix any two.</p></div><div class="reaction-discovery-links">'+REACTIONS.map(r=>'<a href="'+reactionBrowsePath([r.id])+'" data-rx-combo="'+r.id+'"><span aria-hidden="true">'+r.emoji+'</span> '+r.label+'</a>').join('')+'<a class="reaction-all-combos" href="/reactions" data-rx-combo="">All combinations →</a></div></section>'}
+function reactionBrowsePool(){const seen=new Set();return [...allFilms(),...allSeries().flatMap(s=>s.episodes)].filter(f=>{if(seen.has(f.id)||!safetyFilmVisible(f)||state.family&&!isKids(f))return false;seen.add(f.id);return true})}
+function renderReactionBrowse(){
+ const selected=reactionSelection(state.reactionFilter),format=["film","short"].includes(state.reactionFormat)?state.reactionFormat:"all";state.reactionFilter=selected;
+ const pool=reactionBrowsePool(),match=pool.filter(f=>matchesReactionFilter(f,selected));
+ const result=match.filter(f=>format==="all"||(format==="short"?f.format==="short":f.format!=="short")).sort((a,b)=>{const strength=f=>selected.length?Math.min(...selected.map(id=>stats(f).c[REACTIONS.findIndex(r=>r.id===id)])):stats(f).fans;return strength(b)-strength(a)||stats(b).fans-stats(a).fans||(b.added||0)-(a.added||0)||a.id.localeCompare(b.id)});
+ const count=ids=>pool.filter(f=>matchesReactionFilter(f,ids)).length;
+ const pairs='<div class="reaction-combo-grid">'+reactionPairs().map(ids=>'<a class="reaction-combo" href="'+reactionBrowsePath(ids)+'" data-rx-combo="'+ids.join(',')+'"><span class="reaction-combo-icons" aria-hidden="true">'+REACTIONS.filter(r=>ids.includes(r.id)).map(r=>r.emoji).join(' ')+'</span><b>'+reactionLabels(ids)+'</b><small>'+(reactionsReady?count(ids)+' videos':'Loading…')+'</small></a>').join('')+'</div>';
+ let html='<div class="reaction-browse"><header class="reaction-browse-header"><span class="reaction-eyebrow">DISCOVER A FEELING</span><h1>Browse by reaction</h1><p>Pick one feeling or combine any two. Videos must have received every selected reaction.</p></header><section class="reaction-filter-panel" aria-label="Choose reaction categories"><div class="reaction-filter-heading"><b>Choose up to 2 reactions</b><span>'+selected.length+'/2 selected</span>'+(selected.length?'<button class="reaction-clear" data-rx-clear="">Clear filters</button>':'')+'</div><div class="reaction-filter-options" role="group" aria-label="Reaction categories">'+REACTIONS.map(r=>'<button class="reaction-filter-chip '+(selected.includes(r.id)?'selected':'')+'" data-rx-filter="'+r.id+'" aria-pressed="'+selected.includes(r.id)+'" '+(selected.length>=2&&!selected.includes(r.id)?'disabled':'')+'><span aria-hidden="true">'+r.emoji+'</span><b>'+r.label+'</b><small>'+(reactionsReady?count([r.id]):'…')+'</small></button>').join('')+'</div><p class="reaction-filter-hint">'+(selected.length===2?'Remove a selected feeling to try another combination.':'Every feeling works on its own or with any other.')+'</p></section>';
+ if(!selected.length)html+='<section class="reaction-pairs"><h2>Explore all 10 combinations</h2><p class="vmeta">Two feelings. A different kind of film.</p>'+pairs+'</section>';
+ html+='<section class="reaction-results"><div class="reaction-results-heading"><h2>'+(selected.length?reactionLabels(selected):'Recently appreciated')+'</h2><span class="vmeta" role="status">'+(reactionsReady?result.length+' '+(result.length===1?'video':'videos'):'Loading reactions…')+'</span></div><div class="chips" role="group" aria-label="Video format">'+[["all","All videos"],["film","Films & episodes"],["short","Shorts"]].map(([k,label])=>'<button class="chip '+(format===k?'on':'')+'" data-rx-format="'+k+'">'+label+'</button>').join('')+'</div>';
+ html+=!reactionsReady?'<div class="empty">Loading reactions…</div>':result.length?moreGrid("grid",result,f=>card(f)):'<div class="empty"><h3>No videos with '+(selected.length?esc(reactionLabels(selected)):'reactions')+' yet</h3><p>These categories fill automatically as fans react to videos.</p></div>';
+ html+='</section>';
+ if(selected.length)html+='<details class="reaction-pairs reaction-pairs-more"><summary>Explore all 10 combinations</summary>'+pairs+'</details>';
+ $('#main').innerHTML=html+'</div>';
+}
 
 function counts(f){const c=[...f.counts];const x=community[f.id];if(x)x.forEach((v,i)=>c[i]+=v);return c}
 let statMemo=null;
@@ -1391,6 +1421,7 @@ function renderGuide(){renderTabbar();
   const installNav=(!isMobileBrowser()||matchMedia("(display-mode: standalone)").matches||matchMedia("(display-mode: fullscreen)").matches||navigator.standalone||window.FanreelzApp||/FanreelzApp\//.test(navigator.userAgent)?"":`<button class="gi" data-install=""><svg class="i" style="stroke:none" viewBox="0 0 62 58" aria-hidden="true"><path d="M8 6.5c0-3 3.3-4.9 5.9-3.3l38.4 22.8c2.5 1.5 2.5 5.1 0 6.6L13.9 55.4C11.3 57 8 55.1 8 52.1z" fill="#8b5cf6"/><path class="spark" d="M51 2l2.6 6.4L60 11l-6.4 2.6L51 20l-2.6-6.4L42 11l6.4-2.6z" fill="#ffd23f"/></svg><span>Install app</span></button>`);
   $("#guide").innerHTML=fi("home","Home","home")+fnav("short","Shorts")+fnav("series","Series")+`<button class="gi ${state.view==="home"&&!state.cat&&state.format==="film"&&state.dur==="o20"?"on":""}" data-longnav="">${icon("film")}<span>Films</span></button>`+fi("top","Most appreciated","top")+fi("new","New","fresh")+
     `<button class="gi ${state.view==="browse"?"on":""}" data-browse="All">${icon("list")}<span>Browse all</span></button>`+
+    `<a class="gi ${state.view==="reactions"?"on":""}" href="/reactions" data-rx-combo="">${icon("heart")}<span>Browse by reaction</span></a>`+
     `<button class="gi ${state.view==="insights"?"on":""}" data-view="insights">${icon("trend")}<span>Insights <small class="plustag">PLUS</small></span></button>`+installNav+`<hr>`+
     `<button class="gi youhead ${state.view==="you"?"on":""}" data-view="you"><span>You</span><svg class="i" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></button>`+
     [["channel","Creator page","user"],["history","History","clock"],["later","Watch later","clock"],["liked","Liked videos","like"],["yourvideos","Your videos","film"]]
@@ -1623,6 +1654,7 @@ function renderBrowse(){
   const chips=["All",...GROUPS.map(g=>g.name)].map(g=>`<button class="chip ${gsel===g?"on":""}" data-browse="${esc(g)}">${esc(g)}</button>`).join("");
   const groups=GROUPS.filter(g=>gsel==="All"||g.name===gsel);
   let html=`<div class="chips">${chips}</div><h1 class="sect-h" style="font-size:24px;margin-top:4px">${icon("list")} Browse all</h1><p class="vmeta" style="margin:-6px 0 22px">Every game, book, show and trend on Fanreelz. Pick a category or a character to see its films.</p>`;
+  html+=reactionDiscovery();
   html+=groups.map(g=>{const ranked=T[g.name];const cats=[...g.cats].sort((a,b)=>a.name.localeCompare(b.name));
     return `<section class="dir"><h2 class="sect-h">${esc(g.name)} <span class="vmeta" style="font-size:14px;font-weight:500">${g.cats.length} categories</span></h2><div class="dirgrid">${cats.map(c=>{const n=allFilms().filter(f=>f.cat===c.id).length,r=ranked.findIndex(x=>x.c.id===c.id);
       return `<div class="dircard"><button class="dirhead" data-cat="${c.id}">${cav(c.name,40)}<span><b>${esc(c.name)}</b><small>${isMod?n+" films":esc(groupOf(c.id)?.name||"")}${r<3?` · <span class="hot">Trending #${r+1}</span>`:""}</small></span></button><div class="dirchars">${c.chars.map(ch=>`<button data-cat="${c.id}" data-char-go="${esc(ch)}">${esc(ch)}</button>`).join("")}</div></div>`;}).join("")}</div></section>`;}).join("");
@@ -2873,7 +2905,7 @@ function renderAbout(){
    <h2 class="ab-h2">For fans</h2>
    <div class="abgrid">
     ${card("list","Find films about your world","Browse by game, book, anime, series or a single character. Looking for the best Sylvanas film? It's one click away.")}
-    ${card("top","Share how it feels","Epic, Impressive, Funny, Moving or Visually stunning? Choose every reaction that fits. Most appreciated films are ranked by the number of fans who react, with each fan counted once per film.")}
+    ${card("top","Share how it feels","Epic, Impressive, Funny, Moving or Visually stunning? Choose up to two reactions that fit. Most appreciated films are ranked by the number of fans who react, with each fan counted once per film.")}
     ${card("battle","Join the fun","Vote in Fan Battles, enter the weekly contest, build playlists and ask creators for the film you want to see next.")}
    </div>
 
@@ -3161,7 +3193,7 @@ function renderHomeF(){
     html+=sub;
     const shelves=state.feed==="home"&&!state.q&&!state.sort;
     let rest=films;
-    if(plainHome){$("#main").innerHTML=html+homeFeedHtml(films,shorts,series);return}
+    if(plainHome){$("#main").innerHTML=html+reactionDiscovery()+homeFeedHtml(films,shorts,series);return}
     if(shelves&&!c&&state.group==="All"&&interests().n>=2){const fy=forYouList("film").slice(0,8);
       if(fy.length>=3)html+=`<section class="shelf"><h2>✨ For you<button class="seeall" data-group="${FOR_YOU}">See all</button></h2><div class="shelfrow">${fy.map(f=>card(f)).join("")}</div></section>`}
     if(shelves&&films.length>=6){
@@ -4049,7 +4081,7 @@ function pageTitle(){const T=t=>t+" | Fanreelz",f=findFilm(state.film);
   if(state.view==="showdown"){const m=state.sd&&sdList().find(x=>x.key===state.sd);return T(m?m.a+" vs "+m.b+": who would win?":"Character Showdown: who would win?")}
   if(state.view==="home"&&state.q)return T("Search: "+state.q);
   if(state.view==="home"&&state.cat)return T("Best "+(state.char?state.char+" ("+catName(state.cat)+")":catName(state.cat))+" AI fan films");
-  const names={admin:"Accounts",creators:"Creator rankings",top10:"Top 10 AI fan films this month",battles:"Fan Battles",requests:"Requests",about:"About",browse:"Browse all worlds",live:"Live now",discord:"Discord bot",playlists:"Playlists",you:"You",history:"History",later:"Watch later",liked:"Liked videos",series:"Series",user:"Profile",creator:"Creator"};
+  const names={reactions:"Browse by reaction",admin:"Accounts",creators:"Creator rankings",top10:"Top 10 AI fan films this month",battles:"Fan Battles",requests:"Requests",about:"About",browse:"Browse all worlds",live:"Live now",discord:"Discord bot",playlists:"Playlists",you:"You",history:"History",later:"Watch later",liked:"Liked videos",series:"Series",user:"Profile",creator:"Creator"};
   return names[state.view]?T(names[state.view]):"Fanreelz – Where AI fan films find their fans"}
 let fsPending=false;
 const fsEl=()=>document.fullscreenElement||document.webkitFullscreenElement||null;
@@ -4083,7 +4115,7 @@ function renderInner(){
   renderWho();renderGuide();
   clearInterval(ticker);ticker=null;tvNow=null;
   if(state.view!=="shorts")document.querySelectorAll(".sppeek").forEach(x=>x.remove());
-  ({insights:renderInsights,watch:renderWatch,browse:renderBrowse,live:renderLive,liveplay:renderLivePlay,premieres:renderPremieres,tv:renderTV,battles:renderBattles,showdown:renderShowdown,creators:renderCreatorRankings,top10:renderTop10,admin:renderAdmin,requests:renderRequests,contest:renderContest,playlists:renderPlaylists,creator:renderCreator,discord:renderDiscord,about:renderAbout,user:renderUser,you:renderYou,history:renderYouList,later:renderYouList,liked:renderYouList,yourvideos:renderYouList,shorts:renderShorts,series:renderSeries}[state.view]||renderHomeF)();
+  ({insights:renderInsights,watch:renderWatch,browse:renderBrowse,reactions:renderReactionBrowse,live:renderLive,liveplay:renderLivePlay,premieres:renderPremieres,tv:renderTV,battles:renderBattles,showdown:renderShowdown,creators:renderCreatorRankings,top10:renderTop10,admin:renderAdmin,requests:renderRequests,contest:renderContest,playlists:renderPlaylists,creator:renderCreator,discord:renderDiscord,about:renderAbout,user:renderUser,you:renderYou,history:renderYouList,later:renderYouList,liked:renderYouList,yourvideos:renderYouList,shorts:renderShorts,series:renderSeries}[state.view]||renderHomeF)();
   paintAll();armMore();try{instBar()}catch(e){}
   document.querySelectorAll(".cmform").forEach(fm=>{const k=fm.dataset.cparent;const ta=fm.querySelector("textarea");if(drafts[k])ta.value=drafts[k];if(focusKey===k){ta.focus();ta.setSelectionRange(ta.value.length,ta.value.length)}});
   if(state.view==="premieres")ticker=setInterval(tickPremieres,1000);
@@ -4092,10 +4124,10 @@ function renderInner(){
   document.title=pageTitle();
   if(state.view==="contest")ticker=setInterval(()=>{const el=$("#cEnd");if(el)el.textContent=until(contestNow().end-Date.now())},1000);
 }
-const NAVKEYS=["genre","sdur","sort","user","utab","view","feed","group","cat","char","q","film","format","dur","series","season","creator","shortList","shortI","bgroup","ctab","tv","lore"];
+const NAVKEYS=["reactionFilter","reactionFormat","genre","sdur","sort","user","utab","view","feed","group","cat","char","q","film","format","dur","series","season","creator","shortList","shortI","bgroup","ctab","tv","lore"];
 const navSnap=()=>JSON.parse(JSON.stringify(Object.fromEntries(NAVKEYS.map(k=>[k,state[k]]))));
 /* Every page gets its own address (fanreelz.com/film/…, /shorts/…, /about …) so links can be shared and reloaded. */
-const PAGES=["creators","insights","admin","top10","showdown","you","history","later","liked","yourvideos","about","live","premieres","tv","battles","requests","contest","playlists","discord","browse"];
+const PAGES=["reactions","creators","insights","admin","top10","showdown","you","history","later","liked","yourvideos","about","live","premieres","tv","battles","requests","contest","playlists","discord","browse"];
 function pathFor(st){
   const e=encodeURIComponent;
   switch(st.view){
@@ -4108,6 +4140,7 @@ function pathFor(st){
     case "showdown":return "/showdown"+(st.sd?"/"+e(st.sd):st.sdcat&&st.sdcat!=="all"?"?c="+e(st.sdcat):"");
     case "admin":return "/admin"+(st.adminUser?"?u="+e(st.adminUser):"");
     case "browse":return "/browse"+(st.bgroup&&st.bgroup!=="All"?"?g="+e(st.bgroup):"");
+    case "reactions":return reactionBrowsePath(reactionSelection(st.reactionFilter),st.reactionFormat);
     case "home":{
       if(st.q)return "/search?q="+e(st.q);
       if(st.cat)return "/c/"+e(st.cat)+(st.char?"?char="+e(st.char):"");
@@ -4131,6 +4164,7 @@ function parsePath(){
   if(a==="c"&&b&&CATS.some(c=>c.id===b))return {view:"home",feed:"home",cat:b,char:q.get("char")||null};
   if(a==="feed"&&b)return {view:"home",feed:b,cat:null};
   if(a==="search")return {view:"home",feed:"home",q:q.get("q")||""};
+  if(a==="reactions")return {view:"reactions",reactionFilter:reactionSelection(q.get("with")),reactionFormat:["film","short"].includes(q.get("format"))?q.get("format"):"all"};
   if(a==="browse")return {view:"browse",bgroup:q.get("g")||"All"};
   if(a==="admin")return {view:"admin",adminUser:q.get("u")||null};
   if(a&&PAGES.includes(a))return {view:a};
@@ -4273,6 +4307,11 @@ document.addEventListener("click",async e=>{
   if(e.target.closest("#profileBtn")){openProfile();return}
   if(e.target.closest("#submitBtn")){openSubmit();return}
   const A=sel=>e.target.closest(sel);let x;
+  if(x=A("[data-rx-combo]")){if(e.button!==0||e.ctrlKey||e.metaKey||e.shiftKey||e.altKey)return;e.preventDefault();go({view:"reactions",reactionFilter:reactionSelection(x.dataset.rxCombo),reactionFormat:"all"});return}
+  if(x=A("[data-rx-filter]")){const key=x.dataset.rxFilter,selected=reactionSelection(state.reactionFilter);if(!REACTIONS.some(r=>r.id===key))return;if(!selected.includes(key)&&selected.length>=2){toast("Choose up to 2 reaction categories.");return}go({view:"reactions",reactionFilter:selected.includes(key)?selected.filter(id=>id!==key):[...selected,key]});return}
+  if(A("[data-rx-clear]")){go({view:"reactions",reactionFilter:[]});return}
+  if(x=A("[data-rx-format]")){go({view:"reactions",reactionFormat:x.dataset.rxFormat});return}
+
   if(x=A("[data-share]")){shareFilm(x.dataset.share,!!x.dataset.shareShort);return}
   if(A("[data-install]")){installApp();return}
   if(A("[data-theme-next]")){const order=["dark","light","system"],cur=document.documentElement.dataset.theme||"dark";setTheme(order[(order.indexOf(cur)+1)%3]);return}

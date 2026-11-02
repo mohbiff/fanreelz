@@ -1,6 +1,6 @@
 # Film reactions
 
-Fans can select and remove multiple independent reactions: Epic, Impressive, Funny, Moving and Visually stunning. They are feelings, not numeric scores or genres.
+Fans can select and remove up to two independent reactions: Epic, Impressive, Funny, Moving and Visually stunning. They are feelings, not numeric scores or genres.
 
 Signed-in selections use the existing owner-protected docs/save_doc path with col=reactions, id=user UUID, data={r:{filmId:[reactionIds]},t:timestamp}. Guests keep selections locally; signing in merges them into the account. Unknown or duplicate reaction IDs do not count.
 
@@ -9,3 +9,9 @@ Legacy ratings remain unchanged in col=ratings. They are never converted to reac
 Most appreciated uses unique reacting accounts per film, so selecting multiple emotions does not multiply a person's ranking vote. Individual chip counts and total reactions describe each selected feeling. Fan Battles start equally and continue to use their own head-to-head votes.
 
 Database: docs_known_col now also permits reactions; existing RLS, owner checks, save_doc function and grants are unchanged. The change was applied and a rolled-back authenticated save/read plus denied cross-owner write were verified. Run node tests/reactions.test.cjs for logic checks.
+
+## Reaction discovery
+
+Browse by reaction is available from Home, Browse all and the side menu at /reactions. Five individual feelings and all ten unordered pairs are supported. Query parameter with=epic,moving selects both; format=film or format=short narrows the video format. Filtering uses AND across the community totals: a video must have received each selected reaction, whether from the same fan or different fans. Zero-count categories stay visible and fill automatically as people react. Each account still counts once per video in Most appreciated.
+
+The client caps every film's selections at two, including guest merging. The database docs_reaction_limit CHECK independently rejects reaction maps containing non-array values or arrays longer than two; legacy ratings and other document collections are unaffected. Valid pair writes and rejected third-reaction writes were verified in a rolled-back authenticated transaction.
