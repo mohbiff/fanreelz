@@ -40,8 +40,8 @@ assert.equal(read('parsePath().group'),'Fantasy');
 assert.equal(read('pathFor({view:"home",group:"Popular games"})'),'/?g=Popular%20games');
 assert.equal(read('pathFor({view:"home",format:"film",group:"Popular games"})'),'/?f=film&g=Popular%20games');
 
-assert.deepEqual(read('leadingReactionIds({c:[4,6,2,7,10]})'),['visual','moving']);
-assert.equal(vm.runInContext('matchesReactionFilter({id:"v"},["moving","visual"],{v:{n:29,c:[4,6,2,7,10]}})',context),true);
+assert.deepEqual(read('leadingReactionIds({c:[4,6,2,7,10]})'),['informative','moving']);
+assert.equal(vm.runInContext('matchesReactionFilter({id:"v"},["moving","informative"],{v:{n:29,c:[4,6,2,7,10]}})',context),true);
 assert.equal(vm.runInContext('matchesReactionFilter({id:"v"},["epic"],{v:{n:29,c:[4,6,2,7,10]}})',context),false);
 assert.equal(vm.runInContext('matchesReactionFilter({id:"v"},["impressive","moving"],{v:{n:29,c:[4,6,2,7,10]}})',context),false);
 assert.deepEqual(read('leadingReactionIds({c:[5,0,0,0,0]})'),['epic']);

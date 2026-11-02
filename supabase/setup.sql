@@ -208,7 +208,7 @@ revoke all on function public.add_search(text, boolean, text, text) from public;
 grant execute on function public.add_search(text, boolean, text, text) to anon, authenticated;
 
 -- Reactions are stored separately from legacy numeric ratings in docs.col = 'reactions'.
--- data.r maps film IDs to any subset of: epic, impressive, funny, moving, visual.
+-- data.r maps film IDs to any subset of: epic, impressive, funny, moving, informative.
 
 -- Each fan may select at most two reactions per video.
 alter table public.docs drop constraint if exists docs_reaction_limit;

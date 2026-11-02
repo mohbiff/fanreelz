@@ -1246,7 +1246,7 @@ const LANG_MULT=[.12,1,3];
 const langMult=f=>LANG_MULT[langTier(f)];
 
 // Reactions are independent feelings, never numeric ratings. Legacy ratings stay in their own collection.
-const REACTIONS=[{id:"epic",emoji:"🔥",label:"Epic"},{id:"impressive",emoji:"😮",label:"Impressive"},{id:"funny",emoji:"😂",label:"Funny"},{id:"moving",emoji:"❤️",label:"Moving"},{id:"visual",emoji:"🎨",label:"Visually stunning"}];
+const REACTIONS=[{id:"epic",emoji:"🔥",label:"Epic"},{id:"impressive",emoji:"😮",label:"Impressive"},{id:"funny",emoji:"😂",label:"Funny"},{id:"moving",emoji:"❤️",label:"Moving"},{id:"informative",emoji:"💡",label:"Informative"}];
 const cleanReactions=value=>Array.isArray(value)?REACTIONS.map(x=>x.id).filter(id=>value.includes(id)).slice(0,2):[];
 function cleanReactionMap(value){const out={};if(value&&typeof value==="object"&&!Array.isArray(value))for(const [id,v]of Object.entries(value)){const a=cleanReactions(v);if(id.length<=100&&a.length)out[id]=a}return out}
 let myReactions=cleanReactionMap(GUEST.reactions),reactionsBy={},reactionTotals={},reactionSaving=false,reactionsReady=false;
@@ -2921,7 +2921,7 @@ function renderAbout(){
    <h2 class="ab-h2">For fans</h2>
    <div class="abgrid">
     ${card("list","Find films about your world","Browse by game, book, anime, series or a single character. Looking for the best Sylvanas film? It's one click away.")}
-    ${card("top","Share how it feels","Epic, Impressive, Funny, Moving or Visually stunning? Choose up to two reactions that fit. Most appreciated films are ranked by the number of fans who react, with each fan counted once per film.")}
+    ${card("top","Share how it feels","Epic, Impressive, Funny, Moving or Informative? Choose up to two reactions that fit. Most appreciated films are ranked by the number of fans who react, with each fan counted once per film.")}
     ${card("battle","Join the fun","Vote in Fan Battles, enter the weekly contest, build playlists and ask creators for the film you want to see next.")}
    </div>
 

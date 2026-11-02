@@ -1,6 +1,6 @@
 # Film reactions
 
-Fans can select and remove up to two independent reactions: Epic, Impressive, Funny, Moving and Visually stunning. They are feelings, not numeric scores or genres.
+Fans can select and remove up to two independent reactions: Epic, Impressive, Funny, Moving and Informative. They are feelings, not numeric scores or genres.
 
 Signed-in selections use the existing owner-protected docs/save_doc path with col=reactions, id=user UUID, data={r:{filmId:[reactionIds]},t:timestamp}. Guests keep selections locally; signing in merges them into the account. Unknown or duplicate reaction IDs do not count.
 
@@ -25,3 +25,7 @@ The discovery page uses the five reaction buttons; there is no preset combinatio
 ## Leading reaction categories
 
 Discovery uses the two highest positive reaction counts per video, not every reaction it has ever received. A video with fewer than two positive types uses just those available. Equal vote counts use the displayed reaction order as a deterministic tie-break. Category counts and filtered results apply this same rule after the world-group/category/character scope. Live reaction updates recalculate the leading pair; each fan can still select up to two feelings independently.
+
+## Informative
+
+The fifth reaction is 💡 Informative (id: informative), for videos that teach, explain or share useful facts. It replaces the retired visual reaction. Existing visual votes are not reinterpreted as informative; no stored visual selections existed when this change was made. The two-reaction limit, scoped discovery and leading-reaction ranking are unchanged.
