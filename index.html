@@ -912,6 +912,8 @@ a.gi[data-rx-combo]{color:inherit;text-decoration:none}
 
 .reaction-filter-option{position:relative}.reaction-filter-chip>.reaction-rank-badge{font-size:11px;font-weight:800;line-height:1;padding:5px 6px;border-radius:6px;background:#a78bfa;color:#160f25}.reaction-filter-help{position:absolute;top:calc(100% + 12px);left:0;width:300px;max-width:calc(100vw - 48px);z-index:25;box-sizing:border-box;background:var(--surface);border:1px solid #a78bfa;border-radius:14px;padding:17px;box-shadow:0 10px 36px rgba(0,0,0,.4);color:var(--fg);text-align:left}.reaction-filter-help>b{display:block;font-size:14px;padding-right:25px}.reaction-filter-help>p{font-size:13px;line-height:1.6;margin:10px 0}.reaction-filter-help>small{font-size:11px;color:var(--muted);line-height:1.5;display:block}.reaction-filter-help>button{position:absolute;right:8px;top:8px;width:30px;height:30px;background:var(--chip);color:var(--fg);border:0;border-radius:50%;cursor:pointer;font-size:20px;line-height:1}.reaction-filter-option:last-child .reaction-filter-help{left:auto;right:0}.reaction-second-description{font-size:13px;color:var(--muted);margin:-6px 0 18px}
 @media(max-width:560px){.reaction-filter-help{position:fixed;top:auto;bottom:calc(80px + env(safe-area-inset-bottom));left:16px!important;right:16px!important;width:auto;max-width:none;padding:18px;z-index:50}.reaction-filter-help>b{font-size:15px}.reaction-filter-help>p{font-size:14px}}
+
+.reaction-inline{margin:18px 0 26px}.reaction-inline-scope,.reaction-inline-status{font-size:12px;color:var(--muted);margin:10px 0 0}.reaction-inline-conflict{font-size:13px;line-height:1.5;margin:12px 0 0;color:var(--fg)}.reaction-inline-status{font-weight:600}
 </style>
 
 <div id="betabar" style="background:var(--accent);color:var(--ink-on-accent);text-align:center;font-weight:700;font-size:13px;padding:7px 16px">Beta: react, vote and save AI fan films right away. Sign in during the beta to keep it all and get the ⭐ Early fan badge.</div>
@@ -1295,7 +1297,7 @@ function cycleReactionFilter(selected,second,key){
 }
 function matchesReactionFilter(f,selection,totals=reactionTotals,second=null){const leading=leadingReactionIds(totals[f.id]);return leading.length>0&&(!second||selection.includes(second))&&selection.every(id=>leading[id===second?1:0]===id)}
 let reactionFilterHint=null;
-document.addEventListener("keydown",e=>{if(e.key==="Escape"&&reactionFilterHint&&state.view==="reactions"){reactionFilterHint=null;render()}});
+document.addEventListener("keydown",e=>{if(e.key==="Escape"&&reactionFilterHint){reactionFilterHint=null;render()}});
 function reactionFilterLabel(ids,second){return REACTIONS.filter(r=>ids.includes(r.id)).map(r=>r.label+(r.id===second?" ×2":"")).join(" + ")}
 function reactionFilterHelp(r,second){
  if(reactionFilterHint?.key!==r.id)return "";
@@ -1327,7 +1329,20 @@ function reactionScopeLabel(scope){const x=normaliseReactionScope(scope);return 
 function filmInReactionScope(f,scope){const x=normaliseReactionScope(scope);return (!x.cat||f.cat===x.cat)&&(!x.char||f.char===x.char)&&(x.group==="All"||groupOf(f.cat)?.name===x.group)}
 function reactionScopeAttrs(scope){const x=normaliseReactionScope(scope);return ' data-rx-group="'+esc(x.group)+'" data-rx-cat="'+esc(x.cat||"")+'" data-rx-char="'+esc(x.char||"")+'"'}
 function reactionBrowsePath(ids,format="all",scope={},second=null){const p=new URLSearchParams(),x=normaliseReactionScope(scope);if(ids.length)p.set("with",reactionSelection(ids).join(","));const rank=reactionSecondValue(second,reactionSelection(ids));if(rank)p.set("second",rank);if(["film","short"].includes(format))p.set("format",format);if(x.group!=="All")p.set("g",x.group);if(x.cat)p.set("cat",x.cat);if(x.char)p.set("char",x.char);return "/reactions"+(p.size?"?"+p.toString():"")}
-function reactionDiscovery(){const scope=currentReactionScope(),label=reactionScopeLabel(scope),attrs=reactionScopeAttrs(scope);return '<section class="reaction-discovery"><div><h2>Browse by reaction</h2><p>Find a feeling, or mix any two.'+(label!=="All videos"?' Only videos in '+esc(label)+'.':'')+'</p></div><div class="reaction-discovery-links">'+REACTIONS.map(r=>'<a href="'+reactionBrowsePath([r.id],"all",scope)+'" data-rx-combo="'+r.id+'"'+attrs+'><span aria-hidden="true">'+r.emoji+'</span> '+r.label+'</a>').join('')+'<a class="reaction-all-combos" href="'+reactionBrowsePath([],"all",scope)+'" data-rx-combo=""'+attrs+'>Choose reactions →</a></div></section>'}
+const reactionFiltersActive=()=>reactionSelection(state.reactionFilter).length>0;
+const matchesActiveReactions=f=>!reactionFiltersActive()||matchesReactionFilter(f,reactionSelection(state.reactionFilter),reactionTotals,reactionSecondValue(state.reactionSecond,reactionSelection(state.reactionFilter)));
+function inlineReactionPool(override){
+ let pool=Array.isArray(override)?override:state.view==="home"?(state.format==="series"?seriesList(true).filter(x=>sdurOk(x)&&genreOk(x,seriesGenres)&&langOk(x,seriesLang)).flatMap(x=>x.episodes):feedList(true)):reactionBrowsePool(currentReactionScope());
+ if(!override&&state.view==="home"&&state.format==="film")pool=pool.filter(f=>f.format!=="short"&&durOk(f)&&genreOk(f,genresOf)&&langOk(f,langOf));
+ if(!override&&state.view==="home"&&state.format==="short")pool=pool.filter(f=>f.format==="short");
+ const seen=new Set();return pool.filter(f=>{if(seen.has(f.id)||!safetyFilmVisible(f)||state.family&&!isKids(f))return false;seen.add(f.id);return true});
+}
+function reactionDiscovery(override){
+ const selected=reactionSelection(state.reactionFilter),second=reactionSecondValue(state.reactionSecond,selected),pool=inlineReactionPool(override);
+ const count=(ids,rank=null)=>pool.filter(f=>matchesReactionFilter(f,ids,reactionTotals,rank)).length;
+ const matched=selected.length?pool.filter(matchesActiveReactions).length:null,scopeLabel=reactionScopeLabel(currentReactionScope());
+ return '<section class="reaction-filter-panel reaction-inline" aria-label="Filter this page by reaction"><div class="reaction-filter-heading"><b>Filter by reaction</b><span>'+selected.length+'/2 selected</span>'+(selected.length?'<button class="reaction-clear" data-rx-clear="">Clear filters</button>':'')+'</div><div class="reaction-filter-options" role="group" aria-label="Reaction categories">'+REACTIONS.map(r=>reactionFilterChip(r,selected,second,count)).join('')+'</div><p class="reaction-filter-hint">One click = most-voted. Two clicks (×2) = second-most-voted. Third click = off.</p>'+(scopeLabel!=="All videos"?'<p class="reaction-inline-scope">Only videos in '+esc(scopeLabel)+'</p>':'')+(matched!==null?'<p class="reaction-inline-status" role="status">'+matched+' matching '+(matched===1?'video':'videos')+' in this view.</p>':'')+(selected.length===2&&!second?'<p class="reaction-inline-conflict" role="status">Both filters select first place. Click one again for ×2 to choose a first-and-second pair.</p>':'')+'</section>';
+}
 function reactionBrowsePool(scope=currentReactionScope()){const seen=new Set();return [...allFilms(),...allSeries().flatMap(s=>s.episodes)].filter(f=>{if(seen.has(f.id)||!safetyFilmVisible(f)||state.family&&!isKids(f)||!filmInReactionScope(f,scope))return false;seen.add(f.id);return true})}
 function renderReactionBrowse(){
  const selected=reactionSelection(state.reactionFilter),second=reactionSecondValue(state.reactionSecond,selected),format=["film","short"].includes(state.reactionFormat)?state.reactionFormat:"all";state.reactionFilter=selected;state.reactionSecond=second;
@@ -1489,13 +1504,14 @@ function renderWho(){
   if(acct.online&&acct.me){el.innerHTML=`<button class="iconbtn" id="profileBtn" aria-label="Your profile"><img class="avatar" alt=""></button>`;el.querySelector("img").src=acct.me.avatarUrl}
   else el.innerHTML=`<button class="signin" id="signinBtn"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg><b>Sign in</b></button>`;
 }
-function feedList(){
+function feedList(ignoreReactions=false){
   const q=state.q.toLowerCase();
   let list=allFilms().filter(f=>(!state.cat||f.cat===state.cat)&&(!state.char||f.char===state.char)&&
     (state.cat||state.group==="All"||state.group===FOR_YOU||groupOf(f.cat)?.name===state.group)&&
     (!q||[f.title,f.char,catName(f.cat),byName(f),f.tool].join(" ").toLowerCase().includes(q)));
   if(state.feed==="mine"&&!state.cat)list=list.filter(f=>reactedTo(f.id));
   if(state.cat&&state.lore!=="all")list=list.filter(f=>loreOf(f)===state.lore);
+  if(!ignoreReactions)list=list.filter(matchesActiveReactions);
   const k=state.feed==="new"?f=>f.days:f=>-stats(f).bayes,L=state.feed==="mine"?()=>0:langTier;
   return list.sort((a,b)=>(L(b)-L(a))||(k(a)-k(b)));
 }
@@ -1700,6 +1716,7 @@ function renderBrowse(){
   const groups=GROUPS.filter(g=>gsel==="All"||g.name===gsel);
   let html=`<div class="chips">${chips}</div><h1 class="sect-h" style="font-size:24px;margin-top:4px">${icon("list")} ${gsel==="All"?"Browse all":esc(gsel)}</h1><p class="vmeta" style="margin:-6px 0 22px">Every game, book, show and trend on Fanreelz. Pick a category or a character to see its films.</p>`;
   html+=reactionDiscovery();
+  if(reactionFiltersActive()){const videos=inlineReactionPool().filter(matchesActiveReactions);$("#main").innerHTML=html+(videos.length?moreGrid("grid",videos,f=>card(f)):'<div class="empty">No videos match these reaction filters in this view.</div>');return}
   html+=groups.map(g=>{const ranked=T[g.name];const cats=[...g.cats].sort((a,b)=>a.name.localeCompare(b.name));
     return `<section class="dir"><h2 class="sect-h">${esc(g.name)} <span class="vmeta" style="font-size:14px;font-weight:500">${g.cats.length} categories</span></h2><div class="dirgrid">${cats.map(c=>{const n=allFilms().filter(f=>f.cat===c.id).length,r=ranked.findIndex(x=>x.c.id===c.id);
       return `<div class="dircard"><button class="dirhead" data-cat="${c.id}">${cav(c.name,40)}<span><b>${esc(c.name)}</b><small>${isMod?n+" films":esc(groupOf(c.id)?.name||"")}${r<3?` · <span class="hot">Trending #${r+1}</span>`:""}</small></span></button><div class="dirchars">${c.chars.map(ch=>`<button data-cat="${c.id}" data-char-go="${esc(ch)}">${esc(ch)}</button>`).join("")}</div></div>`;}).join("")}</div></section>`;}).join("");
@@ -3097,11 +3114,12 @@ function seriesStats(s){const totals=s.episodes.map(stats),n=totals.reduce((n,t)
 const seriesDays=s=>s.episodes.length?Math.min(...s.episodes.map(e=>e.days??999)):(s.days||0);
 const seasonsOf=s=>[...new Set(s.episodes.map(e=>e.season))].sort((a,b)=>a-b);
 let watched=store.get("fr_watched",{});
-function seriesList(){
+function seriesList(ignoreReactions=false){
   const q=state.q.toLowerCase();
   let l=allSeries().filter(s=>(!state.cat||s.cat===state.cat)&&(!state.char||s.char===state.char)&&(state.cat||state.group==="All"||groupOf(s.cat)?.name===state.group)&&
     (!q||[s.title,s.char,catName(s.cat),seriesBy(s),...s.episodes.map(e=>e.title)].join(" ").toLowerCase().includes(q)));
   if(state.feed==="mine"&&!state.cat)l=l.filter(s=>s.episodes.some(e=>reactedTo(e.id)));
+  if(!ignoreReactions&&reactionFiltersActive())l=l.filter(s=>s.episodes.some(matchesActiveReactions));
   // the viewer's sort (Most viewed = all episodes' YouTube views together, Newest = latest episode, Most appreciated), else the feed's
   const yv=s=>s.episodes.reduce((a,e)=>a+(findFilm(e.id)?.ytViews||0),0);
   const k=state.sort==="views"?s=>-yv(s):state.sort==="new"||state.feed==="new"?s=>seriesDays(s)??1e9:s=>-seriesStats(s).bayes;
@@ -3158,16 +3176,16 @@ function interests(){
 }
 // same order all day, new mix tomorrow
 const dayJitter=id=>{let h=hnum(id+new Date().toDateString());return (h%1000)/1000};
-function forYouList(kind){
+function forYouList(kind,ignoreReactions=false){
   const I=interests(),seen=new Set(myHistory.slice(0,60).map(x=>x.id));
-  const pool=allFilms().filter(f=>(kind==="short")===(f.format==="short")&&!seen.has(f.id)&&!(f.age));
+  const pool=allFilms().filter(f=>(kind==="short")===(f.format==="short")&&!seen.has(f.id)&&!(f.age)&&(ignoreReactions||matchesActiveReactions(f)));
   const g={};for(const [k,v] of Object.entries(I.cat)){const gn=groupOf(k)?.name;if(gn)g[gn]=(g[gn]||0)+v}
   return pool.map(f=>({f,s:(I.cat[f.cat]||0)+(I.ch[f.cat+"|"+f.char]||0)*1.2+(g[groupOf(f.cat)?.name]||0)*.25+Math.log1p(filmTrend(f))*.15+dayJitter(f.id)*.6+[-2.5,0,1.5][langTier(f)]}))
     .sort((a,b)=>b.s-a.s).map(x=>x.f);
 }
 function forYouHtml(){
   const I=interests();
-  if(I.n<2){const top=[...allFilms()].filter(f=>f.format!=="short").sort((a,b)=>filmTrend(b)-filmTrend(a)).slice(0,12);
+  if(I.n<2){const top=[...allFilms()].filter(f=>f.format!=="short"&&matchesActiveReactions(f)).sort((a,b)=>filmTrend(b)-filmTrend(a)).slice(0,12);
     return `<div class="fyempty"><h2>✨ For you</h2><p>Watch, rate or save a few films and this page learns what you like: your worlds, your characters, your kind of AI films. Start with what's trending.</p></div><div class="grid">${top.map(f=>card(f)).join("")}</div>`}
   const films=forYouList("film"),shorts=forYouList("short");
   // "Because you watched" rows for the two most recent different worlds
@@ -3207,10 +3225,10 @@ function renderHomeF(){
   // optional sort chosen by the viewer: most viewed on YouTube, newest, top rated
   const srt=l=>state.sort==="views"?[...l].sort((a,b)=>(b.ytViews||0)-(a.ytViews||0)):state.sort==="new"?[...l].sort((a,b)=>(a.days??1e9)-(b.days??1e9)):state.sort==="top"?[...l].sort((a,b)=>stats(b).bayes-stats(a).bayes):l;
   const base=srt(feedList()),films=base.filter(f=>f.format!=="short"),shorts=base.filter(f=>f.format==="short"),series=seriesList();
-  const plainHome=!c&&!state.q&&state.feed==="home"&&state.format==="all"&&state.group==="All"&&!state.sort;
+  const plainHome=!c&&!state.q&&state.feed==="home"&&state.format==="all"&&state.group==="All"&&!state.sort&&!reactionFiltersActive();
   let html=(!c&&!state.q&&state.feed==="home"&&state.format==="all"&&state.group==="All"?`<p class="hometag">All the best AI fan films in one place, sorted by game, anime, book and series. <button class="hometag-l" data-view="about">Learn more →</button></p>`:"")+`<div class="chips">${chips.join("")}</div>`;
   if(state.family)html+=`<div class="familybar">${icon("shield")} Family-friendly mode is on. Only films suited for younger viewers are shown.<button data-family="">Turn off</button></div>`;
-  if(!c&&!state.q&&state.group===FOR_YOU){$("#main").innerHTML=html+forYouHtml();return}
+  if(!c&&!state.q&&state.group===FOR_YOU){$("#main").innerHTML=html+reactionDiscovery()+forYouHtml();return}
   if(c)html+=`<h1 class="sect-h" style="font-size:24px;margin-top:4px">${cav(c.name,48)} ${esc(c.name)}${isMod?`<span class="vmeta" style="font-size:14px;font-weight:500">${films.length} films · ${shorts.length} shorts · ${series.length} series</span>`:""}</h1>`;
   if(!c&&!state.q&&GROUPS.some(g=>g.name===state.group))html+=`<h1 class="sect-h" style="font-size:24px;margin-top:4px">${esc(state.group)}</h1>`;
   html+=reactionDiscovery();
@@ -3224,7 +3242,7 @@ function renderHomeF(){
   if(!plainHome)html+=fmtTabs(films.length+shorts.length,films.length,shorts.length,series.length);
   if(!plainHome||state.format==="series")html+=`<div class="lorebar sortbar" role="group" aria-label="Sort" style="flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none">${[["","Recommended"],["views","Most viewed"],["new","Newest"],["top","Most appreciated"]].map(([k,l])=>`<button style="flex-shrink:0" class="${(state.sort||"")===k?"on":""}" data-sort="${k}">${l}</button>`).join("")}</div>`;
   const sub=c&&state.format!=="short"&&state.format!=="series"?`<div class="lorebar">${[["all","All films"],["lore","Lore-accurate"],["whatif","What if"]].map(([k,l])=>`<button class="${state.lore===k?"on":""}" data-lore="${k}">${l}</button>`).join("")}</div>`:"";
-  const empty=`<div class="empty">${state.feed==="mine"?(acct.online?"You haven't reacted to anything here yet.":"Sign in to see your reactions."):c&&!state.q?`<b style="display:block;color:var(--fg);font-size:17px;margin-bottom:6px">No ${esc(c.name)} films yet</b>Fanreelz searches YouTube every hour and adds new AI fan films here automatically.<br>Know a good one? <button class="btn" data-submitcat="" style="margin-top:14px">Submit a film</button>`:"Nothing here yet. Submit the first one."}</div>`;
+  const empty=`<div class="empty">${reactionFiltersActive()?"No videos match these reaction filters in this view.":state.feed==="mine"?(acct.online?"You haven't reacted to anything here yet.":"Sign in to see your reactions."):c&&!state.q?`<b style="display:block;color:var(--fg);font-size:17px;margin-bottom:6px">No ${esc(c.name)} films yet</b>Fanreelz searches YouTube every hour and adds new AI fan films here automatically.<br>Know a good one? <button class="btn" data-submitcat="" style="margin-top:14px">Submit a film</button>`:"Nothing here yet. Submit the first one."}</div>`;
   if(state.format==="film"){
     langPrep(films,langOf);const fl=films.filter(durOk).filter(f=>genreOk(f,genresOf)&&langOk(f,langOf));
     html+=sub+langBar(films,langOf)+genreBar(films,genresOf)+`<div class="lorebar">${DUR.map(([k,l])=>`<button class="${state.dur===k?"on":""}" data-dur="${k}">${l}</button>`).join("")}</div>`;
@@ -3238,7 +3256,7 @@ function renderHomeF(){
     html+=sl.length?moreGrid("grid",sl,seriesCard):(series.length?`<div class="empty">No series of this length yet.</div>`:empty);
   }else{
     html+=sub;
-    const shelves=state.feed==="home"&&!state.q&&!state.sort;
+    const shelves=state.feed==="home"&&!state.q&&!state.sort&&!reactionFiltersActive();
     let rest=films;
     if(plainHome){$("#main").innerHTML=html+homeFeedHtml(films,shorts,series);return}
     if(shelves&&!c&&state.group==="All"&&interests().n>=2){const fy=forYouList("film").slice(0,8);
@@ -3422,9 +3440,11 @@ function nextFor(f){
   return allFilms().filter(x=>x.id!==f.id&&x.format!=="short").sort((a,b)=>((b.cat===f.cat)-(a.cat===f.cat))||(langTier(b)-langTier(a))||(stats(b).bayes-stats(a).bayes)).slice(0,14);
 }
 function creatorContent(key,films){
-  const fl=films.filter(f=>f.format!=="short"),sh=films.filter(f=>f.format==="short"),se=allSeries().filter(s=>s.channelId===key||(s.byId||s.by)===key||(/^UC[\w-]{22}$/.test(key)&&s.by===films[0]?.by));
+  const fl=films.filter(f=>f.format!=="short"&&matchesActiveReactions(f)),sh=films.filter(f=>f.format==="short"&&matchesActiveReactions(f)),se=allSeries().filter(s=>s.channelId===key||(s.byId||s.by)===key||(/^UC[\w-]{22}$/.test(key)&&s.by===films[0]?.by)).filter(s=>!reactionFiltersActive()||s.episodes.some(matchesActiveReactions));
   const tab=state.ctab||"film";
-  return `<div class="fmtbar" style="margin-top:24px">${[["film","Films",fl.length],["short","Shorts",sh.length],["series","Series",se.length]].map(([k,l,n])=>`<button class="${tab===k?"on":""}" data-ctab="${k}">${l}<small>${n}</small></button>`).join("")}</div>`+
+  const unfilteredSeries=allSeries().filter(s=>s.channelId===key||(s.byId||s.by)===key||(/^UC[\w-]{22}$/.test(key)&&s.by===films[0]?.by));
+  const facetPool=tab==="series"?unfilteredSeries.flatMap(s=>s.episodes):films.filter(f=>tab==="short"?f.format==="short":f.format!=="short");
+  return reactionDiscovery(facetPool)+`<div class="fmtbar" style="margin-top:24px">${[["film","Films",fl.length],["short","Shorts",sh.length],["series","Series",se.length]].map(([k,l,n])=>`<button class="${tab===k?"on":""}" data-ctab="${k}">${l}<small>${n}</small></button>`).join("")}</div>`+
    (tab==="short"?(sh.length?moreGrid("shortgrid",sh,shortCard):`<div class="empty">No shorts yet.</div>`)
    :tab==="series"?(se.length?moreGrid("grid",se,seriesCard):`<div class="empty">No series yet.</div>`)
    :(fl.length?moreGrid("grid",fl.sort((a,b)=>a.days-b.days),f=>card(f)):`<div class="empty">No films yet.</div>`));
@@ -4175,7 +4195,17 @@ const NAVKEYS=["reactionSecond","reactionGroup","reactionCat","reactionChar","re
 const navSnap=()=>JSON.parse(JSON.stringify(Object.fromEntries(NAVKEYS.map(k=>[k,state[k]]))));
 /* Every page gets its own address (fanreelz.com/film/…, /shorts/…, /about …) so links can be shared and reloaded. */
 const PAGES=["reactions","creators","insights","admin","top10","showdown","you","history","later","liked","yourvideos","about","live","premieres","tv","battles","requests","contest","playlists","discord","browse"];
+function reactionInlineView(st){return ["home","browse","creator"].includes(st.view||"home")||st.view==="user"&&st.utab==="videos"}
 function pathFor(st){
+ const base=pathBaseFor(st);if(!reactionInlineView(st))return base;
+ const selected=reactionSelection(st.reactionFilter);if(!selected.length)return base;
+ const [pathname,query=""]=base.split("?"),q=new URLSearchParams(query);q.set("with",selected.join(","));
+ const second=reactionSecondValue(st.reactionSecond,selected);if(second)q.set("second",second);
+ if(st.view==="creator"&&["short","series"].includes(st.ctab))q.set("tab",st.ctab);
+ if(st.view==="user"&&st.utab==="videos")q.set("tab","videos");
+ return pathname+"?"+q.toString();
+}
+function pathBaseFor(st){
   const e=encodeURIComponent;
   switch(st.view){
     case "watch":return "/film/"+e(st.film||"");
@@ -4199,6 +4229,11 @@ function pathFor(st){
   }
 }
 function parsePath(){
+ const parsed=parsePathBase();if(!reactionInlineView(parsed))return parsed;
+ const q=new URLSearchParams(location.search),selected=reactionSelection(q.get("with"));
+ return {...parsed,reactionFilter:selected,reactionSecond:reactionSecondValue(q.get("second"),selected)};
+}
+function parsePathBase(){
   const parts=location.pathname.split("/").filter(Boolean).map(x=>{try{return decodeURIComponent(x)}catch(e){return x}});
   const q=new URLSearchParams(location.search),[a,b]=parts;
   if(a==="film"&&b&&findFilm(b))return {view:"watch",film:b};
@@ -4206,7 +4241,7 @@ function parsePath(){
   if(a==="shorts")return {view:"shorts",shortList:null,shortI:0};
   if(a==="showdown")return {view:"showdown",sd:b||null,sdcat:q.get("c")||"all"};
   if(a==="series"&&b)return {view:"series",series:b,season:1};
-  if(a==="creator"&&b)return {view:"creator",creator:b,ctab:"film"};
+  if(a==="creator"&&b)return {view:"creator",creator:b,ctab:["short","series"].includes(q.get("tab"))?q.get("tab"):"film"};
   if(a==="u"&&b)return {view:"user",user:b,utab:q.get("tab")==="videos"?"videos":"liked"};
   if(a==="live"&&b)return {view:"liveplay",liveId:b};
   if(a==="c"&&b&&CATS.some(c=>c.id===b))return {view:"home",feed:"home",cat:b,char:q.get("char")||null};
@@ -4359,8 +4394,8 @@ document.addEventListener("click",async e=>{
   if(x=A("[data-group-nav]")){if(e.button!==0||e.ctrlKey||e.metaKey||e.shiftKey||e.altKey)return;e.preventDefault();if(!GROUPS.some(g=>g.name===x.dataset.groupNav))return;$("#shell").classList.remove("open");resetSections();go({view:"home",feed:"home",group:x.dataset.groupNav,cat:null,char:null,q:"",format:"all",sort:"",dur:"any",genre:"all",lore:"all"});return}
   if(x=A("[data-rx-combo]")){if(e.button!==0||e.ctrlKey||e.metaKey||e.shiftKey||e.altKey)return;e.preventDefault();$("#shell").classList.remove("open");reactionFilterHint=null;go({view:"reactions",reactionSecond:null,reactionFilter:reactionSelection(x.dataset.rxCombo),reactionFormat:"all",...reactionScopeState(x.dataset.rxGroup!==undefined?{group:x.dataset.rxGroup,cat:x.dataset.rxCat,char:x.dataset.rxChar}:currentReactionScope())});return}
   if(A("[data-rx-hint-close]")){reactionFilterHint=null;render();return}
-  if(x=A("[data-rx-filter]")){const key=x.dataset.rxFilter,next=cycleReactionFilter(state.reactionFilter,state.reactionSecond,key);if(next.error==="unknown")return;if(next.error==="limit"){toast("Choose up to 2 reaction categories.");return}reactionFilterHint=next.selection.includes(key)?{key,error:next.error||null}:null;if(next.error){render();return}go({view:"reactions",reactionFilter:next.selection,reactionSecond:next.second});return}
-  if(A("[data-rx-clear]")){reactionFilterHint=null;go({view:"reactions",reactionFilter:[],reactionSecond:null});return}
+  if(x=A("[data-rx-filter]")){const key=x.dataset.rxFilter,next=cycleReactionFilter(state.reactionFilter,state.reactionSecond,key);if(next.error==="unknown")return;if(next.error==="limit"){toast("Choose up to 2 reaction categories.");return}reactionFilterHint=next.selection.includes(key)?{key,error:next.error||null}:null;if(next.error){render();return}go({reactionFilter:next.selection,reactionSecond:next.second});return}
+  if(A("[data-rx-clear]")){reactionFilterHint=null;go({reactionFilter:[],reactionSecond:null});return}
   if(x=A("[data-rx-format]")){reactionFilterHint=null;go({view:"reactions",reactionFormat:x.dataset.rxFormat});return}
 
   if(x=A("[data-share]")){shareFilm(x.dataset.share,!!x.dataset.shareShort);return}

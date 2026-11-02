@@ -5,12 +5,12 @@ import vm from 'node:vm';
 const html=readFileSync(new URL('../index.html',import.meta.url),'utf8');
 const source=readFileSync(new URL('../navigation.js',import.meta.url),'utf8');
 function setup(){
-  const listeners=[],ctx=vm.createContext({encodeURIComponent,acct:{uid:'member'},
+  const listeners=[],ctx=vm.createContext({encodeURIComponent,URLSearchParams,GROUPS:[],reactionSelection:value=>Array.isArray(value)?value:[],reactionSecondValue:()=>null,acct:{uid:'member'},
     findFilm:id=>({id,format:id==='short'?'short':'film'}),
     document:{body:{querySelectorAll:()=>[]},addEventListener:(...args)=>listeners.push(args)},
     MutationObserver:class {observe(){}},
   });
-  vm.runInContext('const PAGES=["about","live","you","browse","admin","history"];'+html.slice(html.indexOf('function pathFor(st){'),html.indexOf('function parsePath(){')),ctx);
+  vm.runInContext('const PAGES=["about","live","you","browse","admin","history"];'+html.slice(html.indexOf('function reactionInlineView(st){'),html.indexOf('function parsePath(){')),ctx);
   vm.runInContext(source,ctx);return {ctx,listeners};
 }
 test('navigation URLs point to reloadable film, short, category and profile pages',()=>{
