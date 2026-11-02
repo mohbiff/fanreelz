@@ -39,6 +39,15 @@ context.location={pathname:'/',search:'?g=Fantasy'};
 assert.equal(read('parsePath().group'),'Fantasy');
 assert.equal(read('pathFor({view:"home",group:"Popular games"})'),'/?g=Popular%20games');
 assert.equal(read('pathFor({view:"home",format:"film",group:"Popular games"})'),'/?f=film&g=Popular%20games');
+
+assert.deepEqual(read('leadingReactionIds({c:[4,6,2,7,10]})'),['visual','moving']);
+assert.equal(vm.runInContext('matchesReactionFilter({id:"v"},["moving","visual"],{v:{n:29,c:[4,6,2,7,10]}})',context),true);
+assert.equal(vm.runInContext('matchesReactionFilter({id:"v"},["epic"],{v:{n:29,c:[4,6,2,7,10]}})',context),false);
+assert.equal(vm.runInContext('matchesReactionFilter({id:"v"},["impressive","moving"],{v:{n:29,c:[4,6,2,7,10]}})',context),false);
+assert.deepEqual(read('leadingReactionIds({c:[5,0,0,0,0]})'),['epic']);
+assert.deepEqual(read('leadingReactionIds({c:[0,0,0,0,0]})'),[]);
+assert.deepEqual(read('leadingReactionIds({c:[2,2,2,2,2]})'),['epic','impressive']);
+assert.deepEqual(read('leadingReactionIds({c:[4,6,2,7,1]})'),['moving','impressive']);
 let stored;context.acct.db={doc:path=>({set:async data=>{stored={path,data}}})};
 (async()=>{
  vm.runInContext('reactionsReady=true',context);
@@ -53,6 +62,6 @@ let stored;context.acct.db={doc:path=>({set:async data=>{stored={path,data}}})};
  assert.equal(await vm.runInContext('toggleReaction("film","funny")',context),false);assert.deepEqual(read('myReactions'),{});
  context.acct.online=false;await vm.runInContext('toggleReaction("film","funny")',context);assert.deepEqual(read('GUEST.reactions'),{film:['funny']});assert.deepEqual(read('reactionTotals'),{});
  assert(!html.includes('data-rate="'));assert(!html.includes('s.avg.toFixed'));assert(!html.includes('st.avg.toFixed'));
- console.log(scripts+' inline scripts parse; reaction multi-select, deduplication, removal, rollback, legacy likes and guest isolation, two-reaction limits and all 15 reaction selections, scoped groups/categories/characters, and shareable routes pass.');
+ console.log(scripts+' inline scripts parse; reaction multi-select, deduplication, removal, rollback, legacy likes and guest isolation, two-reaction limits and all 15 reaction selections, scoped groups/categories/characters, shareable routes and the two most-voted reaction categories pass.');
 })().catch(e=>{console.error(e);process.exitCode=1});
 
