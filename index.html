@@ -1382,7 +1382,7 @@ function renderWatch(){
   $("#main").innerHTML=`${theater?`<div class="theater">${playerHtml}</div>`:""}<div class="watch"><div>
     ${theater?"":playerHtml}
     ${f.seriesId&&findSeries(f.seriesId)?`<button class="serieslink" data-series="${esc(f.seriesId)}">${esc(findSeries(f.seriesId)?.title||"Series")} · Season ${f.season}, Episode ${f.ep}</button>`:""}<h1 class="wtitle" ${f.format==="episode"?'style="margin-top:4px"':""}>${esc(f.title)}${f.real?'<span class="pill">Real</span>':""}${isVerified(f)?'<span class="pill">Verified original</span>':""}</h1>
-    <div class="wbar"><div class="wowner">${(f.real||f.yt||f.tt||f.ig||f.vm||f.dm)?`<button class="owner link" data-creator="${esc(videoCreatorKey(f))}">${cav(byName(f),40)}<div><b>${esc(byName(f)||"YouTube creator")}</b><small>${esc(catName(f.cat))} · ${esc(f.char)}</small></div></button>${f.yt?creatorSubscriptionButton(f):""}`:`<button class="owner link" data-creator="${esc(f.byId||f.by)}">${cav(byName(f),40)}<div><b>${esc(byName(f)||"YouTube creator")}</b><small>${fmtN(followerCount(f.byId||f.by))} followers · ${esc(catName(f.cat))}</small></div></button>`}${(f.real||f.yt||f.tt||f.ig||f.vm||f.dm)?"":`<button class="wfollow ${myFollows[f.byId||f.by]?"on":""}" data-follow="${esc(f.byId||f.by)}">${myFollows[f.byId||f.by]?"Following":"Follow"}</button>`}</div>
+    <div class="wbar"><div class="wowner">${(f.real||f.yt||f.tt||f.ig||f.vm||f.dm)?`<button class="owner link" data-creator="${esc(videoCreatorKey(f))}">${cav(byName(f),40)}<div><b>${esc(byName(f)||"YouTube creator")}</b><small>${esc(catName(f.cat))} · ${esc(f.char)}</small></div></button>${f.yt?creatorSubscriptionButton(f):""}`:`<button class="owner link" data-creator="${esc(f.byId||f.by)}">${cav(byName(f),40)}<div><b>${esc(byName(f)||"YouTube creator")}</b><small>${esc(catName(f.cat))}</small></div></button>`}</div>
       <div class="wbtns"><div class="ratebox" role="group" aria-label="Rate this film"><span>${mine?"Your rating":"Rate"}</span>${[1,2,3,4,5].map(k=>`<button data-rate="${k}" class="${k<=mine?"on":""}" aria-label="${k} stars">★</button>`).join("")}</div><button class="wpill" data-share="${esc(f.id)}">${icon("share")}Share</button><button class="wpill" data-save="${esc(f.id)}">${icon("save")}Save</button><div class="wmore"><button class="wpill wdots" data-wmore="" aria-label="More actions" aria-haspopup="menu"><svg class="i" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.3"/><circle cx="12" cy="12" r="1.3"/><circle cx="19" cy="12" r="1.3"/></svg></button><div class="wmenu" role="menu"><button data-later="${esc(f.id)}">${icon("clock")}${myLater.some(x=>x.id===f.id)?"Remove from Watch later":"Watch later"}</button>${f.real||f.yt||f.tt||f.ig||f.vm||f.dm?"":`<button data-tip="${esc(f.byId||f.by)}" data-tipfilm="${esc(f.id)}">${icon("heart")}Tip the creator</button>`}${f.url?`<a class="wmlink" href="${esc(f.url)}" target="_blank" rel="noopener">${icon("film")}Watch on ${esc(f.src)}</a>`:""}${isVerified(f)?"":`<button data-claimorig="${esc(f.id)}">${icon("shield")}Is this yours?</button>`}<button data-report="${esc(f.id)}">${icon("flag")}Report content</button>${isMod&&f.yt?`<button data-adminhide="${esc(f.id)}">${icon("shield")}Hide from Fanreelz</button>`:""}</div></div></div></div>
     <div class="desc"><div class="top2">${[isMod?viewsOf(f).toLocaleString("en-US")+" views on Fanreelz":"",f.ytViews?f.ytViews.toLocaleString("en-US")+" views on YouTube":""].filter(Boolean).map(x=>x+" · ").join("")}${s.n?`★ ${s.avg.toFixed(1)} from ${s.n.toLocaleString("en-US")} ratings`:"No ratings yet"} · ${f.days==null?"":ago(f.days)+" · "}${esc(f.src)}${f.tool&&f.tool!=="Unknown"?" · made with "+esc(f.tool):""}</div>${datesLine(f)?`<div class="vmeta" style="margin-top:4px">${datesLine(f)}</div>`:""}
       <div class="dist">${[5,4,3,2,1].map(k=>`<span>${k}★</span><span class="bar"><i style="width:${max?s.c[k-1]/max*100:0}%"></i></span><span>${fmtN(s.c[k-1])}</span>`).join("")}</div>
@@ -2174,10 +2174,10 @@ function actOf(uid){const A=adminAct[uid];if(!A||!A.docs)return null;const doc=(
   const rd=doc("ratings");if(rd)ev.push({t:T(rd.data?.t)||T(rd.updated_at),k:"Rated films (latest change)"});
   if(likesDoc)ev.push({t:T(likesDoc.updated_at),k:"Liked (latest change)"});
   const pd=doc("playlists");if(pd)ev.push({t:T(pd.updated_at),k:"Changed playlists",text:(pd.data?.lists||[]).map(l=>l.name).filter(Boolean).join(", ")});
-  const fd=doc("follows");if(fd)ev.push({t:T(fd.updated_at),k:"Changed who they follow"});
+  const fd=doc("follows");if(fd)ev.push({t:T(fd.updated_at),k:"Changed creator subscriptions"});
   ev.sort((a,b)=>b.t-a.t);
   const last=Math.max(0,...A.docs.map(x=>T(x.updated_at)),...ev.map(x=>x.t));
-  return {hist,later,liked,ev:ev.filter(x=>x.t),last,lists:pd?.data?.lists||[],follows:Object.keys(fd?.data?.c||{})}}
+  return {hist,later,liked,ev:ev.filter(x=>x.t),last,lists:pd?.data?.lists||[],follows:Object.keys(fd?.data?.c||{}).filter(key=>!isUid(key))}}
 // tabs on one account: Overview, and its History / Watch later / Liked as film cards, like the account's own pages
 const admTabs=AC=>`<div class="fmtbar" style="margin:4px 0 16px">${[["overview","Overview",""],["history","History",AC?AC.hist.length:""],["later","Watch later",AC?AC.later.length:""],["liked","Liked",AC?AC.liked.length:""]].map(([k,l,n])=>`<button class="${(state.adminTab||"overview")===k?"on":""}" data-admintab="${k}">${l}${n!==""?`<small>${n}</small>`:""}</button>`).join("")}</div>`;
 function renderAdminUser(u){const uid=u.id,d=x=>x?new Date(+x||x).toLocaleString("sv-SE",{dateStyle:"short",timeStyle:"short"}):"–";
@@ -2211,7 +2211,7 @@ function renderAdminUser(u){const uid=u.id,d=x=>x?new Date(+x||x).toLocaleString
     <div class="adm-who"><b>${esc(u.name||names[uid]||"(no name)")} ${earlyBadge(uid)}</b><span>${esc(u.email||"")}</span></div>
     <div class="adm-meta"><span class="chip">${esc(u.provider||"–")}</span><span><b>Last active ${AC&&AC.last?d(AC.last)+" ("+admAgo(AC.last)+")":u.active?d(u.active):"–"}</b></span><span>Last sign-in ${d(u.last)}</span><span>Joined ${d(u.created)}</span><button class="chip" data-user="${esc(uid)}">Public profile</button>${plusIdsAdm?`<button class="chip ${plusIdsAdm.includes(uid)?"on":""}" data-plusset="${esc(uid)}">${plusIdsAdm.includes(uid)?"✦ Plus member (remove)":"Give Plus"}</button>`:""}</div></div>
   ${admTabs(AC)}
-  <div class="adm-cards">${[[comments.length,"comments"],[votes.length,"showdown votes"],[votes.filter(v=>String(v.x||"").trim()).length,"showdown reasons"],[ratings.length,"ratings"],[made.length,"showdowns started"],...(AC?[[AC.hist.length,"films watched"],[AC.liked.length,"films liked"],[AC.later.length,"watch later"],[AC.lists.length,"playlists"],[AC.follows.length,"following"]]:[])].map(([n,l])=>`<div class="adm-card"><b>${n}</b><span>${l}</span></div>`).join("")}</div>
+  <div class="adm-cards">${[[comments.length,"comments"],[votes.length,"showdown votes"],[votes.filter(v=>String(v.x||"").trim()).length,"showdown reasons"],[ratings.length,"ratings"],[made.length,"showdowns started"],...(AC?[[AC.hist.length,"films watched"],[AC.liked.length,"films liked"],[AC.later.length,"watch later"],[AC.lists.length,"playlists"],[AC.follows.length,"creator subscriptions"]]:[])].map(([n,l])=>`<div class="adm-card"><b>${n}</b><span>${l}</span></div>`).join("")}</div>
   <h2 class="sect-h" style="font-size:17px">Activity <small class="vmeta" style="font-weight:500">newest first</small></h2>
   ${AE?`<p class="vmeta" style="color:#ff6b6b">Couldn't load the activity: ${esc(AE)}</p>`:!AC?`<p class="vmeta">Loading activity…</p>`:`<div class="adm-list">${AC.ev.slice(0,state.adminActAll?500:40).map(x=>`<div class="adm-row"><div class="adm-who"><b>${esc(x.k)}${x.film?": "+esc(filmName(x.film)):""}</b>${x.text?`<span>${esc(String(x.text).slice(0,200))}</span>`:""}${x.film?filmLink(x.film):""}</div><div class="adm-meta"><span>${d(x.t)}</span></div></div>`).join("")||`<p class="vmeta">No activity yet.</p>`}</div>${AC.ev.length>40&&!state.adminActAll?`<button class="btn ghost" data-adminactall="" style="margin-top:8px">Show all ${AC.ev.length}</button>`:""}
   <h2 class="sect-h" style="font-size:17px;margin-top:18px">Liked films</h2>
@@ -2518,27 +2518,27 @@ function creatorBadges(key,films){
   if(isExampleCreator(key)&&hnum(key)%5===1)b.push("Contest winner");
   return b.slice(0,4);
 }
-function followerCount(key){const base=isExampleCreator(key)?200+hnum(key)%9000:0;
-  const alias=/^UC[\w-]{22}$/.test(key)?creatorFilms(key)[0]?.by:null;const real=Object.entries(followDocs).filter(([uid,c])=>(c[key]||(alias&&c[alias]))&&uid!==acct.uid).length;return base+real+(creatorFollowing(key)?1:0)}
-const followersOf=key=>Object.entries(followDocs).filter(([uid,c])=>c[key]).map(([uid])=>uid);
-const followingOf=uid=>Object.keys((uid===acct.uid?myFollows:followDocs[uid])||{});
+function creatorSubscriberCount(key){
+  const alias=/^UC[\w-]{22}$/.test(key)?creatorFilms(key)[0]?.by:null;const real=Object.entries(followDocs).filter(([uid,c])=>(c[key]||(alias&&c[alias]))&&uid!==acct.uid).length;return real+(creatorFollowing(key)?1:0)}
 function renderCreator(){
   if(isUid(state.creator)){state.view="user";state.user=state.creator;return renderUser()}
   const key=state.creator;const films=creatorFilms(key);const name=films[0]?byName(films[0]):key;
   const rated=films.filter(f=>stats(f).n);const avg=rated.length?rated.reduce((a,f)=>a+stats(f).avg,0)/rated.length:0;
   const badges=creatorBadges(key,films);const following=creatorFollowing(key);
   $("#main").innerHTML=`<div class="chero">${cav(name,96)}<div class="cinfo"><h1>${esc(name)}</h1>
-     <div class="vmeta">${fmtN(followerCount(key))} subscribers · ${films.length} films${rated.length?` · ★ ${avg.toFixed(1)} average`:""}</div>
+     <div class="vmeta">${fmtN(creatorSubscriberCount(key))} subscribers · ${films.length} films${rated.length?` · ★ ${avg.toFixed(1)} average`:""}</div>
      <div class="row" style="gap:6px;margin-top:6px">${badges.map(b=>`<span class="badge2">${esc(b)}</span>`).join("")}</div>
      <div class="row" style="margin-top:12px"><button class="btn ${following?"ghost":""}" data-follow="${esc(key)}">${following?"✓ Subscribed":"Subscribe"}</button>
        <button class="btn ghost" data-tip="${esc(key)}">${icon("heart")} Tip</button><button class="btn ghost" data-commission="${esc(name)}">Commission a film</button></div></div></div>
    ${creatorClaimButton(films)}
    ${supportersHtml(key)}
    ${creatorContent(key,films)}
-   ${isExampleCreator(key)?`<p class="note">Example creator. Follower counts and badges are made up.</p>`:""}`;
+   ${isExampleCreator(key)?`<p class="note">Example creator. Badges are illustrative.</p>`:""}`;
   loadCreatorOwner(films);
 }
 async function toggleFollow(key){
+  // Member-to-member following is retired; this storage now serves creator subscriptions only.
+  if(isUid(key))return;
   if(!needAccount("Sign in to subscribe to creators on Fanreelz."))return;
   const next={...myFollows},alias=/^UC[\w-]{22}$/.test(key)?creatorFilms(key)[0]?.by:null,was=creatorFollowing(key);if(alias)delete next[alias];if(was)delete next[key];else next[key]=true;
   if(await writeOwn("follows",{c:next})){myFollows=next;render();toast(next[key]?"Subscribed":"Unsubscribed")}
@@ -2612,7 +2612,7 @@ function renderDiscord(){
      <div class="cm-embed"><b>Top AI fan films</b>${top.map((f,i)=>`<div class="cm-row"><span class="rk">${i+1}</span><span>${esc(f.title)}<br><small class="vmeta">${f.ytViews?fmtN(f.ytViews)+" views":esc(byName(f)||"")}</small></span></div>`).join("")}<small class="vmeta">Fanreelz · the home of AI fan films</small></div></div></div></div>`;
 }
 
-/* ---------- A member's public profile: liked videos, playlists, following, followers ---------- */
+/* ---------- A member's public profile: liked videos, videos and playlists ---------- */
 const isUid=k=>/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(k||""));
 function renderUser(){
   const uid=state.user,me=uid===acct.uid,name=cname(uid);
@@ -2621,20 +2621,16 @@ function renderUser(){
   const liked=Object.entries(ratingsBy[uid]||{}).filter(([,r])=>r>=4).map(([id])=>findFilm(id)).filter(Boolean);
   const vids=creatorFilms(uid);
   const lists=Array.isArray(plDocs[uid]?.lists)?plDocs[uid].lists:[];
-  const following=followingOf(uid),followers=followersOf(uid),iFollow=!!myFollows[uid];
   const nComments=Array.isArray(commentDocs[uid]?.items)?commentDocs[uid].items.length:0;
-  const tab=state.utab||"liked";
-  const tabs=[["liked",`Liked videos`,liked.length],["videos","Videos",vids.length],["playlists","Playlists",lists.length],["following","Following",following.length],["followers","Followers",followers.length]];
-  const personRow=k=>{const isU=isUid(k);return `<button ${isU?`data-user="${esc(k)}"`:`data-creator="${esc(k)}"`}>${isU?uav(k):cav(k)}<span>${esc(isU?cname(k):k)}</span></button>`};
+  const tab=["liked","videos","playlists"].includes(state.utab)?state.utab:"liked";
+  const tabs=[["liked",`Liked videos`,liked.length],["videos","Videos",vids.length],["playlists","Playlists",lists.length]];
   let body="";
   if(tab==="liked")body=liked.length?moreGrid("grid",liked,f=>card(f)):`<div class="empty">${me?"Films you rate 4 or 5 stars show up here.":"No liked videos yet."}</div>`;
   if(tab==="videos")body=vids.length?moreGrid("grid",vids,f=>card(f)):`<div class="empty">${me?"Films you submit show up here.":"No videos yet."}</div>`;
   if(tab==="playlists")body=(me?`<button class="btn" data-view="playlists" style="margin-bottom:16px">Manage your playlists</button>`:"")+(lists.length?`<div class="plgrid">${lists.map(l=>listCard(l,me)).join("")}</div>`:`<div class="empty">No playlists yet.</div>`);
-  if(tab==="following")body=following.length?`<div class="ulist">${following.map(personRow).join("")}</div>`:`<div class="empty">Not following anyone yet.</div>`;
-  if(tab==="followers")body=followers.length?`<div class="ulist">${followers.map(personRow).join("")}</div>`:`<div class="empty">No followers yet.</div>`;
   $("#main").innerHTML=`<div class="uhero">${uav(uid,96)}<div><h1>${esc(name)} ${earlyBadge(uid)}</h1>
-     <div class="ustats"><span><b>${fmtN(followers.length)}</b> followers</span><span><b>${fmtN(following.length)}</b> following</span><span><b>${liked.length}</b> liked</span><span><b>${nComments}</b> comments</span></div>
-     <div class="row" style="margin-top:12px">${me?`<button class="btn ghost" data-you="you">Your library</button>`:`<button class="btn ${iFollow?"ghost":""}" data-follow="${esc(uid)}">${iFollow?"✓ Following":"Follow"}</button>`}
+     <div class="ustats"><span><b>${liked.length}</b> liked</span><span><b>${nComments}</b> comments</span></div>
+     <div class="row" style="margin-top:12px">${me?`<button class="btn ghost" data-you="you">Your library</button>`:""}
      ${safetyButtons(uid)}<button class="btn ghost" data-copylink="https://fanreelz.com/u/${esc(uid)}">${icon("share")} Share profile</button></div></div></div>
    <div class="utabs" role="tablist">${tabs.map(([k,l,n])=>`<button role="tab" aria-selected="${tab===k}" class="${tab===k?"on":""}" data-utab="${k}">${l} <span class="vmeta">${n}</span></button>`).join("")}</div>${body}`;
 }
@@ -3109,7 +3105,7 @@ function renderShorts(){setTimeout(()=>{if(!spSw)document.querySelectorAll(".spp
    ${spRailOut(f,s,mine)}
    <div class="sparrows"><button class="sparrow" data-snav="-1" aria-label="Previous short" ${state.shortI===0?"disabled":""}><svg viewBox="0 0 24 24"><path d="M6 15l6-6 6 6"/></svg></button><button class="sparrow" data-snav="1" aria-label="Next short"><svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></button></div>
    <div class="sside">
-     ${(f.real||f.yt||f.tt||f.ig||f.vm||f.dm)?`<button class="owner link" data-creator="${esc(videoCreatorKey(f))}">${cav(byName(f),40)}<div><b>${esc(byName(f)||"YouTube creator")}</b><small>${f.days==null?"on "+esc(f.src):ago(f.days)}</small></div></button>${f.yt?creatorSubscriptionButton(f):""}`:`<button class="owner link" data-creator="${esc(f.byId||f.by)}">${cav(byName(f),40)}<div><b>${esc(byName(f)||"YouTube creator")}</b><small>${fmtN(followerCount(f.byId||f.by))} followers</small></div></button>`}
+     ${(f.real||f.yt||f.tt||f.ig||f.vm||f.dm)?`<button class="owner link" data-creator="${esc(videoCreatorKey(f))}">${cav(byName(f),40)}<div><b>${esc(byName(f)||"YouTube creator")}</b><small>${f.days==null?"on "+esc(f.src):ago(f.days)}</small></div></button>${f.yt?creatorSubscriptionButton(f):""}`:`<button class="owner link" data-creator="${esc(f.byId||f.by)}">${cav(byName(f),40)}<div><b>${esc(byName(f)||"YouTube creator")}</b><small>${esc(catName(f.cat))}</small></div></button>`}
      <b class="sside-t">${esc(f.title)}</b>
      <div class="vmeta">${viewTxt(f)}${s.n?`★ ${s.avg.toFixed(1)} from ${fmtN(s.n)} ratings`:"No ratings yet"}${[catName(f.cat),f.char].filter(Boolean).map(x=>" · "+esc(x)).join("")}</div>
      <div class="row" style="gap:10px;flex-wrap:wrap"><div class="ratebox" role="group" aria-label="Rate this short"><span>${mine?"Your rating":"Rate"}</span>${[1,2,3,4,5].map(k=>`<button data-rate="${k}" class="${k<=mine?"on":""}" aria-label="${k} stars">★</button>`).join("")}</div>
