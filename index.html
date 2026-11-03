@@ -79,6 +79,12 @@ html{color-scheme:dark}:root{padding-top:env(safe-area-inset-top,0px);padding-bo
 .library-empty{display:flex;gap:14px;align-items:center;padding:22px;border:1px solid var(--line);border-radius:12px;color:var(--muted);min-height:92px}
 .library-empty .i{width:27px;height:27px;flex:none;opacity:.7}.library-empty p{margin:0;font-size:14px;line-height:1.6}
 .library-empty h3{font-size:15px;color:var(--fg);margin:0 0 4px}.library-page button:focus-visible,.library-page a:focus-visible,.library-row:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+.library-row.subrow{grid-auto-columns:120px;gap:14px}
+.subchip{display:flex;flex-direction:column;align-items:center;gap:6px;background:none;border:0;color:inherit;font:inherit;cursor:pointer;text-align:center;padding:6px;border-radius:12px;text-decoration:none;min-width:0}
+.subchip:hover{background:var(--chip)}.subchip b{font-size:14px;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.subchip small{color:var(--muted);font-size:12px}
+.sublist{display:flex;flex-direction:column;gap:6px;margin:14px 0 26px}
+.subitem{display:flex;align-items:center;justify-content:space-between;gap:12px}.subitem .subchip{flex-direction:row;text-align:left;flex:1;min-width:0}.subitem .subchip span{display:flex;flex-direction:column;min-width:0}
+.ratepick{border:1px solid var(--line,rgba(127,127,127,.3));border-radius:12px;padding:8px 12px;margin:0;display:flex;flex-direction:column;gap:6px}.ratepick legend{padding:0 4px;font-size:13px;color:var(--muted)}.ratepick .chk{display:flex;align-items:center;gap:8px}
 @media(min-width:1600px){.library-row{grid-auto-columns:calc((100% - 60px)/4)}}
 @media(min-width:2300px){.library-row{grid-auto-columns:calc((100% - 80px)/5)}}
 @media(max-width:1100px) and (min-width:861px){.library-row{grid-auto-columns:calc((100% - 20px)/2)}}
@@ -1426,7 +1432,7 @@ function card(f,rank){
 
 function renderTabbar(){
   const t=(on,attr,ic,label)=>`<button class="tb ${on?"on":""}" ${attr} aria-label="${label}">${icon(ic)}<span>${label}</span></button>`;
-  const youOn=["you","history","later","liked","yourvideos","user","playlists"].includes(state.view);
+  const youOn=["you","history","later","liked","yourvideos","subscriptions","user","playlists"].includes(state.view);
   $("#tabbar").innerHTML=t(state.view==="home"&&!state.cat&&state.feed==="home"&&!state.q,'data-feed="home"',"home","Home")+
     t(state.view==="shorts",'data-tabshorts=""',"short","Shorts")+
     `<button class="tb tbplus" id="submitBtn2b" aria-label="Submit a film"><svg class="i" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button>`+
@@ -1493,7 +1499,7 @@ function renderGuide(){renderTabbar();
     (REACTION_FILTER_PUBLIC||isMod?`<a class="gi ${state.view==="reactions"?"on":""}" href="${esc(reactionBrowsePath([],"all",currentReactionScope()))}" data-rx-combo=""${reactionScopeAttrs(currentReactionScope())}>${icon("heart")}<span>Browse by reaction</span></a>`:"")+
     `<button class="gi ${state.view==="insights"?"on":""}" data-view="insights">${icon("trend")}<span>Insights <small class="plustag">PLUS</small></span></button>`+installNav+`<hr>`+
     `<button class="gi youhead ${state.view==="you"?"on":""}" data-view="you"><span>You</span><svg class="i" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></button>`+
-    [["channel","Creator page","user"],["history","History","clock"],["later","Watch later","clock"],["liked","Liked videos","like"],["yourvideos","Your videos","film"]]
+    [["channel","Creator page","user"],["subscriptions","Subscriptions","list"],["history","History","clock"],["later","Watch later","clock"],["liked","Liked videos","like"],["yourvideos","Your videos","film"]]
       .map(([v,l,ic])=>`<button class="gi ${state.view===v||(v==="channel"&&state.view==="user"&&state.user===acct.uid)?"on":""}" data-you="${v}">${icon(ic)}<span>${l}</span></button>`).join("")+
     fi("mine","Your reactions","mine")+(isMod?`<button class="gi ${state.view==="admin"?"on":""}" data-view="admin">${icon("shield")}<span>Accounts (admin)</span></button>`:"")+`<hr>`+
     `<button class="gi ${state.view==="live"?"on":""}" data-view="live">${icon("live")}<span>Live now</span>${LIVE.length?`<span class="livecount">${LIVE.length}</span>`:""}</button>`+[["premieres","Premieres","prem"],["tv","Fanreelz TV","tv"]].map(([v,l,ic])=>`<button class="gi ${state.view===v?"on":""}" data-view="${v}">${icon(ic)}<span>${l}</span></button>`).join("")+
@@ -2580,7 +2586,7 @@ function allRequests(){
   const list=REQ_SEED.map(r=>({...r,example:true}));
   for(const [uid,d] of Object.entries(reqDocs))for(const r of (Array.isArray(d.items)?d.items:[])){
     if(safetyBlocked(uid)||!r||typeof r.title!=="string"||!CATS.some(c=>c.id===r.cat))continue;
-    list.push({id:String(r.id),title:r.title.slice(0,140),cat:r.cat,topic:String(r.topic||"").slice(0,60),char:String(r.char||""),note:String(r.note||"").slice(0,300),forCreator:String(r.forCreator||""),votes:0,t:+r.t||Date.now(),claimedBy:[],byId:uid});}
+    list.push({id:String(r.id),title:r.title.slice(0,140),cat:r.cat,topic:String(r.topic||"").slice(0,60),char:String(r.char||""),note:String(r.note||"").slice(0,300),forCreator:String(r.forCreator||""),rate:r.rate&&typeof r.rate.label==="string"&&+r.rate.price>0?{label:r.rate.label.slice(0,60),price:Math.round(+r.rate.price)}:null,votes:0,t:+r.t||Date.now(),claimedBy:[],byId:uid});}
   const up={},cl={};
   for(const [uid,d] of Object.entries(upDocs))for(const id of Object.keys(d.ids||{}))if(d.ids[id])up[id]=(up[id]||0)+1;
   for(const [uid,d] of Object.entries(claimDocs))for(const id of Object.keys(d.ids||{}))if(d.ids[id])(cl[id]||(cl[id]=[])).push(uid);
@@ -2603,25 +2609,29 @@ function renderRequests(){
      <div class="rbody"><h3>${esc(r.title)}</h3>
        <div class="vmeta">${esc(r.topic||catName(r.cat))}${r.char&&r.char!==r.topic?" · "+esc(r.char):""} · ${ago(daysSince(r.t))}${r.byId?` · by ${esc(r.byId===acct.uid?"you":(names[r.byId]||"a Fanreelz member"))}`:""}</div>
        ${r.note?`<p class="rnote">${esc(r.note)}</p>`:""}
-       <div class="row" style="gap:8px">${r.forCreator?`<span class="pill">Commission for ${esc(r.forCreator)}</span>`:""}${r.madeFilm?'<span class="pill">Made</span>':""}${r.claimers.length?`<span class="vmeta">Claimed by ${esc(r.claimers.join(", "))}</span>`:""}</div></div>
+       <div class="row" style="gap:8px">${r.forCreator?`<span class="pill">Commission for ${esc(r.forCreator)}${r.rate?` · ${esc(r.rate.label)} · ${fmtKr(r.rate.price)}`:""}</span>`:""}${r.madeFilm?'<span class="pill">Made</span>':""}${r.claimers.length?`<span class="vmeta">Claimed by ${esc(r.claimers.join(", "))}</span>`:""}</div></div>
      <button class="remind ${cl[r.id]?"on":""}" data-claim="${esc(r.id)}">${cl[r.id]?"✓ You're making it":"I'll make it"}</button></div>`).join(""):`<div class="empty">No requests here yet.</div>`}</div>
    <p class="note">The requests already on the list are made-up examples. New ones you post are shared with everyone who can open this page.</p>`;
 }
-function openRequest(forCreator){
+function openRequest(forCreator,ckey){
+  const rates=ckey?commissionRates(rateKeyFor(ckey)):[];let pick=0;
   if(!needAccount("Sign in to request a film."))return;
   openModal(`<div class="dlg" role="dialog" aria-modal="true" aria-label="Request a film"><h2>${forCreator?"Commission "+esc(forCreator):"Request a film"}</h2>
-    ${forCreator?`<p class="vmeta" style="margin:0">Your request goes to ${esc(forCreator)} and shows under Commissions. In the finished site the creator would reply with a price.</p>`:""}
+    ${forCreator?`<p class="vmeta" style="margin:0">Your request goes to ${esc(forCreator)} and shows under Commissions.${rates.length?"":` ${esc(forCreator)} hasn't set commission prices yet, so they can reply with a price.`}</p>`:""}
+    ${rates.length?`<fieldset class="ratepick"><legend>Pick a film length</legend>${rates.map((x,i)=>`<label class="chk"><input type="radio" name="rRate" value="${i}" ${i===0?"checked":""}> <span>${esc(x.label)}</span> <b style="margin-left:auto">${fmtKr(x.price)}</b></label>`).join("")}</fieldset><div class="split" id="rSplit"></div>`:""}
     <form class="form" id="rf"><label for="rTitle">What should the film be about?<input id="rTitle" required maxlength="140" placeholder="e.g. Crystal Maiden origin story"></label>
     ${catFields("r",state.cat)}
     <label for="rNote">Details (optional)<input id="rNote" maxlength="300" placeholder="Tone, length, scenes you want"></label>
-    <div class="row"><button class="btn" type="submit" id="rGo">Post request</button><button class="btn ghost" type="button" data-close>Cancel</button></div></form></div>`);
+    <div class="row"><button class="btn" type="submit" id="rGo">${rates.length?"Send commission (demo)":forCreator?"Send commission":"Post request"}</button><button class="btn ghost" type="button" data-close>Cancel</button></div>
+    ${rates.length?`<p class="subnote">Prototype: no payment is taken and no money moves. The real site would charge the card through Stripe Connect when the creator accepts, and pay the creator when the film is delivered.</p>`:""}</form></div>`);
   wireCatFields("r");
+  if(rates.length){const upd=()=>{pick=+(document.querySelector('[name="rRate"]:checked')?.value||0);$("#rSplit").innerHTML=commissionSplitHtml(forCreator,rates[pick].price)};document.querySelectorAll('[name="rRate"]').forEach(i=>i.onchange=upd);upd()}
   $("#rf").onsubmit=async e=>{e.preventDefault();const cc=readCatFields("r");
     if(badText($("#rTitle").value,cc.topic,cc.char,$("#rNote").value)){toast(BAD_MSG);return}
     $("#rGo").disabled=true;
     const mine=Array.isArray(reqDocs[acct.uid]?.items)?reqDocs[acct.uid].items:[];
-    const r={id:"q"+Date.now().toString(36)+Math.random().toString(36).slice(2,5),title:$("#rTitle").value.trim(),cat:cc.cat,char:cc.char,...(cc.topic?{topic:cc.topic}:{}),note:$("#rNote").value.trim(),t:Date.now(),forCreator:forCreator||""};
-    if(await writeOwn("requests",{items:[r,...mine].slice(0,100)})){closeModal();reqSort=forCreator?"commissions":"new";go({view:"requests"});toast(forCreator?"Commission sent":"Request posted")}else $("#rGo").disabled=false};
+    const r={id:"q"+Date.now().toString(36)+Math.random().toString(36).slice(2,5),title:$("#rTitle").value.trim(),cat:cc.cat,char:cc.char,...(cc.topic?{topic:cc.topic}:{}),note:$("#rNote").value.trim(),t:Date.now(),forCreator:forCreator||"",...(ckey?{forKey:rateKeyFor(ckey)}:{}),...(rates.length?{rate:rates[pick],demo:true}:{})};
+    if(await saveRequestsDoc({items:[r,...mine].slice(0,100)})){closeModal();reqSort=forCreator?"commissions":"new";go({view:"requests"});toast(forCreator?"Commission sent":"Request posted")}else $("#rGo").disabled=false};
 }
 async function toggleMap(col,docs,id,label){
   if(!needAccount(label))return;
@@ -2721,8 +2731,9 @@ function renderCreator(){
      <div class="vmeta">${fmtN(creatorSubscriberCount(key))} subscribers · ${films.length} films${rated.length?` · ${fmtN(rated.reduce((n,f)=>n+stats(f).n,0))} reactions`:""}</div>
      <div class="row" style="gap:6px;margin-top:6px">${badges.map(b=>`<span class="badge2">${esc(b)}</span>`).join("")}</div>
      <div class="row" style="margin-top:12px"><button class="btn ${following?"ghost":""}" data-follow="${esc(key)}">${following?"✓ Subscribed":"Subscribe"}</button>
-       <button class="btn ghost" data-tip="${esc(key)}">${icon("heart")} Tip</button><button class="btn ghost" data-commission="${esc(name)}">Commission a film</button></div></div></div>
+       <button class="btn ghost" data-tip="${esc(key)}">${icon("heart")} Tip</button><button class="btn ghost" data-commission="${esc(key)}">${commissionLabel(key)}</button></div></div></div>
    ${creatorClaimButton(films)}
+   ${commissionPricesHtml(key)}
    ${supportersHtml(key)}
    ${creatorContent(key,films)}
    ${isExampleCreator(key)?`<p class="note">Example creator. Badges are illustrative.</p>`:""}`;
@@ -2781,6 +2792,74 @@ function openTip(key,filmId){
     const t={to:key,amt,msg:$("#tipMsg").value.trim().slice(0,140),show:$("#tipShow").checked,film:filmId||"",t:Date.now(),demo:true};
     if(await writeOwn("tips",{items:[t,...mine].slice(0,200)})){tipDocs[acct.uid]={items:[t,...mine]};closeModal();toast(`Demo tip of ${amt} kr recorded. No money was moved.`);render()}
   };
+}
+
+/* ---------- Commission prices: the creator sets their own rows (e.g. "2 min short – 300 kr"); stored in their requests doc ---------- */
+const creatorOwnerIds={};
+function setCreatorOwner(channelId,uid){if(!channelId||!uid||creatorOwnerIds[channelId]===uid)return;creatorOwnerIds[channelId]=uid;if(state.view==="creator"||state.view==="user")render()}
+function rateKeyFor(key){if(isUid(key))return key;return creatorFilms(key).find(f=>f.channelId)?.channelId||key}
+function commissionOwner(rk){return isUid(rk)?rk:creatorOwnerIds[rk]||null}
+const fmtKr=n=>fmtN0(n)+" kr";
+function fmtN0(n){return Math.round(+n||0).toLocaleString("sv-SE")}
+function cleanRates(list){return (Array.isArray(list)?list:[]).filter(x=>x&&typeof x.label==="string"&&x.label.trim()&&+x.price>0).slice(0,12).map(x=>({label:x.label.trim().slice(0,60),price:Math.min(1000000,Math.round(+x.price))}))}
+function commissionRates(rk){const o=commissionOwner(rk);if(!o||safetyBlocked(o))return [];return cleanRates(reqDocs[o]?.rates?.[rk])}
+function canSetRates(key){const rk=rateKeyFor(key);return !!(acct.online&&acct.uid&&commissionOwner(rk)===acct.uid)}
+function commissionLabel(key){const r=commissionRates(rateKeyFor(key));return r.length?`Commission a film · from ${fmtKr(Math.min(...r.map(x=>x.price)))}`:"Commission a film"}
+function commissionPricesHtml(key){
+  const rk=rateKeyFor(key),r=commissionRates(rk),mine=canSetRates(key);if(!r.length&&!mine)return "";
+  return `<section class="supp"><h2 class="sect-h" style="font-size:16px">${icon("film")} Commission prices</h2>
+    ${r.length?`<div class="azlist">${r.map(x=>`<div class="azrow" style="cursor:default"><span class="aztitle">${esc(x.label)}</span><b>${fmtKr(x.price)}</b></div>`).join("")}</div>`:`<p class="vmeta">You haven't set any prices yet. Fans can still send you commission requests.</p>`}
+    ${mine?`<button class="btn ghost" style="margin-top:10px" data-setrates="${esc(key)}">${r.length?"Edit prices":"Set your prices"}</button>`:""}</section>`;
+}
+function commissionSplitHtml(name,amt){const fee=amt*TIP_FEE,pay=Math.min(amt,stripeEst(amt)),net=Math.max(0,amt-fee-pay),pc=x=>amt?(x/amt*100):0;
+  return `<div class="splitbar" aria-hidden="true"><i style="width:${pc(net)}%;background:var(--accent)"></i><i style="width:${pc(fee)}%;background:var(--star)"></i><i style="width:${pc(pay)}%;background:var(--muted)"></i></div>
+    <div class="sr"><span><i class="dot" style="background:var(--accent)"></i>${esc(name)} receives</span><b>${kr(net)}</b></div>
+    <div class="sr"><span><i class="dot" style="background:var(--star)"></i>Fanreelz fee (${Math.round(TIP_FEE*100)}%)</span><span>${kr(fee)}</span></div>
+    <div class="sr"><span><i class="dot" style="background:var(--muted)"></i>Card processing (about 1.5% + 1.80 kr)</span><span>${kr(pay)}</span></div>
+    <div class="sr total"><span>You'd pay</span><span>${kr(amt)}</span></div>`}
+function openCommission(key){const name=isUid(key)?cname(key):creatorName(key);openRequest(name,key)}
+async function saveRequestsDoc(patch){const cur=reqDocs[acct.uid]||{};const next={items:Array.isArray(cur.items)?cur.items:[],...(cur.rates&&typeof cur.rates==="object"?{rates:cur.rates}:{}),...patch};
+  if(await writeOwn("requests",next)){reqDocs[acct.uid]=next;return true}return false}
+function openRates(key){
+  if(!needAccount("Sign in to set your prices."))return;if(!canSetRates(key)){toast("Only the verified owner of this creator page can set prices.");return}
+  const rk=rateKeyFor(key);let rows=commissionRates(rk);if(!rows.length)rows=[{label:"",price:""}];
+  const rowHtml=(x,i)=>`<div class="row raterow" style="gap:8px;flex-wrap:nowrap"><input data-rlabel="${i}" maxlength="60" placeholder="e.g. 2 min film" value="${esc(x.label)}" aria-label="Length or description" style="flex:2;min-width:0"><input data-rprice="${i}" type="number" min="1" max="1000000" step="1" inputmode="numeric" placeholder="kr" value="${esc(String(x.price))}" aria-label="Price in kronor" style="flex:1;min-width:0"><button class="btn ghost" type="button" data-rdel="${i}" aria-label="Remove row">✕</button></div>`;
+  const read=()=>rows.map((_,i)=>({label:document.querySelector(`[data-rlabel="${i}"]`)?.value||"",price:document.querySelector(`[data-rprice="${i}"]`)?.value||""}));
+  const paint=()=>{$("#rateRows").innerHTML=rows.map(rowHtml).join("")};
+  openModal(`<div class="dlg" role="dialog" aria-modal="true" aria-label="Commission prices"><h2>Your commission prices</h2>
+    <p class="vmeta" style="margin:0">Add one row for each kind of film you take on, for example "2 min film", "10 min episode" or "1 hour feature", and your price in kronor. Fans pick a row when they commission you. Leave it empty to only take requests.</p>
+    <form class="form" id="rateForm"><div id="rateRows" style="display:flex;flex-direction:column;gap:8px"></div>
+    <button class="btn ghost" type="button" data-radd="">+ Add row</button>
+    <div class="row"><button class="btn" type="submit">Save prices</button><button class="btn ghost" type="button" data-close>Cancel</button></div>
+    <p class="subnote">Prototype: no payments are taken yet. Fanreelz's fee would be ${Math.round(TIP_FEE*100)}% plus card processing.</p></form></div>`,
+    e=>{if(e.target.closest("[data-radd]")){rows=read();if(rows.length<12){rows.push({label:"",price:""});paint();document.querySelector(`[data-rlabel="${rows.length-1}"]`)?.focus()}else toast("Up to 12 rows");return}
+      const d=e.target.closest("[data-rdel]");if(d){rows=read();rows.splice(+d.dataset.rdel,1);if(!rows.length)rows=[{label:"",price:""}];paint()}});
+  paint();
+  $("#rateForm").onsubmit=async e=>{e.preventDefault();const raw=read().filter(x=>x.label.trim()||String(x.price).trim());
+    if(raw.some(x=>!x.label.trim()||!(+x.price>0))){toast("Each row needs a description and a price above 0 kr");return}
+    if(badText(...raw.map(x=>x.label))){toast(BAD_MSG);return}
+    const list=cleanRates(raw),cur=reqDocs[acct.uid]?.rates&&typeof reqDocs[acct.uid].rates==="object"?{...reqDocs[acct.uid].rates}:{};
+    if(list.length)cur[rk]=list;else delete cur[rk];
+    if(await saveRequestsDoc({rates:cur})){closeModal();toast(list.length?"Prices saved":"Prices removed");render()}};
+}
+
+/* ---------- Subscriptions: creators you subscribe to on Fanreelz ---------- */
+function mySubscriptionKeys(){return Object.keys(myFollows).filter(k=>myFollows[k]&&!isUid(k))}
+function subscriptionCreators(){const seen=new Set(),out=[];
+  for(const key of mySubscriptionKeys()){const films=creatorFilms(key);const name=films[0]?byName(films[0]):key;const id=films.find(f=>f.channelId)?.channelId||key;if(seen.has(id))continue;seen.add(id);out.push({key,name,films})}
+  return out.sort((a,b)=>a.name.localeCompare(b.name))}
+function subscriptionFilms(list){const seen=new Set(),all=[];for(const c of list)for(const f of c.films)if(!seen.has(f.id)){seen.add(f.id);all.push(f)}
+  return all.sort((a,b)=>(a.days??1e9)-(b.days??1e9))}
+function subscriptionsShelf(){const list=subscriptionCreators();
+  return `<section class="library-section"><div class="library-heading"><div><h2>Subscriptions</h2><p class="library-count">${list.length} ${list.length===1?"creator":"creators"}</p></div><div class="library-actions"><button class="library-pill" data-you="subscriptions">View all</button></div></div>
+    ${list.length?`<div class="library-row subrow" role="region" aria-label="Your subscriptions" tabindex="0">${list.slice(0,24).map(c=>`<button class="subchip" data-creator="${esc(c.key)}">${cav(c.name,64)}<b>${esc(c.name)}</b><small>${c.films.length} ${c.films.length===1?"film":"films"}</small></button>`).join("")}</div>`:libraryEmpty("No subscriptions yet","Press Subscribe on a creator's page and they show up here.","user")}</section>`}
+function renderSubscriptions(){
+  if(!acct.online){$("#main").innerHTML=`<div class="about"><h1 class="ab-h">Subscriptions</h1><p class="ab-lede">Sign in to see the creators you subscribe to.</p><button class="btn" id="signinBtn">Sign in</button></div>`;return}
+  const list=subscriptionCreators(),films=subscriptionFilms(list);
+  $("#main").innerHTML=`<div class="wbar" style="margin-top:16px"><h1 class="sect-h" style="font-size:24px;margin:0">${icon("user")} Subscriptions</h1><span class="vmeta">${list.length} ${list.length===1?"creator":"creators"}</span></div>
+   ${list.length?`<div class="sublist">${list.map(c=>`<div class="subitem"><button class="subchip" data-creator="${esc(c.key)}">${cav(c.name,56)}<span><b>${esc(c.name)}</b><small>${fmtN(creatorSubscriberCount(c.key))} subscribers · ${c.films.length} ${c.films.length===1?"film":"films"}</small></span></button><button class="btn ghost" data-follow="${esc(c.key)}">✓ Subscribed</button></div>`).join("")}</div>
+   <h2 class="sect-h">${icon("fresh")} Latest from your subscriptions</h2>${films.length?moreGrid("grid",films,f=>card(f)):`<div class="empty">No films from these creators yet.</div>`}`
+   :`<div class="empty">You don't subscribe to any creators yet. Press Subscribe on a creator's page and their films show up here.</div>`}`;
 }
 
 /* ---------- Originals ---------- */
@@ -2881,6 +2960,7 @@ function renderYou(){
  if(!acct.online){$("#main").innerHTML=`<div class="library-page"><div class="library-profile"><div><h1>Your library</h1><p class="library-byline">Your history, saved videos and playlists, all in one place.</p><button class="library-pill" id="signinBtn">Sign in</button></div></div>${youShelf("History on this browser","history",filmsOf(myHistory),"Start watching and your recent videos will appear here.")}</div>`;requestAnimationFrame(syncLibraryArrows);return}
  const me=acct.me||{},profile=pathFor({view:"user",user:acct.uid,utab:"videos"});
  $("#main").innerHTML=`<div class="library-page"><header class="library-profile"><img src="${esc(me.avatarUrl||initialAvatar(me.name||"Fan"))}" alt="" referrerpolicy="no-referrer"><div><h1>${esc(me.name||"Your library")}</h1><p class="library-byline"><span>Your personal library</span><span aria-hidden="true">·</span><a href="${esc(profile)}" data-fr-link data-you="channel">View your creator page</a></p><div class="library-profile-actions"><button class="library-pill" data-library-account="switch">${icon("user")} Switch account</button><button class="library-pill" data-library-account="profile">${icon("user")} Your account</button></div></div></header>`+
+ subscriptionsShelf()+
  youShelf("History","history",filmsOf(myHistory),"Videos you watch will appear here, ready to find again.")+
  libraryPlaylists()+
  youShelf("Watch later","later",filmsOf(myLater),"Save a video to Watch later and find it here.")+
@@ -4191,7 +4271,7 @@ function renderInner(){
   renderWho();renderGuide();
   clearInterval(ticker);ticker=null;tvNow=null;
   if(state.view!=="shorts")document.querySelectorAll(".sppeek").forEach(x=>x.remove());
-  ({insights:renderInsights,watch:renderWatch,browse:renderBrowse,reactions:renderReactionBrowse,live:renderLive,liveplay:renderLivePlay,premieres:renderPremieres,tv:renderTV,battles:renderBattles,showdown:renderShowdown,creators:renderCreatorRankings,top10:renderTop10,admin:renderAdmin,requests:renderRequests,contest:renderContest,playlists:renderPlaylists,creator:renderCreator,discord:renderDiscord,about:renderAbout,user:renderUser,you:renderYou,history:renderYouList,later:renderYouList,liked:renderYouList,yourvideos:renderYouList,shorts:renderShorts,series:renderSeries}[state.view]||renderHomeF)();
+  ({insights:renderInsights,watch:renderWatch,browse:renderBrowse,reactions:renderReactionBrowse,live:renderLive,liveplay:renderLivePlay,premieres:renderPremieres,tv:renderTV,battles:renderBattles,showdown:renderShowdown,creators:renderCreatorRankings,top10:renderTop10,admin:renderAdmin,requests:renderRequests,contest:renderContest,playlists:renderPlaylists,creator:renderCreator,discord:renderDiscord,about:renderAbout,user:renderUser,you:renderYou,history:renderYouList,later:renderYouList,liked:renderYouList,yourvideos:renderYouList,subscriptions:renderSubscriptions,shorts:renderShorts,series:renderSeries}[state.view]||renderHomeF)();
   paintAll();armMore();try{instBar()}catch(e){}
   document.querySelectorAll(".cmform").forEach(fm=>{const k=fm.dataset.cparent;const ta=fm.querySelector("textarea");if(drafts[k])ta.value=drafts[k];if(focusKey===k){ta.focus();ta.setSelectionRange(ta.value.length,ta.value.length)}});
   if(state.view==="premieres")ticker=setInterval(tickPremieres,1000);
@@ -4203,7 +4283,7 @@ function renderInner(){
 const NAVKEYS=["reactionSecond","reactionGroup","reactionCat","reactionChar","reactionFilter","reactionFormat","genre","sdur","sort","user","utab","view","feed","group","cat","char","q","film","format","dur","series","season","creator","shortList","shortI","bgroup","ctab","tv","lore"];
 const navSnap=()=>JSON.parse(JSON.stringify(Object.fromEntries(NAVKEYS.map(k=>[k,state[k]]))));
 /* Every page gets its own address (fanreelz.com/film/…, /shorts/…, /about …) so links can be shared and reloaded. */
-const PAGES=["reactions","creators","insights","admin","top10","showdown","you","history","later","liked","yourvideos","about","live","premieres","tv","battles","requests","contest","playlists","discord","browse"];
+const PAGES=["reactions","creators","insights","admin","top10","showdown","you","history","later","liked","yourvideos","subscriptions","about","live","premieres","tv","battles","requests","contest","playlists","discord","browse"];
 function reactionInlineView(st){return ["home","browse","creator"].includes(st.view||"home")||st.view==="user"&&st.utab==="videos"}
 function pathFor(st){
  const base=pathBaseFor(st);if(!reactionInlineView(st))return base;
@@ -4323,10 +4403,11 @@ function openProfile(){
   const rated=Object.keys(myReactions).filter(id=>findFilm(id));
   openModal(`<div class="dlg" role="dialog" aria-modal="true" aria-label="Your profile"><div class="row"><img class="avatar" id="pAv" alt="" style="width:48px;height:48px"><h2 id="pName"></h2></div>
     <div class="vmeta">${rated.length} films reacted to · ${mySubs.length} submitted · signed in with ${sb?(acct.me.provider==="discord"?"Discord":acct.me.provider==="google"?"Google":"your account"):"your Claude account"}</div>
-    <div class="row"><button class="btn ghost" data-user="${esc(acct.uid)}">Your profile</button><button class="btn ghost" data-myratings>Your reactions</button>${sb?`<button class="btn ghost" data-switch>Switch account</button><button class="btn ghost" data-signout>Sign out</button><a class="btn ghost" href="/delete-account.html">Delete account or data</a>`:""}<button class="btn ghost" data-close>Close</button></div>
+    <div class="row"><button class="btn ghost" data-user="${esc(acct.uid)}">Your profile</button><button class="btn ghost" data-myratings>Your reactions</button><button class="btn ghost" data-mysubs>Subscriptions</button>${sb?`<button class="btn ghost" data-switch>Switch account</button><button class="btn ghost" data-signout>Sign out</button><a class="btn ghost" href="/delete-account.html">Delete account or data</a>`:""}<button class="btn ghost" data-close>Close</button></div>
     ${sb?`<div class="switchbox" id="switchBox" hidden><b>Switch to another account</b><p class="vmeta" style="margin:4px 0 10px">You're signed out of this one and can pick any Google or Discord account.</p>
       <div class="row"><button class="btn" data-switchto="google">Google account</button><button class="btn" data-switchto="discord">Discord account</button></div></div>`:""}</div>`,
     e=>{if(e.target.closest("[data-signout]")){sbSignOut();return}
+      if(e.target.closest("[data-mysubs]")){closeModal();go({view:"subscriptions",cat:null,char:null});return}
       if(e.target.closest("[data-myratings]")){closeModal();go({view:"home",feed:"mine",cat:null,char:null});return}
       if(e.target.closest("[data-switch]")){const b=$("#switchBox");if(b)b.hidden=!b.hidden;return}
       const sw=e.target.closest("[data-switchto]");if(sw){sbSwitch(sw.dataset.switchto);return}const u=e.target.closest("[data-user]");if(u){closeModal();go({view:"user",user:u.dataset.user,utab:"liked"});return}const o=e.target.closest("[data-open]");if(o){closeModal();go({view:"watch",film:o.dataset.open})}});
@@ -4473,7 +4554,8 @@ document.addEventListener("click",async e=>{
   if(x=A("[data-creator]")){go({view:"creator",creator:x.dataset.creator,ctab:"film"});return}
   if(x=A("[data-follow]")){toggleFollow(x.dataset.follow);return}
   if(x=A("[data-tip]")){openTip(x.dataset.tip,x.dataset.tipfilm||"");return}
-  if(x=A("[data-commission]")){openRequest(x.dataset.commission);return}
+  if(x=A("[data-commission]")){openCommission(x.dataset.commission);return}
+  if(x=A("[data-setrates]")){openRates(x.dataset.setrates);return}
   if(x=A("[data-save]")){openSave(x.dataset.save);return}
   if(x=A("[data-claimorig]")){openClaim(findFilm(x.dataset.claimorig));return}
   if(x=A("[data-report]")){openSafetyReport({kind:"film",id:x.dataset.report});return}

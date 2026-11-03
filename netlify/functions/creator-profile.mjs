@@ -14,7 +14,7 @@ export default async function creatorProfile(req){
   const mac=await crypto.subtle.importKey('raw',new TextEncoder().encode(key),{name:'HMAC',hash:'SHA-256'},false,['sign']);
   const sig=new Uint8Array(await crypto.subtle.sign('HMAC',mac,new TextEncoder().encode('creator-claim:'+user.id+':'+id)));
   const code='fanreelz-'+[...sig.slice(0,4)].map(b=>'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'[b%32]).join('')+[...sig.slice(4,6)].map(b=>'23456789'[b%8]).join('');
-  if(body.action==='status')return json({claimed:!!owner?.userId,mine:owner?.userId===user.id,code:owner?.userId?undefined:code});
+  if(body.action==='status')return json({claimed:!!owner?.userId,mine:owner?.userId===user.id,ownerId:owner?.userId||undefined,code:owner?.userId?undefined:code});
   if(!['claim','sync'].includes(body.action))return json({error:'Unknown action'},400);
   if(owner?.userId&&owner.userId!==user.id)return json({error:'This profile is already claimed by another account'},409);
   // ownership: the channel's own public description must contain this account's code (no YouTube sign-in or extra Google permission)
