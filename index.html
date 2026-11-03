@@ -4257,7 +4257,9 @@ function parsePathBase(){
   return {};
 }
 const urlNow=()=>location.pathname+location.search;
-function go(patch){if(patch.view==="insights"||patch.view==="creators")insightsLoginPrompted=false;if(patch.view==="admin"&&typeof umBase!=="undefined")umBase={};
+function go(patch){if(patch.view==="insights"||patch.view==="creators")insightsLoginPrompted=false;
+  // switching tab (Films, Shorts, Series, New…) starts with no reaction filter, unless the click itself sets one
+  if(!("reactionFilter" in patch)&&(("format" in patch&&patch.format!==state.format)||("feed" in patch&&patch.feed!==state.feed)||(patch.view&&patch.view!==state.view&&patch.view!=="watch"))){patch.reactionFilter=[];patch.reactionSecond=null}if(patch.view==="admin"&&typeof umBase!=="undefined")umBase={};
   if(patch.view&&patch.view!=="watch"&&document.body.classList.contains("fsmode")){try{(document.exitFullscreen||document.webkitExitFullscreen).call(document)}catch(e){}}
   renderHard=true;
   if(patch.view&&patch.view!=="shorts"&&document.body.classList.contains("spfs"))toggleShortsFull(false);
@@ -4430,7 +4432,7 @@ document.addEventListener("click",async e=>{
   if(x=A("[data-creport]")){const [owner,id]=x.dataset.creport.split("|");openSafetyReport({kind:"comment",owner,id});return}
   if(x=A("[data-longnav]")){$("#shell").classList.remove("open");go({view:"home",feed:"home",cat:null,char:null,q:"",group:"All",format:"film",dur:"o20"});return}
   if(x=A("[data-fmtnav]")){$("#shell").classList.remove("open");resetSections();go({view:"home",feed:"home",cat:null,char:null,group:"All",q:"",dur:"any",sdur:"any",genre:"all",lore:"all",format:x.dataset.fmtnav});return}
-  if(x=A("[data-fmt]")){state.format=x.dataset.fmt;go({});return}
+  if(x=A("[data-fmt]")){if(state.format!==x.dataset.fmt){state.reactionFilter=[];state.reactionSecond=null}state.format=x.dataset.fmt;go({});return}
   if(x=A("[data-dur]")){state.dur=x.dataset.dur;render();return}
   if(x=A("[data-sdur]")){go({sdur:x.dataset.sdur});return}
   if(x=A("[data-genre]")){go({genre:x.dataset.genre});return}
