@@ -34,13 +34,24 @@ function prqCard(q){const sel=prqSel[q.id]||(prqSel[q.id]={amt:q.myPledge?q.myPl
   ${isMod&&['apply','vote'].includes(q.phase)?`<button class="linkbtn" data-prq-skip="${esc(q.id)}">Admin test: skip to ${q.phase==='apply'?'voting':'making'}</button>`:''}<p class="vmeta" style="margin:0">Created by ${esc(q.by)}${q.myPledge?` · you pledged ${prqEur(q.myPledge)}`:''}${isMod?` · <button class="linkbtn" data-prq-remove="${esc(q.id)}">Remove</button>`:''}</p></article>`}
 function prqPaint(){const box=document.getElementById('prq');if(!box)return;const D=prqData;
  if(!D){box.innerHTML='<p class="vmeta">Loading challenges…</p>';return}
- const live=(D.requests||[]).filter(q=>['apply','vote','waiting','making'].includes(q.phase)),done=(D.requests||[]).filter(q=>q.phase==='delivered');
- box.innerHTML=`<section class="prq-hero"><small>COMMUNITY POWERED</small><h1>You imagine it. Creators make it.</h1><p>Your idea. Their creativity. Your vote. Back the AI film you want to see and vote for the creator who brings it to life.</p>
+  box.innerHTML=`<section class="prq-hero"><small>COMMUNITY POWERED</small><h1>You imagine it. Creators make it.</h1><p>Your idea. Their creativity. Your vote. Back the AI film you want to see and vote for the creator who brings it to life.</p>
   <div class="row" style="gap:10px;flex-wrap:wrap"><button class="btn purple" data-prq-new="">⚡ Create a Challenge</button><button class="btn ghost" data-prq-howopen="" aria-expanded="${prqHowOpen}">How it works ${prqHowOpen?"▴":"▾"}</button></div>${prqHow()}</section>
   <div class="prq-note">${icon('shield')} <span><b>No money is charged yet.</b> Pledges are promises while payments are being set up. When they open, a pledge is charged only after the film is delivered, and never if nobody makes it.</span></div>
   ${D.error?`<p class="vmeta">${esc(D.error)}</p>`:''}
-  <div class="prq-list">${live.length?live.map(prqCard).join(''):'<div class="empty">No challenges yet. Create the first one!</div>'}</div>
-  ${done.length?`<h3 class="sect-h" style="font-size:16px">Delivered</h3><div class="prq-list">${done.slice(0,10).map(prqCard).join('')}</div>`:''}`}
+  <div class="prq-search"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="2"/><path d="m20 20-4-4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><input id="prqQ" type="search" placeholder="Search challenges: film, book, game, creator or any word" aria-label="Search challenges" value="${esc(prqQ)}"></div>
+  <div id="prqRes">${prqResults()}</div>`}
+// search: title, details, world (film/book/game), character, creator names and who created it
+let prqQ='';
+const prqNorm=t=>String(t||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+function prqText(q){const cat=(typeof CATS!=='undefined'&&CATS.find(c=>c.id===q.cat))||null;
+ return prqNorm([q.title,q.note,q.cat,cat?.name,q.char,q.by,q.for?.name,q.winner?.name,...(q.apps||[]).map(a=>a.name)].join(' '))}
+function prqResults(){const D=prqData||{},all=D.requests||[],words=prqNorm(prqQ).split(/\s+/).filter(Boolean);
+ const hit=q=>!words.length||words.every(w=>prqText(q).includes(w));
+ const live=all.filter(q=>['apply','vote','waiting','making'].includes(q.phase)&&hit(q)),done=all.filter(q=>q.phase==='delivered'&&hit(q));
+ if(words.length&&!live.length&&!done.length)return `<div class="empty">No challenges match "${esc(prqQ.trim())}". <button class="linkbtn" data-prq-new="">Create it as a challenge</button></div>`;
+ return `${words.length?`<p class="vmeta">${live.length+done.length} challenge${live.length+done.length===1?'':'s'} found</p>`:''}<div class="prq-list">${live.length?live.map(prqCard).join(''):words.length?'':'<div class="empty">No challenges yet. Create the first one!</div>'}</div>
+  ${done.length?`<h3 class="sect-h" style="font-size:16px">Delivered</h3><div class="prq-list">${(words.length?done:done.slice(0,10)).map(prqCard).join('')}</div>`:''}`}
+document.addEventListener('input',e=>{if(e.target.id!=='prqQ')return;prqQ=e.target.value;const r=document.getElementById('prqRes');if(r)r.innerHTML=prqResults()});
 // "How it works": open the first time, then remembers if the viewer folded it away
 let prqHowOpen=false;
 function prqHow(){
