@@ -42,12 +42,15 @@ function prqPaint(){const box=document.getElementById('prq');if(!box)return;cons
   <div id="prqRes">${prqResults()}</div>`}
 // search: title, details, world (film/book/game), character, creator names and who created it
 let prqQ='';
+// most popular first: most backers (each backer is one vote), then most votes on creators, then most raised, then newest
+const prqVotes=q=>(q.apps||[]).reduce((a,x)=>a+(x.votes||0),0);
+const prqPop=(a,b)=>b.backers-a.backers||prqVotes(b)-prqVotes(a)||b.total-a.total||b.created-a.created;
 const prqNorm=t=>String(t||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
 function prqText(q){const cat=(typeof CATS!=='undefined'&&CATS.find(c=>c.id===q.cat))||null;
  return prqNorm([q.title,q.note,q.cat,cat?.name,q.char,q.by,q.for?.name,q.winner?.name,...(q.apps||[]).map(a=>a.name)].join(' '))}
 function prqResults(){const D=prqData||{},all=D.requests||[],words=prqNorm(prqQ).split(/\s+/).filter(Boolean);
  const hit=q=>!words.length||words.every(w=>prqText(q).includes(w));
- const live=all.filter(q=>['apply','vote','waiting','making'].includes(q.phase)&&hit(q)),done=all.filter(q=>q.phase==='delivered'&&hit(q));
+ const live=all.filter(q=>['apply','vote','waiting','making'].includes(q.phase)&&hit(q)).sort(prqPop),done=all.filter(q=>q.phase==='delivered'&&hit(q));
  if(words.length&&!live.length&&!done.length)return `<div class="empty">No challenges match "${esc(prqQ.trim())}". <button class="linkbtn" data-prq-new="">Create it as a challenge</button></div>`;
  return `${words.length?`<p class="vmeta">${live.length+done.length} challenge${live.length+done.length===1?'':'s'} found</p>`:''}<div class="prq-list">${live.length?live.map(prqCard).join(''):words.length?'':'<div class="empty">No challenges yet. Create the first one!</div>'}</div>
   ${done.length?`<h3 class="sect-h" style="font-size:16px">Delivered</h3><div class="prq-list">${(words.length?done:done.slice(0,10)).map(prqCard).join('')}</div>`:''}`}
@@ -114,7 +117,7 @@ document.addEventListener('click',async e=>{const t=e.target.closest?.('[data-pr
   prqLoad()}catch(x){toast(x.message)}});
 // start page: up to three popular live challenges (nothing at all when there are none)
 function prqHomeHtml(){if(!prqData){if(!prqBusy&&!window.prqHomeAsked){window.prqHomeAsked=true;prqLoad().then(()=>{if(state.view==='home'&&(prqData?.requests||[]).some(q=>['apply','vote','waiting','making'].includes(q.phase)))render()})}return ''}
- const live=(prqData.requests||[]).filter(q=>['apply','vote','waiting'].includes(q.phase)).sort((a,b)=>b.total-a.total||b.backers-a.backers).slice(0,3);
+ const live=(prqData.requests||[]).filter(q=>['apply','vote','waiting'].includes(q.phase)).sort(prqPop).slice(0,12);
  if(!live.length)return '';
  const when=q=>q.phase==='apply'?prqLeft(q.applyEnd):q.phase==='vote'?prqLeft(q.voteEnd):prqLeft(q.answerBy);
  return `<section class="prq-home"><h2 class="sect-h"><button class="sect-link" data-view="requests"><svg class="i" viewBox="0 0 24 24" style="color:#a78bfa;stroke:#a78bfa"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg> Challenges <span aria-hidden="true">›</span></button><button class="seeall" data-view="requests">See all</button></h2>
