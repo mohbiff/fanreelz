@@ -5,19 +5,20 @@ function creatorSubscriptionButton(f){const key=videoCreatorKey(f);return `<butt
 function creatorClaimButton(films){const id=films.find(f=>f.channelId)?.channelId;return id?`<div style="margin-top:12px"><button class="chip" data-creator-claim="${esc(id)}">Own this channel? Claim your profile</button><button class="chip" data-creator-sync="${esc(id)}" hidden>Sync AI videos</button><p class="vmeta" data-creator-owner-note>Only the verified YouTube channel owner can claim this profile. Sync includes AI-related videos only.</p></div>`:''}
 async function creatorProfileRequest(channelId,action,providerToken){const r=await fetch('/api/creator-profile',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+(sbToken||'')},body:JSON.stringify({channelId,action,providerToken})});const data=await r.json();if(!r.ok){const e=Error(data.error||'Could not verify YouTube');e.reconnect=data.reconnect;throw e}return data}
 async function loadCreatorOwner(films){const id=films.find(f=>f.channelId)?.channelId;if(!id||!acct.online)return;try{const d=await creatorProfileRequest(id,'status');const claim=document.querySelector('[data-creator-claim="'+id+'"]'),sync=document.querySelector('[data-creator-sync="'+id+'"]');if(claim){claim.hidden=d.claimed;sync.hidden=!d.mine;const note=document.querySelector('[data-creator-owner-note]');if(note)note.textContent=d.mine?'You own this verified creator profile.':d.claimed?'Verified YouTube creator.':'Only the verified YouTube channel owner can claim or sync this profile.'}}catch{}}
-async function connectCreatorYoutube(channelId,action){
- if(!sb)return toast('Sign-in is still loading. Try again shortly.');
- sessionStorage.setItem('fr_creator_verify',JSON.stringify({channelId,action}));
- const back=APP?location.origin+'/app-auth?to='+encodeURIComponent(urlNow()):location.origin+urlNow();
- const {error}=await sb.auth.signInWithOAuth({provider:'google',options:{redirectTo:back,scopes:'https://www.googleapis.com/auth/youtube.readonly',queryParams:{prompt:'consent select_account'}}});
- if(error){sessionStorage.removeItem('fr_creator_verify');toast('Could not connect YouTube. Please try again.')}
-}
-async function verifyCreator(channelId,action,returning=false){
- if(!acct.online)return connectCreatorYoutube(channelId,action);
- const {data}=await sb.auth.getSession();const token=data.session?.provider_token;
- if(!token){if(returning)return toast('YouTube permission was not received. Try connecting again.');return connectCreatorYoutube(channelId,action)}
- try{const result=await creatorProfileRequest(channelId,action,token);toast(action==='sync'?`Synced ${result.imported||0} AI videos.${result.more?' More videos continue importing automatically.':''}`:'YouTube ownership verified. This creator profile is yours.');if(action==='sync')await loadCatalog();render()}
- catch(e){if(e.reconnect&&!returning)return connectCreatorYoutube(channelId,action);toast(e.message)}
-}
-async function resumeCreatorVerification(){let pending;try{pending=JSON.parse(sessionStorage.getItem('fr_creator_verify'));sessionStorage.removeItem('fr_creator_verify')}catch{}if(pending&&acct.online)await verifyCreator(pending.channelId,pending.action,true)}
-document.addEventListener('click',async e=>{const b=e.target.closest?.('[data-creator-claim],[data-creator-sync]');if(!b)return;e.preventDefault();if(b.disabled)return;b.disabled=true;try{await verifyCreator(b.dataset.creatorClaim||b.dataset.creatorSync,b.dataset.creatorSync?'sync':'claim')}finally{if(b.isConnected)b.disabled=false}});
+// Claiming a profile: the creator puts a short code in their YouTube channel description (no YouTube sign-in or extra Google permission)
+async function claimCreatorDialog(channelId){
+ if(!acct.online){needAccount('Sign in to claim your creator profile.');return}
+ let d;try{d=await creatorProfileRequest(channelId,'status')}catch(e){return toast(e.message)}
+ if(d.mine)return toast('This creator profile is already yours.');if(d.claimed)return toast('This profile is already claimed by another account.');
+ openModal(`<div class="dlg" role="dialog" aria-modal="true" aria-label="Claim your creator profile"><h2>Claim your creator profile</h2>
+  <p class="vmeta" style="margin:0 0 10px">Prove you own this YouTube channel in three steps. You can remove the code again once you're verified.</p>
+  <ol style="margin:0 0 12px 18px;padding:0;line-height:1.6"><li>Copy your code</li><li>Open <a href="https://studio.youtube.com/channel/${esc(channelId)}/editing/details" target="_blank" rel="noopener">YouTube Studio → Customisation → Basic info</a>, paste the code anywhere in the <b>Description</b> and press <b>Publish</b></li><li>Come back and press <b>Verify</b></li></ol>
+  <div class="sharerow"><input class="shareinp" readonly value="${esc(d.code)}" aria-label="Your code"><button class="btn" data-copylink="${esc(d.code)}">Copy</button></div>
+  <div class="row"><button class="btn ghost" data-close>Cancel</button><button class="btn" data-claimverify="${esc(channelId)}">Verify</button></div></div>`,
+  async e=>{const c=e.target.closest('[data-copylink]');if(c){try{await navigator.clipboard.writeText(c.dataset.copylink)}catch(x){}toast('Code copied');return}
+   const v=e.target.closest('[data-claimverify]');if(!v)return;v.disabled=true;v.textContent='Checking…';
+   try{await creatorProfileRequest(channelId,'claim');closeModal();toast('YouTube ownership verified. This creator profile is yours. You can remove the code from your description now.');render()}
+   catch(x){toast(x.message);v.disabled=false;v.textContent='Verify'}})}
+async function syncCreator(channelId){try{const result=await creatorProfileRequest(channelId,'sync');toast(`Synced ${result.imported||0} AI videos.${result.more?' More videos continue importing automatically.':''}`);await loadCatalog();render()}catch(e){toast(e.message)}}
+async function resumeCreatorVerification(){try{sessionStorage.removeItem('fr_creator_verify')}catch{}}
+document.addEventListener('click',async e=>{const b=e.target.closest?.('[data-creator-claim],[data-creator-sync]');if(!b)return;e.preventDefault();if(b.disabled)return;b.disabled=true;try{if(b.dataset.creatorSync)await syncCreator(b.dataset.creatorSync);else await claimCreatorDialog(b.dataset.creatorClaim)}finally{if(b.isConnected)b.disabled=false}});
