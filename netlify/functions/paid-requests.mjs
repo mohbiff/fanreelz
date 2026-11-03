@@ -3,7 +3,8 @@
 // Days 3–7: everyone who pledged votes (one vote each) for the creator who should make it. The winner has 30 days to deliver.
 // Pledges are promises: when payments open (Stripe), a pledge is charged only after the film is delivered; 80 % goes to the creator.
 // Each request is one row in import_state ("prq:<id>"), written only here, with the secret key.
-// POST /api/paid-requests {action:"list"|"create"|"pledge"|"unpledge"|"apply"|"vote"|"deliver"|"remove", ...}
+// A request can also be for one chosen verified creator: no offers or vote; that creator accepts (or declines) within 7 days.
+// POST /api/paid-requests {action:"list"|"creators"|"create"|"pledge"|"unpledge"|"apply"|"vote"|"accept"|"decline"|"deliver"|"remove", ...}
 import { whoIs, isAdmin } from "./moderate.mjs";
 
 const json = (o, status = 200) => new Response(JSON.stringify(o), { status, headers: { "Content-Type": "application/json", "Cache-Control": "no-store" } });
@@ -45,8 +46,15 @@ async function myChannels(uid) {
 const clean = (t, n) => String(t || "").replace(/[\u0000-\u001f<>]/g, " ").replace(/\s+/g, " ").trim().slice(0, n);
 const cents = (x) => Math.round(Number(x) * 100);
 // where a request is now, worked out from its dates (nothing has to run on a schedule)
+// a request for one chosen creator: no offers or voting; the creator accepts within 7 days, then has 30 days to deliver
+const ANSWER_DAYS = 7;
 function phaseOf(q, now = Date.now()) {
   if (q.delivered) return "delivered";
+  if (q.for) {
+    if (q.declined) return "declined";
+    if (!q.acceptedAt) return now < q.created + ANSWER_DAYS * DAY ? "waiting" : "notaken";
+    return now < q.acceptedAt + DELIVER_DAYS * DAY ? "making" : "expired";
+  }
   const t = q.created, applyEnd = t + APPLY_DAYS * DAY, voteEnd = applyEnd + VOTE_DAYS * DAY;
   if (now < applyEnd) return "apply";
   if (!Object.keys(q.apps || {}).length) return "notaken"; // nobody offered to make it: pledges are released
@@ -69,15 +77,17 @@ function view(q, uid, admin) {
   const tally = {};
   for (const ch of Object.values(q.votes || {})) tally[ch] = (tally[ch] || 0) + 1;
   const showApps = ph !== "apply" || admin; // creators who offered are shown after the first 3 days
-  const win = ["making", "expired", "delivered"].includes(ph) ? q.winner || winnerOf(q) : null;
+  const win = q.for ? (q.acceptedAt || q.delivered ? q.for.channel : null) : ["making", "expired", "delivered"].includes(ph) ? q.winner || winnerOf(q) : null;
+  const winApp = q.for ? { name: q.for.name, uid: q.for.uid } : q.apps?.[win];
   return {
     id: q.id, title: q.title, note: q.note, cat: q.cat, char: q.char, by: q.byName || "a Fanreelz member", mineRequest: q.by === uid,
     created: q.created, applyEnd: q.created + APPLY_DAYS * DAY, voteEnd: q.created + (APPLY_DAYS + VOTE_DAYS) * DAY,
-    deliverBy: q.created + (APPLY_DAYS + VOTE_DAYS + DELIVER_DAYS) * DAY, phase: ph,
+    deliverBy: q.for ? (q.acceptedAt ? q.acceptedAt + DELIVER_DAYS * DAY : null) : q.created + (APPLY_DAYS + VOTE_DAYS + DELIVER_DAYS) * DAY, phase: ph,
+    answerBy: q.for ? q.created + ANSWER_DAYS * DAY : null, for: q.for ? { channel: q.for.channel, name: q.for.name, mine: q.for.uid === uid } : null,
     total, backers: pledges.length, myPledge: q.pledges?.[uid]?.cents || 0, myVote: q.votes?.[uid] || null,
     appCount: Object.keys(q.apps || {}).length, myApp: Object.values(q.apps || {}).some((a) => a.uid === uid),
     apps: showApps ? Object.entries(q.apps || {}).map(([ch, a]) => ({ channel: ch, name: a.name, sample: a.sample, votes: tally[ch] || 0, mine: a.uid === uid })) : [],
-    winner: win ? { channel: win, name: q.apps?.[win]?.name || "", mine: q.apps?.[win]?.uid === uid } : null,
+    winner: win ? { channel: win, name: winApp?.name || "", mine: winApp?.uid === uid } : null,
     delivered: q.delivered || null, creatorShare: Math.round(total * CREATOR_SHARE),
   };
 }
@@ -91,6 +101,13 @@ export default async (req) => {
       const all = (await readAll()).sort((a, b) => b.created - a.created);
       return json({ requests: all.map((q) => view(q, uid, admin)), myChannels: uid ? await myChannels(uid) : [], rules: { min: MIN_CENTS, applyDays: APPLY_DAYS, voteDays: VOTE_DAYS, deliverDays: DELIVER_DAYS, creatorShare: CREATOR_SHARE }, payments: false });
     }
+    if (body.action === "creators") {
+      // verified creators that can be chosen for a request
+      const { url, h } = db();
+      const r = await fetch(url + "?key=like.creator-owner:*&select=key,value&limit=1000", { headers: h });
+      const rows = r.ok ? await r.json() : [];
+      return json({ creators: rows.filter((x) => x.value?.userId).map((x) => x.key.slice("creator-owner:".length)) });
+    }
     if (!uid) return json({ error: "Sign in first" }, 401);
     const name = clean(u.user_metadata?.full_name || u.user_metadata?.name || u.user_metadata?.user_name || "", 60) || "a Fanreelz member";
 
@@ -98,10 +115,21 @@ export default async (req) => {
       const title = clean(body.title, 140), note = clean(body.note, 400), c = cents(body.amount);
       if (title.length < 5) return json({ error: "Describe the film in a few words" }, 400);
       if (!(c >= MIN_CENTS && c <= MAX_CENTS)) return json({ error: "Pledge at least 2 €" }, 400);
-      const mine = (await readAll()).filter((q) => q.by === uid && ["apply", "vote"].includes(phaseOf(q))).length;
+      const mine = (await readAll()).filter((q) => q.by === uid && ["apply", "vote", "waiting"].includes(phaseOf(q))).length;
       if (mine >= 5) return json({ error: "You already have 5 open requests" }, 429);
+      // optionally for one verified creator only
+      let forCreator = null;
+      if (body.creator) {
+        const ch = String(body.creator);
+        const { url, h } = db();
+        const r = await fetch(url + "?key=eq." + encodeURIComponent("creator-owner:" + ch) + "&select=value", { headers: h });
+        const owner = r.ok ? (await r.json())[0]?.value : null;
+        if (!owner?.userId) return json({ error: "That creator hasn't verified their channel on Fanreelz yet" }, 400);
+        if (owner.userId === uid) return json({ error: "You can't request a film from yourself" }, 400);
+        forCreator = { channel: ch, uid: owner.userId, name: clean(body.creatorName, 80) || "YouTube creator" };
+      }
       const q = { id: "r" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), title, note, cat: clean(body.cat, 40), char: clean(body.char, 40),
-        by: uid, byName: name, created: Date.now(), pledges: { [uid]: { cents: c, at: Date.now() } }, apps: {}, votes: {} };
+        by: uid, byName: name, created: Date.now(), pledges: { [uid]: { cents: c, at: Date.now() } }, apps: {}, votes: {}, ...(forCreator ? { for: forCreator } : {}) };
       await save(q);
       return json({ request: view(q, uid, admin) });
     }
@@ -111,14 +139,21 @@ export default async (req) => {
 
     if (body.action === "pledge") {
       const c = cents(body.amount);
-      if (!["apply", "vote"].includes(ph)) return json({ error: "Pledging has closed for this request" }, 409);
+      if (!["apply", "vote", "waiting"].includes(ph) && !(q.for && ph === "making")) return json({ error: "Pledging has closed for this request" }, 409);
       if (!(c >= MIN_CENTS && c <= MAX_CENTS)) return json({ error: "Pledge at least 2 €" }, 400);
       q.pledges = { ...(q.pledges || {}), [uid]: { cents: c, at: Date.now() } };
+      // backing during the vote can choose the creator in the same step
+      if (ph === "vote" && body.channel && q.apps?.[String(body.channel)]) q.votes = { ...(q.votes || {}), [uid]: String(body.channel) };
+    } else if (body.action === "accept" || body.action === "decline") {
+      if (!q.for || q.for.uid !== uid) return json({ error: "Only the chosen creator can answer" }, 403);
+      if (ph !== "waiting") return json({ error: "This request has already been answered" }, 409);
+      if (body.action === "accept") q.acceptedAt = Date.now(); else q.declined = Date.now();
     } else if (body.action === "unpledge") {
-      if (!["apply", "vote"].includes(ph)) return json({ error: "The pledge can't be changed any more" }, 409);
+      if (!["apply", "vote", "waiting"].includes(ph)) return json({ error: "The pledge can't be changed any more" }, 409);
       if (q.by === uid) return json({ error: "The person who started the request keeps a pledge on it" }, 409);
       delete q.pledges?.[uid]; delete q.votes?.[uid];
     } else if (body.action === "apply") {
+      if (q.for) return json({ error: "This request is for one chosen creator" }, 409);
       if (ph !== "apply") return json({ error: "Creators can only offer during the first 3 days" }, 409);
       const ch = (await myChannels(uid)).find((c) => c.id === String(body.channel || ""));
       if (!ch) return json({ error: "Only verified creators can take requests. Claim your creator profile first." }, 403);
@@ -131,13 +166,13 @@ export default async (req) => {
       q.votes = { ...(q.votes || {}), [uid]: String(body.channel) };
     } else if (body.action === "deliver") {
       if (ph !== "making") return json({ error: "This request isn't waiting for a film" }, 409);
-      const win = q.winner || winnerOf(q);
-      if (q.apps?.[win]?.uid !== uid) return json({ error: "Only the chosen creator can deliver the film" }, 403);
+      const win = q.for ? q.for.channel : q.winner || winnerOf(q);
+      if ((q.for ? q.for.uid : q.apps?.[win]?.uid) !== uid) return json({ error: "Only the chosen creator can deliver the film" }, 403);
       const link = String(body.url || "");
       if (!/^https:\/\/(www\.)?(youtube\.com|youtu\.be)\/[^\s"<>]+$/.test(link)) return json({ error: "Paste the YouTube link to the film" }, 400);
       q.winner = win; q.delivered = { url: link.slice(0, 200), at: Date.now() };
     } else if (body.action === "remove") {
-      if (!admin && !(q.by === uid && ph === "apply" && Object.keys(q.pledges || {}).length <= 1)) return json({ error: "Only admins can remove a request others have backed" }, 403);
+      if (!admin && !(q.by === uid && ["apply", "waiting"].includes(ph) && Object.keys(q.pledges || {}).length <= 1)) return json({ error: "Only admins can remove a request others have backed" }, 403);
       await remove(q.id);
       return json({ removed: true });
     } else return json({ error: "Unknown action" }, 400);
