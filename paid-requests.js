@@ -20,7 +20,7 @@ function prqCover(q){const top=pool=>pool.sort((a,b)=>(b.ytViews||0)-(a.ytViews|
  if(f)return `<div class="prq-cover"><img src="https://i.ytimg.com/vi/${esc(f.yt)}/hqdefault.jpg" alt="" loading="lazy" referrerpolicy="no-referrer"></div>`;
  const cat=q.cat&&typeof CATS!=='undefined'?CATS.find(c=>c.id===q.cat):null;
  return cat?prqWorldCover(cat):`<div class="prq-cover prq-cover-empty">🎬</div>`}
-function prqCard(q){const sel=prqSel[q.id]||(prqSel[q.id]={amt:q.myPledge?q.myPledge/100:5,ch:q.myVote||null});
+function prqCard(q,big){const sel=prqSel[q.id]||(prqSel[q.id]={amt:q.myPledge?q.myPledge/100:5,ch:q.myVote||null});
  const open=['apply','vote','waiting'].includes(q.phase)||(q.for&&q.phase==='making'),voting=q.phase==='vote';
  const when=q.noLimit&&['apply','vote','waiting','making'].includes(q.phase)?'∞ No time limit':q.phase==='apply'?prqLeft(q.applyEnd)+' to offer':voting?prqLeft(q.voteEnd)+' to vote':q.phase==='waiting'?prqLeft(q.answerBy)+' to answer':q.phase==='making'&&q.deliverBy?prqLeft(q.deliverBy)+' to deliver':'';
  const totalVotes=q.apps.reduce((a,x)=>a+x.votes,0)||0;
@@ -40,7 +40,7 @@ function prqCard(q){const sel=prqSel[q.id]||(prqSel[q.id]={amt:q.myPledge?q.myPl
   <div class="prq-stats"><div><span>Raised</span><b class="prq-raised">${prqEur(q.total)}</b></div><div><span>Backers</span><b>${q.backers}</b></div><div><span>${q.for?'Creator':'Creators'}</span><b>${q.for?'1':q.appCount}</b></div></div>
   ${q.delivered?`<a class="btn" href="${esc(q.delivered.url)}" target="_blank" rel="noopener">▶ Watch the film by ${esc(q.winner?.name||'')}</a>`:''}
   ${vote}${offers}${answer}${deliver}${back}
-  ${isMod&&['apply','vote'].includes(q.phase)?`<button class="linkbtn" data-prq-skip="${esc(q.id)}">${q.noLimit?(q.phase==='apply'?'Admin: start voting':'Admin: end voting and pick the winner'):'Admin test: skip to '+(q.phase==='apply'?'voting':'making')}</button>`:''}<p class="vmeta" style="margin:0">Created by ${esc(q.by)}${q.myPledge?` · you pledged ${prqEur(q.myPledge)}`:''}${isMod?` · <button class="linkbtn" data-prq-remove="${esc(q.id)}">Remove</button>`:''}</p></article>`}
+  ${isMod&&['apply','vote'].includes(q.phase)?`<button class="linkbtn" data-prq-skip="${esc(q.id)}">${q.noLimit?(q.phase==='apply'?'Admin: start voting':'Admin: end voting and pick the winner'):'Admin test: skip to '+(q.phase==='apply'?'voting':'making')}</button>`:''}<p class="vmeta" style="margin:0">Created by ${esc(q.by)}${!big&&q.comments?.length?` · 💬 ${q.comments.length}`:''}${q.myPledge?` · you pledged ${prqEur(q.myPledge)}`:''}${isMod?` · <button class="linkbtn" data-prq-remove="${esc(q.id)}">Remove</button>`:''}</p>${big?prqDiscussion(q):''}</article>`}
 function prqPaint(){prqBigPaint();const box=document.getElementById('prq');if(!box)return;const D=prqData;
  if(!D){box.innerHTML='<p class="vmeta">Loading challenges…</p>';return}
   box.innerHTML=`<section class="prq-hero"><small>COMMUNITY POWERED</small><h1>You imagine it. Creators make it.</h1><p>Your idea. Their creativity. Your vote. Back the AI film you want to see and vote for the creator who brings it to life.</p>
@@ -152,7 +152,7 @@ function prqCreatorHtml(ch){if(!ch)return '';if(!prqData){if(!prqBusy&&!window.p
 // open a challenge card big in the middle of the screen: it grows out of its place in the list, with the full description
 let prqBigId=null;
 function prqBigPaint(){const box=document.getElementById('prqBigIn');if(!box||!prqBigId)return;const q=(prqData?.requests||[]).find(x=>x.id===prqBigId);if(!q){prqBigClose();return}
- box.innerHTML=`<button class="prq-bigx" data-prq-bigclose aria-label="Close">✕</button>`+prqCard(q).replace('class="prq-card"','class="prq-card prq-card-big"')}
+ box.innerHTML=`<button class="prq-bigx" data-prq-bigclose aria-label="Close">✕</button>`+prqCard(q,true).replace('class="prq-card"','class="prq-card prq-card-big"');const ta=box.querySelector('#prqCm');if(ta&&prqCmFocus){ta.focus({preventScroll:true});ta.setSelectionRange(ta.value.length,ta.value.length)}}
 function prqBigOpen(card){const id=card.dataset.prqCard;if(!id||document.getElementById('prqBig'))return;prqBigId=id;
  const from=card.getBoundingClientRect(),ov=document.createElement('div');ov.id='prqBig';ov.className='prq-big';
  ov.innerHTML='<div class="prq-bigbg" data-prq-bigclose></div><div class="prq-bigin" id="prqBigIn" role="dialog" aria-modal="true" aria-label="Challenge"></div>';document.body.appendChild(ov);document.body.classList.add('prq-noscroll');prqBigPaint();
@@ -169,3 +169,33 @@ document.addEventListener('click',e=>{
  const card=e.target.closest?.('.prq-card:not(.prq-card-big)');if(!card||e.target.closest('button,a,input,select,textarea,label'))return;prqBigOpen(card)});
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&document.getElementById('prqBig'))prqBigClose();
  if((e.key==='Enter'||e.key===' ')&&e.target.matches?.('.prq-card:not(.prq-card-big)')){e.preventDefault();prqBigOpen(e.target)}});
+
+// discussion on a challenge (shown in the big view)
+let prqDraft='',prqReplyTo=null,prqCmFocus=false,prqCmBusy=false;
+const prqAgo=t=>{const m=Math.round((Date.now()-t)/6e4);return m<1?'just now':m<60?m+'m ago':m<1440?Math.round(m/60)+'h ago':Math.round(m/1440)+'d ago'};
+function prqComment(q,c,reply){const h=typeof hueOf==='function'?hueOf(c.name):270;
+ return `<div class="pcm ${reply?'pcm-reply':''}" data-cm="${esc(c.id)}"><span class="pcm-av" style="--h:${h}">${esc((c.name||'?').trim()[0]||'?').toUpperCase()}</span><div class="pcm-body">
+  <div class="pcm-h"><b>${esc(c.name)}</b>${c.badge?`<span class="pcm-badge pcm-${c.badge==='Creator'?'cr':c.badge==='Backer'?'bk':'st'}">${esc(c.badge)}</span>`:''}<small>${prqAgo(c.at)}</small></div>
+  <p class="pcm-t">${esc(c.text)}</p>
+  <div class="pcm-a"><button type="button" class="pcm-like ${c.liked?'on':''}" data-prq-like="${esc(q.id)}" data-cm-id="${esc(c.id)}" aria-pressed="${c.liked}" aria-label="Like">${c.liked?'♥':'♡'} ${c.likes||''}</button><button type="button" data-prq-reply="${esc(c.id)}" data-name="${esc(c.name)}">Reply</button>${c.mine||isMod?`<button type="button" data-prq-uncomment="${esc(q.id)}" data-cm-id="${esc(c.id)}">Remove</button>`:''}</div></div></div>`}
+function prqDiscussion(q){const all=q.comments||[],tops=all.filter(c=>!c.parent).sort((a,b)=>b.likes-a.likes||b.at-a.at),kids=id=>all.filter(c=>c.parent===id).sort((a,b)=>a.at-b.at);
+ const to=prqReplyTo&&all.find(c=>c.id===prqReplyTo);
+ return `<section class="pcd"><div class="pcd-h"><h4>Discussion</h4><span class="vmeta">💬 ${all.length} comment${all.length===1?'':'s'}</span></div>
+  ${tops.length?tops.map(c=>prqComment(q,c)+kids(c.id).map(k=>prqComment(q,k,true)).join('')).join(''):'<p class="vmeta" style="margin:4px 0 8px">No comments yet. Ask a question or share an idea for the film.</p>'}
+  <form class="pcd-f" id="prqCmF" data-q="${esc(q.id)}">${to?`<div class="pcd-to">Replying to <b>${esc(to.name)}</b> <button type="button" data-prq-replyx aria-label="Cancel reply">✕</button></div>`:''}
+   <textarea id="prqCm" rows="1" maxlength="400" placeholder="${acct?.online?'Share your thoughts about this challenge…':'Sign in to join the discussion'}" aria-label="Write a comment">${esc(prqDraft)}</textarea>
+   <button class="btn purple" type="submit" ${prqCmBusy?'disabled':''}>Post</button></form></section>`}
+function prqSetReq(r){if(!r||!prqData?.requests)return;const i=prqData.requests.findIndex(x=>x.id===r.id);if(i>=0)prqData.requests[i]=r;prqPaint()}
+document.addEventListener('input',e=>{if(e.target.id==='prqCm'){prqDraft=e.target.value;e.target.style.height='auto';e.target.style.height=Math.min(e.target.scrollHeight,160)+'px'}});
+document.addEventListener('focusin',e=>{if(e.target.id==='prqCm'){prqCmFocus=true;if(!acct?.online){e.target.blur();prqCmFocus=false;needAccount('Sign in to join the discussion.')}}});
+document.addEventListener('focusout',e=>{if(e.target.id==='prqCm')setTimeout(()=>{if(document.activeElement?.id!=='prqCm')prqCmFocus=false},0)});
+document.addEventListener('keydown',e=>{if(e.target.id==='prqCm'&&e.key==='Enter'&&!e.shiftKey){e.preventDefault();e.target.form?.requestSubmit()}});
+document.addEventListener('submit',async e=>{if(e.target.id!=='prqCmF')return;e.preventDefault();const text=prqDraft.trim();if(!text||prqCmBusy)return;
+ if(!needAccount('Sign in to join the discussion.'))return;
+ if(typeof badText==='function'&&badText(text)){toast(BAD_MSG);return}
+ prqCmBusy=true;try{const r=await prqCall({action:'comment',id:e.target.dataset.q,text,parent:prqReplyTo});prqDraft='';prqReplyTo=null;prqSetReq(r.request)}catch(x){toast(x.message)}prqCmBusy=false;prqBigPaint()});
+document.addEventListener('click',async e=>{const t=e.target.closest?.('[data-prq-like],[data-prq-reply],[data-prq-replyx],[data-prq-uncomment]');if(!t)return;
+ if(t.matches('[data-prq-reply]')){if(!needAccount('Sign in to reply.'))return;prqReplyTo=t.dataset.prqReply;prqCmFocus=true;prqBigPaint();return}
+ if(t.matches('[data-prq-replyx]')){prqReplyTo=null;prqBigPaint();return}
+ if(t.matches('[data-prq-like]')){if(!needAccount('Sign in to like comments.'))return;try{prqSetReq((await prqCall({action:'like',id:t.dataset.prqLike,comment:t.dataset.cmId})).request)}catch(x){toast(x.message)}return}
+ if(t.matches('[data-prq-uncomment]')){try{prqSetReq((await prqCall({action:'uncomment',id:t.dataset.prqUncomment,comment:t.dataset.cmId})).request);toast('Comment removed')}catch(x){toast(x.message)}}});

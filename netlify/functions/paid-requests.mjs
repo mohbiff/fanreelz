@@ -78,6 +78,14 @@ function winnerOf(q) {
   apps.sort((a, b) => (tally[b[0]] || 0) - (tally[a[0]] || 0) || a[1].at - b[1].at);
   return apps[0][0];
 }
+// a label next to a commenter's name: who they are in this challenge (an offer stays hidden until voting starts)
+function badgeOf(q, cu, showApps) {
+  if (q.for?.uid === cu || (q.winner && q.apps?.[q.winner]?.uid === cu)) return "Creator";
+  if (showApps && Object.values(q.apps || {}).some((a) => a.uid === cu)) return "Creator";
+  if (q.by === cu) return "Started it";
+  if (q.pledges?.[cu]) return "Backer";
+  return "";
+}
 // what the page may see: totals, never who pledged how much
 function view(q, uid, admin) {
   const ph = phaseOf(q), pledges = Object.values(q.pledges || {}), total = pledges.reduce((a, p) => a + p.cents, 0);
@@ -98,6 +106,8 @@ function view(q, uid, admin) {
     winner: win ? { channel: win, name: winApp?.name || "", mine: winApp?.uid === uid } : null,
     delivered: q.delivered || null, creatorShare: Math.round(total * CREATOR_SHARE),
     ...(q.noLimit ? { applyEnd: null, voteEnd: null, deliverBy: null, answerBy: null } : {}),
+    comments: (q.comments || []).map((c) => ({ id: c.id, parent: c.parent || null, name: c.name, text: c.text, at: c.at, likes: Object.keys(c.likes || {}).length,
+      liked: !!c.likes?.[uid], mine: c.uid === uid, badge: badgeOf(q, c.uid, showApps) })),
   };
 }
 
@@ -139,6 +149,12 @@ function notesFor(all, uid, now = Date.now()) {
         }
       }
     }
+    const myC = new Set((q.comments || []).filter((c) => c.uid === uid).map((c) => c.id));
+    const fresh = (q.comments || []).filter((c) => c.uid !== uid && now - c.at < 30 * DAY);
+    const replies = fresh.filter((c) => myC.has(c.to || c.parent));
+    if (replies.length) add(q, replies.at(-1).at, "reply", `${replies.at(-1).name} replied to you on ${T}${replies.length > 1 ? ` (+${replies.length - 1} more)` : ""}.`, ph === "making" ? "making" : ph === "delivered" ? "done" : "open");
+    const others = fresh.filter((c) => !replies.includes(c));
+    if (others.length && (mine || q.for?.uid === uid)) add(q, others.at(-1).at, "comment", `${others.at(-1).name} commented on ${T}${others.length > 1 ? ` (+${others.length - 1} more)` : ""}.`, ph === "making" ? "making" : ph === "delivered" ? "done" : "open");
     if (q.delivered && (backed || mine || myApp)) add(q, q.delivered.at, "delivered", `${T} is out! Watch the film.`, "done");
     if (ph === "expired" && (backed || mine)) {
       const end = q.for ? q.acceptedAt + DELIVER_DAYS * DAY : q.created + (APPLY_DAYS + VOTE_DAYS + DELIVER_DAYS) * DAY;
@@ -245,6 +261,27 @@ export default async (req) => {
       const link = String(body.url || "");
       if (!/^https:\/\/(www\.)?(youtube\.com|youtu\.be)\/[^\s"<>]+$/.test(link)) return json({ error: "Paste the YouTube link to the film" }, 400);
       q.winner = win; q.delivered = { url: link.slice(0, 200), at: Date.now() };
+    } else if (body.action === "comment") {
+      const text = clean(body.text, 400);
+      if (text.length < 2) return json({ error: "Write a comment first" }, 400);
+      if (/https?:\/\/|www\./i.test(text.replace(/https:\/\/(www\.)?(youtube\.com|youtu\.be)\/\S+/gi, ""))) return json({ error: "Only YouTube links are allowed in comments" }, 400);
+      const list = q.comments || [], mineN = list.filter((c) => c.uid === uid);
+      if (!admin && mineN.some((c) => Date.now() - c.at < 15000)) return json({ error: "Wait a few seconds before commenting again" }, 429);
+      if (!admin && mineN.length >= 30) return json({ error: "You've commented a lot on this challenge" }, 429);
+      if (list.length >= 500) return json({ error: "This discussion is full" }, 409);
+      const parent = body.parent && list.find((c) => c.id === String(body.parent)) ? String(body.parent) : null;
+      const top = parent ? list.find((c) => c.id === parent).parent || parent : null; // replies stay one level deep
+      q.comments = [...list, { id: "c" + Date.now().toString(36) + Math.random().toString(36).slice(2, 5), uid, name, text, at: Date.now(), parent: top, ...(top && top !== parent ? { to: parent } : {}) }];
+    } else if (body.action === "like") {
+      const c = (q.comments || []).find((x) => x.id === String(body.comment || ""));
+      if (!c) return json({ error: "Comment not found" }, 404);
+      c.likes = c.likes || {};
+      if (c.likes[uid]) delete c.likes[uid]; else c.likes[uid] = 1;
+    } else if (body.action === "uncomment") {
+      const c = (q.comments || []).find((x) => x.id === String(body.comment || ""));
+      if (!c) return json({ error: "Comment not found" }, 404);
+      if (c.uid !== uid && !admin) return json({ error: "You can only remove your own comments" }, 403);
+      q.comments = q.comments.filter((x) => x.id !== c.id && x.parent !== c.id);
     } else if (body.action === "skip" && admin && q.noLimit) {
       // no time limit: the admin starts and ends the vote by hand
       if (ph === "apply") q.voteAt = Date.now();

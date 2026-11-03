@@ -1,7 +1,7 @@
 // Notifications: a bell in the top bar for signed-in members. The list is worked out on the server from the
 // challenges the member started, backed, offered to make or was asked to make (see notesFor in paid-requests.mjs).
 let ntData=null,ntOpen=false,ntBusy=false;
-const NT_ICON={asked:'🎯',accepted:'✅',declined:'✖️',noanswer:'⌛',offer:'🙋',notaken:'⌛',vote:'🗳️',won:'🏆',lost:'🎬',winner:'🎬',due:'⏰',delivered:'🍿',expired:'⌛'};
+const NT_ICON={comment:'💬',reply:'↩️',asked:'🎯',accepted:'✅',declined:'✖️',noanswer:'⌛',offer:'🙋',notaken:'⌛',vote:'🗳️',won:'🏆',lost:'🎬',winner:'🎬',due:'⏰',delivered:'🍿',expired:'⌛'};
 const ntAgo=t=>{const m=Math.round((Date.now()-t)/6e4);return m<1?'just now':m<60?m+' min ago':m<1440?Math.round(m/60)+' h ago':Math.round(m/1440)+' d ago'};
 async function ntLoad(){if(ntBusy||!(acct?.online&&sbToken))return;ntBusy=true;try{ntData=await prqCall({action:'notes'})}catch(e){}ntBusy=false;ntBadge();if(ntOpen)ntPaint()}
 function ntBadge(){const b=document.querySelector('#noteBtn .nbadge');if(!b)return;const n=ntData?.unread||0;b.hidden=!n;b.textContent=n>9?'9+':n;document.getElementById('noteBtn')?.setAttribute('aria-label',n?`Notifications, ${n} new`:'Notifications')}
@@ -15,7 +15,7 @@ function ntClose(){ntOpen=false;document.getElementById('ntPanel')?.remove();doc
 document.addEventListener('click',async e=>{
  const it=e.target.closest?.('[data-nt-req]');
  if(it){const id=it.dataset.ntReq;ntClose();if(typeof prqTab!=='undefined')prqTab=it.dataset.ntTab;if(typeof prqQ!=='undefined')prqQ='';go({view:'requests'});
-  const find=(k=0)=>{const c=document.querySelector(`[data-prq-card="${CSS.escape(id)}"]`);if(c){c.scrollIntoView({block:'center',behavior:'smooth'});c.classList.add('prq-flash');setTimeout(()=>c.classList.remove('prq-flash'),2200)}else if(k<20)setTimeout(()=>find(k+1),250)};find();return}
+  const find=(k=0)=>{const c=document.querySelector(`[data-prq-card="${CSS.escape(id)}"]`);if(c){c.scrollIntoView({block:'center'});if(typeof prqBigOpen==='function')setTimeout(()=>prqBigOpen(c),60);else{c.classList.add('prq-flash');setTimeout(()=>c.classList.remove('prq-flash'),2200)}}else if(k<20)setTimeout(()=>find(k+1),250)};find();return}
  if(e.target.closest?.('#noteBtn')){if(ntOpen){ntClose();return}ntOpen=true;e.currentTarget;document.getElementById('noteBtn').setAttribute('aria-expanded','true');
   if(ntData){ntData.seenBefore=ntData.seen;}ntPaint();await ntLoad();if(ntData){ntData.seenBefore=ntData.seen;ntPaint()}
   if(ntData?.unread){prqCall({action:'seen'}).catch(()=>{});ntData.unread=0;ntData.seen=Date.now();ntBadge()}return}

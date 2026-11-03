@@ -25,3 +25,9 @@ test("admin challenges without a time limit only move on by hand", () => {
   assert.equal(phaseOf({ ...q, voteAt: now - 200 * D, makeAt: now - 100 * D }), "making");
   assert.equal(phaseOf({ ...q, for: { uid: "cr" } }), "waiting");
 });
+test("replies and comments reach the right people", () => {
+  const q = { ...open, comments: [{ id: "c1", uid: "fan", name: "Fan", text: "hi", at: now - 1000 }, { id: "c2", uid: "cr2", name: "Sora", text: "yo", at: now - 500, parent: "c1" }] };
+  assert.ok(notesFor([q], "fan").some((n) => n.kind === "reply"));
+  assert.ok(notesFor([q], "req").some((n) => n.kind === "comment"));
+  assert.ok(!notesFor([q], "cr2").some((n) => n.kind === "reply" || n.kind === "comment"));
+});
