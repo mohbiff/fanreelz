@@ -3254,7 +3254,7 @@ function renderHomeF(){
   const empty=`<div class="empty">${reactionFiltersActive()?"No videos match these reaction filters in this view.":state.feed==="mine"?(acct.online?"You haven't reacted to anything here yet.":"Sign in to see your reactions."):c&&!state.q?`<b style="display:block;color:var(--fg);font-size:17px;margin-bottom:6px">No ${esc(c.name)} films yet</b>Fanreelz searches YouTube every hour and adds new AI fan films here automatically.<br>Know a good one? <button class="btn" data-submitcat="" style="margin-top:14px">Submit a film</button>`:"Nothing here yet. Submit the first one."}</div>`;
   if(state.format==="film"){
     langPrep(films,langOf);const fl=films.filter(durOk).filter(f=>genreOk(f,genresOf)&&langOk(f,langOf));
-    html+=sub+langBar(films,langOf)+genreBar(films,genresOf)+`<div class="lorebar">${DUR.map(([k,l])=>`<button class="${state.dur===k?"on":""}" data-dur="${k}">${l}</button>`).join("")}</div>`;
+    html+=sub+langBar(films,langOf)+genreBar(films,genresOf)+`<div class="lorebar">${DUR.filter(([k])=>k!=="any").map(([k,l])=>`<button class="${state.dur===k?"on":""}" data-dur="${k}">${l}</button>`).join("")}</div>`;
     html+=fl.length?moreGrid("grid",fl,f=>card(f)):empty;
   }else if(state.format==="short"){
     html+=shorts.length?moreGrid("shortgrid",shorts,shortCard):empty;
@@ -4441,7 +4441,7 @@ document.addEventListener("click",async e=>{
   if(x=A("[data-longnav]")){$("#shell").classList.remove("open");go({view:"home",feed:"home",cat:null,char:null,q:"",group:"All",format:"film",dur:"o20"});return}
   if(x=A("[data-fmtnav]")){$("#shell").classList.remove("open");resetSections();go({view:"home",feed:"home",cat:null,char:null,group:"All",q:"",dur:"any",sdur:"any",genre:"all",lore:"all",format:x.dataset.fmtnav});return}
   if(x=A("[data-fmt]")){if(state.format!==x.dataset.fmt){state.reactionFilter=[];state.reactionSecond=null}state.format=x.dataset.fmt;go({});return}
-  if(x=A("[data-dur]")){state.dur=x.dataset.dur;render();return}
+  if(x=A("[data-dur]")){state.dur=state.dur===x.dataset.dur?"any":x.dataset.dur;render();return}
   if(x=A("[data-sdur]")){go({sdur:x.dataset.sdur});return}
   if(x=A("[data-genre]")){go({genre:x.dataset.genre});return}
   if(x=A("[data-longfilms]")){state.format="film";state.dur="o20";go({});return}
