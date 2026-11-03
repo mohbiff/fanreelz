@@ -92,6 +92,58 @@ function view(q, uid, admin) {
   };
 }
 
+// notifications: worked out from each request's state and dates, so nothing has to be sent or scheduled.
+// Only "seen up to" is stored per account ("notes-seen:<uid>").
+function notesFor(all, uid, now = Date.now()) {
+  const out = [], add = (q, t, kind, text, tab) => { if (t && t <= now) out.push({ id: q.id + ":" + kind, req: q.id, t, kind, text, tab }); };
+  for (const q of all) {
+    const ph = phaseOf(q, now), T = "“" + q.title + "”", backed = !!q.pledges?.[uid], mine = q.by === uid;
+    const myApp = Object.entries(q.apps || {}).find(([, a]) => a.uid === uid);
+    if (q.for) {
+      const ans = q.created + ANSWER_DAYS * DAY;
+      if (q.for.uid === uid) {
+        add(q, q.created, "asked", `${q.byName || "A fan"} challenged you to make ${T}. Accept within 7 days.`, "open");
+        if (q.acceptedAt) add(q, q.acceptedAt + (DELIVER_DAYS - 5) * DAY, "due", `5 days left to deliver ${T}.`, "making");
+      }
+      if ((mine || backed) && q.for.uid !== uid) {
+        if (q.acceptedAt) add(q, q.acceptedAt, "accepted", `${q.for.name} accepted ${T} and is making the film.`, "making");
+        if (q.declined) add(q, q.declined, "declined", `${q.for.name} declined ${T}. Your pledge is released.`, "open");
+        if (ph === "notaken") add(q, ans, "noanswer", `${q.for.name} didn't answer ${T} in time. Your pledge is released.`, "open");
+      }
+    } else {
+      const applyEnd = q.created + APPLY_DAYS * DAY, voteEnd = applyEnd + VOTE_DAYS * DAY, hasApps = Object.keys(q.apps || {}).length > 0;
+      if (mine && hasApps) {
+        const first = Math.min(...Object.values(q.apps).map((a) => a.at || now));
+        add(q, first, "offer", `A creator offered to make your challenge ${T}.`, "open");
+      }
+      if (!hasApps && (mine || backed)) add(q, applyEnd, "notaken", `No creator took ${T}. Your pledge is released.`, "open");
+      if (hasApps) {
+        if (backed) add(q, applyEnd, "vote", `Voting has started on ${T}. Pick who makes the film.`, "open");
+        else if (myApp) add(q, applyEnd, "vote", `Voting has started on ${T}. Backers now choose a creator.`, "open");
+        const win = q.winner || winnerOf(q), w = q.apps?.[win];
+        if (win && w) {
+          if (w.uid === uid) {
+            add(q, voteEnd, "won", `You won ${T}! You have 30 days to deliver the film.`, "making");
+            add(q, voteEnd + (DELIVER_DAYS - 5) * DAY, "due", `5 days left to deliver ${T}.`, "making");
+          } else if (myApp) add(q, voteEnd, "lost", `Backers chose ${w.name} for ${T}. Thanks for offering!`, "making");
+          else if (backed || mine) add(q, voteEnd, "winner", `${w.name} won the vote and will make ${T}.`, "making");
+        }
+      }
+    }
+    if (q.delivered && (backed || mine || myApp)) add(q, q.delivered.at, "delivered", `${T} is out! Watch the film.`, "done");
+    if (ph === "expired" && (backed || mine)) {
+      const end = q.for ? q.acceptedAt + DELIVER_DAYS * DAY : q.created + (APPLY_DAYS + VOTE_DAYS + DELIVER_DAYS) * DAY;
+      add(q, end, "expired", `${T} wasn't delivered in time. Your pledge is released.`, "open");
+    }
+  }
+  return out.sort((a, b) => b.t - a.t).slice(0, 40);
+}
+async function seenAt(uid) {
+  const { url, h } = db();
+  const r = await fetch(url + "?key=eq." + encodeURIComponent("notes-seen:" + uid) + "&select=value", { headers: h });
+  return r.ok ? (await r.json())[0]?.value?.t || 0 : 0;
+}
+
 export default async (req) => {
   if (req.method !== "POST") return json({ error: "POST only" }, 405);
   const body = await req.json().catch(() => ({}));
@@ -109,6 +161,16 @@ export default async (req) => {
       return json({ creators: rows.filter((x) => x.value?.userId).map((x) => x.key.slice("creator-owner:".length)) });
     }
     if (!uid) return json({ error: "Sign in first" }, 401);
+    if (body.action === "notes") {
+      const [all, seen] = await Promise.all([readAll(), seenAt(uid)]);
+      const notes = notesFor(all, uid);
+      return json({ notes, seen, unread: notes.filter((n) => n.t > seen).length });
+    }
+    if (body.action === "seen") {
+      const { url, h } = db();
+      await fetch(url, { method: "POST", headers: { ...h, Prefer: "resolution=merge-duplicates,return=minimal" }, body: JSON.stringify([{ key: "notes-seen:" + uid, value: { t: Date.now() } }]) });
+      return json({ ok: true });
+    }
     const name = clean(u.user_metadata?.full_name || u.user_metadata?.name || u.user_metadata?.user_name || "", 60) || "a Fanreelz member";
 
     if (body.action === "create") {
@@ -191,4 +253,5 @@ export default async (req) => {
     return json({ error: "Requests are unavailable right now. Please try again." }, 503);
   }
 };
+export { notesFor };
 export const config = { path: "/api/paid-requests" };
