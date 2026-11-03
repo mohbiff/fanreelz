@@ -29,7 +29,7 @@ function prqPaint(){const box=document.getElementById('prq');if(!box)return;cons
   ${D.error?`<p class="vmeta">${esc(D.error)}</p>`:''}
   <div class="prq-list">${open.length?open.map(prqCard).join(''):'<div class="empty">No paid requests yet. Start the first one!</div>'}</div>
   ${done.length?`<h3 class="sect-h" style="font-size:16px">Delivered</h3><div class="prq-list">${done.slice(0,10).map(prqCard).join('')}</div>`:''}
-  <h2 class="sect-h" style="margin-top:22px">💡 Free ideas</h2>`}
+`}
 function prqAmountDialog(title,label,def,onOk){openModal(`<div class="dlg" role="dialog" aria-modal="true" aria-label="${esc(title)}"><h2>${esc(title)}</h2>
   <form class="form" id="prqf"><label for="prqAmt">${esc(label)}<input id="prqAmt" type="number" min="2" max="500" step="1" value="${def}" required></label>
   <div class="row" style="gap:6px">${[2,5,10,20].map(v=>`<button type="button" class="chip" data-prq-amt="${v}">${v} €</button>`).join('')}</div>
