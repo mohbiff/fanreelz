@@ -171,13 +171,14 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape'&&document.getElement
  if((e.key==='Enter'||e.key===' ')&&e.target.matches?.('.prq-card:not(.prq-card-big)')){e.preventDefault();prqBigOpen(e.target)}});
 
 // discussion on a challenge (shown in the big view)
-let prqDraft='',prqReplyTo=null,prqCmFocus=false,prqCmBusy=false;
+let prqAskCm=null,prqDraft='',prqReplyTo=null,prqCmFocus=false,prqCmBusy=false;
 const prqAgo=t=>{const m=Math.round((Date.now()-t)/6e4);return m<1?'just now':m<60?m+'m ago':m<1440?Math.round(m/60)+'h ago':Math.round(m/1440)+'d ago'};
 function prqComment(q,c,reply){const h=typeof hueOf==='function'?hueOf(c.name):270;
  return `<div class="pcm ${reply?'pcm-reply':''}" data-cm="${esc(c.id)}"><span class="pcm-av" style="--h:${h}">${esc((c.name||'?').trim()[0]||'?').toUpperCase()}</span><div class="pcm-body">
   <div class="pcm-h"><b>${esc(c.name)}</b>${c.badge?`<span class="pcm-badge pcm-${c.badge==='Creator'?'cr':c.badge==='Backer'?'bk':'st'}">${esc(c.badge)}</span>`:''}<small>${prqAgo(c.at)}</small></div>
   <p class="pcm-t">${esc(c.text)}</p>
-  <div class="pcm-a"><button type="button" class="pcm-like ${c.liked?'on':''}" data-prq-like="${esc(q.id)}" data-cm-id="${esc(c.id)}" aria-pressed="${c.liked}" aria-label="Like"><span class="ph">${c.liked?'♥':'♡'}</span>${c.likes||''}</button><button type="button" data-prq-reply="${esc(c.id)}" data-name="${esc(c.name)}">Reply</button>${c.mine||isMod?`<button type="button" data-prq-uncomment="${esc(q.id)}" data-cm-id="${esc(c.id)}">Remove</button>`:''}</div></div></div>`}
+  <div class="pcm-a"><button type="button" class="pcm-like ${c.liked?'on':''}" data-prq-like="${esc(q.id)}" data-cm-id="${esc(c.id)}" aria-pressed="${c.liked}" aria-label="Like"><span class="ph">${c.liked?'♥':'♡'}</span>${c.likes||''}</button><button type="button" data-prq-reply="${esc(c.id)}" data-name="${esc(c.name)}">Reply</button>${c.mine||isMod?(prqAskCm===c.id?'':`<button type="button" data-prq-askrm="${esc(c.id)}">Remove</button>`):''}</div>
+  ${prqAskCm===c.id?`<div class="pcm-ask" role="alertdialog" aria-label="Remove comment"><span>Are you sure you want to remove this comment?${(q.comments||[]).some(k=>k.parent===c.id)?' Its replies are removed too.':''}</span><button type="button" class="pcm-yes" data-prq-uncomment="${esc(q.id)}" data-cm-id="${esc(c.id)}">Yes, remove</button><button type="button" data-prq-asknot>Cancel</button></div>`:''}</div></div>`}
 function prqDiscussion(q){const all=q.comments||[],tops=all.filter(c=>!c.parent).sort((a,b)=>b.likes-a.likes||b.at-a.at),kids=id=>all.filter(c=>c.parent===id).sort((a,b)=>a.at-b.at);
  const to=prqReplyTo&&all.find(c=>c.id===prqReplyTo);
  return `<section class="pcd"><div class="pcd-h"><h4>Discussion</h4><span class="vmeta">💬 ${all.length} comment${all.length===1?'':'s'}</span></div>
@@ -194,8 +195,10 @@ document.addEventListener('submit',async e=>{if(e.target.id!=='prqCmF')return;e.
  if(!needAccount('Sign in to join the discussion.'))return;
  if(typeof badText==='function'&&badText(text)){toast(BAD_MSG);return}
  prqCmBusy=true;try{const r=await prqCall({action:'comment',id:e.target.dataset.q,text,parent:prqReplyTo});prqDraft='';prqReplyTo=null;prqSetReq(r.request)}catch(x){toast(x.message)}prqCmBusy=false;prqBigPaint()});
-document.addEventListener('click',async e=>{const t=e.target.closest?.('[data-prq-like],[data-prq-reply],[data-prq-replyx],[data-prq-uncomment]');if(!t)return;
+document.addEventListener('click',async e=>{const t=e.target.closest?.('[data-prq-like],[data-prq-reply],[data-prq-replyx],[data-prq-uncomment],[data-prq-askrm],[data-prq-asknot]');if(!t)return;
+ if(t.matches('[data-prq-askrm]')){prqAskCm=t.dataset.prqAskrm;prqBigPaint();document.querySelector('#prqBigIn .pcm-yes')?.focus({preventScroll:true});return}
+ if(t.matches('[data-prq-asknot]')){prqAskCm=null;prqBigPaint();return}
  if(t.matches('[data-prq-reply]')){if(!needAccount('Sign in to reply.'))return;prqReplyTo=t.dataset.prqReply;prqCmFocus=true;prqBigPaint();return}
  if(t.matches('[data-prq-replyx]')){prqReplyTo=null;prqBigPaint();return}
  if(t.matches('[data-prq-like]')){if(!needAccount('Sign in to like comments.'))return;try{prqSetReq((await prqCall({action:'like',id:t.dataset.prqLike,comment:t.dataset.cmId})).request)}catch(x){toast(x.message)}return}
- if(t.matches('[data-prq-uncomment]')){try{prqSetReq((await prqCall({action:'uncomment',id:t.dataset.prqUncomment,comment:t.dataset.cmId})).request);toast('Comment removed')}catch(x){toast(x.message)}}});
+ if(t.matches('[data-prq-uncomment]')){prqAskCm=null;try{prqSetReq((await prqCall({action:'uncomment',id:t.dataset.prqUncomment,comment:t.dataset.cmId})).request);toast('Comment removed')}catch(x){toast(x.message)}}});
