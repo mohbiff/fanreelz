@@ -14,6 +14,7 @@ const PRQ_PHASE={apply:'Open for creators',vote:'Creator voting',waiting:'Waitin
 const PRQ_GROUP_ICON={'Fantasy':'🐉','Anime':'⛩️','Kids & teens':'🎮','Sci-fi':'🚀','Popular games':'🎮','Classic games':'🕹️','Movies & TV classics':'🎬','Cartoons':'🎨','80s & 90s kids TV':'📼','Monsters, legends & comics':'🦖','What if & nostalgia':'✨','More':'⚡'};
 function prqWorldCover(cat){const g=(typeof GROUPS!=='undefined'&&GROUPS.find(x=>x.cats.some(c=>c.id===cat.id)))||null,h=typeof hueOf==='function'?hueOf(cat.id):270;
  return `<div class="prq-cover prq-cover-world" style="--h:${h}"><span class="pcw-ic" aria-hidden="true">${PRQ_GROUP_ICON[g?.name]||'🎬'}</span><b>${esc(cat.name)}</b>${g?`<small>${esc(g.name)}</small>`:''}</div>`}
+function prqWorldChip(q){const c=q.cat&&typeof CATS!=='undefined'?CATS.find(x=>x.id===q.cat):null;return `<span class="prq-world" title="World"><span aria-hidden="true">🌍</span> ${c?esc(c.name):'Own idea'}</span>`}
 function prqCover(q){const top=pool=>pool.sort((a,b)=>(b.ytViews||0)-(a.ytViews||0))[0];
  const F=allFilms().filter(f=>f.yt),f=(q.for&&top(F.filter(x=>x.channelId===q.for.channel)))||(q.cat&&top(F.filter(x=>x.cat===q.cat)));
  if(f)return `<div class="prq-cover"><img src="https://i.ytimg.com/vi/${esc(f.yt)}/hqdefault.jpg" alt="" loading="lazy" referrerpolicy="no-referrer"></div>`;
@@ -35,7 +36,7 @@ function prqCard(q){const sel=prqSel[q.id]||(prqSel[q.id]={amt:q.myPledge?q.myPl
    <p class="vmeta" style="margin:0">Your pledge goes to the creator who makes the film.</p>
    <button class="btn prq-go" data-prq-back="${esc(q.id)}" ${voting&&!pick?'disabled':''}>${q.myPledge?'Update pledge':'Pledge'} €${sel.amt}${voting?' and vote':''}</button></div>`:'';
  return `<article class="prq-card" tabindex="0" data-prq-card="${esc(q.id)}"><div class="prq-top"><span class="prq-phase prq-${esc(q.phase)}">${PRQ_PHASE[q.phase]||''}</span><span class="vmeta">${when?(q.noLimit?'':'⏱ ')+when:''}</span></div>
-  ${prqCover(q)}<h3>${esc(q.title)}</h3>${q.note?`<p class="rnote">${esc(q.note)}</p>`:''}${forLine}
+  ${prqCover(q)}${prqWorldChip(q)}<h3>${esc(q.title)}</h3>${q.note?`<p class="rnote">${esc(q.note)}</p>`:''}${forLine}
   <div class="prq-stats"><div><span>Raised</span><b class="prq-raised">${prqEur(q.total)}</b></div><div><span>Backers</span><b>${q.backers}</b></div><div><span>${q.for?'Creator':'Creators'}</span><b>${q.for?'1':q.appCount}</b></div></div>
   ${q.delivered?`<a class="btn" href="${esc(q.delivered.url)}" target="_blank" rel="noopener">▶ Watch the film by ${esc(q.winner?.name||'')}</a>`:''}
   ${vote}${offers}${answer}${deliver}${back}
