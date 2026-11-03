@@ -50,10 +50,16 @@ function prqText(q){const cat=(typeof CATS!=='undefined'&&CATS.find(c=>c.id===q.
  return prqNorm([q.title,q.note,q.cat,cat?.name,q.char,q.by,q.for?.name,q.winner?.name,...(q.apps||[]).map(a=>a.name)].join(' '))}
 function prqResults(){const D=prqData||{},all=D.requests||[],words=prqNorm(prqQ).split(/\s+/).filter(Boolean);
  const hit=q=>!words.length||words.every(w=>prqText(q).includes(w));
- const live=all.filter(q=>['apply','vote','waiting','making'].includes(q.phase)&&hit(q)).sort(prqPop),done=all.filter(q=>q.phase==='delivered'&&hit(q));
- if(words.length&&!live.length&&!done.length)return `<div class="empty">No challenges match "${esc(prqQ.trim())}". <button class="linkbtn" data-prq-new="">Create it as a challenge</button></div>`;
- return `${words.length?`<p class="vmeta">${live.length+done.length} challenge${live.length+done.length===1?'':'s'} found</p>`:''}<div class="prq-list">${live.length?live.map(prqCard).join(''):words.length?'':'<div class="empty">No challenges yet. Create the first one!</div>'}</div>
-  ${done.length?`<h3 class="sect-h" style="font-size:16px">Delivered</h3><div class="prq-list">${(words.length?done:done.slice(0,10)).map(prqCard).join('')}</div>`:''}`}
+ const open=all.filter(q=>['apply','vote','waiting'].includes(q.phase)&&hit(q)).sort(prqPop),
+  making=all.filter(q=>q.phase==='making'&&hit(q)).sort((a,b)=>(a.deliverBy||9e15)-(b.deliverBy||9e15)),
+  done=all.filter(q=>q.phase==='delivered'&&hit(q)).sort((a,b)=>(b.delivered?.at||b.created)-(a.delivered?.at||a.created));
+ const n=open.length+making.length+done.length;
+ if(words.length&&!n)return `<div class="empty">No challenges match "${esc(prqQ.trim())}". <button class="linkbtn" data-prq-new="">Create it as a challenge</button></div>`;
+ const sec=(t,sub,list,empty)=>`<h2 class="sect-h prq-sh">${t} <small>${list.length}</small></h2>${sub?`<p class="vmeta prq-sub">${sub}</p>`:''}${list.length?`<div class="prq-list">${list.map(prqCard).join('')}</div>`:empty?`<div class="empty">${empty}</div>`:''}`;
+ return `${words.length?`<p class="vmeta">${n} challenge${n===1?'':'s'} found</p>`:''}
+  ${sec('Open challenges','Back them now and vote for who makes the film.',open,words.length?'':'No open challenges right now. Create the first one!')}
+  ${making.length?sec('Challenges being made','A creator has taken these on and is making the film.',making):''}
+  ${done.length?sec('Completed challenges','The films are out. Watch them!',done):''}`}
 document.addEventListener('input',e=>{if(e.target.id!=='prqQ')return;prqQ=e.target.value;const r=document.getElementById('prqRes');if(r)r.innerHTML=prqResults()});
 // "How it works": open the first time, then remembers if the viewer folded it away
 let prqHowOpen=false;
