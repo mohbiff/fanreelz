@@ -13,25 +13,25 @@ function prqCover(q){const pool=allFilms().filter(f=>f.yt&&(q.for?f.channelId===
  return f?`<div class="prq-cover"><img src="https://i.ytimg.com/vi/${esc(f.yt)}/hqdefault.jpg" alt="" loading="lazy" referrerpolicy="no-referrer"></div>`:`<div class="prq-cover prq-cover-empty">🎬</div>`}
 function prqCard(q){const sel=prqSel[q.id]||(prqSel[q.id]={amt:q.myPledge?q.myPledge/100:5,ch:q.myVote||null});
  const open=['apply','vote','waiting'].includes(q.phase)||(q.for&&q.phase==='making'),voting=q.phase==='vote';
- const when=q.phase==='apply'?prqLeft(q.applyEnd)+' to offer':voting?prqLeft(q.voteEnd)+' to vote':q.phase==='waiting'?prqLeft(q.answerBy)+' to answer':q.phase==='making'&&q.deliverBy?prqLeft(q.deliverBy)+' to deliver':'';
+ const when=q.noLimit&&['apply','vote','waiting','making'].includes(q.phase)?'∞ No time limit':q.phase==='apply'?prqLeft(q.applyEnd)+' to offer':voting?prqLeft(q.voteEnd)+' to vote':q.phase==='waiting'?prqLeft(q.answerBy)+' to answer':q.phase==='making'&&q.deliverBy?prqLeft(q.deliverBy)+' to deliver':'';
  const totalVotes=q.apps.reduce((a,x)=>a+x.votes,0)||0;
  const vote=voting&&q.apps.length?`<div class="prq-sec"><b>Who should make the film?</b>${q.apps.sort((a,b)=>b.votes-a.votes).map(a=>{const pc=totalVotes?Math.round(a.votes*100/totalVotes):0,on=sel.ch===a.channel;
    return `<button type="button" class="prq-opt ${on?'on':''}" data-prq-pick="${esc(q.id)}" data-ch="${esc(a.channel)}"><span class="prq-radio"></span><span class="prq-optname">${esc(a.name)}${a.sample?` <a href="${esc(a.sample)}" target="_blank" rel="noopener" class="vmeta">example ↗</a>`:''}${q.myVote===a.channel?' <small class="vmeta">· your vote</small>':''}</span><span class="vmeta">${pc}%</span><i class="prq-bar"><i style="width:${pc}%"></i></i></button>`}).join('')}</div>`:'';
  const offers=q.phase==='apply'&&!q.for?`<p class="vmeta">${q.appCount?q.appCount+' creator'+(q.appCount===1?'':'s')+' offered so far · shown when voting starts':'No creator has offered yet'}${q.myApp?' · ✓ you offered':''}</p>${q.myApp?'':`<button class="btn ghost" data-prq-apply="${esc(q.id)}">🎬 Accept the challenge</button>`}`:'';
  const forLine=q.for?`<p class="prq-for">For <b>${esc(q.for.name)}</b>${q.phase==='waiting'?' · waiting for them to accept':q.phase==='making'?' · accepted':''}</p>`:'';
- const answer=q.phase==='waiting'&&(q.for?.mine||isMod)?`<div class="row" style="gap:8px"><button class="btn" data-prq-accept="${esc(q.id)}">Accept · deliver within 30 days</button><button class="btn ghost" data-prq-decline="${esc(q.id)}">Decline</button></div>`:'';
+ const answer=q.phase==='waiting'&&(q.for?.mine||isMod)?`<div class="row" style="gap:8px"><button class="btn" data-prq-accept="${esc(q.id)}">${q.noLimit?'Accept':'Accept · deliver within 30 days'}</button><button class="btn ghost" data-prq-decline="${esc(q.id)}">Decline</button></div>`:'';
  const deliver=q.phase==='making'&&(q.winner?.mine||isMod)?`<button class="btn" data-prq-deliver="${esc(q.id)}">Deliver the film</button>`:'';
  const pick=voting?q.apps.find(a=>a.channel===sel.ch):null;
  const back=open&&!q.for?.mine?`<div class="prq-sec"><b>Your pledge</b><div class="prq-amts">${PRQ_AMOUNTS.map(v=>`<button type="button" class="prq-amt ${sel.amt===v?'on':''}" data-prq-amt="${esc(q.id)}" data-v="${v}">€${v}</button>`).join('')}</div>
    <div class="prq-sum">${voting?`<span>Your creator</span><b>${pick?esc(pick.name):'Pick one above'}</b>`:''}<span>Pledge</span><b>€${sel.amt}</b></div>
    <p class="vmeta" style="margin:0">Your pledge goes to the creator who makes the film.</p>
    <button class="btn prq-go" data-prq-back="${esc(q.id)}" ${voting&&!pick?'disabled':''}>${q.myPledge?'Update pledge':'Pledge'} €${sel.amt}${voting?' and vote':''}</button></div>`:'';
- return `<article class="prq-card" data-prq-card="${esc(q.id)}"><div class="prq-top"><span class="prq-phase prq-${esc(q.phase)}">${PRQ_PHASE[q.phase]||''}</span><span class="vmeta">${when?'⏱ '+when:''}</span></div>
+ return `<article class="prq-card" data-prq-card="${esc(q.id)}"><div class="prq-top"><span class="prq-phase prq-${esc(q.phase)}">${PRQ_PHASE[q.phase]||''}</span><span class="vmeta">${when?(q.noLimit?'':'⏱ ')+when:''}</span></div>
   ${prqCover(q)}<h3>${esc(q.title)}</h3>${q.note?`<p class="rnote">${esc(q.note)}</p>`:''}${forLine}
   <div class="prq-stats"><div><span>Raised</span><b class="prq-raised">${prqEur(q.total)}</b></div><div><span>Backers</span><b>${q.backers}</b></div><div><span>${q.for?'Creator':'Creators'}</span><b>${q.for?'1':q.appCount}</b></div></div>
   ${q.delivered?`<a class="btn" href="${esc(q.delivered.url)}" target="_blank" rel="noopener">▶ Watch the film by ${esc(q.winner?.name||'')}</a>`:''}
   ${vote}${offers}${answer}${deliver}${back}
-  ${isMod&&['apply','vote'].includes(q.phase)?`<button class="linkbtn" data-prq-skip="${esc(q.id)}">Admin test: skip to ${q.phase==='apply'?'voting':'making'}</button>`:''}<p class="vmeta" style="margin:0">Created by ${esc(q.by)}${q.myPledge?` · you pledged ${prqEur(q.myPledge)}`:''}${isMod?` · <button class="linkbtn" data-prq-remove="${esc(q.id)}">Remove</button>`:''}</p></article>`}
+  ${isMod&&['apply','vote'].includes(q.phase)?`<button class="linkbtn" data-prq-skip="${esc(q.id)}">${q.noLimit?(q.phase==='apply'?'Admin: start voting':'Admin: end voting and pick the winner'):'Admin test: skip to '+(q.phase==='apply'?'voting':'making')}</button>`:''}<p class="vmeta" style="margin:0">Created by ${esc(q.by)}${q.myPledge?` · you pledged ${prqEur(q.myPledge)}`:''}${isMod?` · <button class="linkbtn" data-prq-remove="${esc(q.id)}">Remove</button>`:''}</p></article>`}
 function prqPaint(){const box=document.getElementById('prq');if(!box)return;const D=prqData;
  if(!D){box.innerHTML='<p class="vmeta">Loading challenges…</p>';return}
   box.innerHTML=`<section class="prq-hero"><small>COMMUNITY POWERED</small><h1>You imagine it. Creators make it.</h1><p>Your idea. Their creativity. Your vote. Back the AI film you want to see and vote for the creator who brings it to life.</p>
@@ -88,6 +88,7 @@ async function prqNew(){if(!needAccount('Sign in to create a challenge.'))return
   <fieldset class="ratepick"><legend>Who can make it?</legend><label class="chk"><input type="radio" name="prqMode" value="open" checked> <span>Any verified creator: they offer, backers vote</span></label>
    <label class="chk"><input type="radio" name="prqMode" value="one" ${cr.length?'':'disabled'}> <span>One creator I choose${cr.length?'':' (no verified creators yet)'}</span></label>
    <select id="prqWho" hidden>${cr.map(c=>`<option value="${esc(c.id)}">${esc(c.name)}</option>`).join('')}</select></fieldset>
+  ${isMod?`<label class="chk" style="display:flex;flex-direction:row;align-items:flex-start;gap:10px;text-align:left;font-weight:400"><input type="checkbox" id="prqNL" style="width:auto;margin-top:3px"> <span><b>Admin: no time limit.</b> No countdown or deadline. You start and end the vote yourself.</span></label>`:''}
   <label for="prqA">Your pledge (from 2 €)<input id="prqA" type="number" min="2" max="500" step="1" value="5" required></label>
   <p class="subnote">Your own ideas, myths, legends and public-domain stories work best: creators decide what they can make. No money is charged now.</p>
   <div class="row"><button class="btn purple" type="submit">Post challenge</button><button class="btn ghost" type="button" data-close>Cancel</button></div></form></div>`);
@@ -95,7 +96,7 @@ async function prqNew(){if(!needAccount('Sign in to create a challenge.'))return
  $('#prqn').onsubmit=async e=>{e.preventDefault();const title=$('#prqT').value.trim(),note=$('#prqN').value.trim(),one=document.querySelector('[name="prqMode"]:checked').value==='one';
   if(typeof badText==='function'&&badText(title,note)){toast(BAD_MSG);return}
   const who=one?cr.find(c=>c.id===$('#prqWho').value):null;
-  try{await prqCall({action:'create',title,note,cat:$('#prqW').value,amount:+$('#prqA').value,...(who?{creator:who.id,creatorName:who.name}:{})});closeModal();toast(who?'Challenge sent to '+who.name:'Challenge posted');prqLoad()}catch(x){toast(x.message)}}}
+  try{await prqCall({action:'create',title,note,cat:$('#prqW').value,amount:+$('#prqA').value,noLimit:!!$('#prqNL')?.checked,...(who?{creator:who.id,creatorName:who.name}:{})});closeModal();toast(who?'Challenge sent to '+who.name:'Challenge posted');prqLoad()}catch(x){toast(x.message)}}}
 function prqApply(id){const chs=prqData.myChannels||[];const nameOf=ch=>ch.name||allFilms().find(f=>f.channelId===ch.id)?.by||'Your channel';
  openModal(`<div class="dlg" data-sticky="" role="dialog" aria-modal="true" aria-label="Offer to make it"><h2>Offer to make this film</h2>
   <form class="form" id="prqp"><label for="prqC">Your verified channel<select id="prqC">${chs.map(c=>`<option value="${esc(c.id)}">${esc(nameOf(c))}</option>`).join('')}</select></label>

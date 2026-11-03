@@ -50,6 +50,13 @@ const cents = (x) => Math.round(Number(x) * 100);
 const ANSWER_DAYS = 7;
 function phaseOf(q, now = Date.now()) {
   if (q.delivered) return "delivered";
+  // admin challenges without a time limit: an admin moves them on by hand (start voting, end voting); no delivery deadline
+  if (q.noLimit) {
+    if (q.for) return q.declined ? "declined" : q.acceptedAt ? "making" : "waiting";
+    if (!q.voteAt) return "apply";
+    if (!Object.keys(q.apps || {}).length) return "notaken";
+    return q.makeAt ? "making" : "vote";
+  }
   if (q.for) {
     if (q.declined) return "declined";
     if (!q.acceptedAt) return now < q.created + ANSWER_DAYS * DAY ? "waiting" : "notaken";
@@ -81,6 +88,7 @@ function view(q, uid, admin) {
   const winApp = q.for ? { name: q.for.name, uid: q.for.uid } : q.apps?.[win];
   return {
     id: q.id, title: q.title, note: q.note, cat: q.cat, char: q.char, by: q.byName || "a Fanreelz member", mineRequest: q.by === uid,
+    noLimit: !!q.noLimit,
     created: q.created, applyEnd: q.created + APPLY_DAYS * DAY, voteEnd: q.created + (APPLY_DAYS + VOTE_DAYS) * DAY,
     deliverBy: q.for ? (q.acceptedAt ? q.acceptedAt + DELIVER_DAYS * DAY : null) : q.created + (APPLY_DAYS + VOTE_DAYS + DELIVER_DAYS) * DAY, phase: ph,
     answerBy: q.for ? q.created + ANSWER_DAYS * DAY : null, for: q.for ? { channel: q.for.channel, name: q.for.name, mine: q.for.uid === uid } : null,
@@ -89,6 +97,7 @@ function view(q, uid, admin) {
     apps: showApps ? Object.entries(q.apps || {}).map(([ch, a]) => ({ channel: ch, name: a.name, sample: a.sample, votes: tally[ch] || 0, mine: a.uid === uid })) : [],
     winner: win ? { channel: win, name: winApp?.name || "", mine: winApp?.uid === uid } : null,
     delivered: q.delivered || null, creatorShare: Math.round(total * CREATOR_SHARE),
+    ...(q.noLimit ? { applyEnd: null, voteEnd: null, deliverBy: null, answerBy: null } : {}),
   };
 }
 
@@ -102,8 +111,8 @@ function notesFor(all, uid, now = Date.now()) {
     if (q.for) {
       const ans = q.created + ANSWER_DAYS * DAY;
       if (q.for.uid === uid) {
-        add(q, q.created, "asked", `${q.byName || "A fan"} challenged you to make ${T}. Accept within 7 days.`, "open");
-        if (q.acceptedAt) add(q, q.acceptedAt + (DELIVER_DAYS - 5) * DAY, "due", `5 days left to deliver ${T}.`, "making");
+        add(q, q.created, "asked", `${q.byName || "A fan"} challenged you to make ${T}.${q.noLimit ? "" : " Accept within 7 days."}`, "open");
+        if (q.acceptedAt && !q.noLimit) add(q, q.acceptedAt + (DELIVER_DAYS - 5) * DAY, "due", `5 days left to deliver ${T}.`, "making");
       }
       if ((mine || backed) && q.for.uid !== uid) {
         if (q.acceptedAt) add(q, q.acceptedAt, "accepted", `${q.for.name} accepted ${T} and is making the film.`, "making");
@@ -111,7 +120,7 @@ function notesFor(all, uid, now = Date.now()) {
         if (ph === "notaken") add(q, ans, "noanswer", `${q.for.name} didn't answer ${T} in time. Your pledge is released.`, "open");
       }
     } else {
-      const applyEnd = q.created + APPLY_DAYS * DAY, voteEnd = applyEnd + VOTE_DAYS * DAY, hasApps = Object.keys(q.apps || {}).length > 0;
+      const applyEnd = q.noLimit ? q.voteAt : q.created + APPLY_DAYS * DAY, voteEnd = q.noLimit ? q.makeAt : applyEnd + VOTE_DAYS * DAY, hasApps = Object.keys(q.apps || {}).length > 0;
       if (mine && hasApps) {
         const first = Math.min(...Object.values(q.apps).map((a) => a.at || now));
         add(q, first, "offer", `A creator offered to make your challenge ${T}.`, "open");
@@ -123,8 +132,8 @@ function notesFor(all, uid, now = Date.now()) {
         const win = q.winner || winnerOf(q), w = q.apps?.[win];
         if (win && w) {
           if (w.uid === uid) {
-            add(q, voteEnd, "won", `You won ${T}! You have 30 days to deliver the film.`, "making");
-            add(q, voteEnd + (DELIVER_DAYS - 5) * DAY, "due", `5 days left to deliver ${T}.`, "making");
+            add(q, voteEnd, "won", `You won ${T}!${q.noLimit ? "" : " You have 30 days to deliver the film."}`, "making");
+            if (!q.noLimit) add(q, voteEnd + (DELIVER_DAYS - 5) * DAY, "due", `5 days left to deliver ${T}.`, "making");
           } else if (myApp) add(q, voteEnd, "lost", `Backers chose ${w.name} for ${T}. Thanks for offering!`, "making");
           else if (backed || mine) add(q, voteEnd, "winner", `${w.name} won the vote and will make ${T}.`, "making");
         }
@@ -191,7 +200,7 @@ export default async (req) => {
         forCreator = { channel: ch, uid: owner.userId, name: clean(body.creatorName, 80) || "YouTube creator" };
       }
       const q = { id: "r" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), title, note, cat: clean(body.cat, 40), char: clean(body.char, 40),
-        by: uid, byName: name, created: Date.now(), pledges: { [uid]: { cents: c, at: Date.now() } }, apps: {}, votes: {}, ...(forCreator ? { for: forCreator } : {}) };
+        by: uid, byName: name, created: Date.now(), pledges: { [uid]: { cents: c, at: Date.now() } }, apps: {}, votes: {}, ...(forCreator ? { for: forCreator } : {}), ...(admin && body.noLimit ? { noLimit: true } : {}) };
       await save(q);
       return json({ request: view(q, uid, admin) });
     }
@@ -236,6 +245,11 @@ export default async (req) => {
       const link = String(body.url || "");
       if (!/^https:\/\/(www\.)?(youtube\.com|youtu\.be)\/[^\s"<>]+$/.test(link)) return json({ error: "Paste the YouTube link to the film" }, 400);
       q.winner = win; q.delivered = { url: link.slice(0, 200), at: Date.now() };
+    } else if (body.action === "skip" && admin && q.noLimit) {
+      // no time limit: the admin starts and ends the vote by hand
+      if (ph === "apply") q.voteAt = Date.now();
+      else if (ph === "vote") { q.makeAt = Date.now(); q.winner = winnerOf(q); }
+      else return json({ error: "Nothing to skip in this phase" }, 409);
     } else if (body.action === "skip" && admin) {
       // admin test tool: move the request to the next phase now (shifts its dates back)
       const shift = ph === "apply" ? q.created + APPLY_DAYS * DAY - Date.now() + 1000 : ph === "vote" ? q.created + (APPLY_DAYS + VOTE_DAYS) * DAY - Date.now() + 1000 : 0;
@@ -253,5 +267,5 @@ export default async (req) => {
     return json({ error: "Requests are unavailable right now. Please try again." }, 503);
   }
 };
-export { notesFor };
+export { notesFor, phaseOf };
 export const config = { path: "/api/paid-requests" };

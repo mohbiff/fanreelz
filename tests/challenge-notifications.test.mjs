@@ -17,3 +17,11 @@ test("future events are not shown yet", () => {
   const fresh = { ...open, created: now - D };
   assert.ok(!notesFor([fresh], "fan").some((n) => n.kind === "vote"));
 });
+import { phaseOf } from "../netlify/functions/paid-requests.mjs";
+test("admin challenges without a time limit only move on by hand", () => {
+  const q = { id: "n", title: "Forever", by: "adm", created: now - 400 * D, noLimit: true, pledges: {}, apps: { c: { uid: "cr", name: "C", at: now - 300 * D } }, votes: {} };
+  assert.equal(phaseOf(q), "apply");
+  assert.equal(phaseOf({ ...q, voteAt: now - 200 * D }), "vote");
+  assert.equal(phaseOf({ ...q, voteAt: now - 200 * D, makeAt: now - 100 * D }), "making");
+  assert.equal(phaseOf({ ...q, for: { uid: "cr" } }), "waiting");
+});
