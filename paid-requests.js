@@ -36,24 +36,23 @@ function prqPaint(){const box=document.getElementById('prq');if(!box)return;cons
  if(!D){box.innerHTML='<p class="vmeta">Loading challenges…</p>';return}
  const live=(D.requests||[]).filter(q=>['apply','vote','waiting','making'].includes(q.phase)),done=(D.requests||[]).filter(q=>q.phase==='delivered');
  box.innerHTML=`<section class="prq-hero"><small>COMMUNITY POWERED</small><h1>You imagine it. Creators make it.</h1><p>Your idea. Their creativity. Your vote. Back the AI film you want to see and vote for the creator who brings it to life.</p>
-  <div class="row" style="gap:10px;flex-wrap:wrap"><button class="btn purple" data-prq-new="">⚡ Create a Challenge</button><button class="btn ghost" data-prq-howopen="">How it works</button></div></section>
-  ${prqHow()}
+  <div class="row" style="gap:10px;flex-wrap:wrap"><button class="btn purple" data-prq-new="">⚡ Create a Challenge</button><button class="btn ghost" data-prq-howopen="" aria-expanded="${prqHowOpen}">How it works ${prqHowOpen?"▴":"▾"}</button></div>${prqHow()}</section>
   <div class="prq-note">${icon('shield')} <span><b>No money is charged yet.</b> Pledges are promises while payments are being set up. When they open, a pledge is charged only after the film is delivered, and never if nobody makes it.</span></div>
   ${D.error?`<p class="vmeta">${esc(D.error)}</p>`:''}
   <div class="prq-list">${live.length?live.map(prqCard).join(''):'<div class="empty">No challenges yet. Create the first one!</div>'}</div>
   ${done.length?`<h3 class="sect-h" style="font-size:16px">Delivered</h3><div class="prq-list">${done.slice(0,10).map(prqCard).join('')}</div>`:''}`}
 // "How it works": open the first time, then remembers if the viewer folded it away
-function prqHow(){let shut=false;try{shut=localStorage.getItem('fr_prq_how')==='0'}catch(e){}
+let prqHowOpen=false;
+function prqHow(){
  const step=(ic,t)=>`<div class="prq-step"><span>${ic}</span><b>${t}</b></div>`;
  const row=(n,sub,t,d)=>`<div class="prq-row"><div class="prq-day"><b>${n}</b><small>${sub}</small></div><div><b>${t}</b><p>${d}</p></div></div>`;
- return `<details class="prq-how" ${shut?'':'open'}><summary>How it works</summary>
+ return `<div class="prq-how ${prqHowOpen?'open':''}" id="prqHow"><div class="prq-howin">
   <div class="prq-steps">${step('💡','Create a challenge')}<i>→</i>${step('💶','Back it')}<i>→</i>${step('🗳️','Vote')}<i>→</i>${step('🎬','Film made')}</div>
   ${row('1–3','Days','Back it and creators sign up','Someone posts an idea, like "Vikings on Mars". Anyone can back it from €2, with no upper limit. Verified creators can sign up to make it, but their names stay hidden.')}
   ${row('4–7','Days','Creators revealed, voting opens','The creators who signed up are shown. Everyone who backed the request votes, one vote each, on who should make the film.')}
   ${row('7+','After','The winner makes it','The creator with the most votes gets the job and has 30 days to deliver. Pledges are charged only when the film is delivered, and the money goes to the creator who made it.')}
-  <p class="prq-alt">Or <b>ask one creator directly</b>: they accept within 7 days, then have 30 days to deliver.</p></details>`}
-document.addEventListener('click',e=>{if(!e.target.closest?.('[data-prq-howopen]'))return;const d=document.querySelector('.prq-how');if(d){d.open=true;d.scrollIntoView({behavior:'smooth',block:'start'})}});
-document.addEventListener('toggle',e=>{if(e.target.classList?.contains('prq-how')){try{localStorage.setItem('fr_prq_how',e.target.open?'1':'0')}catch(x){}}},true);
+  <p class="prq-alt">Or <b>ask one creator directly</b>: they accept within 7 days, then have 30 days to deliver.</p></div></div>`}
+document.addEventListener('click',e=>{const b=e.target.closest?.('[data-prq-howopen]');if(!b)return;prqHowOpen=!prqHowOpen;document.getElementById('prqHow')?.classList.toggle('open',prqHowOpen);b.setAttribute('aria-expanded',prqHowOpen);b.textContent='How it works '+(prqHowOpen?'▴':'▾')});
 // verified creators to choose from (names from their films on Fanreelz)
 async function prqCreatorList(){if(!prqCreators){try{prqCreators=(await prqCall({action:'creators'})).creators||[]}catch(e){prqCreators=[]}}
  return prqCreators.map(id=>({id,name:allFilms().find(f=>f.channelId===id)?.by||''})).filter(c=>c.name).sort((a,b)=>a.name.localeCompare(b.name))}
