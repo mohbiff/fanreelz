@@ -4522,6 +4522,8 @@ render();
 function signinInUrl(){return /[?&#](code|error|access_token)=/.test(location.search+location.hash)}
 try{history.replaceState({fr:navSnap(),y:0},"",signinInUrl()||pendingLink?location.href:pathFor(state))}catch(e){}
 loadLive();setInterval(()=>{if(!document.hidden)loadLive()},120000);
+/* Ctrl/Cmd+A selects only inside a text box, never the whole page (it painted everything blue) */
+document.addEventListener("keydown",e=>{if((e.ctrlKey||e.metaKey)&&!e.altKey&&(e.key==="a"||e.key==="A")){const t=e.target;if(t&&(t.matches?.("input,textarea,[contenteditable],[contenteditable] *")))return;e.preventDefault();try{getSelection().removeAllRanges()}catch(x){}}});
 /* The Android app: its first start counts as an install, and each day it is used counts once (for the admin's app numbers) */
 setTimeout(()=>{try{if(!(window.FanreelzApp||/FanreelzApp\//.test(navigator.userAgent)))return;
   const d=new Date().toLocaleDateString("sv-SE"),add=id=>{if(sb)sb.rpc("add_view",{p_id:id}).then(()=>{},()=>{})};
