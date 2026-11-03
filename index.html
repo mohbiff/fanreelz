@@ -1237,7 +1237,7 @@ const langBar=(list,of)=>{const n={};list.forEach(x=>{const l=of(x);n[l]=(n[l]||
   // languages with only one or two titles share an "Other languages" button
   const few=Object.entries(n).filter(([,v])=>v<3),fewN=few.reduce((a,[,v])=>a+v,0);
   if(ls.length+(fewN?1:0)<2&&!state.lang)return "";
-  return `<div class="lorebar langbar" role="group" aria-label="Language" style="flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none">${[["","All languages",list.length],...ls.map(([l,v])=>[l,langName(l),v]),...(fewN?[["other","Other languages",fewN]]:[])].map(([k,l,v])=>`<button style="flex-shrink:0" class="${(state.lang||"")===k?"on":""}" data-lang="${k}">${esc(l)}${isMod?` <small style="opacity:.7">${v}</small>`:""}</button>`).join("")}</div>`};
+  return `<div class="lorebar langbar" role="group" aria-label="Language" style="flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none">${[...ls.map(([l,v])=>[l,langName(l),v]),...(fewN?[["other","Other languages",fewN]]:[])].map(([k,l,v])=>`<button style="flex-shrink:0" class="${(state.lang||"")===k?"on":""}" data-lang="${k}">${esc(l)}${isMod?` <small style="opacity:.7">${v}</small>`:""}</button>`).join("")}</div>`};
 let langFew=null;const langOk=(x,of)=>{if(!state.lang)return true;const l=of(x);if(state.lang!=="other")return l===state.lang;
   // "Other languages": every language that has fewer than 3 titles in this list (worked out once per list)
   return langFew?.has(l)};
@@ -3156,7 +3156,7 @@ function genresOf(f){if(genreMemo.has(f.id))return genreMemo.get(f.id);
   if(typeof isKids==="function"&&isKids(f))out.push("family");genreMemo.set(f.id,out);return out}
 const seriesGenres=x=>{const set=new Set(genresOf({id:"s:"+x.id,title:x.title,char:x.char,cat:x.cat}));x.episodes.forEach(e=>genresOf(findFilm(e.id)||{...e,cat:x.cat}).forEach(g=>set.add(g)));return [...set]};
 const GENRE_LIST=[["all","All genres"],...GENRES.map(([k,l])=>[k,l]),["family","Family"]];
-const genreBar=(list,of)=>`<div class="lorebar genrebar" role="group" aria-label="Genre" style="flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none">${GENRE_LIST.filter(([k])=>k==="all"||list.some(x=>of(x).includes(k))).map(([k,l])=>`<button style="flex-shrink:0" class="${(state.genre||"all")===k?"on":""}" data-genre="${k}">${l}</button>`).join("")}</div>`;
+const genreBar=(list,of)=>`<div class="lorebar genrebar" role="group" aria-label="Genre" style="flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none">${GENRE_LIST.filter(([k])=>k!=="all"&&list.some(x=>of(x).includes(k))).map(([k,l])=>`<button style="flex-shrink:0" class="${(state.genre||"all")===k?"on":""}" data-genre="${k}">${l}</button>`).join("")}</div>`;
 const genreOk=(x,of)=>!state.genre||state.genre==="all"||of(x).includes(state.genre);
 const durOk=f=>{const s=secs(f.len);return state.dur==="any"||(state.dur==="u5"&&s<300)||(state.dur==="5to20"&&s>=300&&s<=1200)||(state.dur==="o20"&&s>1200)};
 
@@ -3261,7 +3261,7 @@ function renderHomeF(){
   }else if(state.format==="series"){
     langPrep(series,seriesLang);const sl=series.filter(x=>sdurOk(x)&&genreOk(x,seriesGenres)&&langOk(x,seriesLang));
     html+=langBar(series,seriesLang)+genreBar(series,seriesGenres);
-    html+=`<div class="lorebar">${SDUR.map(([k,l])=>{const n=series.filter(x=>sdurOk(x,k)).length;return `<button class="${(state.sdur||"any")===k?"on":""}" data-sdur="${k}">${l}${isMod?` <small style="opacity:.7">${n}</small>`:""}</button>`}).join("")}</div>`;
+    html+=`<div class="lorebar">${SDUR.filter(([k])=>k!=="any").map(([k,l])=>{const n=series.filter(x=>sdurOk(x,k)).length;return `<button class="${(state.sdur||"any")===k?"on":""}" data-sdur="${k}">${l}${isMod?` <small style="opacity:.7">${n}</small>`:""}</button>`}).join("")}</div>`;
     html+=sl.length?moreGrid("grid",sl,seriesCard):(series.length?`<div class="empty">No series of this length yet.</div>`:empty);
   }else{
     html+=sub;
@@ -4442,8 +4442,8 @@ document.addEventListener("click",async e=>{
   if(x=A("[data-fmtnav]")){$("#shell").classList.remove("open");resetSections();go({view:"home",feed:"home",cat:null,char:null,group:"All",q:"",dur:"any",sdur:"any",genre:"all",lore:"all",format:x.dataset.fmtnav});return}
   if(x=A("[data-fmt]")){if(state.format!==x.dataset.fmt){state.reactionFilter=[];state.reactionSecond=null}state.format=x.dataset.fmt;go({});return}
   if(x=A("[data-dur]")){state.dur=state.dur===x.dataset.dur?"any":x.dataset.dur;render();return}
-  if(x=A("[data-sdur]")){go({sdur:x.dataset.sdur});return}
-  if(x=A("[data-genre]")){go({genre:x.dataset.genre});return}
+  if(x=A("[data-sdur]")){go({sdur:(state.sdur||"any")===x.dataset.sdur?"any":x.dataset.sdur});return}
+  if(x=A("[data-genre]")){go({genre:(state.genre||"all")===x.dataset.genre?"all":x.dataset.genre});return}
   if(x=A("[data-longfilms]")){state.format="film";state.dur="o20";go({});return}
   if(x=A("[data-short]")){openShorts(x.dataset.short);return}
   if(x=A("[data-series]")){go({view:"series",series:x.dataset.series,season:1});return}
@@ -4459,7 +4459,7 @@ document.addEventListener("click",async e=>{
   if(A("[data-news]")){toggleNewsletter();return}
   if(x=A("[data-lore]")){state.lore=x.dataset.lore;render();return}
   if(x=A("[data-sort]")){state.sort=x.dataset.sort;render();return}
-  if(x=A("[data-lang]")){state.lang=x.dataset.lang;render();return}
+  if(x=A("[data-lang]")){state.lang=(state.lang||"")===x.dataset.lang?"":x.dataset.lang;render();return}
   if(x=A("[data-browsesort]")){const g=state.bgroup;go({view:"home",feed:"home",cat:null,char:null,q:"",group:g&&g!=="All"?g:"All",format:"film",sort:x.dataset.browsesort});return}
   if(x=A("[data-gcats]")){gcatsOpen=!gcatsOpen;render();return}
   if(x=A("[data-umpeak]")){umPeakOpen=!umPeakOpen;render();return}
