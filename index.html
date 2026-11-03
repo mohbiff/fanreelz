@@ -665,7 +665,7 @@ body.spfs .tabbar,body.spfs .toast{z-index:61}
 .toast{z-index:210!important}
 /* phone Shorts: like YouTube, the bottom bar (Home, Shorts…) stays, the video ends just above it, and a back arrow sits top-left */
 body.spfs .shorts-view .sp{bottom:calc(54px + env(safe-area-inset-bottom,0px));height:auto}
-body.spfs .tabbar{background:#000;border-top-color:rgba(255,255,255,.12)}body.spfs .tb{color:#fff}body.spfs .tbplus .i{border-color:#fff}
+body.spfs .tabbar{background:#000;border-top-color:rgba(255,255,255,.12)}body.spfs .tb{color:#fff}body.spfs .tbplus .i{border-color:#fff}.tbchal .i{color:#a78bfa;stroke:#a78bfa}
 .spback{display:none;position:absolute;top:calc(8px + env(safe-area-inset-top,0px));left:8px;z-index:7;width:44px;height:44px;border:0;border-radius:50%;background:rgba(0,0,0,.35);color:#fff;cursor:pointer;align-items:center;justify-content:center;padding:0}
 .spback svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
 body.spfs .spback{display:flex}
@@ -936,7 +936,6 @@ a.gi[data-rx-combo]{color:inherit;text-decoration:none}
   <button class="logo" id="homeLogo" aria-label="Fanreelz home"><span class="mark"><svg viewBox="0 0 62 58" aria-hidden="true"><path d="M8 6.5c0-3 3.3-4.9 5.9-3.3l38.4 22.8c2.5 1.5 2.5 5.1 0 6.6L13.9 55.4C11.3 57 8 55.1 8 52.1z" fill="#8b5cf6"/><path class="spark" d="M51 2l2.6 6.4L60 11l-6.4 2.6L51 20l-2.6-6.4L42 11l6.4-2.6z" fill="#ffd23f"/></svg></span><span class="word">Fanreel<span class="zz">z</span></span><span class="word-tag">The home of AI fan films</span></button>
   <div class="searchwrap"><form class="search" id="sform" role="search"><input id="q" type="search" placeholder="Search" aria-label="Search films, games, characters"><button type="submit" aria-label="Search"><svg class="i" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M20 20l-4.8-4.8"/></svg></button></form></div>
   <div class="actions">
-    <button class="createbtn" id="submitBtn" aria-label="Submit a film"><svg class="i" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg><b>Submit</b></button>
     <div id="who"><button class="signin" id="signinBtn"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg><b>Sign in</b></button></div>
   </div>
 </header>
@@ -1440,7 +1439,7 @@ function renderTabbar(){
   const youOn=["you","history","later","liked","yourvideos","subscriptions","user","playlists"].includes(state.view);
   $("#tabbar").innerHTML=t(state.view==="home"&&!state.cat&&state.feed==="home"&&!state.q,'data-feed="home"',"home","Home")+
     t(state.view==="shorts",'data-tabshorts=""',"short","Shorts")+
-    `<button class="tb tbplus" id="submitBtn2b" aria-label="Submit a film"><svg class="i" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button>`+
+    `<button class="tb tbchal ${state.view==="requests"?"on":""}" data-view="requests" aria-label="Challenges"><svg class="i" viewBox="0 0 24 24"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg><span>Challenges</span></button>`+
     t(state.view==="live"||state.view==="liveplay",'data-view="live"',"live","Live")+
     `<button class="tb ${youOn?"on":""}" data-view="you" aria-label="You">${acct.online&&acct.me?.avatarUrl?`<img class="tbav" src="${esc(acct.me.avatarUrl)}" alt="" referrerpolicy="no-referrer">`:icon("user")}<span>You</span></button>`;
 }
@@ -1562,7 +1561,7 @@ function renderHome(){
   if(state.feed==="mine"&&!c)html+=`<h2 class="sect-h">${icon("mine")} Your reactions</h2>`;
   if(showShelf)html+=`<h2 class="sect-h">${icon("fresh")} Latest</h2>`;
   html+=rest.length?moreGrid("grid",rest,f=>card(f))
-    :`<div class="empty">${state.feed==="mine"?(acct.online?"You haven't reacted to anything yet.":"Sign in to see the films you've reacted to."):"No films here yet. Submit the first one."}</div>`;
+    :`<div class="empty">${state.feed==="mine"?(acct.online?"You haven't reacted to anything yet.":"Sign in to see the films you've reacted to."):"No films here yet."}</div>`;
   html+=`<p class="note">Layout demo of Fanreelz. Films marked Real are actual viral AI content; all other films, creators and ratings are made-up examples.</p>`;
   $("#main").innerHTML=html;
 }
@@ -2657,7 +2656,7 @@ function renderContest(){
   const pod=entries.slice(0,3),rest=entries.slice(3);
   $("#main").innerHTML=`<div class="contest-hero"><div><span class="nowtag" style="background:var(--accent);color:var(--ink-on-accent)">THIS WEEK'S CONTEST</span>
     <h1>${esc(theme.name)}</h1><p>Make an AI fan film on this week's theme. The film with the best fan rating when the week ends wins.</p>
-    <div class="row"><button class="btn" id="submitBtn2">Submit your entry</button><span class="vmeta">Ends in <b class="count" id="cEnd">${until(end-Date.now())}</b></span></div></div>
+    <div class="row"><button class="btn" data-you="channel">Sync your channel to enter</button><span class="vmeta">Ends in <b class="count" id="cEnd">${until(end-Date.now())}</b></span></div></div>
     <div class="prize"><small>PRIZE</small><b>Sponsor slot</b><span>An AI video tool sponsors the prize, for example a year of their top plan.</span></div></div>
    <h2 class="sect-h">Leading entries <span class="vmeta" style="font-size:14px;font-weight:500">${entries.length} entries</span></h2>
    ${pod.length?`<div class="podium">${pod.map((f,i)=>`<div class="pod p${i+1}">${card(f,i+1)}</div>`).join("")}</div>`:`<div class="empty">No entries yet. Be the first.</div>`}
@@ -2984,7 +2983,7 @@ document.addEventListener("click",e=>{
 
 function renderYouList(){
   const v=state.view,meta={history:["History","clock",filmsOf(myHistory),"Films you watch show up here."],later:["Watch later","clock",filmsOf(myLater),"Press Watch later on a film to save it here."],
-    liked:["Liked videos","like",likedFilms(),"Films you react to show up here, along with your previous liked videos."],yourvideos:["Your videos","film",yourVideos(),"Films you submit show up here. Press Submit to add one."]}[v];
+    liked:["Liked videos","like",likedFilms(),"Films you react to show up here, along with your previous liked videos."],yourvideos:["Your videos","film",yourVideos(),"Films from your synced YouTube channel show up here. Sync your channel on your Creator page."]}[v];
   if(v!=="history"&&!acct.online){$("#main").innerHTML=`<div class="about"><h1 class="ab-h">${meta[0]}</h1><p class="ab-lede">Sign in to see this.</p><button class="btn" id="signinBtn">Sign in</button></div>`;return}
   $("#main").innerHTML=`<div class="wbar" style="margin-top:16px"><h1 class="sect-h" style="font-size:24px;margin:0">${icon(meta[1])} ${meta[0]}</h1>${v==="history"&&meta[2].length?`<button class="btn ghost" data-clearhistory="">Clear history</button>`:""}</div>
     <p class="lede" style="margin-top:8px">${meta[2].length} film${meta[2].length===1?"":"s"}</p>
@@ -3081,7 +3080,7 @@ function renderAbout(){
     <li><b>Quick takedowns.</b> If you own a film or the rights to a world and want something removed, contact us and we will act quickly.</li>
    </ul>
 
-   <div class="ab-cta"><div><h2>Made an AI fan film?</h2><p>Submit it and let the fans decide.</p></div><div class="row"><button class="btn" id="submitBtn2">Submit a film</button><button class="btn ghost" data-browse="All">Browse all films</button></div></div>
+   <div class="ab-cta"><div><h2>Made an AI fan film?</h2><p>Sync your YouTube channel on your Creator page and your AI films show up here for the fans.</p></div><div class="row"><button class="btn" data-you="channel">Go to your Creator page</button><button class="btn ghost" data-browse="All">Browse all films</button></div></div>
    <p class="note">Fanreelz is in beta. Contact and takedown requests: <a href="mailto:hello@fanreelz.com">hello@fanreelz.com</a> · <a href="/privacy.html">Privacy policy</a> · <a href="/terms.html">Terms of use</a></p>
   </div>`;
 }
@@ -3303,7 +3302,7 @@ function homeFeedHtml(films,shorts,series){
   if(order.length>n)h+=moreGrid("grid",order.slice(n,n+homeCols()*2),f=>card(f));
   if(series.length)h+=`<section class="shelf homeshorts"><h2>${icon("series")} Series<button class="seeall" data-fmt="series">See all</button></h2><div class="shelfrow">${series.slice(0,8).map(seriesCard).join("")}</div></section>`;
   if(order.length>n+homeCols()*2)h+=moreGrid("grid",order.slice(n+homeCols()*2),f=>card(f));
-  if(!order.length&&!shorts.length&&!series.length)h+=`<div class="empty">Nothing here yet. Submit the first one.</div>`;
+  if(!order.length&&!shorts.length&&!series.length)h+=`<div class="empty">Nothing here yet.</div>`;
   return h+`<p class="note">The films are real AI fan films from YouTube, TikTok and Vimeo, picked by Fanreelz. Premieres and some Community pages still show examples.</p>`;
 }
 function renderHomeF(){
@@ -3330,7 +3329,7 @@ function renderHomeF(){
   if(!plainHome)html+=fmtTabs(films.length+shorts.length,films.length,shorts.length,series.length);
   if(!plainHome||state.format==="series")html+=`<div class="lorebar sortbar" role="group" aria-label="Sort" style="flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none">${[["","Recommended"],["views","Most viewed"],["new","Newest"],["top","Most appreciated"]].map(([k,l])=>`<button style="flex-shrink:0" class="${(state.sort||"")===k?"on":""}" data-sort="${k}">${l}</button>`).join("")}</div>`;
   const sub=c&&state.format!=="short"&&state.format!=="series"?`<div class="lorebar">${[["all","All films"],["lore","Lore-accurate"],["whatif","What if"]].map(([k,l])=>`<button class="${state.lore===k?"on":""}" data-lore="${k}">${l}</button>`).join("")}</div>`:"";
-  const empty=`<div class="empty">${reactionFiltersActive()?"No videos match these reaction filters in this view.":state.feed==="mine"?(acct.online?"You haven't reacted to anything here yet.":"Sign in to see your reactions."):c&&!state.q?`<b style="display:block;color:var(--fg);font-size:17px;margin-bottom:6px">No ${esc(c.name)} films yet</b>Fanreelz searches YouTube every hour and adds new AI fan films here automatically.<br>Know a good one? <button class="btn" data-submitcat="" style="margin-top:14px">Submit a film</button>`:"Nothing here yet. Submit the first one."}</div>`;
+  const empty=`<div class="empty">${reactionFiltersActive()?"No videos match these reaction filters in this view.":state.feed==="mine"?(acct.online?"You haven't reacted to anything here yet.":"Sign in to see your reactions."):c&&!state.q?`<b style="display:block;color:var(--fg);font-size:17px;margin-bottom:6px">No ${esc(c.name)} films yet</b>Fanreelz searches YouTube every hour and adds new AI fan films here automatically.`:"Nothing here yet."}</div>`;
   if(state.format==="film"){
     langPrep(films,langOf);const fl=films.filter(durOk).filter(f=>genreOk(f,genresOf)&&langOk(f,langOf));
     html+=sub+langBar(films,langOf)+genreBar(films,genresOf)+`<div class="lorebar">${DUR.filter(([k])=>k!=="any").map(([k,l])=>`<button class="${state.dur===k?"on":""}" data-dur="${k}">${l}</button>`).join("")}</div>`;
