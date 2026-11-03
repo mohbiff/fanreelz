@@ -4580,7 +4580,7 @@ document.addEventListener("click",async e=>{
   const reaction=e.target.closest("[data-reaction]");if(reaction){await toggleReaction(reaction.dataset.reactionFilm,reaction.dataset.reaction);return}
   const o=e.target.closest("[data-open]");if(o){const f=findFilm(o.dataset.open);if(!f)return;if(f.format==="short"||f.vert){openShorts(f.id);return}if(f.format==="episode"||f.seriesId){watched[f.id]=true;store.set("fr_watched",watched)}go({view:"watch",film:f.id})}
 });
-document.addEventListener("keydown",e=>{if(e.key==="Escape"){if(!$("#scrim").querySelector("[data-sticky]"))closeModal();if($("#shell").classList.contains("open"))closeMenu()}});
+document.addEventListener("keydown",e=>{if(e.key==="Escape"){closeModal();if($("#shell").classList.contains("open"))closeMenu()}});
 document.addEventListener("submit",async e=>{
   if(e.target.id==="lcform"){e.preventDefault();const i=$("#lcinput");const v=i.value;i.value="";if(!(await sendLive(v)))i.value=v;i.focus();return}const fm=e.target.closest(".cmform");if(!fm)return;e.preventDefault();const btn=fm.querySelector('button[type="submit"]');btn.disabled=true;const ok=await postComment(fm.dataset.cparent,fm.querySelector("textarea").value);if(!ok&&document.body.contains(btn))btn.disabled=false});
 document.addEventListener("keydown",e=>{if(e.key==="Enter"&&(e.ctrlKey||e.metaKey)&&e.target.closest(".cmform")){e.preventDefault();e.target.closest(".cmform").requestSubmit()}});
