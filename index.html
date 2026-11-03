@@ -1287,15 +1287,16 @@ const reactionSelection=value=>cleanReactions(Array.isArray(value)?value:String(
 function reactionPairs(){const pairs=[];for(let i=0;i<REACTIONS.length;i++)for(let j=i+1;j<REACTIONS.length;j++)pairs.push([REACTIONS[i].id,REACTIONS[j].id]);return pairs}
 function leadingReactionIds(t){return REACTIONS.map((r,i)=>({id:r.id,n:Number(t?.c?.[i])||0,i})).filter(r=>r.n>0).sort((a,b)=>b.n-a.n||a.i-b.i).slice(0,2).map(r=>r.id)}
 function reactionSecondValue(value,selected){return typeof value==="string"&&selected.includes(value)&&REACTIONS.some(r=>r.id===value)?value:null}
+// simple filter: a click turns a reaction on or off (up to 2); no first/second-place ranks
 function cycleReactionFilter(selected,second,key){
- const ids=reactionSelection(selected),rank=reactionSecondValue(second,ids);
- if(!REACTIONS.some(r=>r.id===key))return {selection:ids,second:rank,error:"unknown"};
- if(!ids.includes(key)){if(ids.length>=2)return {selection:ids,second:rank,error:"limit"};return {selection:reactionSelection([...ids,key]),second:rank}}
- if(rank===key)return {selection:ids.filter(id=>id!==key),second:null};
- if(rank)return {selection:ids,second:rank,error:"second-conflict"};
- return {selection:ids,second:key};
+ const ids=reactionSelection(selected);
+ if(!REACTIONS.some(r=>r.id===key))return {selection:ids,second:null,error:"unknown"};
+ if(ids.includes(key))return {selection:ids.filter(id=>id!==key),second:null};
+ if(ids.length>=2)return {selection:ids,second:null,error:"limit"};
+ return {selection:reactionSelection([...ids,key]),second:null};
 }
-function matchesReactionFilter(f,selection,totals=reactionTotals,second=null){const leading=leadingReactionIds(totals[f.id]);return leading.length>0&&(!second||selection.includes(second))&&selection.every(id=>leading[id===second?1:0]===id)}
+// a video matches when its two most-voted reactions include every chosen one, in any order
+function matchesReactionFilter(f,selection,totals=reactionTotals,second=null){const leading=leadingReactionIds(totals[f.id]);return leading.length>0&&selection.every(id=>leading.includes(id))}
 let reactionFilterHint=null;
 document.addEventListener("keydown",e=>{if(e.key==="Escape"&&reactionFilterHint){reactionFilterHint=null;render()}});
 function reactionFilterLabel(ids,second){return REACTIONS.filter(r=>ids.includes(r.id)).map(r=>r.label+(r.id===second?" ×2":"")).join(" + ")}
@@ -1307,7 +1308,7 @@ function reactionFilterHelp(r,second){
  return '<div class="reaction-filter-help" id="rx-help-'+r.id+'" role="dialog" aria-label="How '+r.label+' ×2 works"><button type="button" data-rx-hint-close="" aria-label="Close reaction explanation">×</button><b>'+title+'</b><p>'+message+'</p><small>×2 changes the filter. It does not add votes.</small></div>';
 }
 function reactionFilterChip(r,selected,second,count){
- const on=selected.includes(r.id),rank=second===r.id,showHelp=reactionFilterHint?.key===r.id;
+ const on=selected.includes(r.id),rank=false,showHelp=false;
  return '<div class="reaction-filter-option"><button type="button" class="reaction-filter-chip '+(on?'selected':'')+'" data-rx-filter="'+r.id+'" aria-label="'+r.label+(rank?' ×2, second-most-voted only':on?', most-voted only':'')+'" aria-pressed="'+on+'" aria-expanded="'+showHelp+'" '+(showHelp?'aria-controls="rx-help-'+r.id+'" ':'')+(selected.length>=2&&!on?'disabled':'')+'><span aria-hidden="true">'+r.emoji+'</span><b>'+r.label+'</b>'+(rank?'<span class="reaction-rank-badge" aria-hidden="true">×2</span>':'')+'<small>'+(reactionsReady?count([r.id],rank?r.id:null):'…')+'</small></button>'+reactionFilterHelp(r,second)+'</div>';
 }
 document.addEventListener("click",e=>{if(!reactionFilterHint||e.target.closest("[data-rx-filter],[data-rx-hint-close],.reaction-filter-help"))return;reactionFilterHint=null;document.querySelectorAll(".reaction-filter-help").forEach(x=>x.remove());document.querySelectorAll('[data-rx-filter][aria-expanded="true"]').forEach(x=>{x.setAttribute("aria-expanded","false");x.removeAttribute("aria-controls")})});
@@ -1341,7 +1342,7 @@ function reactionDiscovery(override){
  const selected=reactionSelection(state.reactionFilter),second=reactionSecondValue(state.reactionSecond,selected),pool=inlineReactionPool(override);
  const count=(ids,rank=null)=>pool.filter(f=>matchesReactionFilter(f,ids,reactionTotals,rank)).length;
  const matched=selected.length?pool.filter(matchesActiveReactions).length:null,scopeLabel=reactionScopeLabel(currentReactionScope());
- return '<section class="reaction-filter-panel reaction-inline" aria-label="Filter this page by reaction"><div class="reaction-filter-heading"><b>Filter by reaction</b><span>'+selected.length+'/2 selected</span>'+(selected.length?'<button class="reaction-clear" data-rx-clear="">Clear filters</button>':'')+'</div><div class="reaction-filter-options" role="group" aria-label="Reaction categories">'+REACTIONS.map(r=>reactionFilterChip(r,selected,second,count)).join('')+'</div><p class="reaction-filter-hint">One click = most-voted. Two clicks (×2) = second-most-voted. Third click = off.</p>'+(scopeLabel!=="All videos"?'<p class="reaction-inline-scope">Only videos in '+esc(scopeLabel)+'</p>':'')+(matched!==null?'<p class="reaction-inline-status" role="status">'+matched+' matching '+(matched===1?'video':'videos')+' in this view.</p>':'')+(selected.length===2&&!second?'<p class="reaction-inline-conflict" role="status">Both filters select first place. Click one again for ×2 to choose a first-and-second pair.</p>':'')+'</section>';
+ return '<section class="reaction-filter-panel reaction-inline" aria-label="Filter this page by reaction"><div class="reaction-filter-heading"><b>Filter by reaction</b><span>'+selected.length+'/2 selected</span>'+(selected.length?'<button class="reaction-clear" data-rx-clear="">Clear filters</button>':'')+'</div><div class="reaction-filter-options" role="group" aria-label="Reaction categories">'+REACTIONS.map(r=>reactionFilterChip(r,selected,second,count)).join('')+'</div><p class="reaction-filter-hint">Pick up to 2 reactions to see videos fans felt that way about. Click again to remove.</p>'+(scopeLabel!=="All videos"?'<p class="reaction-inline-scope">Only videos in '+esc(scopeLabel)+'</p>':'')+(matched!==null?'<p class="reaction-inline-status" role="status">'+matched+' matching '+(matched===1?'video':'videos')+' in this view.</p>':'')+(selected.length===2&&!second?'<p class="reaction-inline-conflict" role="status">Both filters select first place. Click one again for ×2 to choose a first-and-second pair.</p>':'')+'</section>';
 }
 function reactionBrowsePool(scope=currentReactionScope()){const seen=new Set();return [...allFilms(),...allSeries().flatMap(s=>s.episodes)].filter(f=>{if(seen.has(f.id)||!safetyFilmVisible(f)||state.family&&!isKids(f)||!filmInReactionScope(f,scope))return false;seen.add(f.id);return true})}
 function renderReactionBrowse(){
@@ -4394,7 +4395,7 @@ document.addEventListener("click",async e=>{
   if(x=A("[data-group-nav]")){if(e.button!==0||e.ctrlKey||e.metaKey||e.shiftKey||e.altKey)return;e.preventDefault();if(!GROUPS.some(g=>g.name===x.dataset.groupNav))return;$("#shell").classList.remove("open");resetSections();go({view:"home",feed:"home",group:x.dataset.groupNav,cat:null,char:null,q:"",format:"all",sort:"",dur:"any",genre:"all",lore:"all"});return}
   if(x=A("[data-rx-combo]")){if(e.button!==0||e.ctrlKey||e.metaKey||e.shiftKey||e.altKey)return;e.preventDefault();$("#shell").classList.remove("open");reactionFilterHint=null;go({view:"reactions",reactionSecond:null,reactionFilter:reactionSelection(x.dataset.rxCombo),reactionFormat:"all",...reactionScopeState(x.dataset.rxGroup!==undefined?{group:x.dataset.rxGroup,cat:x.dataset.rxCat,char:x.dataset.rxChar}:currentReactionScope())});return}
   if(A("[data-rx-hint-close]")){reactionFilterHint=null;render();return}
-  if(x=A("[data-rx-filter]")){const key=x.dataset.rxFilter,next=cycleReactionFilter(state.reactionFilter,state.reactionSecond,key);if(next.error==="unknown")return;if(next.error==="limit"){toast("Choose up to 2 reaction categories.");return}reactionFilterHint=next.selection.includes(key)?{key,error:next.error||null}:null;if(next.error){render();return}go({reactionFilter:next.selection,reactionSecond:next.second});return}
+  if(x=A("[data-rx-filter]")){const key=x.dataset.rxFilter,next=cycleReactionFilter(state.reactionFilter,state.reactionSecond,key);if(next.error==="unknown")return;if(next.error==="limit"){toast("Choose up to 2 reaction categories.");return}reactionFilterHint=null;go({reactionFilter:next.selection,reactionSecond:null});return}
   if(A("[data-rx-clear]")){reactionFilterHint=null;go({reactionFilter:[],reactionSecond:null});return}
   if(x=A("[data-rx-format]")){reactionFilterHint=null;go({view:"reactions",reactionFormat:x.dataset.rxFormat});return}
 
