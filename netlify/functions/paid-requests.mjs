@@ -145,7 +145,7 @@ export default async (req) => {
       // backing during the vote can choose the creator in the same step
       if (ph === "vote" && body.channel && q.apps?.[String(body.channel)]) q.votes = { ...(q.votes || {}), [uid]: String(body.channel) };
     } else if (body.action === "accept" || body.action === "decline") {
-      if (!q.for || q.for.uid !== uid) return json({ error: "Only the chosen creator can answer" }, 403);
+      if (!q.for || (q.for.uid !== uid && !admin)) return json({ error: "Only the chosen creator can answer" }, 403);
       if (ph !== "waiting") return json({ error: "This request has already been answered" }, 409);
       if (body.action === "accept") q.acceptedAt = Date.now(); else q.declined = Date.now();
     } else if (body.action === "unpledge") {
@@ -155,7 +155,10 @@ export default async (req) => {
     } else if (body.action === "apply") {
       if (q.for) return json({ error: "This request is for one chosen creator" }, 409);
       if (ph !== "apply") return json({ error: "Creators can only offer during the first 3 days" }, 409);
-      const ch = (await myChannels(uid)).find((c) => c.id === String(body.channel || ""));
+      if (q.by === uid && !admin) return json({ error: "You started this request, so you can't take it yourself." }, 403);
+      // admins can take a request with a test creator, to try the whole flow
+      let ch = (await myChannels(uid)).find((c) => c.id === String(body.channel || ""));
+      if (!ch && admin && body.test) ch = { id: "TEST-" + uid.slice(0, 8), name: "Fanreelz test creator" };
       if (!ch) return json({ error: "Only verified creators can take requests. Claim your creator profile first." }, 403);
       const sample = /^https:\/\/(www\.)?(youtube\.com|youtu\.be)\/[^\s"<>]+$/.test(String(body.sample || "")) ? String(body.sample).slice(0, 200) : "";
       q.apps = { ...(q.apps || {}), [ch.id]: { uid, name: clean(body.name, 80) || ch.name || "YouTube creator", sample, at: Date.now() } };
@@ -167,10 +170,15 @@ export default async (req) => {
     } else if (body.action === "deliver") {
       if (ph !== "making") return json({ error: "This request isn't waiting for a film" }, 409);
       const win = q.for ? q.for.channel : q.winner || winnerOf(q);
-      if ((q.for ? q.for.uid : q.apps?.[win]?.uid) !== uid) return json({ error: "Only the chosen creator can deliver the film" }, 403);
+      if ((q.for ? q.for.uid : q.apps?.[win]?.uid) !== uid && !admin) return json({ error: "Only the chosen creator can deliver the film" }, 403);
       const link = String(body.url || "");
       if (!/^https:\/\/(www\.)?(youtube\.com|youtu\.be)\/[^\s"<>]+$/.test(link)) return json({ error: "Paste the YouTube link to the film" }, 400);
       q.winner = win; q.delivered = { url: link.slice(0, 200), at: Date.now() };
+    } else if (body.action === "skip" && admin) {
+      // admin test tool: move the request to the next phase now (shifts its dates back)
+      const shift = ph === "apply" ? q.created + APPLY_DAYS * DAY - Date.now() + 1000 : ph === "vote" ? q.created + (APPLY_DAYS + VOTE_DAYS) * DAY - Date.now() + 1000 : 0;
+      if (!shift) return json({ error: "Nothing to skip in this phase" }, 409);
+      q.created -= shift; for (const p of Object.values(q.pledges || {})) p.at -= shift;
     } else if (body.action === "remove") {
       if (!admin && !(q.by === uid && ["apply", "waiting"].includes(ph) && Object.keys(q.pledges || {}).length <= 1)) return json({ error: "Only admins can remove a request others have backed" }, 403);
       await remove(q.id);

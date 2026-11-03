@@ -17,10 +17,10 @@ function prqCard(q){const sel=prqSel[q.id]||(prqSel[q.id]={amt:q.myPledge?q.myPl
  const totalVotes=q.apps.reduce((a,x)=>a+x.votes,0)||0;
  const vote=voting&&q.apps.length?`<div class="prq-sec"><b>Who should make the film?</b>${q.apps.sort((a,b)=>b.votes-a.votes).map(a=>{const pc=totalVotes?Math.round(a.votes*100/totalVotes):0,on=sel.ch===a.channel;
    return `<button type="button" class="prq-opt ${on?'on':''}" data-prq-pick="${esc(q.id)}" data-ch="${esc(a.channel)}"><span class="prq-radio"></span><span class="prq-optname">${esc(a.name)}${a.sample?` <a href="${esc(a.sample)}" target="_blank" rel="noopener" class="vmeta">example ↗</a>`:''}${q.myVote===a.channel?' <small class="vmeta">· your vote</small>':''}</span><span class="vmeta">${pc}%</span><i class="prq-bar"><i style="width:${pc}%"></i></i></button>`}).join('')}</div>`:'';
- const offers=q.phase==='apply'&&!q.for?`<p class="vmeta">${q.appCount?q.appCount+' creator'+(q.appCount===1?'':'s')+' offered so far · shown when voting starts':'No creator has offered yet'}${(prqData.myChannels||[]).length&&!q.myApp?` · <button class="linkbtn" data-prq-apply="${esc(q.id)}">I'll make it</button>`:q.myApp?' · ✓ you offered':''}</p>`:'';
+ const offers=q.phase==='apply'&&!q.for?`<p class="vmeta">${q.appCount?q.appCount+' creator'+(q.appCount===1?'':'s')+' offered so far · shown when voting starts':'No creator has offered yet'}${q.myApp?' · ✓ you offered':''}</p>${q.myApp?'':`<button class="btn ghost" data-prq-apply="${esc(q.id)}">🎬 Accept the challenge</button>`}`:'';
  const forLine=q.for?`<p class="prq-for">For <b>${esc(q.for.name)}</b>${q.phase==='waiting'?' · waiting for them to accept':q.phase==='making'?' · accepted':''}</p>`:'';
- const answer=q.phase==='waiting'&&q.for?.mine?`<div class="row" style="gap:8px"><button class="btn" data-prq-accept="${esc(q.id)}">Accept · deliver within 30 days</button><button class="btn ghost" data-prq-decline="${esc(q.id)}">Decline</button></div>`:'';
- const deliver=q.phase==='making'&&q.winner?.mine?`<button class="btn" data-prq-deliver="${esc(q.id)}">Deliver the film</button>`:'';
+ const answer=q.phase==='waiting'&&(q.for?.mine||isMod)?`<div class="row" style="gap:8px"><button class="btn" data-prq-accept="${esc(q.id)}">Accept · deliver within 30 days</button><button class="btn ghost" data-prq-decline="${esc(q.id)}">Decline</button></div>`:'';
+ const deliver=q.phase==='making'&&(q.winner?.mine||isMod)?`<button class="btn" data-prq-deliver="${esc(q.id)}">Deliver the film</button>`:'';
  const pick=voting?q.apps.find(a=>a.channel===sel.ch):null;
  const back=open&&!q.for?.mine?`<div class="prq-sec"><b>Your pledge</b><div class="prq-amts">${PRQ_AMOUNTS.map(v=>`<button type="button" class="prq-amt ${sel.amt===v?'on':''}" data-prq-amt="${esc(q.id)}" data-v="${v}">€${v}</button>`).join('')}</div>
    <div class="prq-sum">${voting?`<span>Your creator</span><b>${pick?esc(pick.name):'Pick one above'}</b>`:''}<span>Pledge</span><b>€${sel.amt}</b></div>
@@ -31,7 +31,7 @@ function prqCard(q){const sel=prqSel[q.id]||(prqSel[q.id]={amt:q.myPledge?q.myPl
   <div class="prq-stats"><div><span>Raised</span><b class="prq-raised">${prqEur(q.total)}</b></div><div><span>Backers</span><b>${q.backers}</b></div><div><span>${q.for?'Creator':'Creators'}</span><b>${q.for?'1':q.appCount}</b></div></div>
   ${q.delivered?`<a class="btn" href="${esc(q.delivered.url)}" target="_blank" rel="noopener">▶ Watch the film by ${esc(q.winner?.name||'')}</a>`:''}
   ${vote}${offers}${answer}${deliver}${back}
-  <p class="vmeta" style="margin:0">Requested by ${esc(q.by)}${q.myPledge?` · you pledged ${prqEur(q.myPledge)}`:''}${isMod?` · <button class="linkbtn" data-prq-remove="${esc(q.id)}">Remove</button>`:''}</p></article>`}
+  ${isMod&&['apply','vote'].includes(q.phase)?`<button class="linkbtn" data-prq-skip="${esc(q.id)}">Admin test: skip to ${q.phase==='apply'?'voting':'making'}</button>`:''}<p class="vmeta" style="margin:0">Requested by ${esc(q.by)}${q.myPledge?` · you pledged ${prqEur(q.myPledge)}`:''}${isMod?` · <button class="linkbtn" data-prq-remove="${esc(q.id)}">Remove</button>`:''}</p></article>`}
 function prqPaint(){const box=document.getElementById('prq');if(!box)return;const D=prqData;
  if(!D){box.innerHTML='<p class="vmeta">Loading paid requests…</p>';return}
  const live=(D.requests||[]).filter(q=>['apply','vote','waiting','making'].includes(q.phase)),done=(D.requests||[]).filter(q=>q.phase==='delivered');
@@ -83,13 +83,18 @@ function prqDeliver(id){openModal(`<div class="dlg" role="dialog" aria-modal="tr
   <form class="form" id="prqd"><label for="prqU">YouTube link to the finished film<input id="prqU" type="url" required placeholder="https://youtube.com/watch?v=…"></label>
   <div class="row"><button class="btn" type="submit">Deliver</button><button class="btn ghost" type="button" data-close>Cancel</button></div></form></div>`);
  $('#prqd').onsubmit=async e=>{e.preventDefault();try{await prqCall({action:'deliver',id,url:$('#prqU').value.trim()});closeModal();toast('Delivered. Thank you!');prqLoad()}catch(x){toast(x.message)}}}
-document.addEventListener('click',async e=>{const t=e.target.closest?.('[data-prq-new],[data-prq-pick],[data-prq-amt],[data-prq-back],[data-prq-apply],[data-prq-accept],[data-prq-decline],[data-prq-deliver],[data-prq-remove]');if(!t||e.target.closest('a[target]'))return;e.preventDefault();
+document.addEventListener('click',async e=>{const t=e.target.closest?.('[data-prq-new],[data-prq-pick],[data-prq-amt],[data-prq-back],[data-prq-apply],[data-prq-skip],[data-prq-accept],[data-prq-decline],[data-prq-deliver],[data-prq-remove]');if(!t||e.target.closest('a[target]'))return;e.preventDefault();
  if(t.dataset.prqNew!==undefined)return prqNew();
  if(t.dataset.prqPick){prqSel[t.dataset.prqPick].ch=t.dataset.ch;return prqPaint()}
  if(t.dataset.prqAmt){prqSel[t.dataset.prqAmt].amt=+t.dataset.v;return prqPaint()}
  if(!needAccount('Sign in to take part.'))return;
- const id=t.dataset.prqBack||t.dataset.prqApply||t.dataset.prqAccept||t.dataset.prqDecline||t.dataset.prqDeliver||t.dataset.prqRemove;
- if(t.dataset.prqApply)return prqApply(id);
+ const id=t.dataset.prqBack||t.dataset.prqApply||t.dataset.prqSkip||t.dataset.prqAccept||t.dataset.prqDecline||t.dataset.prqDeliver||t.dataset.prqRemove;
+ if(t.dataset.prqApply){const q=prqData.requests.find(x=>x.id===id);
+  if(q?.mineRequest&&!isMod)return toast("You started this request, so you can't take it yourself.");
+  if(!(prqData.myChannels||[]).length&&!isMod)return toast('Only verified creators can take a request. Claim your channel on your creator page first ("Own this channel?").');
+  if(!(prqData.myChannels||[]).length&&isMod){try{await prqCall({action:'apply',id,test:true,name:'Fanreelz test creator'});toast('Admin test: you took the challenge as "Fanreelz test creator"');prqLoad()}catch(x){toast(x.message)}return}
+  return prqApply(id)}
+ if(t.dataset.prqSkip){try{await prqCall({action:'skip',id});toast('Admin test: moved to the next phase');prqLoad()}catch(x){toast(x.message)}return}
  if(t.dataset.prqDeliver)return prqDeliver(id);
  try{if(t.dataset.prqBack){const s=prqSel[id];await prqCall({action:'pledge',id,amount:s.amt,...(s.ch?{channel:s.ch}:{})});toast('Pledge saved'+(s.ch?' and vote counted':''))}
   else if(t.dataset.prqAccept){await prqCall({action:'accept',id});toast('Accepted. You have 30 days to deliver.')}
