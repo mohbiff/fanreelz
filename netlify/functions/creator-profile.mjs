@@ -1,4 +1,4 @@
-import {whoIs,isAdmin} from './moderate.mjs';
+import {whoIs} from './moderate.mjs';
 import {addChannel} from './import-youtube.mjs';
 const json=(data,status=200)=>Response.json(data,{status,headers:{'Cache-Control':'no-store'}});
 export default async function creatorProfile(req){
@@ -15,13 +15,6 @@ export default async function creatorProfile(req){
   const sig=new Uint8Array(await crypto.subtle.sign('HMAC',mac,new TextEncoder().encode('creator-claim:'+user.id+':'+id)));
   const code='fanreelz-'+[...sig.slice(0,4)].map(b=>'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'[b%32]).join('')+[...sig.slice(4,6)].map(b=>'23456789'[b%8]).join('');
   if(body.action==='status')return json({claimed:!!owner?.userId,mine:owner?.userId===user.id,code:owner?.userId?undefined:code});
-  // release: the owner (or an admin) unlinks the profile; the films stay in the catalogue
-  if(body.action==='release'){
-   if(!owner?.userId)return json({claimed:false,mine:false});
-   if(owner.userId!==user.id&&!isAdmin(user))return json({error:'Only the owner can release this profile'},403);
-   const del=await fetch(base+'import_state?key=eq.'+encodeURIComponent('creator-owner:'+id),{method:'DELETE',headers});
-   return del.ok?json({claimed:false,mine:false,released:true}):json({error:'Could not release the profile'},503);
-  }
   if(!['claim','sync'].includes(body.action))return json({error:'Unknown action'},400);
   if(owner?.userId&&owner.userId!==user.id)return json({error:'This profile is already claimed by another account'},409);
   // ownership: the channel's own public description must contain this account's code (no YouTube sign-in or extra Google permission)
