@@ -8,7 +8,7 @@ import SEEDS from "../netlify/functions/lib/showdowns.mjs";
 const SITE = "https://fanreelz.com";
 const DEFAULT = {
   title: "Fanreelz – Where AI fan films find their fans",
-  description: "The home of AI fan films. Watch, discover and rate the best AI-made films about the games, books, anime and series you love.",
+  description: "Watch the best AI fan films about the games, anime, books and series you love, and challenge an AI creator to make the film you want to see.",
   image: SITE + "/og.png",
 };
 const STATIC = {
@@ -18,7 +18,7 @@ const STATIC = {
   "/showdown": ["Character Showdown: who would win?", "Fans vote and argue which character would win a fight that never happened in canon. Fanreelz weighs the research and the arguments."],
   "/battles": ["Fan Battles: which AI fan film is better?", "Two AI fan films, one vote. Pick the better one and watch the fan ranking change."],
   "/requests": ["Fanreelz Challenges: you imagine it, creators make it", "Back the AI fan film you want to see and vote for the creator who makes it."],
-  "/challenges": ["Fanreelz Challenges: you imagine it, creators make it", "Back the AI fan film you want to see and vote for the creator who makes it."],
+  "/challenges": ["Challenge an AI creator to make your film | Fanreelz", "Got an idea for an AI film? Post a challenge, back it from €2 and vote for the AI creator who brings it to life. You imagine it, creators make it."],
   "/about": ["About Fanreelz", "Fanreelz collects AI fan films about games, books, anime and series in one place, so fans can find, rate and support them."],
   "/browse": ["Browse all AI fan film worlds", "Every game, book, anime and series on Fanreelz, from Warcraft and Lord of the Rings to Naruto and Minecraft."],
   "/live": ["Live AI film streams", "AI fan film creators streaming right now on YouTube and Twitch."],
