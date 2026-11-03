@@ -23,7 +23,8 @@ function prqCard(q){const sel=prqSel[q.id]||(prqSel[q.id]={amt:q.myPledge?q.myPl
  const deliver=q.phase==='making'&&q.winner?.mine?`<button class="btn" data-prq-deliver="${esc(q.id)}">Deliver the film</button>`:'';
  const pick=voting?q.apps.find(a=>a.channel===sel.ch):null;
  const back=open&&!q.for?.mine?`<div class="prq-sec"><b>Your pledge</b><div class="prq-amts">${PRQ_AMOUNTS.map(v=>`<button type="button" class="prq-amt ${sel.amt===v?'on':''}" data-prq-amt="${esc(q.id)}" data-v="${v}">€${v}</button>`).join('')}</div>
-   <div class="prq-sum">${voting?`<span>Your creator</span><b>${pick?esc(pick.name):'Pick one above'}</b>`:''}<span>Pledge</span><b>€${sel.amt}</b><span>To the creator</span><b>${prqEur(Math.round(sel.amt*100*(prqData.rules?.creatorShare||.8)))}</b></div>
+   <div class="prq-sum">${voting?`<span>Your creator</span><b>${pick?esc(pick.name):'Pick one above'}</b>`:''}<span>Pledge</span><b>€${sel.amt}</b></div>
+   <p class="vmeta" style="margin:0">Your pledge goes to the creator who makes the film.</p>
    <button class="btn prq-go" data-prq-back="${esc(q.id)}" ${voting&&!pick?'disabled':''}>${q.myPledge?'Update pledge':'Pledge'} €${sel.amt}${voting?' and vote':''}</button></div>`:'';
  return `<article class="prq-card"><div class="prq-top"><span class="prq-phase prq-${esc(q.phase)}">${PRQ_PHASE[q.phase]||''}</span><span class="vmeta">${when?'⏱ '+when:''}</span></div>
   ${prqCover(q)}<h3>${esc(q.title)}</h3>${q.note?`<p class="rnote">${esc(q.note)}</p>`:''}${forLine}
@@ -49,7 +50,7 @@ function prqHow(){let shut=false;try{shut=localStorage.getItem('fr_prq_how')==='
   <div class="prq-steps">${step('💡','Post a request')}<i>→</i>${step('💶','Back it')}<i>→</i>${step('🗳️','Vote')}<i>→</i>${step('🎬','Film made')}</div>
   ${row('1–3','Days','Back it and creators sign up','Someone posts an idea, like "Vikings on Mars". Anyone can back it from €2, with no upper limit. Verified creators can sign up to make it, but their names stay hidden.')}
   ${row('4–7','Days','Creators revealed, voting opens','The creators who signed up are shown. Everyone who backed the request votes, one vote each, on who should make the film.')}
-  ${row('7+','After','The winner makes it','The creator with the most votes gets the job and has 30 days to deliver. Pledges are charged only when the film is delivered, and 80 % goes to the creator.')}
+  ${row('7+','After','The winner makes it','The creator with the most votes gets the job and has 30 days to deliver. Pledges are charged only when the film is delivered, and the money goes to the creator who made it.')}
   <p class="prq-alt">Or <b>ask one creator directly</b>: they accept within 7 days, then have 30 days to deliver.</p></details>`}
 document.addEventListener('toggle',e=>{if(e.target.classList?.contains('prq-how')){try{localStorage.setItem('fr_prq_how',e.target.open?'1':'0')}catch(x){}}},true);
 // verified creators to choose from (names from their films on Fanreelz)
