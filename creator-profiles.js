@@ -12,7 +12,7 @@ async function claimCreatorDialog(channelId){
  if(d.mine)return toast('This creator profile is already yours.');if(d.claimed)return toast('This profile is already claimed by another account.');
  openModal(`<div class="dlg" role="dialog" aria-modal="true" aria-label="Claim your creator profile"><h2>Claim your creator profile</h2>
   <p class="vmeta" style="margin:0 0 10px">Prove you own this YouTube channel in three steps. You can remove the code again once you're verified.</p>
-  <ol style="margin:0 0 12px 18px;padding:0;line-height:1.6"><li>Copy your code</li><li>Open <a href="https://studio.youtube.com/channel/${esc(channelId)}/editing/details" target="_blank" rel="noopener">YouTube Studio → Customisation → Basic info</a>, paste the code anywhere in the <b>Description</b> and press <b>Publish</b></li><li>Come back and press <b>Verify</b></li></ol>
+  <ol style="margin:0 0 12px 18px;padding:0;line-height:1.6"><li>Copy your code</li><li>Open <a href="https://studio.youtube.com/" target="_blank" rel="noopener">YouTube Studio</a> <b>signed in with the Google account that owns this channel</b>, go to <b>Customisation → Basic info</b>, paste the code anywhere in the <b>Description</b> and press <b>Publish</b></li><li>Come back and press <b>Verify</b></li></ol>
   <div class="sharerow"><input class="shareinp" readonly value="${esc(d.code)}" aria-label="Your code"><button class="btn" data-copylink="${esc(d.code)}">Copy</button></div>
   <div class="row"><button class="btn ghost" data-close>Cancel</button><button class="btn" data-claimverify="${esc(channelId)}">Verify</button></div></div>`,
   async e=>{const c=e.target.closest('[data-copylink]');if(c){try{await navigator.clipboard.writeText(c.dataset.copylink)}catch(x){}toast('Code copied');return}
