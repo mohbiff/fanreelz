@@ -35,11 +35,23 @@ function prqPaint(){const box=document.getElementById('prq');if(!box)return;cons
  if(!D){box.innerHTML='<p class="vmeta">Loading paid requests…</p>';return}
  const live=(D.requests||[]).filter(q=>['apply','vote','waiting','making'].includes(q.phase)),done=(D.requests||[]).filter(q=>q.phase==='delivered');
  box.innerHTML=`<div class="wbar"><h2 class="sect-h" style="margin:0">💶 Paid requests <small class="plustag">BETA</small></h2><button class="btn" data-prq-new="">+ Start a paid request</button></div>
-  <p class="lede" style="margin-top:6px">Pledge for the AI film you want. Open requests: for 3 days creators can offer, then backers vote for 4 days on who makes it. Or ask one creator directly. ${Math.round((D.rules?.creatorShare||.8)*100)} % goes to the creator who delivers.</p>
+  <p class="lede" style="margin-top:6px">Pledge for the AI film you want, and the fans choose who makes it.</p>
+  ${prqHow()}
   <div class="prq-note">${icon('shield')} <span><b>No money is charged yet.</b> Pledges are promises while payments are being set up. When they open, a pledge is charged only after the film is delivered, and never if nobody makes it.</span></div>
   ${D.error?`<p class="vmeta">${esc(D.error)}</p>`:''}
   <div class="prq-list">${live.length?live.map(prqCard).join(''):'<div class="empty">No paid requests yet. Start the first one!</div>'}</div>
   ${done.length?`<h3 class="sect-h" style="font-size:16px">Delivered</h3><div class="prq-list">${done.slice(0,10).map(prqCard).join('')}</div>`:''}`}
+// "How it works": open the first time, then remembers if the viewer folded it away
+function prqHow(){let shut=false;try{shut=localStorage.getItem('fr_prq_how')==='0'}catch(e){}
+ const step=(ic,t)=>`<div class="prq-step"><span>${ic}</span><b>${t}</b></div>`;
+ const row=(n,sub,t,d)=>`<div class="prq-row"><div class="prq-day"><b>${n}</b><small>${sub}</small></div><div><b>${t}</b><p>${d}</p></div></div>`;
+ return `<details class="prq-how" ${shut?'':'open'}><summary>How it works</summary>
+  <div class="prq-steps">${step('💡','Post a request')}<i>→</i>${step('💶','Back it')}<i>→</i>${step('🗳️','Vote')}<i>→</i>${step('🎬','Film made')}</div>
+  ${row('1–3','Days','Back it and creators sign up','Someone posts an idea, like "Vikings on Mars". Anyone can back it from €2, with no upper limit. Verified creators can sign up to make it, but their names stay hidden.')}
+  ${row('4–7','Days','Creators revealed, voting opens','The creators who signed up are shown. Everyone who backed the request votes, one vote each, on who should make the film.')}
+  ${row('7+','After','The winner makes it','The creator with the most votes gets the job and has 30 days to deliver. Pledges are charged only when the film is delivered, and 80 % goes to the creator.')}
+  <p class="prq-alt">Or <b>ask one creator directly</b>: they accept within 7 days, then have 30 days to deliver.</p></details>`}
+document.addEventListener('toggle',e=>{if(e.target.classList?.contains('prq-how')){try{localStorage.setItem('fr_prq_how',e.target.open?'1':'0')}catch(x){}}},true);
 // verified creators to choose from (names from their films on Fanreelz)
 async function prqCreatorList(){if(!prqCreators){try{prqCreators=(await prqCall({action:'creators'})).creators||[]}catch(e){prqCreators=[]}}
  return prqCreators.map(id=>({id,name:allFilms().find(f=>f.channelId===id)?.by||''})).filter(c=>c.name).sort((a,b)=>a.name.localeCompare(b.name))}
