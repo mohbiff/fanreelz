@@ -34,13 +34,13 @@ function prqCard(q){const sel=prqSel[q.id]||(prqSel[q.id]={amt:q.myPledge?q.myPl
    <div class="prq-sum">${voting?`<span>Your creator</span><b>${pick?esc(pick.name):'Pick one above'}</b>`:''}<span>Pledge</span><b>€${sel.amt}</b></div>
    <p class="vmeta" style="margin:0">Your pledge goes to the creator who makes the film.</p>
    <button class="btn prq-go" data-prq-back="${esc(q.id)}" ${voting&&!pick?'disabled':''}>${q.myPledge?'Update pledge':'Pledge'} €${sel.amt}${voting?' and vote':''}</button></div>`:'';
- return `<article class="prq-card" data-prq-card="${esc(q.id)}"><div class="prq-top"><span class="prq-phase prq-${esc(q.phase)}">${PRQ_PHASE[q.phase]||''}</span><span class="vmeta">${when?(q.noLimit?'':'⏱ ')+when:''}</span></div>
+ return `<article class="prq-card" tabindex="0" data-prq-card="${esc(q.id)}"><div class="prq-top"><span class="prq-phase prq-${esc(q.phase)}">${PRQ_PHASE[q.phase]||''}</span><span class="vmeta">${when?(q.noLimit?'':'⏱ ')+when:''}</span></div>
   ${prqCover(q)}<h3>${esc(q.title)}</h3>${q.note?`<p class="rnote">${esc(q.note)}</p>`:''}${forLine}
   <div class="prq-stats"><div><span>Raised</span><b class="prq-raised">${prqEur(q.total)}</b></div><div><span>Backers</span><b>${q.backers}</b></div><div><span>${q.for?'Creator':'Creators'}</span><b>${q.for?'1':q.appCount}</b></div></div>
   ${q.delivered?`<a class="btn" href="${esc(q.delivered.url)}" target="_blank" rel="noopener">▶ Watch the film by ${esc(q.winner?.name||'')}</a>`:''}
   ${vote}${offers}${answer}${deliver}${back}
   ${isMod&&['apply','vote'].includes(q.phase)?`<button class="linkbtn" data-prq-skip="${esc(q.id)}">${q.noLimit?(q.phase==='apply'?'Admin: start voting':'Admin: end voting and pick the winner'):'Admin test: skip to '+(q.phase==='apply'?'voting':'making')}</button>`:''}<p class="vmeta" style="margin:0">Created by ${esc(q.by)}${q.myPledge?` · you pledged ${prqEur(q.myPledge)}`:''}${isMod?` · <button class="linkbtn" data-prq-remove="${esc(q.id)}">Remove</button>`:''}</p></article>`}
-function prqPaint(){const box=document.getElementById('prq');if(!box)return;const D=prqData;
+function prqPaint(){prqBigPaint();const box=document.getElementById('prq');if(!box)return;const D=prqData;
  if(!D){box.innerHTML='<p class="vmeta">Loading challenges…</p>';return}
   box.innerHTML=`<section class="prq-hero"><small>COMMUNITY POWERED</small><h1>You imagine it. Creators make it.</h1><p>Your idea. Their creativity. Your vote. Back the AI film you want to see and vote for the creator who brings it to life.</p>
   <div class="row" style="gap:10px;flex-wrap:wrap"><button class="btn purple" data-prq-new="">⚡ Create a Challenge</button><button class="btn ghost" data-prq-howopen="" aria-expanded="${prqHowOpen}">How it works ${prqHowOpen?"▴":"▾"}</button><div class="prq-tabs" id="prqTabs" role="tablist">${prqTabsHtml()}</div></div>${prqHow()}</section>
@@ -147,3 +147,24 @@ function prqCreatorHtml(ch){if(!ch)return '';if(!prqData){if(!prqBusy&&!window.p
  if(!mine.length)return '';
  const lbl=q=>q.phase==='delivered'?'✓ Delivered':q.phase==='making'?'Making it':q.phase==='waiting'?'Asked to make it':q.phase==='declined'?'Declined':'';
  return `<div class="prq-cr"><b>⚡ Challenges</b> ${mine.filter(q=>q.phase==='delivered').length} delivered${mine.map(q=>`<div class="vmeta">${esc(lbl(q))} · ${q.delivered?`<a href="${esc(q.delivered.url)}" target="_blank" rel="noopener">${esc(q.title)}</a>`:esc(q.title)}</div>`).join('')}</div>`}
+
+// open a challenge card big in the middle of the screen: it grows out of its place in the list, with the full description
+let prqBigId=null;
+function prqBigPaint(){const box=document.getElementById('prqBigIn');if(!box||!prqBigId)return;const q=(prqData?.requests||[]).find(x=>x.id===prqBigId);if(!q){prqBigClose();return}
+ box.innerHTML=`<button class="prq-bigx" data-prq-bigclose aria-label="Close">✕</button>`+prqCard(q).replace('class="prq-card"','class="prq-card prq-card-big"')}
+function prqBigOpen(card){const id=card.dataset.prqCard;if(!id||document.getElementById('prqBig'))return;prqBigId=id;
+ const from=card.getBoundingClientRect(),ov=document.createElement('div');ov.id='prqBig';ov.className='prq-big';
+ ov.innerHTML='<div class="prq-bigbg" data-prq-bigclose></div><div class="prq-bigin" id="prqBigIn" role="dialog" aria-modal="true" aria-label="Challenge"></div>';document.body.appendChild(ov);document.body.classList.add('prq-noscroll');prqBigPaint();
+ const pan=document.getElementById('prqBigIn'),to=pan.getBoundingClientRect();card.classList.add('prq-ghost');
+ pan.style.transformOrigin='top left';pan.style.transform=`translate(${from.left-to.left}px,${from.top-to.top}px) scale(${from.width/to.width},${Math.min(from.height,to.height*3)/to.height})`;pan.style.opacity='.6';
+ requestAnimationFrame(()=>requestAnimationFrame(()=>{ov.classList.add('on');pan.style.transition='transform .38s cubic-bezier(.2,.8,.2,1),opacity .3s';pan.style.transform='none';pan.style.opacity='1'}));
+ pan.querySelector('.prq-bigx')?.focus({preventScroll:true})}
+function prqBigClose(){const ov=document.getElementById('prqBig');if(!ov)return;const pan=document.getElementById('prqBigIn'),card=document.querySelector(`[data-prq-card="${CSS.escape(prqBigId||'')}"]:not(.prq-card-big)`);
+ const done=()=>{ov.remove();document.body.classList.remove('prq-noscroll');document.querySelectorAll('.prq-ghost').forEach(c=>c.classList.remove('prq-ghost'));prqBigId=null};
+ ov.classList.remove('on');if(card&&pan){const a=card.getBoundingClientRect(),b=pan.getBoundingClientRect();pan.style.transform=`translate(${a.left-b.left}px,${a.top-b.top}px) scale(${a.width/b.width},${Math.min(a.height,b.height*3)/b.height})`;pan.style.opacity='0'}else if(pan)pan.style.opacity='0';
+ setTimeout(done,330)}
+document.addEventListener('click',e=>{
+ if(e.target.closest?.('[data-prq-bigclose]')){prqBigClose();return}
+ const card=e.target.closest?.('.prq-card:not(.prq-card-big)');if(!card||e.target.closest('button,a,input,select,textarea,label'))return;prqBigOpen(card)});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&document.getElementById('prqBig'))prqBigClose();
+ if((e.key==='Enter'||e.key===' ')&&e.target.matches?.('.prq-card:not(.prq-card-big)')){e.preventDefault();prqBigOpen(e.target)}});
