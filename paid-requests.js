@@ -9,8 +9,16 @@ async function prqCall(body){const r=await fetch('/api/paid-requests',{method:'P
 async function prqLoad(){if(prqBusy)return;prqBusy=true;try{prqData=await prqCall({action:'list'})}catch(e){prqData={error:e.message,requests:[]}}prqBusy=false;if(state.view==='requests')prqPaint()}
 const PRQ_PHASE={apply:'Open for creators',vote:'Creator voting',waiting:'Waiting for the creator',making:'Being made',delivered:'Delivered',notaken:'No creator',declined:'Declined',expired:'Not delivered'};
 // a picture for the request: the most watched film of its world, or of the chosen creator
-function prqCover(q){const pool=allFilms().filter(f=>f.yt&&(q.for?f.channelId===q.for.channel:q.cat&&f.cat===q.cat));const f=pool.sort((a,b)=>(b.ytViews||0)-(a.ytViews||0))[0];
- return f?`<div class="prq-cover"><img src="https://i.ytimg.com/vi/${esc(f.yt)}/hqdefault.jpg" alt="" loading="lazy" referrerpolicy="no-referrer"></div>`:`<div class="prq-cover prq-cover-empty">🎬</div>`}
+// a picture for the request: the most watched film of its world (or of the chosen creator);
+// a world with no films yet gets its own designed cover (its name on a colour of its own), never someone else's picture
+const PRQ_GROUP_ICON={'Fantasy':'🐉','Anime':'⛩️','Kids & teens':'🎮','Sci-fi':'🚀','Popular games':'🎮','Classic games':'🕹️','Movies & TV classics':'🎬','Cartoons':'🎨','80s & 90s kids TV':'📼','Monsters, legends & comics':'🦖','What if & nostalgia':'✨','More':'⚡'};
+function prqWorldCover(cat){const g=(typeof GROUPS!=='undefined'&&GROUPS.find(x=>x.cats.some(c=>c.id===cat.id)))||null,h=typeof hueOf==='function'?hueOf(cat.id):270;
+ return `<div class="prq-cover prq-cover-world" style="--h:${h}"><span class="pcw-ic" aria-hidden="true">${PRQ_GROUP_ICON[g?.name]||'🎬'}</span><b>${esc(cat.name)}</b>${g?`<small>${esc(g.name)}</small>`:''}</div>`}
+function prqCover(q){const top=pool=>pool.sort((a,b)=>(b.ytViews||0)-(a.ytViews||0))[0];
+ const F=allFilms().filter(f=>f.yt),f=(q.for&&top(F.filter(x=>x.channelId===q.for.channel)))||(q.cat&&top(F.filter(x=>x.cat===q.cat)));
+ if(f)return `<div class="prq-cover"><img src="https://i.ytimg.com/vi/${esc(f.yt)}/hqdefault.jpg" alt="" loading="lazy" referrerpolicy="no-referrer"></div>`;
+ const cat=q.cat&&typeof CATS!=='undefined'?CATS.find(c=>c.id===q.cat):null;
+ return cat?prqWorldCover(cat):`<div class="prq-cover prq-cover-empty">🎬</div>`}
 function prqCard(q){const sel=prqSel[q.id]||(prqSel[q.id]={amt:q.myPledge?q.myPledge/100:5,ch:q.myVote||null});
  const open=['apply','vote','waiting'].includes(q.phase)||(q.for&&q.phase==='making'),voting=q.phase==='vote';
  const when=q.noLimit&&['apply','vote','waiting','making'].includes(q.phase)?'∞ No time limit':q.phase==='apply'?prqLeft(q.applyEnd)+' to offer':voting?prqLeft(q.voteEnd)+' to vote':q.phase==='waiting'?prqLeft(q.answerBy)+' to answer':q.phase==='making'&&q.deliverBy?prqLeft(q.deliverBy)+' to deliver':'';
@@ -84,7 +92,7 @@ async function prqNew(){if(!needAccount('Sign in to create a challenge.'))return
  openModal(`<div class="dlg" data-sticky="" role="dialog" aria-modal="true" aria-label="Create a challenge"><h2>Create a Challenge</h2>
   <form class="form" id="prqn"><label for="prqT">What AI film do you want?<input id="prqT" required minlength="5" maxlength="140" placeholder="e.g. Vikings on Mars"></label>
   <label for="prqN">Details (optional)<input id="prqN" maxlength="400" placeholder="Story, tone, length"></label>
-  <label for="prqW">World (optional)<select id="prqW"><option value="">Any / my own idea</option>${CATS.map(c=>`<option value="${esc(c.id)}">${esc(c.name)}</option>`).join('')}</select></label>
+  <label for="prqW">World (optional)<select id="prqW"><option value="">Any / my own idea</option>${[...CATS].sort((a,b)=>a.name.replace(/^the /i,'').localeCompare(b.name.replace(/^the /i,''),'en',{sensitivity:'base'})).map(c=>`<option value="${esc(c.id)}">${esc(c.name)}</option>`).join('')}</select></label>
   <fieldset class="ratepick"><legend>Who can make it?</legend><label class="chk"><input type="radio" name="prqMode" value="open" checked> <span>Any verified creator: they offer, backers vote</span></label>
    <label class="chk"><input type="radio" name="prqMode" value="one" ${cr.length?'':'disabled'}> <span>One creator I choose${cr.length?'':' (no verified creators yet)'}</span></label>
    <select id="prqWho" hidden>${cr.map(c=>`<option value="${esc(c.id)}">${esc(c.name)}</option>`).join('')}</select></fieldset>
