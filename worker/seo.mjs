@@ -17,7 +17,8 @@ const STATIC = {
   "/shorts": ["AI fan film Shorts", "Swipe through the best short AI fan films from YouTube, TikTok and Instagram, rated by fans."],
   "/showdown": ["Character Showdown: who would win?", "Fans vote and argue which character would win a fight that never happened in canon. Fanreelz weighs the research and the arguments."],
   "/battles": ["Fan Battles: which AI fan film is better?", "Two AI fan films, one vote. Pick the better one and watch the fan ranking change."],
-  "/requests": ["Request an AI fan film", "Tell AI creators which fan film you want to see next and vote for the best ideas."],
+  "/requests": ["Fanreelz Challenges: you imagine it, creators make it", "Back the AI fan film you want to see and vote for the creator who makes it."],
+  "/challenges": ["Fanreelz Challenges: you imagine it, creators make it", "Back the AI fan film you want to see and vote for the creator who makes it."],
   "/about": ["About Fanreelz", "Fanreelz collects AI fan films about games, books, anime and series in one place, so fans can find, rate and support them."],
   "/browse": ["Browse all AI fan film worlds", "Every game, book, anime and series on Fanreelz, from Warcraft and Lord of the Rings to Naruto and Minecraft."],
   "/live": ["Live AI film streams", "AI fan film creators streaming right now on YouTube and Twitch."],
@@ -155,7 +156,7 @@ export async function withSeo(req, res, env, ctx) {
 
 // sitemap.xml: every page Google should know about, rebuilt from the database at most once an hour
 export async function sitemap(env, ctx) {
-  const urls = ["/", "/creators", "/top10", "/shorts", "/showdown", "/battles", "/browse", "/about", "/requests", "/discord"].map((p) => ({ loc: SITE + p }));
+  const urls = ["/", "/creators", "/top10", "/shorts", "/showdown", "/battles", "/browse", "/about", "/challenges", "/discord"].map((p) => ({ loc: SITE + p }));
   CATS.forEach((c) => urls.push({ loc: `${SITE}/c/${c.id}` }));
   for (let from = 0; from < 45000; from += 1000) {
     const rows = await db(env, `catalog?select=id,published_at,added_at&hidden=eq.false&order=views.desc&offset=${from}&limit=1000`, ctx);

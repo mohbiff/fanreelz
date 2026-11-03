@@ -31,33 +31,34 @@ function prqCard(q){const sel=prqSel[q.id]||(prqSel[q.id]={amt:q.myPledge?q.myPl
   <div class="prq-stats"><div><span>Raised</span><b class="prq-raised">${prqEur(q.total)}</b></div><div><span>Backers</span><b>${q.backers}</b></div><div><span>${q.for?'Creator':'Creators'}</span><b>${q.for?'1':q.appCount}</b></div></div>
   ${q.delivered?`<a class="btn" href="${esc(q.delivered.url)}" target="_blank" rel="noopener">▶ Watch the film by ${esc(q.winner?.name||'')}</a>`:''}
   ${vote}${offers}${answer}${deliver}${back}
-  ${isMod&&['apply','vote'].includes(q.phase)?`<button class="linkbtn" data-prq-skip="${esc(q.id)}">Admin test: skip to ${q.phase==='apply'?'voting':'making'}</button>`:''}<p class="vmeta" style="margin:0">Requested by ${esc(q.by)}${q.myPledge?` · you pledged ${prqEur(q.myPledge)}`:''}${isMod?` · <button class="linkbtn" data-prq-remove="${esc(q.id)}">Remove</button>`:''}</p></article>`}
+  ${isMod&&['apply','vote'].includes(q.phase)?`<button class="linkbtn" data-prq-skip="${esc(q.id)}">Admin test: skip to ${q.phase==='apply'?'voting':'making'}</button>`:''}<p class="vmeta" style="margin:0">Created by ${esc(q.by)}${q.myPledge?` · you pledged ${prqEur(q.myPledge)}`:''}${isMod?` · <button class="linkbtn" data-prq-remove="${esc(q.id)}">Remove</button>`:''}</p></article>`}
 function prqPaint(){const box=document.getElementById('prq');if(!box)return;const D=prqData;
- if(!D){box.innerHTML='<p class="vmeta">Loading paid requests…</p>';return}
+ if(!D){box.innerHTML='<p class="vmeta">Loading challenges…</p>';return}
  const live=(D.requests||[]).filter(q=>['apply','vote','waiting','making'].includes(q.phase)),done=(D.requests||[]).filter(q=>q.phase==='delivered');
- box.innerHTML=`<div class="wbar"><h2 class="sect-h" style="margin:0">💶 Paid requests <small class="plustag">BETA</small></h2><button class="btn" data-prq-new="">+ Start a paid request</button></div>
-  <p class="lede" style="margin-top:6px">Pledge for the AI film you want, and the fans choose who makes it.</p>
+ box.innerHTML=`<section class="prq-hero"><small>COMMUNITY POWERED</small><h1>You imagine it. Creators make it.</h1><p>Your idea. Their creativity. Your vote. Back the AI film you want to see and vote for the creator who brings it to life.</p>
+  <div class="row" style="gap:10px;flex-wrap:wrap"><button class="btn purple" data-prq-new="">⚡ Create a Challenge</button><button class="btn ghost" data-prq-howopen="">How it works</button></div></section>
   ${prqHow()}
   <div class="prq-note">${icon('shield')} <span><b>No money is charged yet.</b> Pledges are promises while payments are being set up. When they open, a pledge is charged only after the film is delivered, and never if nobody makes it.</span></div>
   ${D.error?`<p class="vmeta">${esc(D.error)}</p>`:''}
-  <div class="prq-list">${live.length?live.map(prqCard).join(''):'<div class="empty">No paid requests yet. Start the first one!</div>'}</div>
+  <div class="prq-list">${live.length?live.map(prqCard).join(''):'<div class="empty">No challenges yet. Create the first one!</div>'}</div>
   ${done.length?`<h3 class="sect-h" style="font-size:16px">Delivered</h3><div class="prq-list">${done.slice(0,10).map(prqCard).join('')}</div>`:''}`}
 // "How it works": open the first time, then remembers if the viewer folded it away
 function prqHow(){let shut=false;try{shut=localStorage.getItem('fr_prq_how')==='0'}catch(e){}
  const step=(ic,t)=>`<div class="prq-step"><span>${ic}</span><b>${t}</b></div>`;
  const row=(n,sub,t,d)=>`<div class="prq-row"><div class="prq-day"><b>${n}</b><small>${sub}</small></div><div><b>${t}</b><p>${d}</p></div></div>`;
  return `<details class="prq-how" ${shut?'':'open'}><summary>How it works</summary>
-  <div class="prq-steps">${step('💡','Post a request')}<i>→</i>${step('💶','Back it')}<i>→</i>${step('🗳️','Vote')}<i>→</i>${step('🎬','Film made')}</div>
+  <div class="prq-steps">${step('💡','Create a challenge')}<i>→</i>${step('💶','Back it')}<i>→</i>${step('🗳️','Vote')}<i>→</i>${step('🎬','Film made')}</div>
   ${row('1–3','Days','Back it and creators sign up','Someone posts an idea, like "Vikings on Mars". Anyone can back it from €2, with no upper limit. Verified creators can sign up to make it, but their names stay hidden.')}
   ${row('4–7','Days','Creators revealed, voting opens','The creators who signed up are shown. Everyone who backed the request votes, one vote each, on who should make the film.')}
   ${row('7+','After','The winner makes it','The creator with the most votes gets the job and has 30 days to deliver. Pledges are charged only when the film is delivered, and the money goes to the creator who made it.')}
   <p class="prq-alt">Or <b>ask one creator directly</b>: they accept within 7 days, then have 30 days to deliver.</p></details>`}
+document.addEventListener('click',e=>{if(!e.target.closest?.('[data-prq-howopen]'))return;const d=document.querySelector('.prq-how');if(d){d.open=true;d.scrollIntoView({behavior:'smooth',block:'start'})}});
 document.addEventListener('toggle',e=>{if(e.target.classList?.contains('prq-how')){try{localStorage.setItem('fr_prq_how',e.target.open?'1':'0')}catch(x){}}},true);
 // verified creators to choose from (names from their films on Fanreelz)
 async function prqCreatorList(){if(!prqCreators){try{prqCreators=(await prqCall({action:'creators'})).creators||[]}catch(e){prqCreators=[]}}
  return prqCreators.map(id=>({id,name:allFilms().find(f=>f.channelId===id)?.by||''})).filter(c=>c.name).sort((a,b)=>a.name.localeCompare(b.name))}
-async function prqNew(){if(!needAccount('Sign in to start a paid request.'))return;const cr=await prqCreatorList();
- openModal(`<div class="dlg" role="dialog" aria-modal="true" aria-label="Start a paid request"><h2>Start a paid request</h2>
+async function prqNew(){if(!needAccount('Sign in to create a challenge.'))return;const cr=await prqCreatorList();
+ openModal(`<div class="dlg" role="dialog" aria-modal="true" aria-label="Create a challenge"><h2>Create a Challenge</h2>
   <form class="form" id="prqn"><label for="prqT">What AI film do you want?<input id="prqT" required minlength="5" maxlength="140" placeholder="e.g. Vikings on Mars"></label>
   <label for="prqN">Details (optional)<input id="prqN" maxlength="400" placeholder="Story, tone, length"></label>
   <label for="prqW">World (optional)<select id="prqW"><option value="">Any / my own idea</option>${CATS.map(c=>`<option value="${esc(c.id)}">${esc(c.name)}</option>`).join('')}</select></label>
@@ -66,12 +67,12 @@ async function prqNew(){if(!needAccount('Sign in to start a paid request.'))retu
    <select id="prqWho" hidden>${cr.map(c=>`<option value="${esc(c.id)}">${esc(c.name)}</option>`).join('')}</select></fieldset>
   <label for="prqA">Your pledge (from 2 €)<input id="prqA" type="number" min="2" max="500" step="1" value="5" required></label>
   <p class="subnote">Your own ideas, myths, legends and public-domain stories work best: creators decide what they can make. No money is charged now.</p>
-  <div class="row"><button class="btn" type="submit">Post request</button><button class="btn ghost" type="button" data-close>Cancel</button></div></form></div>`);
+  <div class="row"><button class="btn purple" type="submit">Post challenge</button><button class="btn ghost" type="button" data-close>Cancel</button></div></form></div>`);
  document.querySelectorAll('[name="prqMode"]').forEach(r=>r.onchange=()=>{$('#prqWho').hidden=document.querySelector('[name="prqMode"]:checked').value!=='one'});
  $('#prqn').onsubmit=async e=>{e.preventDefault();const title=$('#prqT').value.trim(),note=$('#prqN').value.trim(),one=document.querySelector('[name="prqMode"]:checked').value==='one';
   if(typeof badText==='function'&&badText(title,note)){toast(BAD_MSG);return}
   const who=one?cr.find(c=>c.id===$('#prqWho').value):null;
-  try{await prqCall({action:'create',title,note,cat:$('#prqW').value,amount:+$('#prqA').value,...(who?{creator:who.id,creatorName:who.name}:{})});closeModal();toast(who?'Request sent to '+who.name:'Paid request posted');prqLoad()}catch(x){toast(x.message)}}}
+  try{await prqCall({action:'create',title,note,cat:$('#prqW').value,amount:+$('#prqA').value,...(who?{creator:who.id,creatorName:who.name}:{})});closeModal();toast(who?'Challenge sent to '+who.name:'Challenge posted');prqLoad()}catch(x){toast(x.message)}}}
 function prqApply(id){const chs=prqData.myChannels||[];const nameOf=ch=>ch.name||allFilms().find(f=>f.channelId===ch.id)?.by||'Your channel';
  openModal(`<div class="dlg" role="dialog" aria-modal="true" aria-label="Offer to make it"><h2>Offer to make this film</h2>
   <form class="form" id="prqp"><label for="prqC">Your verified channel<select id="prqC">${chs.map(c=>`<option value="${esc(c.id)}">${esc(nameOf(c))}</option>`).join('')}</select></label>
@@ -90,7 +91,7 @@ document.addEventListener('click',async e=>{const t=e.target.closest?.('[data-pr
  if(!needAccount('Sign in to take part.'))return;
  const id=t.dataset.prqBack||t.dataset.prqApply||t.dataset.prqSkip||t.dataset.prqAccept||t.dataset.prqDecline||t.dataset.prqDeliver||t.dataset.prqRemove;
  if(t.dataset.prqApply){const q=prqData.requests.find(x=>x.id===id);
-  if(q?.mineRequest&&!isMod)return toast("You started this request, so you can't take it yourself.");
+  if(q?.mineRequest&&!isMod)return toast("You created this challenge, so you can't take it yourself.");
   if(!(prqData.myChannels||[]).length&&!isMod)return toast('Only verified creators can take a request. Claim your channel on your creator page first ("Own this channel?").');
   if(!(prqData.myChannels||[]).length&&isMod){try{await prqCall({action:'apply',id,test:true,name:'Fanreelz test creator'});toast('Admin test: you took the challenge as "Fanreelz test creator"');prqLoad()}catch(x){toast(x.message)}return}
   return prqApply(id)}
@@ -99,5 +100,18 @@ document.addEventListener('click',async e=>{const t=e.target.closest?.('[data-pr
  try{if(t.dataset.prqBack){const s=prqSel[id];await prqCall({action:'pledge',id,amount:s.amt,...(s.ch?{channel:s.ch}:{})});toast('Pledge saved'+(s.ch?' and vote counted':''))}
   else if(t.dataset.prqAccept){await prqCall({action:'accept',id});toast('Accepted. You have 30 days to deliver.')}
   else if(t.dataset.prqDecline){if(!confirm('Decline this request? The pledges are released.'))return;await prqCall({action:'decline',id});toast('Declined')}
-  else if(t.dataset.prqRemove){if(!confirm('Remove this paid request for everyone?'))return;await prqCall({action:'remove',id});toast('Removed')}
+  else if(t.dataset.prqRemove){if(!confirm('Remove this challenge for everyone?'))return;await prqCall({action:'remove',id});toast('Removed')}
   prqLoad()}catch(x){toast(x.message)}});
+// start page: up to three popular live challenges (nothing at all when there are none)
+function prqHomeHtml(){if(!prqData){if(!prqBusy&&!window.prqHomeAsked){window.prqHomeAsked=true;prqLoad().then(()=>{if(state.view==='home'&&(prqData?.requests||[]).some(q=>['apply','vote','waiting','making'].includes(q.phase)))render()})}return ''}
+ const live=(prqData.requests||[]).filter(q=>['apply','vote','waiting'].includes(q.phase)).sort((a,b)=>b.total-a.total||b.backers-a.backers).slice(0,3);
+ if(!live.length)return '';
+ const when=q=>q.phase==='apply'?prqLeft(q.applyEnd):q.phase==='vote'?prqLeft(q.voteEnd):prqLeft(q.answerBy);
+ return `<section class="prq-home"><h2 class="sect-h"><svg class="i" viewBox="0 0 24 24" style="color:#a78bfa;stroke:#a78bfa"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg> Challenges <button class="seeall" data-view="requests">See all</button></h2>
+  <div class="prq-mini">${live.map(q=>`<button class="prq-mc" data-view="requests">${prqCover(q)}<b>${esc(q.title)}</b><span><b class="prq-raised" style="font-size:15px">${prqEur(q.total)}</b> · ${q.backers} backer${q.backers===1?'':'s'}${when(q)?' · '+when(q):''}</span></button>`).join('')}</div></section>`}
+// creator profile: the challenges this creator won or was asked for, and what they delivered
+function prqCreatorHtml(ch){if(!ch)return '';if(!prqData){if(!prqBusy&&!window.prqCrAsked){window.prqCrAsked=true;prqLoad().then(()=>{if(state.view==='creator')render()})}return ''}
+ const mine=(prqData.requests||[]).filter(q=>q.winner?.channel===ch||q.for?.channel===ch);
+ if(!mine.length)return '';
+ const lbl=q=>q.phase==='delivered'?'✓ Delivered':q.phase==='making'?'Making it':q.phase==='waiting'?'Asked to make it':q.phase==='declined'?'Declined':'';
+ return `<div class="prq-cr"><b>⚡ Challenges</b> ${mine.filter(q=>q.phase==='delivered').length} delivered${mine.map(q=>`<div class="vmeta">${esc(lbl(q))} · ${q.delivered?`<a href="${esc(q.delivered.url)}" target="_blank" rel="noopener">${esc(q.title)}</a>`:esc(q.title)}</div>`).join('')}</div>`}
