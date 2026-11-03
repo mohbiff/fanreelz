@@ -117,7 +117,7 @@ function prqHomeHtml(){if(!prqData){if(!prqBusy&&!window.prqHomeAsked){window.pr
  const live=(prqData.requests||[]).filter(q=>['apply','vote','waiting'].includes(q.phase)).sort((a,b)=>b.total-a.total||b.backers-a.backers).slice(0,3);
  if(!live.length)return '';
  const when=q=>q.phase==='apply'?prqLeft(q.applyEnd):q.phase==='vote'?prqLeft(q.voteEnd):prqLeft(q.answerBy);
- return `<section class="prq-home"><h2 class="sect-h"><svg class="i" viewBox="0 0 24 24" style="color:#a78bfa;stroke:#a78bfa"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg> Challenges <button class="seeall" data-view="requests">See all</button></h2>
+ return `<section class="prq-home"><h2 class="sect-h"><button class="sect-link" data-view="requests"><svg class="i" viewBox="0 0 24 24" style="color:#a78bfa;stroke:#a78bfa"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg> Challenges <span aria-hidden="true">›</span></button><button class="seeall" data-view="requests">See all</button></h2>
   <div class="prq-mini">${live.map(q=>`<button class="prq-mc" data-view="requests">${prqCover(q)}<b>${esc(q.title)}</b><span><b class="prq-raised" style="font-size:15px">${prqEur(q.total)}</b> · ${q.backers} backer${q.backers===1?'':'s'}${when(q)?' · '+when(q):''}</span></button>`).join('')}</div></section>`}
 // creator profile: the challenges this creator won or was asked for, and what they delivered
 function prqCreatorHtml(ch){if(!ch)return '';if(!prqData){if(!prqBusy&&!window.prqCrAsked){window.prqCrAsked=true;prqLoad().then(()=>{if(state.view==='creator')render()})}return ''}
