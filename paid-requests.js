@@ -35,7 +35,7 @@ function prqCard(q){const sel=prqSel[q.id]||(prqSel[q.id]={amt:q.myPledge?q.myPl
 function prqPaint(){const box=document.getElementById('prq');if(!box)return;const D=prqData;
  if(!D){box.innerHTML='<p class="vmeta">Loading challenges…</p>';return}
   box.innerHTML=`<section class="prq-hero"><small>COMMUNITY POWERED</small><h1>You imagine it. Creators make it.</h1><p>Your idea. Their creativity. Your vote. Back the AI film you want to see and vote for the creator who brings it to life.</p>
-  <div class="row" style="gap:10px;flex-wrap:wrap"><button class="btn purple" data-prq-new="">⚡ Create a Challenge</button><button class="btn ghost" data-prq-howopen="" aria-expanded="${prqHowOpen}">How it works ${prqHowOpen?"▴":"▾"}</button></div>${prqHow()}</section>
+  <div class="row" style="gap:10px;flex-wrap:wrap"><button class="btn purple" data-prq-new="">⚡ Create a Challenge</button><button class="btn ghost" data-prq-howopen="" aria-expanded="${prqHowOpen}">How it works ${prqHowOpen?"▴":"▾"}</button><div class="prq-tabs" id="prqTabs" role="tablist">${prqTabsHtml()}</div></div>${prqHow()}</section>
   <div class="prq-note">${icon('shield')} <span><b>No money is charged yet.</b> Pledges are promises while payments are being set up. When they open, a pledge is charged only after the film is delivered, and never if nobody makes it.</span></div>
   ${D.error?`<p class="vmeta">${esc(D.error)}</p>`:''}
   <div class="prq-search"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="2"/><path d="m20 20-4-4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><input id="prqQ" type="search" placeholder="Search challenges: film, book, game, creator or any word" aria-label="Search challenges" value="${esc(prqQ)}"></div>
@@ -48,19 +48,23 @@ const prqPop=(a,b)=>b.backers-a.backers||prqVotes(b)-prqVotes(a)||b.total-a.tota
 const prqNorm=t=>String(t||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
 function prqText(q){const cat=(typeof CATS!=='undefined'&&CATS.find(c=>c.id===q.cat))||null;
  return prqNorm([q.title,q.note,q.cat,cat?.name,q.char,q.by,q.for?.name,q.winner?.name,...(q.apps||[]).map(a=>a.name)].join(' '))}
-function prqResults(){const D=prqData||{},all=D.requests||[],words=prqNorm(prqQ).split(/\s+/).filter(Boolean);
+let prqTab='open';
+const PRQ_TABS=[['open','Open'],['making','Being made'],['done','Completed']];
+function prqGroups(){const all=(prqData||{}).requests||[],words=prqNorm(prqQ).split(/\s+/).filter(Boolean);
  const hit=q=>!words.length||words.every(w=>prqText(q).includes(w));
- const open=all.filter(q=>['apply','vote','waiting'].includes(q.phase)&&hit(q)).sort(prqPop),
-  making=all.filter(q=>q.phase==='making'&&hit(q)).sort((a,b)=>(a.deliverBy||9e15)-(b.deliverBy||9e15)),
-  done=all.filter(q=>q.phase==='delivered'&&hit(q)).sort((a,b)=>(b.delivered?.at||b.created)-(a.delivered?.at||a.created));
- const n=open.length+making.length+done.length;
- if(words.length&&!n)return `<div class="empty">No challenges match "${esc(prqQ.trim())}". <button class="linkbtn" data-prq-new="">Create it as a challenge</button></div>`;
- const sec=(t,sub,list,empty)=>`<h2 class="sect-h prq-sh">${t} <small>${list.length}</small></h2>${sub?`<p class="vmeta prq-sub">${sub}</p>`:''}${list.length?`<div class="prq-list">${list.map(prqCard).join('')}</div>`:empty?`<div class="empty">${empty}</div>`:''}`;
- return `${words.length?`<p class="vmeta">${n} challenge${n===1?'':'s'} found</p>`:''}
-  ${sec('Open challenges','Back them now and vote for who makes the film.',open,words.length?'':'No open challenges right now. Create the first one!')}
-  ${making.length?sec('Challenges being made','A creator has taken these on and is making the film.',making):''}
-  ${done.length?sec('Completed challenges','The films are out. Watch them!',done):''}`}
-document.addEventListener('input',e=>{if(e.target.id!=='prqQ')return;prqQ=e.target.value;const r=document.getElementById('prqRes');if(r)r.innerHTML=prqResults()});
+ return {words,
+  open:all.filter(q=>['apply','vote','waiting'].includes(q.phase)&&hit(q)).sort(prqPop),
+  making:all.filter(q=>q.phase==='making'&&hit(q)).sort((a,b)=>(a.deliverBy||9e15)-(b.deliverBy||9e15)),
+  done:all.filter(q=>q.phase==='delivered'&&hit(q)).sort((a,b)=>(b.delivered?.at||b.created)-(a.delivered?.at||a.created))}}
+function prqTabsHtml(){const G=prqGroups();return PRQ_TABS.map(([k,t])=>`<button type="button" role="tab" class="prq-tab ${prqTab===k?'on':''}" aria-selected="${prqTab===k}" data-prq-tab="${k}">${t} <small>${G[k].length}</small></button>`).join('')}
+function prqResults(){const G=prqGroups(),list=G[prqTab],q=esc(prqQ.trim());
+ const sub={open:'Back them now and vote for who makes the film.',making:'A creator has taken these on and is making the film.',done:'The films are out. Watch them!'}[prqTab];
+ const empty=G.words.length?`No ${prqTab==='open'?'open':prqTab==='making'?'challenges being made':'completed challenges'} match "${q}".${prqTab==='open'?' <button class="linkbtn" data-prq-new="">Create it as a challenge</button>':''}`
+  :{open:'No open challenges right now. Create the first one!',making:'No challenge is being made yet. When a creator takes one on, it shows up here.',done:'No completed challenges yet. Delivered films show up here.'}[prqTab];
+ return `${list.length?`<p class="vmeta prq-sub">${sub}</p>`:''}${list.length?`<div class="prq-list">${list.map(prqCard).join('')}</div>`:`<div class="empty">${empty}</div>`}`}
+const prqRefresh=()=>{const t=document.getElementById('prqTabs');if(t)t.innerHTML=prqTabsHtml();const r=document.getElementById('prqRes');if(r)r.innerHTML=prqResults()};
+document.addEventListener('input',e=>{if(e.target.id!=='prqQ')return;prqQ=e.target.value;prqRefresh()});
+document.addEventListener('click',e=>{const b=e.target.closest?.('[data-prq-tab]');if(!b)return;prqTab=b.dataset.prqTab;prqRefresh()});
 // "How it works": open the first time, then remembers if the viewer folded it away
 let prqHowOpen=false;
 function prqHow(){
