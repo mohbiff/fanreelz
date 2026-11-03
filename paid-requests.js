@@ -81,7 +81,7 @@ document.addEventListener('click',e=>{const b=e.target.closest?.('[data-prq-howo
 async function prqCreatorList(){if(!prqCreators){try{prqCreators=(await prqCall({action:'creators'})).creators||[]}catch(e){prqCreators=[]}}
  return prqCreators.map(id=>({id,name:allFilms().find(f=>f.channelId===id)?.by||''})).filter(c=>c.name).sort((a,b)=>a.name.localeCompare(b.name))}
 async function prqNew(){if(!needAccount('Sign in to create a challenge.'))return;const cr=await prqCreatorList();
- openModal(`<div class="dlg" role="dialog" aria-modal="true" aria-label="Create a challenge"><h2>Create a Challenge</h2>
+ openModal(`<div class="dlg" data-sticky="" role="dialog" aria-modal="true" aria-label="Create a challenge"><h2>Create a Challenge</h2>
   <form class="form" id="prqn"><label for="prqT">What AI film do you want?<input id="prqT" required minlength="5" maxlength="140" placeholder="e.g. Vikings on Mars"></label>
   <label for="prqN">Details (optional)<input id="prqN" maxlength="400" placeholder="Story, tone, length"></label>
   <label for="prqW">World (optional)<select id="prqW"><option value="">Any / my own idea</option>${CATS.map(c=>`<option value="${esc(c.id)}">${esc(c.name)}</option>`).join('')}</select></label>
@@ -97,13 +97,13 @@ async function prqNew(){if(!needAccount('Sign in to create a challenge.'))return
   const who=one?cr.find(c=>c.id===$('#prqWho').value):null;
   try{await prqCall({action:'create',title,note,cat:$('#prqW').value,amount:+$('#prqA').value,...(who?{creator:who.id,creatorName:who.name}:{})});closeModal();toast(who?'Challenge sent to '+who.name:'Challenge posted');prqLoad()}catch(x){toast(x.message)}}}
 function prqApply(id){const chs=prqData.myChannels||[];const nameOf=ch=>ch.name||allFilms().find(f=>f.channelId===ch.id)?.by||'Your channel';
- openModal(`<div class="dlg" role="dialog" aria-modal="true" aria-label="Offer to make it"><h2>Offer to make this film</h2>
+ openModal(`<div class="dlg" data-sticky="" role="dialog" aria-modal="true" aria-label="Offer to make it"><h2>Offer to make this film</h2>
   <form class="form" id="prqp"><label for="prqC">Your verified channel<select id="prqC">${chs.map(c=>`<option value="${esc(c.id)}">${esc(nameOf(c))}</option>`).join('')}</select></label>
   <label for="prqS">Link to an earlier film of yours (optional)<input id="prqS" type="url" placeholder="https://youtube.com/watch?v=…"></label>
   <p class="subnote">Backers see your offer when voting starts. If you win, you have 30 days to deliver.</p>
   <div class="row"><button class="btn" type="submit">Offer</button><button class="btn ghost" type="button" data-close>Cancel</button></div></form></div>`);
  $('#prqp').onsubmit=async e=>{e.preventDefault();const ch=chs.find(c=>c.id===$('#prqC').value);try{await prqCall({action:'apply',id,channel:ch.id,name:nameOf(ch),sample:$('#prqS').value.trim()});closeModal();toast('Offer sent');prqLoad()}catch(x){toast(x.message)}}}
-function prqDeliver(id){openModal(`<div class="dlg" role="dialog" aria-modal="true" aria-label="Deliver the film"><h2>Deliver the film</h2>
+function prqDeliver(id){openModal(`<div class="dlg" data-sticky="" role="dialog" aria-modal="true" aria-label="Deliver the film"><h2>Deliver the film</h2>
   <form class="form" id="prqd"><label for="prqU">YouTube link to the finished film<input id="prqU" type="url" required placeholder="https://youtube.com/watch?v=…"></label>
   <div class="row"><button class="btn" type="submit">Deliver</button><button class="btn ghost" type="button" data-close>Cancel</button></div></form></div>`);
  $('#prqd').onsubmit=async e=>{e.preventDefault();try{await prqCall({action:'deliver',id,url:$('#prqU').value.trim()});closeModal();toast('Delivered. Thank you!');prqLoad()}catch(x){toast(x.message)}}}
