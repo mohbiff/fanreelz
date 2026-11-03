@@ -175,6 +175,7 @@ svg.i{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stro
 main{min-width:0;padding-right:max(16px,env(safe-area-inset-right,0px));padding-left:12px;padding-bottom:40px}
 .gcatbtn{display:inline-flex;align-items:center;gap:6px;margin:0 0 12px}.gcatgrid{margin-bottom:18px;display:grid!important;grid-template-columns:repeat(auto-fill,minmax(160px,1fr))!important;gap:8px!important}.gcatgrid .dircard{padding:8px 10px;gap:8px}.gcatgrid .dircard b{font-size:13px;line-height:1.25}
 .plustag{font-size:10px;font-weight:800;letter-spacing:.06em;background:#ffd23f;color:#1a1405;border-radius:5px;padding:1px 5px;vertical-align:middle;margin-left:4px}.inslock{display:flex;align-items:center;gap:8px;margin-top:10px;padding:10px 12px;border:1px dashed var(--line);border-radius:10px;color:var(--muted);font-size:13px}.insplus{display:flex;flex-direction:column;gap:4px;padding:14px 16px;margin:0 0 16px;border-radius:14px;background:var(--surface);border:1px solid #ffd23f55;max-width:720px}.insplus span{color:var(--muted);font-size:14px}.insplus a{color:#ffd23f}
+.prq-card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px 16px;display:flex;flex-direction:column;gap:8px}.prq-list{display:grid;gap:12px;margin:12px 0}.prq-card h3{margin:0;font-size:17px}.prq-top{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.prq-phase{font-size:11px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;border-radius:6px;padding:2px 7px;background:var(--chip)}.prq-apply,.prq-vote{background:#ffd23f;color:#1a1405}.prq-making{background:#8b5cf6;color:#fff}.prq-delivered{background:#3ecf8e;color:#06210f}.prq-money b{font-size:18px}.prq-apps{display:flex;flex-direction:column;gap:6px;padding:8px 0;border-top:1px solid var(--line)}.prq-app{display:flex;align-items:center;gap:10px;justify-content:space-between;flex-wrap:wrap}.prq-note{display:flex;gap:8px;align-items:flex-start;padding:10px 12px;border:1px dashed var(--line);border-radius:10px;color:var(--muted);font-size:13px;margin:8px 0}
 .chips{position:sticky;top:calc(56px + env(safe-area-inset-top,0px));z-index:4;background:var(--bg);display:flex;gap:12px;overflow-x:auto;padding:10px 0 14px;scrollbar-width:none}
 .chips::-webkit-scrollbar{display:none}
 .chip{flex:none;height:32px;padding:0 12px;border-radius:8px;border:0;background:var(--chip);font-weight:600;white-space:nowrap}
@@ -949,6 +950,7 @@ a.gi[data-rx-combo]{color:inherit;text-decoration:none}
 <div id="frameHold" hidden></div><div id="spPre" aria-hidden="true" style="position:fixed;left:-10000px;top:0;width:360px;height:640px;opacity:0;pointer-events:none;overflow:hidden"></div>
 <script src="/email-auth.js?v=1"></script>
 <script src="/creator-profiles.js?v=5"></script>
+<script src="/paid-requests.js?v=1"></script>
 <script>
 const GROUPS=[
  {name:"Fantasy",cats:[
@@ -2601,7 +2603,7 @@ function renderRequests(){
   if(reqSort==="open")list=list.filter(r=>!r.claimers.length&&!r.madeFilm).sort((a,b)=>b.total-a.total);
   if(reqSort==="commissions")list=list.filter(r=>r.forCreator).sort((a,b)=>b.t-a.t);
   const up=myUp(),cl=myClaims();
-  $("#main").innerHTML=`<div class="chips">${[["top","Most wanted"],["new","Newest"],["open","Not claimed yet"],["commissions","Commissions"]].map(([k,l])=>`<button class="chip ${reqSort===k?"on":""}" data-rsort="${k}">${l}</button>`).join("")}</div>
+  $("#main").innerHTML=`<div id="prq"></div><div class="chips">${[["top","Most wanted"],["new","Newest"],["open","Not claimed yet"],["commissions","Commissions"]].map(([k,l])=>`<button class="chip ${reqSort===k?"on":""}" data-rsort="${k}">${l}</button>`).join("")}</div>
    <div class="wbar"><h1 class="sect-h" style="font-size:24px;margin:0">${icon("req")} Requests</h1><button class="btn" data-newreq="">+ Request a film</button></div>
    <p class="lede" style="margin-top:8px">Tell creators what you want to see. Vote up the ideas you like; a creator who takes one on marks it as claimed.</p>
    <div class="reqlist">${list.length?list.map(r=>`<div class="req">
@@ -2612,6 +2614,8 @@ function renderRequests(){
        <div class="row" style="gap:8px">${r.forCreator?`<span class="pill">Commission for ${esc(r.forCreator)}${r.rate?` · ${esc(r.rate.label)} · ${fmtKr(r.rate.price)}`:""}</span>`:""}${r.madeFilm?'<span class="pill">Made</span>':""}${r.claimers.length?`<span class="vmeta">Claimed by ${esc(r.claimers.join(", "))}</span>`:""}</div></div>
      <button class="remind ${cl[r.id]?"on":""}" data-claim="${esc(r.id)}">${cl[r.id]?"✓ You're making it":"I'll make it"}</button></div>`).join(""):`<div class="empty">No requests here yet.</div>`}</div>
    <p class="note">The requests already on the list are made-up examples. New ones you post are shared with everyone who can open this page.</p>`;
+  // paid requests (paid-requests.js) sit above the free ideas
+  if(typeof prqPaint==="function"){prqPaint();if(!prqData||Date.now()-(window.prqAt||0)>60e3){window.prqAt=Date.now();prqLoad()}}
 }
 function openRequest(forCreator,ckey){
   const rates=ckey?commissionRates(rateKeyFor(ckey)):[];let pick=0;

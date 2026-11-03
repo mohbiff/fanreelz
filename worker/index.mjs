@@ -16,6 +16,7 @@ import thumb from "../netlify/functions/thumb.mjs";
 import ytViews from "../netlify/functions/yt-views.mjs";
 import affiliates from "../netlify/functions/affiliates.mjs";
 import insights from "../netlify/functions/insights.mjs";
+import paidRequests from "../netlify/functions/paid-requests.mjs";
 import creatorProfile from "../netlify/functions/creator-profile.mjs";
 import creatorAi from "../netlify/functions/creator-ai.mjs";
 import {refreshCreatorSubscribers} from "../netlify/functions/lib/creator-subscribers.mjs";
@@ -37,6 +38,7 @@ const ROUTES = {
   "/api/yt-views": ytViews,
   "/api/affiliates": affiliates,
   "/api/insights": insights,
+  "/api/paid-requests": paidRequests,
   "/api/creator-ai": creatorAi,
   "/api/creator-profile": creatorProfile,
   "/api/creator-rankings": creatorRankings,
