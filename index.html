@@ -291,7 +291,7 @@ body.mini-on main{padding-bottom:calc(var(--minipad,0px) + 64px)}
 @media (max-width:860px){.player.hasbar .fpcatch{display:block}.player.ytctrl .fpcatch,.player.ended .fpcatch{display:none}.player.hasbar .dragzone{display:block}body.fsmode .dragzone,body.wfs .dragzone{display:none!important}.player.ytctrl .edgegrab{display:block}body.fsmode .edgegrab,body.wfs .edgegrab{display:none!important}}
 /* vertical videos (9:16): a tall player like YouTube's, and in full screen they use the whole width of a standing phone */
 /* the video is 9:16 and the control bar (seek, volume…) sits under it, so the player is the video plus the bar */
-.player.vert.hasbar{aspect-ratio:auto;width:min(100%,calc((100dvh - 180px) * 9 / 16),620px);height:auto;margin-left:auto;margin-right:auto}
+.player.vert.hasbar{aspect-ratio:auto;width:min(100%,calc((100dvh - 210px) * 9 / 16),620px);height:auto;margin-left:auto;margin-right:auto}
 .player.vert.hasbar iframe{aspect-ratio:9/16;width:100%!important;height:auto!important;margin:0 auto}
 @media (max-width:860px) and (orientation:portrait){
   .theater:has(.player.vert){margin-left:-12px;margin-right:calc(-1 * max(16px,env(safe-area-inset-right,0px)));padding-left:0;padding-right:0}
