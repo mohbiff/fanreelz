@@ -3984,10 +3984,23 @@ document.addEventListener("click",e=>{
 })();
 /* Is this YouTube video vertical? The catalogue only knows the length, so check YouTube's original-shape thumbnail once */
 const vertSeen={};
-function checkVert(f){if(!f||!f.yt)return;const apply=v=>{f.vert=v;const pl=document.querySelector(".player");if(pl&&state.film===f.id)pl.classList.toggle("vert",v)};
+// vertical videos (also long ones, not only Shorts): YouTube's real aspect ratio, asked from the server and remembered on this device
+try{Object.assign(vertSeen,JSON.parse(localStorage.getItem("fr_vert")||"{}"))}catch(e){}
+const vertSave=()=>{try{localStorage.setItem("fr_vert",JSON.stringify(vertSeen))}catch(e){}};
+async function vertAsk(ids){const got={};for(let i=0;i<ids.length;i+=50){const r=await fetch("/api/yt-shape?ids="+ids.slice(i,i+50).join(",")).then(r=>r.json()).catch(()=>({}));for(const k in r){vertSeen[k]=!!r[k];got[k]=!!r[k]}}vertSave();return got}
+const vertMoved=new Set();
+function checkVert(f){if(!f||!f.yt)return;const apply=v=>{f.vert=v;const pl=document.querySelector(".player");if(pl&&state.film===f.id)pl.classList.toggle("vert",v);
+    // on a phone, a vertical film (for example from a Discord link) opens in the Shorts player, filling the standing screen
+    if(v&&typeof phone==="function"&&phone()&&state.view==="watch"&&state.film===f.id&&!vertMoved.has(f.id)){vertMoved.add(f.id);openShorts(f.id)}};
   if(f.yt in vertSeen){apply(vertSeen[f.yt]);return}
-  const im=new Image();im.onload=()=>{vertSeen[f.yt]=im.naturalHeight>im.naturalWidth*1.1;apply(vertSeen[f.yt])};im.onerror=()=>{vertSeen[f.yt]=false;apply(false)};
-  im.src="https://i.ytimg.com/vi/"+f.yt+"/oardefault.jpg"}
+  vertAsk([f.yt]).then(r=>{if(f.yt in r)apply(r[f.yt])})}
+// once per visit: find the vertical ones among all films, so cards open them in the tall player too
+let vertSwept=false;
+async function vertSweep(){if(vertSwept)return;vertSwept=true;const F=rawFilms().filter(f=>f.yt&&f.format!=="short");
+  let ch=false;for(const f of F)if(f.yt in vertSeen&&!!f.vert!==vertSeen[f.yt]){f.vert=vertSeen[f.yt];ch=true}
+  const ask=[...new Set(F.filter(f=>!(f.yt in vertSeen)).map(f=>f.yt))];
+  if(ask.length){const r=await vertAsk(ask);for(const f of F)if(f.yt in r&&!!f.vert!==r[f.yt]){f.vert=r[f.yt];ch=true}}
+  if(ch&&state.view!=="watch")render()}
 /* Inside the Android app (or the installed web app) Chrome shows its "swipe from the top to exit full screen" notice
    every time the page uses the browser's full screen. There the player fills the screen by itself instead — no notice. */
 const APP=window.FanreelzApp||null; // the Android app: hides the phone's bars and turns the screen for full screen
@@ -4835,7 +4848,7 @@ async function sbSignOut(){if(sb){await sb.auth.signOut();location.reload()}}
       for(const f of films){if(!f||!CATS.some(c=>c.id===f.cat)||typeof f.title!=="string")continue;
         all.push({id:String(f.id),title:f.title.slice(0,120),cat:f.cat,char:String(f.char||""),src:String(f.src||"YouTube"),tool:String(f.tool||"Unknown"),len:"",days:daysSince(+f.t||Date.now()),added:+f.t||null,counts:[0,0,0,0,0],hue:(+f.hue||0)%360,url:/^https:\/\//.test(f.url)?f.url:"",...submissionCredit(f,d.id),topic:String(f.topic||"").slice(0,60),...(/^https:\/\//.test(f.url)?parseVid(f.url):{}),format:["short","film","episode"].includes(f.format)?f.format:"film",seriesTitle:String(f.seriesTitle||"").slice(0,80),season:Math.max(1,+f.season||1),ep:Math.max(1,+f.ep||1)});
         if(d.id===acct.uid)mine.push(f);}}
-    all.forEach(applyYtInfo);sharedSubs=all;mySubs=mine;openLinkedFilm();render();resolveNames();setTimeout(()=>loadHandViews().catch(()=>{}),1500);},()=>{});
+    all.forEach(applyYtInfo);sharedSubs=all;mySubs=mine;openLinkedFilm();render();resolveNames();setTimeout(()=>loadHandViews().catch(()=>{}),1500);setTimeout(()=>vertSweep().catch(()=>{}),2500);},()=>{});
 })();
 </script>
 

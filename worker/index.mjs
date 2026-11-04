@@ -14,6 +14,7 @@ import showdown from "../netlify/functions/showdown.mjs";
 import peak from "../netlify/functions/peak.mjs";
 import thumb from "../netlify/functions/thumb.mjs";
 import ytViews from "../netlify/functions/yt-views.mjs";
+import ytShape from "../netlify/functions/yt-shape.mjs";
 import affiliates from "../netlify/functions/affiliates.mjs";
 import insights from "../netlify/functions/insights.mjs";
 import paidRequests from "../netlify/functions/paid-requests.mjs";
@@ -36,6 +37,7 @@ const ROUTES = {
   "/api/thumb": thumb,
   "/api/tiktok-thumb": thumb,
   "/api/yt-views": ytViews,
+  "/api/yt-shape": ytShape,
   "/api/affiliates": affiliates,
   "/api/insights": insights,
   "/api/paid-requests": paidRequests,
