@@ -3994,13 +3994,9 @@ function checkVert(f){if(!f||!f.yt)return;const apply=v=>{f.vert=v;const pl=docu
     if(v&&typeof phone==="function"&&phone()&&state.view==="watch"&&state.film===f.id&&!vertMoved.has(f.id)){vertMoved.add(f.id);openShorts(f.id)}};
   if(f.yt in vertSeen){apply(vertSeen[f.yt]);return}
   vertAsk([f.yt]).then(r=>{if(f.yt in r)apply(r[f.yt])})}
-// once per visit: find the vertical ones among all films, so cards open them in the tall player too
+// films already known to be vertical on this device open in the tall player from their cards too (no YouTube requests here)
 let vertSwept=false;
-async function vertSweep(){if(vertSwept)return;vertSwept=true;const F=rawFilms().filter(f=>f.yt&&f.format!=="short");
-  let ch=false;for(const f of F)if(f.yt in vertSeen&&!!f.vert!==vertSeen[f.yt]){f.vert=vertSeen[f.yt];ch=true}
-  const ask=[...new Set(F.filter(f=>!(f.yt in vertSeen)).map(f=>f.yt))];
-  if(ask.length){const r=await vertAsk(ask);for(const f of F)if(f.yt in r&&!!f.vert!==r[f.yt]){f.vert=r[f.yt];ch=true}}
-  if(ch&&state.view!=="watch")render()}
+function vertSweep(){if(vertSwept)return;vertSwept=true;let ch=false;for(const f of rawFilms())if(f.yt&&f.format!=="short"&&f.yt in vertSeen&&!!f.vert!==vertSeen[f.yt]){f.vert=vertSeen[f.yt];ch=true}if(ch&&state.view!=="watch")render()}
 /* Inside the Android app (or the installed web app) Chrome shows its "swipe from the top to exit full screen" notice
    every time the page uses the browser's full screen. There the player fills the screen by itself instead — no notice. */
 const APP=window.FanreelzApp||null; // the Android app: hides the phone's bars and turns the screen for full screen
@@ -4848,7 +4844,7 @@ async function sbSignOut(){if(sb){await sb.auth.signOut();location.reload()}}
       for(const f of films){if(!f||!CATS.some(c=>c.id===f.cat)||typeof f.title!=="string")continue;
         all.push({id:String(f.id),title:f.title.slice(0,120),cat:f.cat,char:String(f.char||""),src:String(f.src||"YouTube"),tool:String(f.tool||"Unknown"),len:"",days:daysSince(+f.t||Date.now()),added:+f.t||null,counts:[0,0,0,0,0],hue:(+f.hue||0)%360,url:/^https:\/\//.test(f.url)?f.url:"",...submissionCredit(f,d.id),topic:String(f.topic||"").slice(0,60),...(/^https:\/\//.test(f.url)?parseVid(f.url):{}),format:["short","film","episode"].includes(f.format)?f.format:"film",seriesTitle:String(f.seriesTitle||"").slice(0,80),season:Math.max(1,+f.season||1),ep:Math.max(1,+f.ep||1)});
         if(d.id===acct.uid)mine.push(f);}}
-    all.forEach(applyYtInfo);sharedSubs=all;mySubs=mine;openLinkedFilm();render();resolveNames();setTimeout(()=>loadHandViews().catch(()=>{}),1500);setTimeout(()=>vertSweep().catch(()=>{}),2500);},()=>{});
+    all.forEach(applyYtInfo);sharedSubs=all;mySubs=mine;openLinkedFilm();render();resolveNames();setTimeout(()=>loadHandViews().catch(()=>{}),1500);setTimeout(vertSweep,2500);},()=>{});
 })();
 </script>
 
