@@ -52,7 +52,12 @@ const CRONS = { "*/10 * * * *": importYoutube, "41 * * * *": showdown, "* * * * 
 // Digital Asset Links: proves that the Android app (Google Play) and fanreelz.com belong together, so the app shows no browser bar.
 // The first fingerprint is the upload key; add Google Play's "App signing key" SHA-256 from Play Console → Test and release → App integrity,
 // here or as ASSETLINKS_SHA256 in the Cloudflare dashboard (several can be given, separated by commas).
-const ANDROID_FINGERPRINTS = ["36:8C:F0:16:D1:F0:1E:25:15:FB:C2:F5:2D:5D:EB:25:2A:6A:52:17:0A:FD:83:FC:EB:6C:48:B5:F4:EA:D2:B9"];
+// public certificate fingerprints (not secrets): our own signing key (the APK download) and Google Play's app signing key
+// (Play re-signs the app it installs, so Android checks that one: Play Console → App integrity → App signing)
+const ANDROID_FINGERPRINTS = [
+  "36:8C:F0:16:D1:F0:1E:25:15:FB:C2:F5:2D:5D:EB:25:2A:6A:52:17:0A:FD:83:FC:EB:6C:48:B5:F4:EA:D2:B9",
+  "E9:21:5C:4C:42:81:DA:BB:31:CC:92:1F:E4:36:EE:EA:B7:5D:0E:A7:73:4D:15:DD:D6:1E:7E:22:F6:6C:D4:B1",
+];
 function assetLinks(env) {
   const fps = [...ANDROID_FINGERPRINTS, ...String(env.ASSETLINKS_SHA256 || "").split(",").map((s) => s.trim().toUpperCase()).filter(Boolean)];
   const body = [{ relation: ["delegate_permission/common.handle_all_urls"], target: { namespace: "android_app", package_name: "com.fanreelz.app", sha256_cert_fingerprints: [...new Set(fps)] } }];
