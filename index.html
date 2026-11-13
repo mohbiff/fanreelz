@@ -4653,12 +4653,15 @@ function instBar(){const old=$("#instbar"),ua=navigator.userAgent;
   const iosSafari=/iphone|ipad|ipod/i.test(ua)&&!/CriOS|FxiOS|EdgiOS|FBAN|FBAV|Instagram|Snapchat|TikTok/i.test(ua);
   const show=instReady&&(installPrompt||iosSafari)&&!standalone&&!IN_APP&&!APP&&!off&&phone()&&!["watch","shorts","admin"].includes(state.view)&&$("#scrim").hidden;
   if(!show){old?.remove();return}if(old)return;
-  document.body.insertAdjacentHTML("beforeend",`<div id="instbar" class="instbar" role="region" aria-label="Get the app"><span class="instic" aria-hidden="true"></span><span><b>Get the Fanreelz app</b><small>Free · installs in one tap</small></span><button class="btn" data-instgo="">Install</button><button class="instx" data-instoff="" aria-label="Not now">✕</button></div>`)}
+  document.body.insertAdjacentHTML("beforeend",`<div id="instbar" class="instbar" role="region" aria-label="Get the app"><span class="instic" aria-hidden="true"></span><span><b>Get the Fanreelz app</b><small>${/android/i.test(navigator.userAgent)?"Free on Google Play":"Free · installs in one tap"}</small></span><button class="btn" data-instgo="">Install</button><button class="instx" data-instoff="" aria-label="Not now">✕</button></div>`)}
 document.addEventListener("click",e=>{
   if(e.target.closest("[data-instgo]")){e.preventDefault();$("#instbar")?.remove();try{localStorage.setItem("fr_inst_off",Date.now())}catch(x){}installApp();return}
   if(e.target.closest("[data-instoff]")){e.preventDefault();try{localStorage.setItem("fr_inst_off",Date.now())}catch(x){}$("#instbar")?.remove()}});
+// the Android app is on Google Play: Android phones go straight to its Play page (the Play Store app opens it)
+const PLAY_URL="https://play.google.com/store/apps/details?id=com.fanreelz.app";
 async function installApp(){
   if($("#shell").classList.contains("open"))closeMenu();
+  if(/android/i.test(navigator.userAgent)){try{window.umami?.track?.("install-play")}catch(e){}location.href=PLAY_URL;return}
   if(installPrompt){installPrompt.prompt();await installPrompt.userChoice.catch(()=>{});installPrompt=null;renderGuide();return}
   const ua=navigator.userAgent,ios=/iphone|ipad|ipod/i.test(ua),android=/android/i.test(ua),
     inApp=/FBAN|FBAV|FB_IAB|Messenger|Instagram|Line\/|Snapchat|TikTok|musical_ly|Twitter/i.test(ua),
